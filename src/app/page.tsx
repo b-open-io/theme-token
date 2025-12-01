@@ -87,13 +87,21 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button size="lg" className="gap-2">
-                <Github className="h-5 w-5" />
-                View on GitHub
+              <Button size="lg" className="gap-2" asChild>
+                <a
+                  href="https://github.com/b-open-io/theme-token"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Github className="h-5 w-5" />
+                  View on GitHub
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="gap-2">
-                Read the Spec
-                <ArrowRight className="h-4 w-4" />
+              <Button size="lg" variant="outline" className="gap-2" asChild>
+                <a href="#schema">
+                  Read the Spec
+                  <ArrowRight className="h-4 w-4" />
+                </a>
               </Button>
             </div>
           </motion.div>
@@ -249,7 +257,7 @@ export default function Home() {
       </section>
 
       {/* Schema Documentation */}
-      <section className="border-t border-border py-24">
+      <section id="schema" className="border-t border-border py-24">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             initial="initial"
@@ -284,19 +292,19 @@ export default function Home() {
               viewport={{ once: true }}
               className="space-y-4"
             >
-              <h3 className="font-semibold">Semantic Color Tokens</h3>
+              <h3 className="font-semibold">19 Semantic Color Properties</h3>
               <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                 {[
                   ["background", "Page background"],
                   ["foreground", "Text color"],
-                  ["primary", "Brand/action color"],
+                  ["primary", "Brand color"],
                   ["secondary", "Muted actions"],
                   ["muted", "Muted backgrounds"],
-                  ["accent", "Highlight color"],
+                  ["accent", "Highlights"],
                   ["destructive", "Error/danger"],
                   ["card", "Card surfaces"],
-                  ["popover", "Dropdown surfaces"],
-                  ["border", "Border color"],
+                  ["popover", "Dropdowns"],
+                  ["border", "Borders"],
                   ["input", "Input borders"],
                   ["ring", "Focus rings"],
                 ].map(([name, desc]) => (
@@ -313,8 +321,12 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Each color has a <code className="rounded bg-muted px-1">-foreground</code>{" "}
-                variant for text contrast
+                Colors like <code className="rounded bg-muted px-1">primary</code>,{" "}
+                <code className="rounded bg-muted px-1">card</code>, and{" "}
+                <code className="rounded bg-muted px-1">destructive</code> include{" "}
+                <code className="rounded bg-muted px-1">-foreground</code> variants for
+                accessible text contrast. All values use{" "}
+                <code className="rounded bg-muted px-1">oklch()</code> format.
               </p>
             </motion.div>
 
@@ -331,22 +343,26 @@ export default function Home() {
                   protocol: "ThemeToken",
                   type: "ShadCN-UI",
                   metadata: {
-                    name: "string (required)",
-                    description: "string",
-                    author: "string",
-                    tags: ["string[]"],
-                    license: "CC0 | MIT | string",
-                    previewUrl: "string",
+                    name: "My Theme",
+                    description: "A custom theme",
+                    author: "designer@paymail",
+                    tags: ["dark", "minimal"],
+                    license: "CC0",
+                    previewUrl: "ordfs://...",
                   },
                   light: {
                     colors: { "...19 semantic colors": "" },
                     dimensions: { radius: "0.5rem" },
-                    charts: { "1": "oklch(...)", "2": "..." },
+                    charts: { "1": "oklch(0.6 0.2 240)" },
                   },
                   dark: { "...": "same structure as light" },
                 }}
                 className="text-xs"
               />
+              <p className="mt-3 text-xs text-muted-foreground">
+                Optional <code className="rounded bg-muted px-1">charts</code> object
+                defines colors for data visualizations.
+              </p>
             </motion.div>
           </div>
         </div>
@@ -442,7 +458,9 @@ export default function Home() {
             </p>
             <div className="flex gap-4">
               <a
-                href="#"
+                href="https://github.com/b-open-io/theme-token"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 GitHub
