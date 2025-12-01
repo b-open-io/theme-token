@@ -130,7 +130,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // Save selection
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ themeName: theme.label })
+          JSON.stringify({ themeName: theme.name })
         );
       } else {
         applyThemeToDocument(null);
@@ -192,7 +192,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       const { themeName } = JSON.parse(saved) as StoredThemeSelection;
       if (themeName) {
-        const found = availableThemes.find((t) => t.label === themeName);
+        const found = availableThemes.find((t) => t.name === themeName);
         if (found) {
           setActiveTheme(found);
           applyThemeToDocument(found.styles[mode]);

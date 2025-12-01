@@ -113,7 +113,7 @@ export function WalletConnect() {
         >
           <Palette className="h-4 w-4" />
           <span className="hidden max-w-[120px] truncate sm:inline">
-            {activeTheme?.label ?? "Select Theme"}
+            {activeTheme?.name ?? "Select Theme"}
           </span>
           {isLoading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -157,13 +157,13 @@ export function WalletConnect() {
                 <div className="max-h-64 space-y-1 overflow-auto">
                   {themeTokens.map((token) => (
                     <button
-                      key={token.label}
+                      key={token.name}
                       onClick={() => {
                         applyTheme(token);
                         setIsOpen(false);
                       }}
                       className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                        activeTheme?.label === token.label
+                        activeTheme?.name === token.name
                           ? "bg-primary/10 text-primary"
                           : "hover:bg-muted"
                       }`}
@@ -184,9 +184,9 @@ export function WalletConnect() {
                         />
                       </div>
                       <span className="flex-1 truncate">
-                        {token.label}
+                        {token.name}
                       </span>
-                      {activeTheme?.label === token.label && (
+                      {activeTheme?.name === token.name && (
                         <Check className="h-4 w-4" />
                       )}
                     </button>
@@ -231,7 +231,7 @@ export function WalletConnect() {
             className="h-2 w-2 rounded-full"
             style={{ backgroundColor: activeTheme.styles[mode].primary }}
           />
-          {activeTheme.label}
+          {activeTheme.name}
         </Badge>
       )}
     </div>

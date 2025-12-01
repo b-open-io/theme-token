@@ -9,7 +9,7 @@
 
 import { z } from "zod";
 
-export const THEME_TOKEN_SCHEMA = "https://themetoken.dev/v1" as const;
+export const THEME_TOKEN_SCHEMA_URL = "https://themetoken.dev/v1/schema.json" as const;
 
 /**
  * Theme style properties - flat, kebab-case, matches ShadCN CSS vars exactly
@@ -86,19 +86,14 @@ export const themeStylesSchema = z.object({
 export type ThemeStyles = z.infer<typeof themeStylesSchema>;
 
 /**
- * Theme Token - compatible with tweakcn + blockchain extension
+ * Theme Token - matches tweakcn format with optional extension fields
+ * Required: name, styles
+ * Optional: $schema (for validation), author (paymail/identity)
  */
 export const themeTokenSchema = z.object({
-  // tweakcn-compatible metadata
-  label: z.string(),
-  source: z.enum(["SAVED", "BUILT_IN", "BLOCKCHAIN"]).optional(),
-  createdAt: z.string().optional(),
-
-  // Blockchain extension (minimal)
-  $schema: z.literal(THEME_TOKEN_SCHEMA).optional(),
+  $schema: z.string().optional(),
+  name: z.string(),
   author: z.string().optional(),
-
-  // Theme styles
   styles: themeStylesSchema,
 });
 
@@ -130,13 +125,11 @@ export function validateThemeToken(
 }
 
 /**
- * Example Theme Tokens (tweakcn-compatible format)
+ * Example Theme Tokens (tweakcn format)
  */
 export const exampleThemes: ThemeToken[] = [
   {
-    $schema: THEME_TOKEN_SCHEMA,
-    label: "Ocean Depths",
-    source: "BUILT_IN",
+    name: "Ocean Depths",
     styles: {
       light: {
         background: "oklch(0.98 0.01 240)",
@@ -195,9 +188,7 @@ export const exampleThemes: ThemeToken[] = [
     },
   },
   {
-    $schema: THEME_TOKEN_SCHEMA,
-    label: "Cyberpunk Neon",
-    source: "BUILT_IN",
+    name: "Cyberpunk Neon",
     styles: {
       light: {
         background: "oklch(0.95 0.01 300)",
@@ -256,9 +247,7 @@ export const exampleThemes: ThemeToken[] = [
     },
   },
   {
-    $schema: THEME_TOKEN_SCHEMA,
-    label: "Forest Moss",
-    source: "BUILT_IN",
+    name: "Forest Moss",
     styles: {
       light: {
         background: "oklch(0.97 0.01 90)",
@@ -357,13 +346,13 @@ function parseCssBlock(css: string): ThemeStyleProps {
  */
 export function parseTweakCnCss(
   css: string,
-  label = "Custom Theme"
+  name = "Custom Theme"
 ): { valid: true; theme: ThemeToken } | { valid: false; error: string } {
   try {
     // Extract :root block for light mode
-    const rootMatch = css.match(/:root\s*\{([^}]+)\}/s);
+    const rootMatch = css.match(/:root\s*\{([^}]+)\}/);
     // Extract .dark block for dark mode
-    const darkMatch = css.match(/\.dark\s*\{([^}]+)\}/s);
+    const darkMatch = css.match(/\.dark\s*\{([^}]+)\}/);
 
     if (!rootMatch) {
       return { valid: false, error: "Missing :root { } block for light mode" };
@@ -386,8 +375,7 @@ export function parseTweakCnCss(
     }
 
     const theme: ThemeToken = {
-      $schema: THEME_TOKEN_SCHEMA,
-      label,
+      name,
       styles: {
         light: lightStyles,
         dark: darkStyles,

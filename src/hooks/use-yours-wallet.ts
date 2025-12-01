@@ -232,14 +232,8 @@ export function useYoursWallet(): UseYoursWalletReturn {
       setError(null);
 
       try {
-        // Prepare theme with blockchain source marker
-        const themeWithSource: ThemeToken = {
-          ...theme,
-          source: "BLOCKCHAIN",
-          $schema: "https://themetoken.dev/v1",
-        };
-
-        const jsonString = JSON.stringify(themeWithSource);
+        // Inscribe theme token with clean format (no invented fields)
+        const jsonString = JSON.stringify(theme);
         const base64Data = btoa(jsonString);
 
         const response = await wallet.inscribe([
@@ -250,7 +244,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
             map: {
               app: "ThemeToken",
               type: "theme",
-              name: theme.label,
+              name: theme.name,
             },
             satoshis: 1,
           },

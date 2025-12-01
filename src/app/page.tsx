@@ -344,10 +344,9 @@ export default function Home() {
               <h3 className="mb-4 font-semibold">Full Schema Structure</h3>
               <JsonSyntax
                 json={{
-                  $schema: "https://themetoken.dev/v1",
-                  label: "My Theme",
+                  $schema: "https://themetoken.dev/v1/schema.json",
+                  name: "My Theme",
                   author: "designer@paymail",
-                  source: "BLOCKCHAIN",
                   styles: {
                     light: {
                       background: "oklch(1 0 0)",

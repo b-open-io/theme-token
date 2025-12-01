@@ -100,13 +100,13 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
           <div className="space-y-3">
             {exampleThemes.map((theme, i) => (
               <motion.button
-                key={theme.label}
+                key={theme.name}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
                 onClick={() => setSelectedTheme(theme)}
                 className={`w-full rounded-lg border p-4 text-left transition-all ${
-                  selectedTheme.label === theme.label
+                  selectedTheme.name === theme.name
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50 hover:bg-muted/50"
                 }`}
@@ -124,17 +124,12 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
                         style={{ backgroundColor: theme.styles[mode].background }}
                       />
                     </div>
-                    <h4 className="font-semibold">{theme.label}</h4>
+                    <h4 className="font-semibold">{theme.name}</h4>
                   </div>
-                  {selectedTheme.label === theme.label && (
+                  {selectedTheme.name === theme.name && (
                     <Check className="h-5 w-5 text-primary" />
                   )}
                 </div>
-                {theme.source && (
-                  <Badge variant="secondary" className="mt-2 text-xs">
-                    {theme.source}
-                  </Badge>
-                )}
               </motion.button>
             ))}
           </div>
@@ -217,7 +212,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
               style={{ backgroundColor: "var(--chart-3)" }}
             />
             <span className="ml-4 font-mono text-sm" style={{ color: "var(--muted-foreground)" }}>
-              {selectedTheme.label}
+              {selectedTheme.name}
             </span>
           </div>
         </div>

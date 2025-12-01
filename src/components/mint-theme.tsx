@@ -83,10 +83,10 @@ export function MintTheme({ className = "" }: MintThemeProps) {
   };
 
   const handleMint = async () => {
-    // Use custom label if provided, otherwise use theme's label
+    // Use custom name if provided, otherwise use theme's name
     const themeToMint: ThemeToken = {
       ...selectedTheme,
-      label: customLabel.trim() || selectedTheme.label,
+      name: customLabel.trim() || selectedTheme.name,
     };
 
     const result = await inscribeTheme(themeToMint);
@@ -219,10 +219,10 @@ export function MintTheme({ className = "" }: MintThemeProps) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {exampleThemes.map((theme) => (
             <button
-              key={theme.label}
+              key={theme.name}
               onClick={() => setSelectedTheme(theme)}
               className={`relative rounded-lg border p-4 text-left transition-all ${
-                selectedTheme.label === theme.label
+                selectedTheme.name === theme.name
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
@@ -239,10 +239,10 @@ export function MintTheme({ className = "" }: MintThemeProps) {
                   />
                 </div>
                 <div>
-                  <h4 className="font-semibold">{theme.label}</h4>
+                  <h4 className="font-semibold">{theme.name}</h4>
                 </div>
               </div>
-              {selectedTheme.label === theme.label && (
+              {selectedTheme.name === theme.name && (
                 <Check className="absolute right-3 top-3 h-5 w-5 text-primary" />
               )}
             </button>
@@ -327,7 +327,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
           type="text"
           value={customLabel}
           onChange={(e) => setCustomLabel(e.target.value)}
-          placeholder={selectedTheme.label}
+          placeholder={selectedTheme.name}
           className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <p className="mt-1 text-xs text-muted-foreground">
@@ -342,10 +342,8 @@ export function MintTheme({ className = "" }: MintThemeProps) {
         </h4>
         <JsonSyntax
           json={{
-            ...selectedTheme,
-            label: customLabel.trim() || selectedTheme.label,
-            source: "BLOCKCHAIN",
-            $schema: "https://themetoken.dev/v1",
+            name: customLabel.trim() || selectedTheme.name,
+            styles: selectedTheme.styles,
           }}
           className="max-h-48 overflow-auto text-xs"
         />

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://themetoken.dev/v1/schema.json",
+  "title": "Theme Token",
+  "description": "ShadCN UI theme token for blockchain inscription. Compatible with tweakcn.com",
+  "type": "object",
+  "required": ["name", "styles"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URL for validation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Theme name"
+    },
+    "author": {
+      "type": "string",
+      "description": "Creator's paymail or identity"
+    },
+    "styles": {
+      "type": "object",
+      "required": ["light", "dark"],
+      "properties": {
+        "light": { "$ref": "#/$defs/themeStyleProps" },
+        "dark": { "$ref": "#/$defs/themeStyleProps" }
+      }
+    }
+  },
+  "$defs": {
+    "themeStyleProps": {
+      "type": "object",
+      "required": [
+        "background", "foreground", "card", "card-foreground",
+        "popover", "popover-foreground", "primary", "primary-foreground",
+        "secondary", "secondary-foreground", "muted", "muted-foreground",
+        "accent", "accent-foreground", "destructive", "destructive-foreground",
+        "border", "input", "ring",
+        "chart-1", "chart-2", "chart-3", "chart-4", "chart-5",
+        "radius"
+      ],
+      "properties": {
+        "background": { "type": "string", "description": "Default background color" },
+        "foreground": { "type": "string", "description": "Default foreground color" },
+        "card": { "type": "string", "description": "Card background color" },
+        "card-foreground": { "type": "string" },
+        "popover": { "type": "string", "description": "Popover background color" },
+        "popover-foreground": { "type": "string" },
+        "primary": { "type": "string", "description": "Primary brand color" },
+        "primary-foreground": { "type": "string" },
+        "secondary": { "type": "string", "description": "Secondary color" },
+        "secondary-foreground": { "type": "string" },
+        "muted": { "type": "string", "description": "Muted background color" },
+        "muted-foreground": { "type": "string" },
+        "accent": { "type": "string", "description": "Accent/highlight color" },
+        "accent-foreground": { "type": "string" },
+        "destructive": { "type": "string", "description": "Destructive action color" },
+        "destructive-foreground": { "type": "string" },
+        "border": { "type": "string", "description": "Border color" },
+        "input": { "type": "string", "description": "Input field color" },
+        "ring": { "type": "string", "description": "Focus ring color" },
+        "chart-1": { "type": "string" },
+        "chart-2": { "type": "string" },
+        "chart-3": { "type": "string" },
+        "chart-4": { "type": "string" },
+        "chart-5": { "type": "string" },
+        "sidebar": { "type": "string", "description": "Sidebar background" },
+        "sidebar-foreground": { "type": "string" },
+        "sidebar-primary": { "type": "string" },
+        "sidebar-primary-foreground": { "type": "string" },
+        "sidebar-accent": { "type": "string" },
+        "sidebar-accent-foreground": { "type": "string" },
+        "sidebar-border": { "type": "string" },
+        "sidebar-ring": { "type": "string" },
+        "font-sans": { "type": "string", "description": "Primary UI font family" },
+        "font-serif": { "type": "string", "description": "Serif font family" },
+        "font-mono": { "type": "string", "description": "Monospace font family" },
+        "radius": { "type": "string", "description": "Border radius (e.g. 0.5rem)" },
+        "shadow-color": { "type": "string" },
+        "shadow-opacity": { "type": "string" },
+        "shadow-blur": { "type": "string" },
+        "shadow-spread": { "type": "string" },
+        "shadow-offset-x": { "type": "string" },
+        "shadow-offset-y": { "type": "string" },
+        "letter-spacing": { "type": "string" },
+        "spacing": { "type": "string" }
+      }
+    }
+  }
+}
