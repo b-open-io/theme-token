@@ -13,10 +13,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   type ThemeToken,
-  type ThemeMode,
+  type ThemeStyleProps,
   exampleThemes,
   validateThemeToken,
-  themeToCssVars,
+  applyTheme,
 } from "@/lib/schema";
 import { JsonSyntax } from "./json-syntax";
 import { Sun, Moon, Check, AlertCircle } from "lucide-react";
@@ -32,18 +32,19 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"presets" | "custom">("presets");
 
-  const applyThemeToPreview = useCallback((theme: ThemeMode) => {
+  const applyThemeToPreview = useCallback((styles: ThemeStyleProps) => {
     const previewEl = document.getElementById("theme-preview-container");
     if (!previewEl) return;
 
-    const vars = themeToCssVars(theme);
-    for (const [key, value] of Object.entries(vars)) {
-      previewEl.style.setProperty(key, value);
+    for (const [key, value] of Object.entries(styles)) {
+      if (value !== undefined) {
+        previewEl.style.setProperty(`--${key}`, value);
+      }
     }
   }, []);
 
   useEffect(() => {
-    applyThemeToPreview(selectedTheme[mode]);
+    applyThemeToPreview(selectedTheme.styles[mode]);
   }, [selectedTheme, mode, applyThemeToPreview]);
 
   const handleCustomJsonChange = (value: string) => {
@@ -99,35 +100,41 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
           <div className="space-y-3">
             {exampleThemes.map((theme, i) => (
               <motion.button
-                key={theme.metadata.name}
+                key={theme.label}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
                 onClick={() => setSelectedTheme(theme)}
                 className={`w-full rounded-lg border p-4 text-left transition-all ${
-                  selectedTheme.metadata.name === theme.metadata.name
+                  selectedTheme.label === theme.label
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50 hover:bg-muted/50"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold">{theme.metadata.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {theme.metadata.description}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    {/* Color Preview */}
+                    <div className="flex -space-x-1">
+                      <div
+                        className="h-6 w-6 rounded-full border-2 border-background"
+                        style={{ backgroundColor: theme.styles[mode].primary }}
+                      />
+                      <div
+                        className="h-6 w-6 rounded-full border-2 border-background"
+                        style={{ backgroundColor: theme.styles[mode].background }}
+                      />
+                    </div>
+                    <h4 className="font-semibold">{theme.label}</h4>
                   </div>
-                  {selectedTheme.metadata.name === theme.metadata.name && (
+                  {selectedTheme.label === theme.label && (
                     <Check className="h-5 w-5 text-primary" />
                   )}
                 </div>
-                <div className="mt-2 flex gap-1">
-                  {theme.metadata.tags?.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                {theme.source && (
+                  <Badge variant="secondary" className="mt-2 text-xs">
+                    {theme.source}
+                  </Badge>
+                )}
               </motion.button>
             ))}
           </div>
@@ -210,7 +217,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
               style={{ backgroundColor: "var(--chart-3)" }}
             />
             <span className="ml-4 font-mono text-sm" style={{ color: "var(--muted-foreground)" }}>
-              {selectedTheme.metadata.name}
+              {selectedTheme.label}
             </span>
           </div>
         </div>

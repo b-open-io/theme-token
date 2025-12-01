@@ -31,26 +31,23 @@ const stagger = {
   },
 };
 
+// New simplified schema - tweakcn compatible
 const minimalSchema = {
-  $schema: "1.0",
-  protocol: "ThemeToken",
-  type: "ShadCN-UI",
-  metadata: {
-    name: "My Theme",
-    author: "designer.paymail",
-    license: "CC0",
-  },
-  light: {
-    colors: {
+  $schema: "https://themetoken.dev/v1",
+  label: "My Theme",
+  author: "designer@paymail",
+  styles: {
+    light: {
+      background: "oklch(1 0 0)",
+      foreground: "oklch(0.145 0 0)",
       primary: "oklch(0.55 0.22 255)",
-      background: "oklch(0.98 0.005 240)",
-      "...": "// 16 more semantic colors",
+      "primary-foreground": "oklch(0.98 0 0)",
+      radius: "0.5rem",
+      "...": "// all ShadCN CSS vars",
     },
-    dimensions: { radius: "0.5rem" },
-  },
-  dark: {
-    colors: { "...": "// dark mode variants" },
-    dimensions: { radius: "0.5rem" },
+    dark: {
+      "...": "// dark mode variants",
+    },
   },
 };
 
@@ -339,29 +336,30 @@ export default function Home() {
               <h3 className="mb-4 font-semibold">Full Schema Structure</h3>
               <JsonSyntax
                 json={{
-                  $schema: "1.0",
-                  protocol: "ThemeToken",
-                  type: "ShadCN-UI",
-                  metadata: {
-                    name: "My Theme",
-                    description: "A custom theme",
-                    author: "designer@paymail",
-                    tags: ["dark", "minimal"],
-                    license: "CC0",
-                    previewUrl: "ordfs://...",
+                  $schema: "https://themetoken.dev/v1",
+                  label: "My Theme",
+                  author: "designer@paymail",
+                  source: "BLOCKCHAIN",
+                  styles: {
+                    light: {
+                      background: "oklch(1 0 0)",
+                      foreground: "oklch(0.145 0 0)",
+                      primary: "oklch(0.55 0.22 255)",
+                      "primary-foreground": "oklch(0.98 0 0)",
+                      "...": "// 19 semantic colors + chart-1 to chart-5",
+                      radius: "0.5rem",
+                    },
+                    dark: { "...": "// dark mode variants" },
                   },
-                  light: {
-                    colors: { "...19 semantic colors": "" },
-                    dimensions: { radius: "0.5rem" },
-                    charts: { "1": "oklch(0.6 0.2 240)" },
-                  },
-                  dark: { "...": "same structure as light" },
                 }}
                 className="text-xs"
               />
               <p className="mt-3 text-xs text-muted-foreground">
-                Optional <code className="rounded bg-muted px-1">charts</code> object
-                defines colors for data visualizations.
+                Directly compatible with{" "}
+                <a href="https://tweakcn.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  tweakcn
+                </a>{" "}
+                and ShadCN UI. Uses flat kebab-case CSS property names.
               </p>
             </motion.div>
           </div>

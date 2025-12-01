@@ -92,45 +92,62 @@ export function useYoursWallet(): UseYoursWalletReturn {
     }
   }, [setAvailableThemes]);
 
-  // Initialize and check connection status
+  // Initialize and check connection status with retry for slow injection
   useEffect(() => {
-    if (!isYoursWalletInstalled()) {
-      setStatus("not-installed");
-      return;
-    }
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 500; // ms
 
-    const wallet = getYoursWallet();
-    if (!wallet) {
-      setStatus("not-installed");
-      return;
-    }
-
-    walletRef.current = wallet;
-
-    // Set up event listeners
-    wallet.on("switchAccount", handleSwitchAccount);
-    wallet.on("signedOut", handleSignedOut);
-
-    // Check if already connected
-    wallet
-      .isConnected()
-      .then((connected) => {
-        if (connected) {
-          setStatus("connected");
-          fetchThemeTokens();
-        } else {
-          setStatus("disconnected");
+    const initWallet = () => {
+      if (!isYoursWalletInstalled()) {
+        // Retry a few times in case wallet injects slowly
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(initWallet, retryDelay);
+          return;
         }
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Connection check failed");
-        setStatus("error");
-      });
+        setStatus("not-installed");
+        return;
+      }
+
+      const wallet = getYoursWallet();
+      if (!wallet) {
+        setStatus("not-installed");
+        return;
+      }
+
+      walletRef.current = wallet;
+
+      // Set up event listeners
+      wallet.on("switchAccount", handleSwitchAccount);
+      wallet.on("signedOut", handleSignedOut);
+
+      // Check if already connected
+      wallet
+        .isConnected()
+        .then((connected) => {
+          if (connected) {
+            setStatus("connected");
+            fetchThemeTokens();
+          } else {
+            setStatus("disconnected");
+          }
+        })
+        .catch((err) => {
+          setError(err instanceof Error ? err.message : "Connection check failed");
+          setStatus("error");
+        });
+    };
+
+    initWallet();
 
     // Cleanup
     return () => {
-      wallet.removeListener("switchAccount", handleSwitchAccount);
-      wallet.removeListener("signedOut", handleSignedOut);
+      const wallet = walletRef.current;
+      if (wallet) {
+        wallet.removeListener("switchAccount", handleSwitchAccount);
+        wallet.removeListener("signedOut", handleSignedOut);
+      }
     };
   }, [handleSwitchAccount, handleSignedOut, fetchThemeTokens]);
 

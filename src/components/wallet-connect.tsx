@@ -19,25 +19,48 @@ import {
   X,
 } from "lucide-react";
 
+function ModeToggle() {
+  const { mode, toggleMode } = useTheme();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={(e) => toggleMode(e)}
+      className="h-9 w-9"
+      title={mode === "light" ? "Switch to dark mode" : "Switch to light mode"}
+    >
+      {mode === "light" ? (
+        <Moon className="h-4 w-4" />
+      ) : (
+        <Sun className="h-4 w-4" />
+      )}
+    </Button>
+  );
+}
+
 export function WalletConnect() {
   const { status, error, connect, disconnect, themeTokens, isLoading } =
     useYoursWallet();
-  const { activeTheme, applyTheme, resetTheme, mode, toggleMode } = useTheme();
+  const { activeTheme, applyTheme, resetTheme, mode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   // Not installed state
   if (status === "not-installed") {
     return (
-      <a
-        href={YOURS_WALLET_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition-colors hover:bg-muted"
-      >
-        <Wallet className="h-4 w-4" />
-        <span className="hidden sm:inline">Install Yours Wallet</span>
-        <ExternalLink className="h-3 w-3" />
-      </a>
+      <div className="flex items-center gap-2">
+        <ModeToggle />
+        <a
+          href={YOURS_WALLET_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition-colors hover:bg-muted"
+        >
+          <Wallet className="h-4 w-4" />
+          <span className="hidden sm:inline">Install Yours Wallet</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
     );
   }
 
@@ -45,6 +68,7 @@ export function WalletConnect() {
   if (status === "disconnected" || status === "error") {
     return (
       <div className="flex items-center gap-2">
+        <ModeToggle />
         <Button
           variant="outline"
           size="sm"
@@ -64,29 +88,20 @@ export function WalletConnect() {
   // Connecting state
   if (status === "connecting") {
     return (
-      <Button variant="outline" size="sm" disabled className="gap-2">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="hidden sm:inline">Connecting...</span>
-      </Button>
+      <div className="flex items-center gap-2">
+        <ModeToggle />
+        <Button variant="outline" size="sm" disabled className="gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="hidden sm:inline">Connecting...</span>
+        </Button>
+      </div>
     );
   }
 
   // Connected state
   return (
     <div className="flex items-center gap-2">
-      {/* Mode Toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleMode}
-        className="h-9 w-9"
-      >
-        {mode === "light" ? (
-          <Moon className="h-4 w-4" />
-        ) : (
-          <Sun className="h-4 w-4" />
-        )}
-      </Button>
+      <ModeToggle />
 
       {/* Theme Selector Dropdown */}
       <div className="relative">
@@ -98,7 +113,7 @@ export function WalletConnect() {
         >
           <Palette className="h-4 w-4" />
           <span className="hidden max-w-[120px] truncate sm:inline">
-            {activeTheme?.metadata.name ?? "Select Theme"}
+            {activeTheme?.label ?? "Select Theme"}
           </span>
           {isLoading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -142,13 +157,13 @@ export function WalletConnect() {
                 <div className="max-h-64 space-y-1 overflow-auto">
                   {themeTokens.map((token) => (
                     <button
-                      key={token.metadata.name}
+                      key={token.label}
                       onClick={() => {
                         applyTheme(token);
                         setIsOpen(false);
                       }}
                       className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                        activeTheme?.metadata.name === token.metadata.name
+                        activeTheme?.label === token.label
                           ? "bg-primary/10 text-primary"
                           : "hover:bg-muted"
                       }`}
@@ -158,20 +173,20 @@ export function WalletConnect() {
                         <div
                           className="h-4 w-4 rounded-full border border-border"
                           style={{
-                            backgroundColor: token[mode].colors.primary,
+                            backgroundColor: token.styles[mode].primary,
                           }}
                         />
                         <div
                           className="h-4 w-4 rounded-full border border-border"
                           style={{
-                            backgroundColor: token[mode].colors.background,
+                            backgroundColor: token.styles[mode].background,
                           }}
                         />
                       </div>
                       <span className="flex-1 truncate">
-                        {token.metadata.name}
+                        {token.label}
                       </span>
-                      {activeTheme?.metadata.name === token.metadata.name && (
+                      {activeTheme?.label === token.label && (
                         <Check className="h-4 w-4" />
                       )}
                     </button>
@@ -214,9 +229,9 @@ export function WalletConnect() {
         <Badge variant="secondary" className="hidden gap-1 lg:flex">
           <div
             className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: activeTheme[mode].colors.primary }}
+            style={{ backgroundColor: activeTheme.styles[mode].primary }}
           />
-          {activeTheme.metadata.name}
+          {activeTheme.label}
         </Badge>
       )}
     </div>
