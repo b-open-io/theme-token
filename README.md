@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Theme Token
 
-## Getting Started
+An open standard for tokenizing ShadCN UI themes on blockchain.
 
-First, run the development server:
+## What is Theme Token?
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Theme Token defines a JSON schema for inscribing UI themes as NFT assets using protocols like 1Sat Ordinals. Any app using ShadCN UI can read and apply these on-chain themes.
+
+## Schema v1.0
+
+```json
+{
+  "$schema": "1.0",
+  "protocol": "ThemeToken",
+  "type": "ShadCN-UI",
+  "metadata": {
+    "name": "My Theme",
+    "author": "designer.paymail",
+    "license": "CC0"
+  },
+  "light": {
+    "colors": {
+      "primary": "oklch(0.55 0.22 255)",
+      "background": "oklch(0.98 0.005 240)",
+      ...
+    },
+    "dimensions": { "radius": "0.5rem" }
+  },
+  "dark": { ... }
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+bun install
+bun run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Runs on http://localhost:3033
 
-## Learn More
+## Links
 
-To learn more about Next.js, take a look at the following resources:
+- [themetoken.dev](https://themetoken.dev)
+- [1Sat Ordinals](https://1satordinals.com)
+- [ShadCN UI](https://ui.shadcn.com)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
