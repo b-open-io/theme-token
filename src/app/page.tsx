@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { JsonSyntax } from "@/components/json-syntax";
 import { ThemePreview } from "@/components/theme-preview";
 import { ChainImplementations } from "@/components/chain-implementations";
+import { MintTheme } from "@/components/mint-theme";
 import {
   Palette,
   Code2,
@@ -15,6 +16,7 @@ import {
   Layers,
   ArrowRight,
   Github,
+  Sparkles,
 } from "lucide-react";
 
 const fadeIn = {
@@ -85,19 +87,25 @@ export default function Home() {
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="lg" className="gap-2" asChild>
-                <a
-                  href="https://github.com/b-open-io/theme-token"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Github className="h-5 w-5" />
-                  View on GitHub
+                <a href="#mint">
+                  <Sparkles className="h-5 w-5" />
+                  Mint Theme Token
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="gap-2" asChild>
                 <a href="#schema">
                   Read the Spec
                   <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
+              <Button size="lg" variant="ghost" className="gap-2" asChild>
+                <a
+                  href="https://github.com/b-open-io/theme-token"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Github className="h-5 w-5" />
+                  GitHub
                 </a>
               </Button>
             </div>
@@ -436,6 +444,51 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <ThemePreview />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Mint Section */}
+      <section id="mint" className="border-t border-border bg-muted/30 py-24">
+        <div className="mx-auto max-w-3xl px-6">
+          <motion.div
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="text-center"
+          >
+            <motion.div
+              variants={fadeIn}
+              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10"
+            >
+              <Sparkles className="h-6 w-6 text-primary" />
+            </motion.div>
+            <motion.p
+              variants={fadeIn}
+              className="font-mono text-sm text-primary"
+            >
+              // Mint Your Theme
+            </motion.p>
+            <motion.h2
+              variants={fadeIn}
+              className="mb-4 text-3xl font-bold sm:text-4xl"
+            >
+              Inscribe On-Chain
+            </motion.h2>
+            <motion.p variants={fadeIn} className="mb-12 text-muted-foreground">
+              Create a permanent, tradeable Theme Token on the BSV blockchain.
+              <br />
+              Connect your Yours Wallet to get started.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <MintTheme />
           </motion.div>
         </div>
       </section>
