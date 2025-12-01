@@ -137,29 +137,11 @@ export function MintTheme({ className = "" }: MintThemeProps) {
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Connection Status */}
-      {!isConnected && (
-        <div className="rounded-lg border border-border bg-muted/30 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Connect Your Wallet</h4>
-              <p className="text-sm text-muted-foreground">
-                Connect Yours Wallet to inscribe theme tokens
-              </p>
-            </div>
-            <Button onClick={connect} disabled={status === "connecting"}>
-              {status === "connecting" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Connect
-                </>
-              )}
-            </Button>
-          </div>
+      {!isConnected && status !== "connecting" && (
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            Connect your wallet using the button in the header to inscribe theme tokens.
+          </p>
         </div>
       )}
 
@@ -369,15 +351,10 @@ export function MintTheme({ className = "" }: MintThemeProps) {
             <Loader2 className="h-5 w-5 animate-spin" />
             Inscribing...
           </>
-        ) : !isConnected ? (
-          <>
-            <Wallet className="h-5 w-5" />
-            Connect Wallet to Mint
-          </>
         ) : (
           <>
             <Sparkles className="h-5 w-5" />
-            Inscribe Theme Token (~$0.001)
+            {isConnected ? "Inscribe Theme Token (~$0.001)" : "Connect Wallet First"}
           </>
         )}
       </Button>

@@ -13,11 +13,32 @@ import {
   Check,
   Loader2,
   ExternalLink,
-  Palette,
   Moon,
   Sun,
   X,
 } from "lucide-react";
+
+// Color stripes thumbnail for themes
+function ThemeStripes({ styles, mode }: { styles: { light: Record<string, string>; dark: Record<string, string> }; mode: "light" | "dark" }) {
+  const colors = [
+    styles[mode].primary,
+    styles[mode].secondary,
+    styles[mode].accent,
+    styles[mode].background,
+  ];
+
+  return (
+    <div className="flex h-4 w-4 overflow-hidden rounded-sm border border-border">
+      {colors.map((color, i) => (
+        <div
+          key={i}
+          className="flex-1"
+          style={{ backgroundColor: color }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function ModeToggle() {
   const { mode, toggleMode } = useTheme();
@@ -111,7 +132,13 @@ export function WalletConnect() {
           onClick={() => setIsOpen(!isOpen)}
           className="gap-2"
         >
-          <Palette className="h-4 w-4" />
+          {activeTheme ? (
+            <ThemeStripes styles={activeTheme.styles} mode={mode} />
+          ) : (
+            <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-dashed border-muted-foreground">
+              <span className="text-[8px] text-muted-foreground">?</span>
+            </div>
+          )}
           <span className="hidden max-w-[120px] truncate sm:inline">
             {activeTheme?.name ?? "Select Theme"}
           </span>
@@ -145,7 +172,9 @@ export function WalletConnect() {
                     </div>
                   ) : (
                     <>
-                      <Palette className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                      <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded border border-dashed border-muted-foreground opacity-50">
+                        <span className="text-xs">?</span>
+                      </div>
                       <p>No Theme Tokens found</p>
                       <p className="mt-1 text-xs">
                         Inscribe a Theme Token to see it here
@@ -168,21 +197,7 @@ export function WalletConnect() {
                           : "hover:bg-muted"
                       }`}
                     >
-                      {/* Color Preview */}
-                      <div className="flex -space-x-1">
-                        <div
-                          className="h-4 w-4 rounded-full border border-border"
-                          style={{
-                            backgroundColor: token.styles[mode].primary,
-                          }}
-                        />
-                        <div
-                          className="h-4 w-4 rounded-full border border-border"
-                          style={{
-                            backgroundColor: token.styles[mode].background,
-                          }}
-                        />
-                      </div>
+                      <ThemeStripes styles={token.styles} mode={mode} />
                       <span className="flex-1 truncate">
                         {token.name}
                       </span>

@@ -16,6 +16,7 @@ import {
   type ThemeStyleProps,
   exampleThemes,
   validateThemeToken,
+  parseTweakCnCss,
   applyTheme,
 } from "@/lib/schema";
 import { JsonSyntax } from "./json-syntax";
@@ -29,8 +30,9 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
   const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(exampleThemes[0]);
   const [mode, setMode] = useState<"light" | "dark">("dark");
   const [customJson, setCustomJson] = useState("");
+  const [customCss, setCustomCss] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"presets" | "custom">("presets");
+  const [activeTab, setActiveTab] = useState<"presets" | "css" | "json">("presets");
 
   const applyThemeToPreview = useCallback((styles: ThemeStyleProps) => {
     const previewEl = document.getElementById("theme-preview-container");
@@ -68,6 +70,22 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
     }
   };
 
+  const handleCustomCssChange = (value: string) => {
+    setCustomCss(value);
+    setValidationError(null);
+
+    if (!value.trim()) return;
+
+    const result = parseTweakCnCss(value, "Custom Theme");
+
+    if (result.valid) {
+      setSelectedTheme(result.theme);
+      setValidationError(null);
+    } else {
+      setValidationError(result.error);
+    }
+  };
+
   return (
     <div className={`grid gap-8 lg:grid-cols-2 ${className}`}>
       {/* Control Panel */}
@@ -82,21 +100,31 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Preset Themes
+            Presets
           </button>
           <button
-            onClick={() => setActiveTab("custom")}
+            onClick={() => setActiveTab("css")}
             className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "custom"
+              activeTab === "css"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Paste Your Own
+            Paste CSS
+          </button>
+          <button
+            onClick={() => setActiveTab("json")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "json"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            JSON
           </button>
         </div>
 
-        {activeTab === "presets" ? (
+        {activeTab === "presets" && (
           <div className="space-y-3">
             {exampleThemes.map((theme, i) => (
               <motion.button
@@ -133,7 +161,54 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
               </motion.button>
             ))}
           </div>
-        ) : (
+        )}
+
+        {activeTab === "css" && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Paste CSS from{" "}
+              <a
+                href="https://tweakcn.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                tweakcn.com
+              </a>{" "}
+              or any ShadCN theme generator.
+            </p>
+            <textarea
+              value={customCss}
+              onChange={(e) => handleCustomCssChange(e.target.value)}
+              placeholder={`:root {
+  --background: oklch(0.98 0.01 90);
+  --foreground: oklch(0.2 0.02 90);
+  --primary: oklch(0.6 0.15 145);
+  /* ... */
+}
+
+.dark {
+  --background: oklch(0.15 0.02 90);
+  /* ... */
+}`}
+              className="h-64 w-full rounded-lg border border-border bg-muted/30 p-4 font-mono text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {validationError && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                {validationError}
+              </div>
+            )}
+            {customCss && !validationError && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <Check className="h-4 w-4" />
+                Valid CSS parsed successfully
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "json" && (
           <div className="space-y-3">
             <textarea
               value={customJson}
