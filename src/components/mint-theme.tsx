@@ -11,6 +11,7 @@ import {
   type ThemeToken,
   exampleThemes,
   validateThemeToken,
+  parseTweakCnCss,
 } from "@/lib/schema";
 import {
   Wallet,
@@ -38,8 +39,9 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 
   const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(exampleThemes[0]);
   const [customJson, setCustomJson] = useState("");
+  const [customCss, setCustomCss] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"presets" | "custom">("presets");
+  const [activeTab, setActiveTab] = useState<"presets" | "css" | "json">("presets");
   const [txid, setTxid] = useState<string | null>(null);
   const [customLabel, setCustomLabel] = useState("");
 
@@ -61,6 +63,22 @@ export function MintTheme({ className = "" }: MintThemeProps) {
       }
     } catch {
       setValidationError("Invalid JSON syntax");
+    }
+  };
+
+  const handleCustomCssChange = (value: string) => {
+    setCustomCss(value);
+    setValidationError(null);
+
+    if (!value.trim()) return;
+
+    const result = parseTweakCnCss(value, customLabel || "Custom Theme");
+
+    if (result.valid) {
+      setSelectedTheme(result.theme);
+      setValidationError(null);
+    } else {
+      setValidationError(result.error);
     }
   };
 
@@ -172,28 +190,38 @@ export function MintTheme({ className = "" }: MintThemeProps) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Preset Themes
+          Presets
         </button>
         <button
-          onClick={() => setActiveTab("custom")}
+          onClick={() => setActiveTab("css")}
           className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "custom"
+            activeTab === "css"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Custom JSON
+          Paste CSS
+        </button>
+        <button
+          onClick={() => setActiveTab("json")}
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === "json"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          JSON
         </button>
       </div>
 
       {/* Theme Selection */}
-      {activeTab === "presets" ? (
+      {activeTab === "presets" && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {exampleThemes.map((theme) => (
             <button
               key={theme.label}
               onClick={() => setSelectedTheme(theme)}
-              className={`rounded-lg border p-4 text-left transition-all ${
+              className={`relative rounded-lg border p-4 text-left transition-all ${
                 selectedTheme.label === theme.label
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
@@ -212,11 +240,6 @@ export function MintTheme({ className = "" }: MintThemeProps) {
                 </div>
                 <div>
                   <h4 className="font-semibold">{theme.label}</h4>
-                  {theme.source && (
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {theme.source}
-                    </Badge>
-                  )}
                 </div>
               </div>
               {selectedTheme.label === theme.label && (
@@ -225,7 +248,54 @@ export function MintTheme({ className = "" }: MintThemeProps) {
             </button>
           ))}
         </div>
-      ) : (
+      )}
+
+      {activeTab === "css" && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Paste CSS from{" "}
+            <a
+              href="https://tweakcn.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              tweakcn.com
+            </a>{" "}
+            or any ShadCN theme generator. Include both :root and .dark blocks.
+          </p>
+          <textarea
+            value={customCss}
+            onChange={(e) => handleCustomCssChange(e.target.value)}
+            placeholder={`:root {
+  --background: oklch(0.98 0.01 90);
+  --foreground: oklch(0.2 0.02 90);
+  --primary: oklch(0.6 0.15 145);
+  /* ... */
+}
+
+.dark {
+  --background: oklch(0.15 0.02 90);
+  /* ... */
+}`}
+            className="h-64 w-full rounded-lg border border-border bg-muted/30 p-4 font-mono text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          {validationError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              {validationError}
+            </div>
+          )}
+          {customCss && !validationError && (
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <Check className="h-4 w-4" />
+              Valid CSS parsed successfully
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "json" && (
         <div className="space-y-3">
           <textarea
             value={customJson}

@@ -76,9 +76,10 @@ export function useYoursWallet(): UseYoursWalletReturn {
       });
 
       const tokens: ThemeToken[] = [];
+      const ordinals = response?.ordinals ?? [];
 
       // Fetch and validate each ordinal
-      for (const ordinal of response.ordinals) {
+      for (const ordinal of ordinals) {
         try {
           const content = await fetchOrdinalContent(ordinal.origin.outpoint);
           if (content) {

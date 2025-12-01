@@ -317,3 +317,88 @@ export const exampleThemes: ThemeToken[] = [
     },
   },
 ];
+
+/**
+ * Parse CSS from tweakcn format into ThemeStyleProps
+ * Supports :root { } and .dark { } blocks
+ */
+function parseCssBlock(css: string): ThemeStyleProps {
+  const props: Record<string, string> = {};
+
+  // Match CSS variable declarations: --name: value;
+  const varRegex = /--([a-z0-9-]+)\s*:\s*([^;]+);/gi;
+  let match;
+
+  while ((match = varRegex.test(css), match = varRegex.exec(css)) !== null) {
+    const [, name, value] = match;
+    // Skip @theme inline variables (--color-*, --radius-*, --shadow-*)
+    // and compound shadow values
+    if (
+      !name.startsWith("color-") &&
+      !name.startsWith("radius-") &&
+      !name.startsWith("shadow-2") &&
+      name !== "shadow-xs" &&
+      name !== "shadow-sm" &&
+      name !== "shadow-md" &&
+      name !== "shadow-lg" &&
+      name !== "shadow-xl" &&
+      name !== "shadow"
+    ) {
+      props[name] = value.trim();
+    }
+  }
+
+  return props as unknown as ThemeStyleProps;
+}
+
+/**
+ * Parse tweakcn CSS export into ThemeToken format
+ * Accepts raw CSS with :root { } and .dark { } blocks
+ */
+export function parseTweakCnCss(
+  css: string,
+  label = "Custom Theme"
+): { valid: true; theme: ThemeToken } | { valid: false; error: string } {
+  try {
+    // Extract :root block for light mode
+    const rootMatch = css.match(/:root\s*\{([^}]+)\}/s);
+    // Extract .dark block for dark mode
+    const darkMatch = css.match(/\.dark\s*\{([^}]+)\}/s);
+
+    if (!rootMatch) {
+      return { valid: false, error: "Missing :root { } block for light mode" };
+    }
+
+    const lightStyles = parseCssBlock(rootMatch[1]);
+    const darkStyles = darkMatch
+      ? parseCssBlock(darkMatch[1])
+      : { ...lightStyles }; // Fall back to light if no dark
+
+    // Validate that we have required properties
+    const requiredProps = ["background", "foreground", "primary", "radius"];
+    for (const prop of requiredProps) {
+      if (!(prop in lightStyles)) {
+        return {
+          valid: false,
+          error: `Missing required property: --${prop}`,
+        };
+      }
+    }
+
+    const theme: ThemeToken = {
+      $schema: THEME_TOKEN_SCHEMA,
+      label,
+      styles: {
+        light: lightStyles,
+        dark: darkStyles,
+      },
+    };
+
+    return { valid: true, theme };
+  } catch (err) {
+    return {
+      valid: false,
+      error: err instanceof Error ? err.message : "Failed to parse CSS",
+    };
+  }
+}
