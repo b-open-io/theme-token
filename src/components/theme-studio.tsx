@@ -444,7 +444,7 @@ export function ThemeStudio() {
                     selectedTheme.name === theme.name
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
-                  } ${index === 0 && activeTheme ? "ring-1 ring-primary/30" : ""}`}
+                  }`}
                 >
                   <div className="mb-2 flex h-4 overflow-hidden rounded">
                     {[
