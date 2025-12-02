@@ -3,7 +3,7 @@
  * Uses Yours Wallet's getSignatures and broadcast
  */
 
-import { Transaction, P2PKH, Script } from "@bsv/sdk";
+import { Transaction, P2PKH, Script, Utils } from "@bsv/sdk";
 import { OrdLock } from "js-1sat-ord";
 import type {
   YoursWallet,
@@ -103,6 +103,12 @@ export async function listOrdinal(
     });
   }
 
+  // Convert base64 scripts to hex for signature requests
+  const ordinalScriptHex = Utils.toHex(Utils.toArray(ordinal.script, "base64"));
+  const payUtxoScriptHex = Utils.toHex(Utils.toArray(payUtxo.script, "base64"));
+  console.log("[listOrdinal] Ordinal script (hex):", ordinalScriptHex);
+  console.log("[listOrdinal] PayUtxo script (hex):", payUtxoScriptHex);
+
   // Build signature requests
   const sigRequests: SignatureRequest[] = [
     {
@@ -111,7 +117,7 @@ export async function listOrdinal(
       inputIndex: 0,
       satoshis: ordinal.satoshis,
       address: ordAddress,
-      script: ordinal.script,
+      script: ordinalScriptHex,
     },
     {
       prevTxid: payUtxo.txid,
@@ -119,7 +125,7 @@ export async function listOrdinal(
       inputIndex: 1,
       satoshis: payUtxo.satoshis,
       address: bsvAddress,
-      script: payUtxo.script,
+      script: payUtxoScriptHex,
     },
   ];
 
