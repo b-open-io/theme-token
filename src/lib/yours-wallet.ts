@@ -206,7 +206,7 @@ export interface MarketListing {
 }
 
 export interface ThemeMarketListing extends MarketListing {
-  theme: import("./schema").ThemeToken;
+  theme: import("@theme-token/sdk").ThemeToken;
 }
 
 /**
@@ -274,7 +274,7 @@ export async function fetchThemeMarketListings(): Promise<ThemeMarketListing[]> 
     (l) => l.data?.map?.app === "ThemeToken"
   );
 
-  const { validateThemeToken } = await import("./schema");
+  const { validateThemeToken } = await import("@theme-token/sdk");
 
   for (const listing of potentialThemes) {
     try {

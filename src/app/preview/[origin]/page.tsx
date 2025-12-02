@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeDemo } from "@/components/theme-demo";
-import { validateThemeToken, type ThemeToken, type ThemeStyleProps } from "@/lib/schema";
+import { validateThemeToken, type ThemeToken, type ThemeStyleProps } from "@theme-token/sdk";
 import { useTheme } from "@/components/theme-provider";
 import {
   ArrowLeft,

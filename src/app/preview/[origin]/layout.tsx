@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchThemeByOrigin } from "@/lib/fetch-themes";
+import { fetchThemeByOrigin } from "@theme-token/sdk";
 
 interface Props {
   params: Promise<{ origin: string }>;

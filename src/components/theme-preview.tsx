@@ -14,11 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   type ThemeToken,
   type ThemeStyleProps,
-  exampleThemes,
   validateThemeToken,
   parseCss,
   applyTheme,
-} from "@/lib/schema";
+} from "@theme-token/sdk";
+import { exampleThemes } from "@/lib/example-themes";
 import { JsonSyntax } from "./json-syntax";
 import { Sun, Moon, Check, AlertCircle } from "lucide-react";
 

@@ -13,7 +13,7 @@ import {
   type Ordinal,
 } from "@/lib/yours-wallet";
 import { listOrdinal, type ListOrdinalResult } from "@/lib/list-ordinal";
-import { type ThemeToken, validateThemeToken, THEME_TOKEN_SCHEMA_URL } from "@/lib/schema";
+import { type ThemeToken, validateThemeToken, THEME_TOKEN_SCHEMA_URL } from "@theme-token/sdk";
 import { useTheme } from "@/components/theme-provider";
 
 export type WalletStatus =

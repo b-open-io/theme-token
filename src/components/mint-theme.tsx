@@ -9,10 +9,10 @@ import { useTheme } from "@/components/theme-provider";
 import { JsonSyntax } from "@/components/json-syntax";
 import {
   type ThemeToken,
-  exampleThemes,
   validateThemeToken,
   parseCss,
-} from "@/lib/schema";
+} from "@theme-token/sdk";
+import { exampleThemes } from "@/lib/example-themes";
 import {
   Wallet,
   Loader2,

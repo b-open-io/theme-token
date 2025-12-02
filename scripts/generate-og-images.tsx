@@ -9,8 +9,8 @@ import { Resvg } from "@resvg/resvg-js";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import better from "better-color-tools";
-import { fetchPublishedThemes } from "../src/lib/fetch-themes";
-import { exampleThemes, type ThemeToken } from "../src/lib/schema";
+import { fetchPublishedThemes, type ThemeToken } from "@theme-token/sdk";
+import { exampleThemes } from "../src/lib/example-themes";
 
 const OUTPUT_DIR = join(process.cwd(), "public/og");
 const FONT_PATH = join(process.cwd(), "public/fonts/space-grotesk-latin-700-normal.woff");

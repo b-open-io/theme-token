@@ -9,13 +9,14 @@ import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { useTheme } from "@/components/theme-provider";
 import {
   type ThemeToken,
-  exampleThemes,
   validateThemeToken,
   parseCss,
   applyTheme as applyThemeToDOM,
-} from "@/lib/schema";
+  fetchPublishedThemes,
+  type PublishedTheme,
+} from "@theme-token/sdk";
+import { exampleThemes } from "@/lib/example-themes";
 import { REMIX_THEME_EVENT, getAndClearRemixTheme } from "@/components/theme-gallery";
-import { fetchPublishedThemes, type PublishedTheme } from "@/lib/fetch-themes";
 import { ThemePreviewPanel } from "@/components/theme-preview-panel";
 import { Slider } from "@/components/ui/slider";
 import {

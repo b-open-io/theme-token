@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
-import { type ThemeToken } from "@/lib/schema";
-import { fetchPublishedThemes, type PublishedTheme } from "@/lib/fetch-themes";
+import { type ThemeToken, fetchPublishedThemes, type PublishedTheme } from "@theme-token/sdk";
 import { ArrowRight, Sparkles, Loader2, Eye } from "lucide-react";
 
 // Custom event for theme remixing (works on same page)

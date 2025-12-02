@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { validateThemeToken, type ThemeStyleProps } from "@/lib/schema";
+import { validateThemeToken, type ThemeStyleProps } from "@theme-token/sdk";
 
 interface ShadcnRegistryItem {
   $schema: string;

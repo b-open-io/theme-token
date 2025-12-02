@@ -14,7 +14,7 @@ import {
   type ThemeStyleProps,
   applyTheme as applyThemeStyles,
   validateThemeToken,
-} from "@/lib/schema";
+} from "@theme-token/sdk";
 
 interface ThemeContextValue {
   /** Currently active theme token */
