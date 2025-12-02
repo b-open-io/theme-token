@@ -185,8 +185,24 @@ export async function listOrdinal(
   console.log("[listOrdinal] Signed raw tx:", signedRawtx);
   console.log("[listOrdinal] Input 0 unlocking script:", tx.inputs[0]?.unlockingScript?.toHex());
   console.log("[listOrdinal] Input 1 unlocking script:", tx.inputs[1]?.unlockingScript?.toHex());
-  console.log("[listOrdinal] Broadcasting...");
-  const txid = await wallet.broadcast({ rawtx: signedRawtx });
+
+  // Broadcast directly to GorillaPool API (wallet broadcast has verification issues)
+  console.log("[listOrdinal] Broadcasting to GorillaPool...");
+  const txBytes = new Uint8Array(Utils.toArray(signedRawtx, "hex"));
+  const broadcastResponse = await fetch("https://ordinals.gorillapool.io/api/tx", {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: txBytes,
+  });
+
+  if (!broadcastResponse.ok) {
+    const errorText = await broadcastResponse.text();
+    console.error("[listOrdinal] Broadcast failed:", errorText);
+    throw new Error(`Broadcast failed: ${errorText}`);
+  }
+
+  const txid = await broadcastResponse.text();
+  console.log("[listOrdinal] Broadcast success, txid:", txid);
 
   return {
     txid,
