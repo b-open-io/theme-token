@@ -11,7 +11,7 @@ import {
   type ThemeToken,
   exampleThemes,
   validateThemeToken,
-  parseTweakCnCss,
+  parseCss,
   applyTheme as applyThemeToDOM,
 } from "@/lib/schema";
 import { REMIX_THEME_EVENT, getAndClearRemixTheme } from "@/components/theme-gallery";
@@ -213,7 +213,7 @@ export function ThemeStudio() {
 
         // Parse the CSS
         const themeName = nameParam || "Imported Theme";
-        const cssResult = parseTweakCnCss(decodedCss, themeName);
+        const cssResult = parseCss(decodedCss, themeName);
 
         if (cssResult.valid) {
           setSelectedTheme(cssResult.theme);
@@ -341,7 +341,7 @@ export function ThemeStudio() {
     }
 
     // Try parsing as CSS
-    const cssResult = parseTweakCnCss(value, customName || "Custom Theme");
+    const cssResult = parseCss(value, customName || "Custom Theme");
     if (cssResult.valid) {
       setSelectedTheme(cssResult.theme);
       setValidationError(null);

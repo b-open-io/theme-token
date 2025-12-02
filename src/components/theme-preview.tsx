@@ -16,7 +16,7 @@ import {
   type ThemeStyleProps,
   exampleThemes,
   validateThemeToken,
-  parseTweakCnCss,
+  parseCss,
   applyTheme,
 } from "@/lib/schema";
 import { JsonSyntax } from "./json-syntax";
@@ -76,7 +76,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 
     if (!value.trim()) return;
 
-    const result = parseTweakCnCss(value, "Custom Theme");
+    const result = parseCss(value, "Custom Theme");
 
     if (result.valid) {
       setSelectedTheme(result.theme);

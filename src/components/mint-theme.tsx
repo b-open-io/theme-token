@@ -11,7 +11,7 @@ import {
   type ThemeToken,
   exampleThemes,
   validateThemeToken,
-  parseTweakCnCss,
+  parseCss,
 } from "@/lib/schema";
 import {
   Wallet,
@@ -72,7 +72,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 
     if (!value.trim()) return;
 
-    const result = parseTweakCnCss(value, customLabel || "Custom Theme");
+    const result = parseCss(value, customLabel || "Custom Theme");
 
     if (result.valid) {
       setSelectedTheme(result.theme);

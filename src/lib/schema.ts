@@ -525,6 +525,3 @@ export function parseCss(
     };
   }
 }
-
-/** @deprecated Use parseCss instead */
-export const parseTweakCnCss = parseCss;
