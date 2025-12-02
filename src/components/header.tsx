@@ -55,12 +55,18 @@ export function Header() {
 
         {/* Center Nav Links */}
         <nav className="hidden items-center gap-6 md:flex">
-          <a
-            href="#schema"
+          <Link
+            href="/#schema"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Spec
-          </a>
+          </Link>
+          <Link
+            href="/#studio"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Studio
+          </Link>
           <Link
             href="/market"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
