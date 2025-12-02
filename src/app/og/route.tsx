@@ -1,11 +1,11 @@
 import { ImageResponse } from "next/og";
 import { fetchPublishedThemes } from "@/lib/fetch-themes";
-import { exampleThemes } from "@/lib/schema";
+import { exampleThemes, type ThemeToken } from "@/lib/schema";
 
 export const runtime = "edge";
-// Cache for 1 year - this image rarely needs to change
-// Vercel will cache it at the edge, avoiding regeneration costs
-export const revalidate = 31536000;
+// Cache for 1 week - regenerates when cache expires
+// Each unique theme generates once, then served from edge cache
+export const revalidate = 604800;
 
 // Convert oklch to approximate hex for OG image rendering
 function oklchToHex(oklch: string): string {
@@ -41,11 +41,8 @@ function oklchToHex(oklch: string): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b_)}`;
 }
 
-// Extract key colors from a theme
-function extractColors(
-  styles: Record<string, string>,
-  mode: "light" | "dark" = "dark"
-): string[] {
+// Extract key colors from a single theme for stripe generation
+function extractThemeColors(theme: ThemeToken): string[] {
   const colorKeys = [
     "primary",
     "secondary",
@@ -55,61 +52,100 @@ function extractColors(
     "chart-1",
     "chart-2",
     "chart-3",
+    "chart-4",
+    "chart-5",
   ];
 
-  return colorKeys
-    .map((key) => styles[key])
-    .filter(Boolean)
-    .map(oklchToHex);
+  const colors: string[] = [];
+
+  // Get colors from both light and dark modes
+  for (const mode of ["light", "dark"] as const) {
+    const styles = theme.styles[mode];
+    for (const key of colorKeys) {
+      if (styles[key]) {
+        colors.push(oklchToHex(styles[key]));
+      }
+    }
+  }
+
+  // Dedupe and return
+  return [...new Set(colors)];
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const themeOrigin = searchParams.get("theme");
+
   // Fetch on-chain themes
-  let allColors: string[] = [];
+  let selectedTheme: ThemeToken | null = null;
+  let themeName = "Theme Token";
 
   try {
     const publishedThemes = await fetchPublishedThemes();
 
     if (publishedThemes.length > 0) {
-      // Collect colors from all published themes
-      for (const { theme } of publishedThemes) {
-        const darkColors = extractColors(theme.styles.dark, "dark");
-        const lightColors = extractColors(theme.styles.light, "light");
-        allColors.push(...darkColors, ...lightColors);
+      // If specific theme requested via ?theme=origin, find it
+      if (themeOrigin) {
+        const found = publishedThemes.find((t) => t.origin === themeOrigin);
+        if (found) {
+          selectedTheme = found.theme;
+          themeName = found.theme.name;
+        }
+      }
+
+      // If no specific theme or not found, pick one deterministically
+      if (!selectedTheme) {
+        // Seed based on week of year so it changes weekly but stays stable for caching
+        const now = new Date();
+        const weekOfYear = Math.floor(
+          (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) /
+          (7 * 24 * 60 * 60 * 1000)
+        );
+        const seed = weekOfYear + now.getFullYear() * 52;
+        const themeIndex = Math.abs(Math.floor(Math.sin(seed) * 10000)) % publishedThemes.length;
+
+        const selected = publishedThemes[themeIndex];
+        selectedTheme = selected.theme;
+        themeName = selected.theme.name;
       }
     }
   } catch {
     // Fall through to example themes
   }
 
-  // If no on-chain themes, use example themes
-  if (allColors.length === 0) {
-    for (const theme of exampleThemes) {
-      const darkColors = extractColors(theme.styles.dark, "dark");
-      const lightColors = extractColors(theme.styles.light, "light");
-      allColors.push(...darkColors, ...lightColors);
-    }
+  // If no on-chain themes, pick from example themes
+  if (!selectedTheme) {
+    const now = new Date();
+    const weekOfYear = Math.floor(
+      (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) /
+      (7 * 24 * 60 * 60 * 1000)
+    );
+    const seed = weekOfYear + now.getFullYear() * 52;
+    const themeIndex = Math.abs(Math.floor(Math.sin(seed) * 10000)) % exampleThemes.length;
+    selectedTheme = exampleThemes[themeIndex];
+    themeName = selectedTheme.name;
   }
 
-  // Dedupe colors
-  const uniqueColors = [...new Set(allColors)];
+  // Extract colors from the selected theme only
+  const themeColors = extractThemeColors(selectedTheme);
 
-  // Use deterministic seeded random for consistent caching
-  // Seed based on month so it changes monthly but stays stable for caching
-  const seed = new Date().getMonth() + new Date().getFullYear() * 12;
+  // Use deterministic seeded random for stripe arrangement
+  const seed = themeName.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const seededRandom = (i: number) => {
     const x = Math.sin(seed + i) * 10000;
     return x - Math.floor(x);
   };
 
-  // Shuffle with seeded random
-  const shuffled = uniqueColors
+  // Shuffle colors with seeded random
+  const shuffled = themeColors
     .map((c, i) => ({ c, r: seededRandom(i) }))
     .sort((a, b) => a.r - b.r)
     .map(({ c }) => c);
 
-  // Pick 10-15 colors for stripes
-  const stripeColors = shuffled.slice(0, Math.min(15, Math.max(10, shuffled.length)));
+  // Use all available colors for stripes (repeat if needed)
+  const stripeColors = shuffled.length >= 8
+    ? shuffled
+    : [...shuffled, ...shuffled, ...shuffled].slice(0, 12);
 
   // Generate varying stripe widths with seeded random
   const stripeWidths: number[] = [];
