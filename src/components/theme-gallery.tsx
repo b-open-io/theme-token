@@ -3,15 +3,22 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
-import { exampleThemes } from "@/lib/schema";
-import { ArrowRight } from "lucide-react";
+import { exampleThemes, type ThemeToken } from "@/lib/schema";
+import { ArrowRight, Sparkles } from "lucide-react";
+
+// Custom event for theme remixing
+export const REMIX_THEME_EVENT = "remix-theme";
+
+export function dispatchRemixTheme(theme: ThemeToken) {
+  window.dispatchEvent(new CustomEvent(REMIX_THEME_EVENT, { detail: theme }));
+}
 
 function ThemeCard({
   theme,
-  onClick,
+  onRemix,
 }: {
-  theme: (typeof exampleThemes)[0];
-  onClick?: () => void;
+  theme: ThemeToken;
+  onRemix?: () => void;
 }) {
   const { mode } = useTheme();
   const colors = [
@@ -22,21 +29,25 @@ function ThemeCard({
   ];
 
   return (
-    <button
-      onClick={onClick}
-      className="group flex-shrink-0 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md"
-    >
+    <div className="group flex-shrink-0 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md">
       {/* Color stripes */}
       <div className="mb-2 flex h-12 w-32 overflow-hidden rounded-md">
         {colors.map((color, i) => (
           <div key={i} className="flex-1" style={{ backgroundColor: color }} />
         ))}
       </div>
-      {/* Theme name */}
-      <p className="text-left text-sm font-medium group-hover:text-primary">
-        {theme.name}
-      </p>
-    </button>
+      {/* Theme name and remix button */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">{theme.name}</p>
+        <button
+          onClick={onRemix}
+          className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary/20"
+        >
+          <Sparkles className="h-3 w-3" />
+          Remix
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -69,8 +80,9 @@ export function ThemeGallery() {
             >
               <ThemeCard
                 theme={theme}
-                onClick={() => {
-                  // Scroll to studio and potentially load theme
+                onRemix={() => {
+                  // Dispatch event and scroll to studio
+                  dispatchRemixTheme(theme);
                   document.getElementById("studio")?.scrollIntoView({ behavior: "smooth" });
                 }}
               />

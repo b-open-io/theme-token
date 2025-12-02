@@ -12,12 +12,16 @@ import {
   validateThemeToken,
   parseTweakCnCss,
 } from "@/lib/schema";
+import { REMIX_THEME_EVENT } from "@/components/theme-gallery";
 import {
   Loader2,
   Check,
   AlertCircle,
   Sparkles,
   ExternalLink,
+  Copy,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 // Preview components that show the theme in action
@@ -99,15 +103,52 @@ export function ThemeStudio() {
   const [activeTab, setActiveTab] = useState<"presets" | "paste">("presets");
   const [txid, setTxid] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
+  const [previewMode, setPreviewMode] = useState<"light" | "dark">(mode);
+  const [copied, setCopied] = useState<"css" | "json" | null>(null);
 
   const isConnected = status === "connected";
   const canMint = isConnected && !isInscribing && !validationError;
+
+  // Generate CSS from theme
+  const generateCSS = (theme: ThemeToken): string => {
+    const lightVars = Object.entries(theme.styles.light)
+      .map(([key, value]) => `  --${key}: ${value};`)
+      .join("\n");
+    const darkVars = Object.entries(theme.styles.dark)
+      .map(([key, value]) => `  --${key}: ${value};`)
+      .join("\n");
+
+    return `:root {\n${lightVars}\n}\n\n.dark {\n${darkVars}\n}`;
+  };
+
+  // Copy to clipboard
+  const handleCopy = async (type: "css" | "json") => {
+    const content = type === "css"
+      ? generateCSS(selectedTheme)
+      : JSON.stringify(selectedTheme, null, 2);
+
+    await navigator.clipboard.writeText(content);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   // Apply theme to preview when selected
   useEffect(() => {
     applyTheme(selectedTheme);
     return () => resetTheme();
   }, [selectedTheme, applyTheme, resetTheme]);
+
+  // Listen for remix events from gallery
+  useEffect(() => {
+    const handleRemix = (e: Event) => {
+      const theme = (e as CustomEvent<ThemeToken>).detail;
+      setSelectedTheme(theme);
+      setCustomName(""); // Clear custom name for remix
+    };
+
+    window.addEventListener(REMIX_THEME_EVENT, handleRemix);
+    return () => window.removeEventListener(REMIX_THEME_EVENT, handleRemix);
+  }, []);
 
   const handleInputChange = (value: string) => {
     setCustomInput(value);
@@ -232,10 +273,10 @@ export function ThemeStudio() {
                 >
                   <div className="mb-2 flex h-4 overflow-hidden rounded">
                     {[
-                      theme.styles[mode].primary,
-                      theme.styles[mode].secondary,
-                      theme.styles[mode].accent,
-                      theme.styles[mode].background,
+                      theme.styles[previewMode].primary,
+                      theme.styles[previewMode].secondary,
+                      theme.styles[previewMode].accent,
+                      theme.styles[previewMode].background,
                     ].map((color, i) => (
                       <div key={i} className="flex-1" style={{ backgroundColor: color }} />
                     ))}
@@ -298,10 +339,63 @@ export function ThemeStudio() {
         </div>
 
         {/* Right Panel: Preview */}
-        <div className="flex-1 bg-background p-6">
+        <div className={`flex-1 p-6 ${previewMode === "dark" ? "dark bg-zinc-950" : "bg-background"}`}>
           <div className="mb-4 flex items-center justify-between">
-            <Badge variant="secondary">Live Preview</Badge>
-            <Badge variant="outline">{mode} mode</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">Live Preview</Badge>
+              {/* Mode Toggle */}
+              <button
+                onClick={() => setPreviewMode(previewMode === "light" ? "dark" : "light")}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+              >
+                {previewMode === "light" ? (
+                  <>
+                    <Sun className="h-3 w-3" />
+                    Light
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-3 w-3" />
+                    Dark
+                  </>
+                )}
+              </button>
+            </div>
+            {/* Copy Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleCopy("css")}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+              >
+                {copied === "css" ? (
+                  <>
+                    <Check className="h-3 w-3 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    Copy CSS
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => handleCopy("json")}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+              >
+                {copied === "json" ? (
+                  <>
+                    <Check className="h-3 w-3 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    Copy JSON
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           <PreviewPanel />
         </div>
