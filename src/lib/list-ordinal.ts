@@ -73,12 +73,30 @@ export async function listOrdinal(
   // Placeholder unlocking script for serialization (will be replaced after signing)
   const placeholderUnlock = new Script();
 
+  // Parse source locking scripts from base64
+  const ordinalLockingScript = Script.fromBinary(Utils.toArray(ordinal.script, "base64"));
+  const payUtxoLockingScript = Script.fromBinary(Utils.toArray(payUtxo.script, "base64"));
+
+  // Build fake source transactions with outputs at correct vout indexes
+  const ordSourceOutputs: { lockingScript: Script; satoshis: number }[] = [];
+  ordSourceOutputs[ordinal.vout] = {
+    lockingScript: ordinalLockingScript,
+    satoshis: ordinal.satoshis,
+  };
+
+  const paySourceOutputs: { lockingScript: Script; satoshis: number }[] = [];
+  paySourceOutputs[payUtxo.vout] = {
+    lockingScript: payUtxoLockingScript,
+    satoshis: payUtxo.satoshis,
+  };
+
   // Add the ordinal as input (index 0)
   tx.addInput({
     sourceTXID: ordinal.txid,
     sourceOutputIndex: ordinal.vout,
     sequence: 0xffffffff,
     unlockingScript: placeholderUnlock,
+    sourceTransaction: { outputs: ordSourceOutputs } as unknown as Transaction,
   });
 
   // Add payment UTXO for fees (index 1)
@@ -87,6 +105,7 @@ export async function listOrdinal(
     sourceOutputIndex: payUtxo.vout,
     sequence: 0xffffffff,
     unlockingScript: placeholderUnlock,
+    sourceTransaction: { outputs: paySourceOutputs } as unknown as Transaction,
   });
 
   // Output 0: The ordinal with OrdLock script
@@ -163,6 +182,10 @@ export async function listOrdinal(
 
   // Broadcast the signed transaction
   const signedRawtx = tx.toHex();
+  console.log("[listOrdinal] Signed raw tx:", signedRawtx);
+  console.log("[listOrdinal] Input 0 unlocking script:", tx.inputs[0]?.unlockingScript?.toHex());
+  console.log("[listOrdinal] Input 1 unlocking script:", tx.inputs[1]?.unlockingScript?.toHex());
+  console.log("[listOrdinal] Broadcasting...");
   const txid = await wallet.broadcast({ rawtx: signedRawtx });
 
   return {
