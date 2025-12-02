@@ -140,11 +140,35 @@ export function ThemeStudio() {
     setDrafts(loadDrafts());
   }, []);
 
-  // Handle deep link import from URL (?import=base64 or ?css=base64)
+  // Handle deep link import from URL (?import=base64 or ?css=base64 or ?remix=origin)
   useEffect(() => {
     const importParam = searchParams.get("import") || searchParams.get("css");
+    const remixParam = searchParams.get("remix");
     const nameParam = searchParams.get("name");
     const sourceParam = searchParams.get("source");
+
+    // Handle remix by origin - fetch theme from blockchain
+    if (remixParam) {
+      fetch(`https://ordfs.network/${remixParam}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.styles && (data.styles.light || data.styles.dark)) {
+            const theme: ThemeToken = {
+              $schema: data.$schema || "https://themetoken.dev/v1/schema.json",
+              name: data.name || "Remixed Theme",
+              author: data.author,
+              styles: data.styles,
+            };
+            setSelectedTheme(theme);
+            setCustomName(`${theme.name} (remix)`);
+            setImportSource("blockchain");
+          }
+        })
+        .catch(() => {
+          setValidationError("Failed to fetch theme from blockchain");
+        });
+      return;
+    }
 
     if (importParam) {
       try {
