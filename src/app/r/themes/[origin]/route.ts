@@ -5,6 +5,9 @@ interface ShadcnRegistryItem {
   $schema: string;
   name: string;
   type: "registry:style";
+  css?: {
+    "@layer base"?: Record<string, Record<string, string>>;
+  };
   cssVars: {
     theme?: Record<string, string>;
     light: Record<string, string>;
@@ -25,6 +28,11 @@ function extractSharedThemeVars(
     "radius",
     "spacing",
     "tracking-normal",
+    "tracking-tighter",
+    "tracking-tight",
+    "tracking-wide",
+    "tracking-wider",
+    "tracking-widest",
   ];
 
   for (const key of sharedKeys) {
@@ -89,6 +97,7 @@ export async function GET(
       $schema: "https://ui.shadcn.com/schema/registry-item.json",
       name: toShadcnName(theme.name),
       type: "registry:style",
+      ...(theme.css && { css: theme.css }),
       cssVars: {
         ...(Object.keys(sharedVars).length > 0 ? { theme: sharedVars } : {}),
         light: theme.styles.light as unknown as Record<string, string>,

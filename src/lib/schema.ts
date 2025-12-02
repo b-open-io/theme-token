@@ -64,15 +64,23 @@ export const themeStylePropsSchema = z.object({
   "letter-spacing": z.string().optional(),
   spacing: z.string().optional(),
 
-  // Shadow (optional)
+  // Shadow components (optional)
   "shadow-color": z.string().optional(),
   "shadow-opacity": z.string().optional(),
   "shadow-blur": z.string().optional(),
   "shadow-spread": z.string().optional(),
   "shadow-offset-x": z.string().optional(),
   "shadow-offset-y": z.string().optional(),
-  "shadow-x": z.string().optional(),
-  "shadow-y": z.string().optional(),
+
+  // Shadow presets (optional) - generated from shadow components
+  "shadow-2xs": z.string().optional(),
+  "shadow-xs": z.string().optional(),
+  "shadow-sm": z.string().optional(),
+  shadow: z.string().optional(),
+  "shadow-md": z.string().optional(),
+  "shadow-lg": z.string().optional(),
+  "shadow-xl": z.string().optional(),
+  "shadow-2xl": z.string().optional(),
 
   // Tracking (optional)
   "tracking-normal": z.string().optional(),
@@ -91,15 +99,23 @@ export const themeStylesSchema = z.object({
 export type ThemeStyles = z.infer<typeof themeStylesSchema>;
 
 /**
+ * CSS rules schema for @layer base
+ */
+export const cssRulesSchema = z.object({
+  "@layer base": z.record(z.string(), z.record(z.string(), z.string())).optional(),
+}).optional();
+
+/**
  * Theme Token - matches tweakcn format with extension fields
  * Required: $schema, name, styles
- * Optional: author (paymail/identity)
+ * Optional: author (paymail/identity), css
  */
 export const themeTokenSchema = z.object({
   $schema: z.string(),
   name: z.string(),
   author: z.string().optional(),
   styles: themeStylesSchema,
+  css: cssRulesSchema,
 });
 
 export type ThemeToken = z.infer<typeof themeTokenSchema>;
@@ -376,6 +392,37 @@ export const exampleThemes: ThemeToken[] = [
 ];
 
 /**
+ * Parse @layer base rules from CSS
+ * Returns the body styles if found
+ */
+function parseLayerBase(
+  css: string
+): { "@layer base": Record<string, Record<string, string>> } | undefined {
+  // Match @layer base { ... } - need to handle nested braces
+  const layerMatch = css.match(/@layer\s+base\s*\{([\s\S]*?body[\s\S]*?)\}/);
+  if (!layerMatch) return undefined;
+
+  // Extract body { ... } within @layer base
+  const bodyMatch = layerMatch[1].match(/body\s*\{([^}]+)\}/);
+  if (!bodyMatch) return undefined;
+
+  const bodyProps: Record<string, string> = {};
+  const propRegex = /([a-z-]+)\s*:\s*([^;]+);/gi;
+  let match;
+  while ((match = propRegex.exec(bodyMatch[1])) !== null) {
+    bodyProps[match[1].trim()] = match[2].trim();
+  }
+
+  if (Object.keys(bodyProps).length === 0) return undefined;
+
+  return {
+    "@layer base": {
+      body: bodyProps,
+    },
+  };
+}
+
+/**
  * Parse CSS from tweakcn format into ThemeStyleProps
  * Supports :root { } and .dark { } blocks
  */
@@ -388,20 +435,17 @@ function parseCssBlock(css: string): ThemeStyleProps {
 
   while ((match = varRegex.test(css), match = varRegex.exec(css)) !== null) {
     const [, name, value] = match;
-    // Skip @theme inline variables (--color-*, --radius-*, --shadow-*)
-    // and compound shadow values
-    if (
-      !name.startsWith("color-") &&
-      !name.startsWith("radius-") &&
-      !name.startsWith("shadow-2") &&
-      name !== "shadow-xs" &&
-      name !== "shadow-sm" &&
-      name !== "shadow-md" &&
-      name !== "shadow-lg" &&
-      name !== "shadow-xl" &&
-      name !== "shadow"
-    ) {
-      props[name] = value.trim();
+    // Skip @theme inline variables (--color-*, --radius-*) which are duplicates
+    if (!name.startsWith("color-") && !name.startsWith("radius-")) {
+      // Map CSS names to JSON names (matching tweakcn JSON registry format)
+      // Tweakcn CSS exports use shadow-x/shadow-y but JSON uses shadow-offset-x/shadow-offset-y
+      if (name === "shadow-x") {
+        props["shadow-offset-x"] = value.trim();
+      } else if (name === "shadow-y") {
+        props["shadow-offset-y"] = value.trim();
+      } else {
+        props[name] = value.trim();
+      }
     }
   }
 
@@ -442,6 +486,9 @@ export function parseTweakCnCss(
       }
     }
 
+    // Parse @layer base rules if present
+    const cssRules = parseLayerBase(css);
+
     const theme: ThemeToken = {
       $schema: THEME_TOKEN_SCHEMA_URL,
       name,
@@ -449,6 +496,7 @@ export function parseTweakCnCss(
         light: lightStyles,
         dark: darkStyles,
       },
+      ...(cssRules && { css: cssRules }),
     };
 
     return { valid: true, theme };
