@@ -84,7 +84,7 @@ export async function GET(
     const theme = result.theme;
     const { light, dark } = theme.styles;
 
-    // Build the ShadCN registry item (matching tweakcn format exactly)
+    // Build the ShadCN registry item
     const registryItem: ShadcnRegistryItem = {
       $schema: "https://ui.shadcn.com/schema/registry-item.json",
       name: toShadcnName(theme.name),
