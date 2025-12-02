@@ -122,9 +122,13 @@ export function ThemeStudio() {
     isInscribing,
     error: walletError,
   } = useYoursWallet();
-  const { mode, toggleMode, applyTheme, resetTheme } = useTheme();
+  const { mode, toggleMode, applyTheme, resetTheme, activeTheme } = useTheme();
 
-  const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(exampleThemes[0]);
+  // Use wallet's active theme as default if available, otherwise use first preset
+  const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
+    activeTheme || exampleThemes[0]
+  );
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"presets" | "paste" | "drafts">("presets");
@@ -257,11 +261,24 @@ export function ThemeStudio() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // Apply theme to preview when selected
+  // Apply theme to preview when selected (skip initial if wallet theme is active)
   useEffect(() => {
+    // Skip applying on first render if we already have an active wallet theme
+    if (!hasInitialized && activeTheme) {
+      setHasInitialized(true);
+      return;
+    }
+    setHasInitialized(true);
     applyTheme(selectedTheme);
     return () => resetTheme();
-  }, [selectedTheme, applyTheme, resetTheme]);
+  }, [selectedTheme, applyTheme, resetTheme, activeTheme, hasInitialized]);
+
+  // Sync selected theme when wallet theme changes
+  useEffect(() => {
+    if (activeTheme && hasInitialized) {
+      setSelectedTheme(activeTheme);
+    }
+  }, [activeTheme, hasInitialized]);
 
   // Listen for remix events from gallery
   useEffect(() => {
@@ -426,7 +443,11 @@ export function ThemeStudio() {
           {/* Presets Tab */}
           {activeTab === "presets" && (
             <div className="grid grid-cols-2 gap-2">
-              {exampleThemes.map((theme) => (
+              {/* Show wallet theme first if available, otherwise show all example themes */}
+              {(activeTheme
+                ? [activeTheme, ...exampleThemes.filter(t => t.name !== activeTheme.name)]
+                : exampleThemes
+              ).map((theme, index) => (
                 <button
                   key={theme.name}
                   onClick={() => {
@@ -437,7 +458,7 @@ export function ThemeStudio() {
                     selectedTheme.name === theme.name
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
-                  }`}
+                  } ${index === 0 && activeTheme ? "ring-1 ring-primary/30" : ""}`}
                 >
                   <div className="mb-2 flex h-4 overflow-hidden rounded">
                     {[
@@ -449,7 +470,12 @@ export function ThemeStudio() {
                       <div key={i} className="flex-1" style={{ backgroundColor: color }} />
                     ))}
                   </div>
-                  <p className="text-xs font-medium">{theme.name}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs font-medium">{theme.name}</p>
+                    {index === 0 && activeTheme && (
+                      <span className="text-[10px] text-primary">(active)</span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
