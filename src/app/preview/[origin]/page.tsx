@@ -67,6 +67,42 @@ function applyStylesToElement(element: HTMLElement, styles: ThemeStyleProps) {
   }
 }
 
+// Calculate max radius for circular reveal animation
+function getMaxRadius(x: number, y: number): number {
+  const right = window.innerWidth - x;
+  const bottom = window.innerHeight - y;
+  return Math.hypot(Math.max(x, right), Math.max(y, bottom));
+}
+
+// Start view transition with Web Animations API
+async function startViewTransition(callback: () => void, clickX?: number, clickY?: number): Promise<void> {
+  if ("startViewTransition" in document) {
+    const x = clickX ?? window.innerWidth / 2;
+    const y = clickY ?? window.innerHeight / 2;
+    const maxRadius = getMaxRadius(x, y);
+
+    const transition = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }).startViewTransition(callback);
+
+    await transition.ready;
+
+    document.documentElement.animate(
+      {
+        clipPath: [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${maxRadius}px at ${x}px ${y}px)`,
+        ],
+      },
+      {
+        duration: 500,
+        easing: "ease-in-out",
+        pseudoElement: "::view-transition-new(root)",
+      }
+    );
+  } else {
+    callback();
+  }
+}
+
 export default function PreviewPage({ params }: Props) {
   const { origin } = use(params);
   const router = useRouter();
@@ -200,7 +236,11 @@ export default function PreviewPage({ params }: Props) {
             {/* Mode Toggle */}
             <div className="flex items-center rounded-lg border p-1">
               <button
-                onClick={() => setPreviewMode("light")}
+                onClick={(e) => {
+                  if (previewMode !== "light") {
+                    startViewTransition(() => setPreviewMode("light"), e.clientX, e.clientY);
+                  }
+                }}
                 className={`rounded-md p-2 transition-colors ${
                   previewMode === "light"
                     ? "bg-primary text-primary-foreground"
@@ -210,7 +250,11 @@ export default function PreviewPage({ params }: Props) {
                 <Sun className="h-4 w-4" />
               </button>
               <button
-                onClick={() => setPreviewMode("dark")}
+                onClick={(e) => {
+                  if (previewMode !== "dark") {
+                    startViewTransition(() => setPreviewMode("dark"), e.clientX, e.clientY);
+                  }
+                }}
                 className={`rounded-md p-2 transition-colors ${
                   previewMode === "dark"
                     ? "bg-primary text-primary-foreground"

@@ -90,7 +90,7 @@ ENCODED=$(echo -n "$CSS" | base64)
 echo "https://themetoken.dev/studio?import=$ENCODED&name=My%20Theme&source=tweakcn"
 ```
 
-This enables integrations with theme builders like [tweakcn.com](https://tweakcn.com).
+This enables integrations with theme builders like [tweakcn.com](https://tweakcn.com/editor/theme).
 
 ## CLI Tool
 
@@ -119,7 +119,7 @@ Runs on http://localhost:3033
 - [themetoken.dev](https://themetoken.dev)
 - [1Sat Ordinals](https://1satordinals.com)
 - [ShadCN UI](https://ui.shadcn.com)
-- [tweakcn](https://tweakcn.com) - Theme builder
+- [tweakcn](https://tweakcn.com/editor/theme) - Theme builder
 
 ## License
 

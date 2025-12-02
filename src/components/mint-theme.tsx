@@ -237,7 +237,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
           <p className="text-sm text-muted-foreground">
             Paste CSS from{" "}
             <a
-              href="https://tweakcn.com"
+              href="https://tweakcn.com/editor/theme"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"

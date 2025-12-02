@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,18 @@ import {
   applyTheme as applyThemeToDOM,
 } from "@/lib/schema";
 import { REMIX_THEME_EVENT, getAndClearRemixTheme } from "@/components/theme-gallery";
+import { fetchPublishedThemes, type PublishedTheme } from "@/lib/fetch-themes";
+import { ThemePreviewPanel } from "@/components/theme-preview-panel";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select";
 import {
   Loader2,
   Check,
@@ -27,6 +39,11 @@ import {
   Save,
   Trash2,
   FolderOpen,
+  ChevronDown,
+  ChevronUp,
+  Pipette,
+  Type,
+  Settings2,
 } from "lucide-react";
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
@@ -51,63 +68,59 @@ function saveDrafts(drafts: ThemeDraft[]): void {
   localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
 }
 
-// Preview components that show the theme in action
-function PreviewCard({ className = "" }: { className?: string }) {
-  return (
-    <div className={`rounded-lg border border-border bg-card p-4 ${className}`}>
-      <h4 className="mb-2 font-semibold text-card-foreground">Card Title</h4>
-      <p className="mb-3 text-sm text-muted-foreground">
-        This is a sample card component.
-      </p>
-      <div className="flex gap-2">
-        <Button size="sm">Primary</Button>
-        <Button size="sm" variant="secondary">Secondary</Button>
-        <Button size="sm" variant="outline">Outline</Button>
-      </div>
-    </div>
-  );
+
+// Color control component for editing individual colors
+interface ColorControlProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
 }
 
-function PreviewInputs({ className = "" }: { className?: string }) {
+function ColorControl({ label, value, onChange }: ColorControlProps) {
   return (
-    <div className={`space-y-3 ${className}`}>
-      <div>
-        <label className="mb-1 block text-sm font-medium">Text Input</label>
+    <div className="flex items-center gap-2">
+      <div
+        className="h-6 w-6 shrink-0 cursor-pointer rounded border border-border"
+        style={{ backgroundColor: value }}
+      >
         <input
-          type="text"
-          placeholder="Type something..."
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          type="color"
+          value={value.startsWith("#") ? value : "#808080"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-full w-full cursor-pointer opacity-0"
         />
       </div>
-      <div className="flex gap-2">
-        <Badge>Default</Badge>
-        <Badge variant="secondary">Secondary</Badge>
-        <Badge variant="outline">Outline</Badge>
-        <Badge variant="destructive">Destructive</Badge>
-      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-7 flex-1 rounded border border-border bg-background px-2 font-mono text-xs focus:border-primary focus:outline-none"
+        placeholder={label}
+      />
+      <span className="w-24 truncate text-[10px] text-muted-foreground">{label}</span>
     </div>
   );
 }
 
-function PreviewPanel() {
+// Collapsible section for grouping color controls
+interface ColorSectionProps {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+function ColorSection({ title, children, defaultOpen = false }: ColorSectionProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
-    <div className="space-y-4">
-      <PreviewCard />
-      <PreviewInputs />
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-primary p-3 text-center text-primary-foreground">
-          Primary
-        </div>
-        <div className="rounded-lg bg-secondary p-3 text-center text-secondary-foreground">
-          Secondary
-        </div>
-        <div className="rounded-lg bg-accent p-3 text-center text-accent-foreground">
-          Accent
-        </div>
-        <div className="rounded-lg bg-muted p-3 text-center text-muted-foreground">
-          Muted
-        </div>
-      </div>
+    <div className="border-b border-border pb-2">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+      >
+        {title}
+        {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {isOpen && <div className="space-y-2 pb-2">{children}</div>}
     </div>
   );
 }
@@ -123,7 +136,7 @@ export function ThemeStudio() {
     isInscribing,
     error: walletError,
   } = useYoursWallet();
-  const { mode, toggleMode, activeTheme } = useTheme();
+  const { mode, toggleMode, activeTheme, applyThemeAnimated, availableThemes } = useTheme();
 
   // Use wallet's active theme as default if available, otherwise use first preset
   const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
@@ -138,11 +151,30 @@ export function ThemeStudio() {
   const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
   const [savedNotice, setSavedNotice] = useState(false);
   const [importSource, setImportSource] = useState<string | null>(null);
+  const [onChainThemes, setOnChainThemes] = useState<PublishedTheme[]>([]);
+  const [loadingThemes, setLoadingThemes] = useState(true);
+  const [editorSubTab, setEditorSubTab] = useState<"colors" | "typography" | "other">("colors");
+  const isAnimatingRef = useRef(false);
 
   // Load drafts on mount
   useEffect(() => {
     setDrafts(loadDrafts());
   }, []);
+
+  // Fetch on-chain themes
+  useEffect(() => {
+    fetchPublishedThemes()
+      .then(setOnChainThemes)
+      .finally(() => setLoadingThemes(false));
+  }, []);
+
+  // Sync with wallet's active theme when it changes externally
+  useEffect(() => {
+    if (activeTheme) {
+      setSelectedTheme(activeTheme);
+      setCustomName("");
+    }
+  }, [activeTheme]);
 
   // Handle deep link import from URL (?import=base64 or ?css=base64 or ?remix=origin)
   useEffect(() => {
@@ -223,10 +255,12 @@ export function ThemeStudio() {
     setTimeout(() => setSavedNotice(false), 2000);
   };
 
-  const handleLoadDraft = (draft: ThemeDraft) => {
+  const handleLoadDraft = (draft: ThemeDraft, e?: React.MouseEvent) => {
     setSelectedTheme(draft.theme);
     setCustomName(draft.theme.name);
     setActiveTab("presets");
+    // Apply theme with animation
+    applyThemeAnimated(draft.theme, e);
   };
 
   const handleDeleteDraft = (id: string) => {
@@ -261,10 +295,12 @@ export function ThemeStudio() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // Apply theme to DOM directly (not through provider to avoid loops)
+  // Apply theme to DOM directly for preview (skip during animated transitions)
   useEffect(() => {
+    if (isAnimatingRef.current) return;
     applyThemeToDOM(selectedTheme.styles[mode]);
   }, [selectedTheme, mode]);
+
 
   // Listen for remix events from gallery
   useEffect(() => {
@@ -328,6 +364,21 @@ export function ThemeStudio() {
     }
   };
 
+  // Update a single color in the current mode
+  const updateColor = (key: string, value: string) => {
+    setSelectedTheme((prev) => ({
+      ...prev,
+      styles: {
+        ...prev.styles,
+        [mode]: {
+          ...prev.styles[mode],
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+
   // Success state
   if (txid) {
     const origin = `${txid}_0`;
@@ -387,11 +438,12 @@ export function ThemeStudio() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-      {/* Split pane layout */}
-      <div className="flex flex-col lg:flex-row">
-        {/* Left Panel: Controls */}
-        <div className="w-full border-b border-border bg-muted/10 p-6 lg:w-2/5 lg:border-b-0 lg:border-r">
+    <div className="flex h-screen flex-col">
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Panel: Controls (fixed width, scrollable) */}
+        <div className="flex w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
+          <div className="flex-1 overflow-y-auto p-4">
           {/* Tab switcher */}
           <div className="mb-4 flex gap-1 rounded-lg bg-muted p-1">
             <button
@@ -402,7 +454,7 @@ export function ThemeStudio() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Presets
+              Editor
             </button>
             <button
               onClick={() => setActiveTab("paste")}
@@ -426,44 +478,493 @@ export function ThemeStudio() {
             </button>
           </div>
 
-          {/* Presets Tab */}
+          {/* Editor Tab (was Presets) */}
           {activeTab === "presets" && (
-            <div className="grid grid-cols-2 gap-2">
-              {/* Show wallet theme first if available, otherwise show all example themes */}
-              {(activeTheme
-                ? [activeTheme, ...exampleThemes.filter(t => t.name !== activeTheme.name)]
-                : exampleThemes
-              ).map((theme, index) => (
-                <button
-                  key={theme.name}
-                  onClick={() => {
-                    setSelectedTheme(theme);
-                    setCustomName("");
+            <div className="space-y-4">
+              {/* Preset selector - Dropdown */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Select Theme
+                </label>
+                <Select
+                  value={selectedTheme.name}
+                  onValueChange={async (value) => {
+                    // Find theme from all sources
+                    const onChain = onChainThemes.find(t => t.theme.name === value);
+                    const wallet = availableThemes.find(t => t.name === value);
+                    const example = exampleThemes.find(t => t.name === value);
+                    const theme = onChain?.theme || wallet || example;
+                    if (theme) {
+                      isAnimatingRef.current = true;
+                      setSelectedTheme(theme);
+                      setCustomName("");
+                      await applyThemeAnimated(theme);
+                      isAnimatingRef.current = false;
+                    }
                   }}
-                  className={`rounded-lg border p-3 text-left transition-all ${
-                    selectedTheme.name === theme.name
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-4 w-12 overflow-hidden rounded-sm border border-border">
+                          {[
+                            selectedTheme.styles[mode].primary,
+                            selectedTheme.styles[mode].secondary,
+                            selectedTheme.styles[mode].accent,
+                          ].map((color, i) => (
+                            <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                          ))}
+                        </div>
+                        <span className="truncate">{selectedTheme.name}</span>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {/* On-Chain Themes */}
+                    {onChainThemes.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-xs text-primary">On-Chain Themes</SelectLabel>
+                        {onChainThemes.map((published) => (
+                          <SelectItem key={published.origin} value={published.theme.name}>
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+                                {[
+                                  published.theme.styles[mode].primary,
+                                  published.theme.styles[mode].secondary,
+                                  published.theme.styles[mode].accent,
+                                ].map((color, i) => (
+                                  <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                              <span>{published.theme.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {loadingThemes && (
+                      <div className="flex items-center justify-center py-2 text-xs text-muted-foreground">
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Loading on-chain themes...
+                      </div>
+                    )}
+                    {/* Wallet Themes */}
+                    {availableThemes.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-xs text-muted-foreground">My Themes</SelectLabel>
+                        {availableThemes.map((theme) => (
+                          <SelectItem key={theme.name} value={theme.name}>
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+                                {[
+                                  theme.styles[mode].primary,
+                                  theme.styles[mode].secondary,
+                                  theme.styles[mode].accent,
+                                ].map((color, i) => (
+                                  <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                              <span>{theme.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {/* Example Themes */}
+                    <SelectGroup>
+                      <SelectLabel className="text-xs text-muted-foreground">Examples</SelectLabel>
+                      {exampleThemes.map((theme) => (
+                        <SelectItem key={theme.name} value={theme.name}>
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+                              {[
+                                theme.styles[mode].primary,
+                                theme.styles[mode].secondary,
+                                theme.styles[mode].accent,
+                              ].map((color, i) => (
+                                <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                              ))}
+                            </div>
+                            <span>{theme.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sub-tabs for editor sections */}
+              <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
+                <button
+                  onClick={() => setEditorSubTab("colors")}
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                    editorSubTab === "colors"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <div className="mb-2 flex h-4 overflow-hidden rounded">
-                    {[
-                      theme.styles[mode].primary,
-                      theme.styles[mode].secondary,
-                      theme.styles[mode].accent,
-                      theme.styles[mode].background,
-                    ].map((color, i) => (
-                      <div key={i} className="flex-1" style={{ backgroundColor: color }} />
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs font-medium">{theme.name}</p>
-                    {index === 0 && activeTheme && (
-                      <span className="text-[10px] text-primary">(active)</span>
-                    )}
-                  </div>
+                  <Pipette className="h-3 w-3" />
+                  Colors
                 </button>
-              ))}
+                <button
+                  onClick={() => setEditorSubTab("typography")}
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                    editorSubTab === "typography"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Type className="h-3 w-3" />
+                  Type
+                </button>
+                <button
+                  onClick={() => setEditorSubTab("other")}
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                    editorSubTab === "other"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Settings2 className="h-3 w-3" />
+                  Other
+                </button>
+              </div>
+
+              {/* Colors Sub-tab */}
+              {editorSubTab === "colors" && (
+                <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+                  <ColorSection title="Primary Colors" defaultOpen>
+                    <ColorControl
+                      label="primary"
+                      value={selectedTheme.styles[mode].primary}
+                      onChange={(v) => updateColor("primary", v)}
+                    />
+                    <ColorControl
+                      label="primary-fg"
+                      value={selectedTheme.styles[mode]["primary-foreground"]}
+                      onChange={(v) => updateColor("primary-foreground", v)}
+                    />
+                  </ColorSection>
+
+                  <ColorSection title="Secondary Colors">
+                    <ColorControl
+                      label="secondary"
+                      value={selectedTheme.styles[mode].secondary}
+                      onChange={(v) => updateColor("secondary", v)}
+                    />
+                    <ColorControl
+                      label="secondary-fg"
+                      value={selectedTheme.styles[mode]["secondary-foreground"]}
+                      onChange={(v) => updateColor("secondary-foreground", v)}
+                    />
+                  </ColorSection>
+
+                  <ColorSection title="Background & Foreground">
+                    <ColorControl
+                      label="background"
+                      value={selectedTheme.styles[mode].background}
+                      onChange={(v) => updateColor("background", v)}
+                    />
+                    <ColorControl
+                      label="foreground"
+                      value={selectedTheme.styles[mode].foreground}
+                      onChange={(v) => updateColor("foreground", v)}
+                    />
+                  </ColorSection>
+
+                  <ColorSection title="Card & Popover">
+                    <ColorControl
+                      label="card"
+                      value={selectedTheme.styles[mode].card}
+                      onChange={(v) => updateColor("card", v)}
+                    />
+                    <ColorControl
+                      label="card-fg"
+                      value={selectedTheme.styles[mode]["card-foreground"]}
+                      onChange={(v) => updateColor("card-foreground", v)}
+                    />
+                    <ColorControl
+                      label="popover"
+                      value={selectedTheme.styles[mode].popover}
+                      onChange={(v) => updateColor("popover", v)}
+                    />
+                    <ColorControl
+                      label="popover-fg"
+                      value={selectedTheme.styles[mode]["popover-foreground"]}
+                      onChange={(v) => updateColor("popover-foreground", v)}
+                    />
+                  </ColorSection>
+
+                  <ColorSection title="Accent & Muted">
+                    <ColorControl
+                      label="accent"
+                      value={selectedTheme.styles[mode].accent}
+                      onChange={(v) => updateColor("accent", v)}
+                    />
+                    <ColorControl
+                      label="accent-fg"
+                      value={selectedTheme.styles[mode]["accent-foreground"]}
+                      onChange={(v) => updateColor("accent-foreground", v)}
+                    />
+                    <ColorControl
+                      label="muted"
+                      value={selectedTheme.styles[mode].muted}
+                      onChange={(v) => updateColor("muted", v)}
+                    />
+                    <ColorControl
+                      label="muted-fg"
+                      value={selectedTheme.styles[mode]["muted-foreground"]}
+                      onChange={(v) => updateColor("muted-foreground", v)}
+                    />
+                  </ColorSection>
+
+                  <ColorSection title="Borders & Input">
+                    <ColorControl
+                      label="border"
+                      value={selectedTheme.styles[mode].border}
+                      onChange={(v) => updateColor("border", v)}
+                    />
+                    <ColorControl
+                      label="input"
+                      value={selectedTheme.styles[mode].input}
+                      onChange={(v) => updateColor("input", v)}
+                    />
+                    <ColorControl
+                      label="ring"
+                      value={selectedTheme.styles[mode].ring}
+                      onChange={(v) => updateColor("ring", v)}
+                    />
+                  </ColorSection>
+
+                  <ColorSection title="Destructive">
+                    <ColorControl
+                      label="destructive"
+                      value={selectedTheme.styles[mode].destructive}
+                      onChange={(v) => updateColor("destructive", v)}
+                    />
+                    <ColorControl
+                      label="destructive-fg"
+                      value={selectedTheme.styles[mode]["destructive-foreground"]}
+                      onChange={(v) => updateColor("destructive-foreground", v)}
+                    />
+                  </ColorSection>
+                </div>
+              )}
+
+              {/* Typography Sub-tab */}
+              {editorSubTab === "typography" && (
+                <div className="space-y-4">
+                  {/* Font Families */}
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="mb-3 text-xs font-medium">Font Families</div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1 block text-[10px] text-muted-foreground">
+                          Sans-Serif (--font-sans)
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedTheme.styles[mode]["font-sans"] || ""}
+                          onChange={(e) => updateColor("font-sans", e.target.value)}
+                          placeholder="Inter, system-ui, sans-serif"
+                          className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] text-muted-foreground">
+                          Serif (--font-serif)
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedTheme.styles[mode]["font-serif"] || ""}
+                          onChange={(e) => updateColor("font-serif", e.target.value)}
+                          placeholder="Georgia, serif"
+                          className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] text-muted-foreground">
+                          Monospace (--font-mono)
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedTheme.styles[mode]["font-mono"] || ""}
+                          onChange={(e) => updateColor("font-mono", e.target.value)}
+                          placeholder="JetBrains Mono, monospace"
+                          className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Letter Spacing */}
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-medium">Letter Spacing</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {selectedTheme.styles[mode]["letter-spacing"] || "0em"}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[parseFloat(selectedTheme.styles[mode]["letter-spacing"]?.replace("em", "") || "0")]}
+                      min={-0.05}
+                      max={0.2}
+                      step={0.01}
+                      onValueChange={([v]) => updateColor("letter-spacing", `${v}em`)}
+                    />
+                  </div>
+
+                  {/* Spacing */}
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-medium">Base Spacing</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {selectedTheme.styles[mode].spacing || "0.25rem"}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[parseFloat(selectedTheme.styles[mode].spacing?.replace("rem", "") || "0.25")]}
+                      min={0.125}
+                      max={0.5}
+                      step={0.025}
+                      onValueChange={([v]) => updateColor("spacing", `${v}rem`)}
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground">
+                    Tip: Font families must be installed/imported in your project to work.
+                  </p>
+                </div>
+              )}
+
+              {/* Other Sub-tab */}
+              {editorSubTab === "other" && (
+                <div className="max-h-80 space-y-4 overflow-y-auto pr-1">
+                  {/* Radius */}
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-medium">Border Radius</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {selectedTheme.styles[mode].radius}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[parseFloat(selectedTheme.styles[mode].radius) || 0.5]}
+                      min={0}
+                      max={2}
+                      step={0.125}
+                      onValueChange={([v]) => updateColor("radius", `${v}rem`)}
+                    />
+                  </div>
+
+                  {/* Shadow Controls */}
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="mb-3 text-xs font-medium">Shadow</div>
+                    <div className="space-y-3">
+                      <ColorControl
+                        label="shadow-color"
+                        value={selectedTheme.styles[mode]["shadow-color"] || "oklch(0 0 0)"}
+                        onChange={(v) => updateColor("shadow-color", v)}
+                      />
+                      <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Opacity</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {selectedTheme.styles[mode]["shadow-opacity"] || "0.1"}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[parseFloat(selectedTheme.styles[mode]["shadow-opacity"] || "0.1")]}
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          onValueChange={([v]) => updateColor("shadow-opacity", v.toString())}
+                        />
+                      </div>
+                      <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Blur</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {selectedTheme.styles[mode]["shadow-blur"] || "8px"}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[parseFloat(selectedTheme.styles[mode]["shadow-blur"]?.replace("px", "") || "8")]}
+                          min={0}
+                          max={50}
+                          step={1}
+                          onValueChange={([v]) => updateColor("shadow-blur", `${v}px`)}
+                        />
+                      </div>
+                      <div>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Spread</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {selectedTheme.styles[mode]["shadow-spread"] || "0px"}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[parseFloat(selectedTheme.styles[mode]["shadow-spread"]?.replace("px", "") || "0")]}
+                          min={-10}
+                          max={20}
+                          step={1}
+                          onValueChange={([v]) => updateColor("shadow-spread", `${v}px`)}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">Offset X</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {selectedTheme.styles[mode]["shadow-offset-x"] || "0px"}
+                            </span>
+                          </div>
+                          <Slider
+                            value={[parseFloat(selectedTheme.styles[mode]["shadow-offset-x"]?.replace("px", "") || "0")]}
+                            min={-20}
+                            max={20}
+                            step={1}
+                            onValueChange={([v]) => updateColor("shadow-offset-x", `${v}px`)}
+                          />
+                        </div>
+                        <div>
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">Offset Y</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {selectedTheme.styles[mode]["shadow-offset-y"] || "4px"}
+                            </span>
+                          </div>
+                          <Slider
+                            value={[parseFloat(selectedTheme.styles[mode]["shadow-offset-y"]?.replace("px", "") || "4")]}
+                            min={-20}
+                            max={20}
+                            step={1}
+                            onValueChange={([v]) => updateColor("shadow-offset-y", `${v}px`)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mode indicator */}
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">Editing Mode</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {mode === "light" ? (
+                          <><Sun className="mr-1 h-3 w-3" /> Light</>
+                        ) : (
+                          <><Moon className="mr-1 h-3 w-3" /> Dark</>
+                        )}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      Use the mode toggle in the preview panel to switch between light and dark modes.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -473,7 +974,7 @@ export function ThemeStudio() {
               <p className="text-xs text-muted-foreground">
                 Paste ShadCN theme CSS from{" "}
                 <a
-                  href="https://tweakcn.com"
+                  href="https://tweakcn.com/editor/theme"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
@@ -540,7 +1041,7 @@ export function ThemeStudio() {
                     className="flex items-center gap-2 rounded-lg border border-border p-3"
                   >
                     <button
-                      onClick={() => handleLoadDraft(draft)}
+                      onClick={(e) => handleLoadDraft(draft, e)}
                       className="flex flex-1 items-center gap-2 text-left hover:text-primary"
                     >
                       <div className="flex h-4 w-8 overflow-hidden rounded">
@@ -602,14 +1103,16 @@ export function ThemeStudio() {
               )}
             </button>
           </div>
-        </div>
+          </div>{/* Close scrollable area */}
+        </div>{/* Close left panel */}
 
-        {/* Right Panel: Preview */}
-        <div className="flex-1 p-6">
-          <div className="mb-4 flex items-center justify-between">
+        {/* Right Panel: Preview (scrollable) */}
+        <div className="hidden flex-1 flex-col overflow-hidden lg:flex">
+          {/* Toolbar */}
+          <div className="flex shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary">Live Preview</Badge>
-              {/* Mode Toggle - uses global mode with splash animation */}
+              <span className="text-sm font-medium">Preview</span>
+              {/* Mode Toggle */}
               <button
                 onClick={(e) => toggleMode(e)}
                 className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
@@ -641,7 +1144,7 @@ export function ThemeStudio() {
                 ) : (
                   <>
                     <Copy className="h-3 w-3" />
-                    Copy CSS
+                    CSS
                   </>
                 )}
               </button>
@@ -657,18 +1160,21 @@ export function ThemeStudio() {
                 ) : (
                   <>
                     <Copy className="h-3 w-3" />
-                    Copy JSON
+                    JSON
                   </>
                 )}
               </button>
             </div>
           </div>
-          <PreviewPanel />
+          {/* Scrollable Preview Area */}
+          <div className="flex-1 overflow-y-auto bg-background">
+            <ThemePreviewPanel />
+          </div>
         </div>
-      </div>
+      </div>{/* Close main content area */}
 
       {/* Bottom Bar: Mint Action */}
-      <div className="flex items-center justify-between border-t border-border bg-muted/30 px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-3">
         <div>
           {isConnected && balance ? (
             <div>

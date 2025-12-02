@@ -199,7 +199,7 @@ export default function SpecPage() {
                   ShadCN Registry Format
                 </a>
                 . Also compatible with{" "}
-                <a href="https://tweakcn.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a href="https://tweakcn.com/editor/theme" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   tweakcn
                 </a>
                 .{" "}

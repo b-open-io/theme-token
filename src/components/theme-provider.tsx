@@ -42,6 +42,31 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = "theme-token-selection";
 const MODE_STORAGE_KEY = "theme-token-mode";
 
+// Calculate max radius for circular reveal animation
+function getMaxRadius(x: number, y: number): number {
+  const right = window.innerWidth - x;
+  const bottom = window.innerHeight - y;
+  return Math.hypot(Math.max(x, right), Math.max(y, bottom));
+}
+
+// Animate the view transition with Web Animations API
+function animateTransition(x: number, y: number): void {
+  const maxRadius = getMaxRadius(x, y);
+  document.documentElement.animate(
+    {
+      clipPath: [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${maxRadius}px at ${x}px ${y}px)`,
+      ],
+    },
+    {
+      duration: 500,
+      easing: "ease-in-out",
+      pseudoElement: "::view-transition-new(root)",
+    }
+  );
+}
+
 interface StoredThemeSelection {
   outpoint?: string;
   themeName?: string;
@@ -149,27 +174,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyThemeAnimated = useCallback(
-    (theme: ThemeToken | null, e?: MouseEvent) => {
-      // Set click position for radial animation
-      if (e) {
-        document.documentElement.style.setProperty(
-          "--click-x",
-          `${e.clientX}px`
-        );
-        document.documentElement.style.setProperty(
-          "--click-y",
-          `${e.clientY}px`
-        );
-      }
-
+    async (theme: ThemeToken | null, e?: MouseEvent): Promise<void> => {
       // Use View Transitions API if available
       if (
         typeof document !== "undefined" &&
         "startViewTransition" in document
       ) {
-        (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+        const x = e?.clientX ?? window.innerWidth / 2;
+        const y = e?.clientY ?? window.innerHeight / 2;
+
+        const transition = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }).startViewTransition(() => {
           applyTheme(theme);
         });
+
+        // Wait for transition to be ready, then animate
+        await transition.ready;
+        animateTransition(x, y);
+        // Wait for animation to complete
+        await transition.finished;
       } else {
         applyTheme(theme);
       }
@@ -183,29 +205,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleMode = useCallback(
-    (e?: MouseEvent) => {
+    async (e?: MouseEvent) => {
       const newMode = mode === "light" ? "dark" : "light";
-
-      // Set click position for radial animation
-      if (e) {
-        document.documentElement.style.setProperty(
-          "--click-x",
-          `${e.clientX}px`
-        );
-        document.documentElement.style.setProperty(
-          "--click-y",
-          `${e.clientY}px`
-        );
-      }
 
       // Use View Transitions API if available
       if (
         typeof document !== "undefined" &&
         "startViewTransition" in document
       ) {
-        (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+        const x = e?.clientX ?? window.innerWidth / 2;
+        const y = e?.clientY ?? window.innerHeight / 2;
+
+        const transition = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }).startViewTransition(() => {
           setMode(newMode);
         });
+
+        // Wait for transition to be ready, then animate
+        await transition.ready;
+        animateTransition(x, y);
       } else {
         setMode(newMode);
       }
