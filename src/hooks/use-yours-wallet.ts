@@ -85,17 +85,12 @@ export function useYoursWallet(): UseYoursWalletReturn {
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
-          const { outpoint, data } = ordinal;
-          const file = data?.insc?.file;
-          const contentType = file?.type;
+          const { outpoint, origin } = ordinal;
 
-          // Skip non-JSON ordinals
-          if (!contentType?.includes("json")) {
-            continue;
-          }
-
-          // The JSON content is embedded in file.json - no need to fetch!
+          // JSON is embedded in origin.data.insc.file.json
+          const file = origin?.data?.insc?.file;
           const content = file?.json;
+
           console.log("[ThemeToken] Ordinal:", outpoint, "content:", content);
 
           if (content) {
