@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
   ArrowRight,
   Github,
   Sparkles,
+  ShoppingCart,
 } from "lucide-react";
 
 const fadeIn = {
@@ -93,6 +95,12 @@ export default function Home() {
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="gap-2" asChild>
+                <Link href="/market">
+                  <ShoppingCart className="h-5 w-5" />
+                  Market
+                </Link>
+              </Button>
+              <Button size="lg" variant="ghost" className="gap-2" asChild>
                 <a href="#schema">
                   Read the Spec
                   <ArrowRight className="h-4 w-4" />
