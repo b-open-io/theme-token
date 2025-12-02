@@ -113,61 +113,68 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* CLI Install - Primary CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mx-auto mt-12 max-w-3xl"
-          >
-            <div className="rounded-xl border border-primary/20 bg-card/80 p-6 shadow-2xl backdrop-blur">
-              <div className="mb-4 flex items-center gap-2">
-                <Terminal className="h-5 w-5 text-primary" />
-                <span className="font-semibold">Install from Blockchain</span>
-              </div>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 font-mono text-sm">
-                <code className="flex-1 overflow-x-auto text-muted-foreground">
-                  <span className="text-primary">bunx</span> shadcn@latest add{" "}
-                  <span className="text-foreground">https://themetoken.dev/r/themes/[origin].json</span>
-                </code>
-                <button
-                  onClick={copyCommand}
-                  className="flex-shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  title="Copy command"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <p className="mt-3 text-center text-sm text-muted-foreground">
-                Replace <code className="rounded bg-muted px-1 font-mono">[origin]</code> with any theme&apos;s blockchain ID.{" "}
-                <a href="/market" className="text-primary hover:underline">Browse themes</a> to find one.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Schema Preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mx-auto mt-8 max-w-2xl"
-          >
-            <div className="rounded-xl border border-border bg-card/50 p-1 shadow-xl backdrop-blur">
-              <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-                <div className="h-3 w-3 rounded-full bg-destructive/60" />
-                <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
-                <div className="h-3 w-3 rounded-full bg-green-500/60" />
-                <span className="ml-2 font-mono text-xs text-muted-foreground">
+          {/* Glass Stack: CLI + Schema Preview */}
+          <div className="relative mx-auto mt-16 flex w-full max-w-3xl flex-col items-center justify-center">
+            {/* Background Layer: JSON Schema (tilted, faded) */}
+            <motion.div
+              initial={{ opacity: 0, y: 40, rotate: 0 }}
+              animate={{ opacity: 0.6, y: 0, rotate: -2 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              whileHover={{ opacity: 1, rotate: 0 }}
+              className="absolute top-0 w-full max-w-2xl scale-95 rounded-xl border border-border bg-card/50 p-1 shadow-xl backdrop-blur transition-all duration-500"
+            >
+              <div className="flex items-center gap-2 border-b border-border/50 px-4 py-2">
+                <div className="h-2.5 w-2.5 rounded-full bg-destructive/40" />
+                <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/40" />
+                <div className="h-2.5 w-2.5 rounded-full bg-green-500/40" />
+                <span className="ml-2 font-mono text-[10px] text-muted-foreground/60">
                   theme-token.json
                 </span>
               </div>
-              <JsonSyntax json={minimalSchema} className="rounded-b-lg text-sm" />
-            </div>
-          </motion.div>
+              <div className="relative">
+                <JsonSyntax json={minimalSchema} className="rounded-b-lg text-xs opacity-80" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card/80 to-transparent" />
+              </div>
+            </motion.div>
+
+            {/* Foreground Layer: CLI Install (focused, glowing) */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative z-10 mt-32 w-full max-w-xl"
+            >
+              <div className="rounded-xl border border-primary/20 bg-background/90 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
+                <div className="mb-2 flex items-center gap-2 px-2 pt-1">
+                  <Terminal className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">Install from Blockchain</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/50 px-4 py-3">
+                  <code className="flex-1 overflow-x-auto font-mono text-sm">
+                    <span className="select-none text-muted-foreground">$ </span>
+                    <span className="text-primary">bunx</span>{" "}
+                    <span className="text-foreground">shadcn@latest add</span>{" "}
+                    <span className="text-muted-foreground">https://.../<span className="text-primary">[origin]</span>.json</span>
+                  </code>
+                  <button
+                    onClick={copyCommand}
+                    className="shrink-0 rounded-md border border-border bg-background p-2 text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+                    title="Copy command"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-3 text-center text-sm text-muted-foreground">
+                Replace <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-primary">[origin]</code> with any theme&apos;s blockchain ID.{" "}
+                <a href="/market" className="text-primary hover:underline">Browse themes</a> to find one.
+              </p>
+            </motion.div>
+          </div>
         </div>
       </section>
 

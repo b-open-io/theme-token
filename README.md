@@ -1,6 +1,6 @@
 # Theme Token
 
-On-chain themes for ShadCN UI using the ShadCN Registry Format.
+On-chain themes for ShadCN UI. Install themes directly from blockchain using the ShadCN CLI.
 
 ## Install from Blockchain
 
@@ -8,13 +8,21 @@ On-chain themes for ShadCN UI using the ShadCN Registry Format.
 bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
 ```
 
-Replace `[origin]` with the inscription origin ID.
+Replace `[origin]` with the theme's inscription origin ID (e.g., `85702d92...cf_0`).
 
 ## What is Theme Token?
 
-Theme Token inscribes UI themes on blockchain as NFT assets. Any app using ShadCN UI can install and apply these on-chain themes directly via the ShadCN CLI.
+Theme Token inscribes UI themes on the BSV blockchain as NFT assets. Any app using ShadCN UI can install these on-chain themes directly via the standard ShadCN CLI.
 
-## Schema
+**For Designers:** True ownership with authorship recorded on-chain. Sell on any ordinal marketplace.
+
+**For Developers:** 100% compatible with ShadCN ecosystem. One command to install.
+
+**For Users:** Buy once, use across all supported apps. Collect rare themes.
+
+## Theme Token Schema
+
+Themes are inscribed in this format:
 
 ```json
 {
@@ -28,13 +36,9 @@ Theme Token inscribes UI themes on blockchain as NFT assets. Any app using ShadC
       "primary": "oklch(0.55 0.22 255)",
       "primary-foreground": "oklch(0.98 0 0)",
       "secondary": "oklch(0.97 0 0)",
-      "secondary-foreground": "oklch(0.145 0 0)",
       "muted": "oklch(0.97 0 0)",
-      "muted-foreground": "oklch(0.45 0 0)",
       "accent": "oklch(0.97 0 0)",
-      "accent-foreground": "oklch(0.145 0 0)",
       "destructive": "oklch(0.55 0.22 25)",
-      "destructive-foreground": "oklch(0.98 0 0)",
       "border": "oklch(0.9 0 0)",
       "input": "oklch(0.9 0 0)",
       "ring": "oklch(0.55 0.22 255)",
@@ -49,7 +53,7 @@ Theme Token inscribes UI themes on blockchain as NFT assets. Any app using ShadC
 
 ## Registry API
 
-The `/r/themes/[origin].json` endpoint serves themes in ShadCN Registry Format:
+The `/r/themes/[origin].json` endpoint converts theme tokens to ShadCN Registry Format:
 
 ```json
 {
@@ -57,10 +61,48 @@ The `/r/themes/[origin].json` endpoint serves themes in ShadCN Registry Format:
   "name": "midnight-aurora",
   "type": "registry:style",
   "cssVars": {
-    "light": { "...": "light mode CSS vars" },
-    "dark": { "...": "dark mode CSS vars" }
+    "light": { "background": "oklch(1 0 0)", "...": "..." },
+    "dark": { "...": "..." }
   }
 }
+```
+
+## Studio Deep Links
+
+The theme studio supports deep link imports for tool integrations:
+
+```
+https://themetoken.dev/studio?import=<base64>&name=<name>&source=<source>
+```
+
+**Parameters:**
+- `import` or `css` - Base64-encoded CSS (required)
+- `name` - Theme name (optional)
+- `source` - Attribution shown in UI, e.g., "tweakcn" (optional)
+
+**Example:**
+```bash
+# Encode your CSS
+CSS=':root { --primary: oklch(0.6 0.15 145); }'
+ENCODED=$(echo -n "$CSS" | base64)
+
+# Generate deep link
+echo "https://themetoken.dev/studio?import=$ENCODED&name=My%20Theme&source=tweakcn"
+```
+
+This enables integrations with theme builders like [tweakcn.com](https://tweakcn.com).
+
+## CLI Tool
+
+```bash
+# Install a theme by origin ID
+bunx themetoken add 85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf_0
+
+# Install by txid (assumes _0 vout)
+bunx themetoken add 85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf
+
+# Get registry URL without installing
+bunx themetoken url <origin>
 ```
 
 ## Development
@@ -77,6 +119,7 @@ Runs on http://localhost:3033
 - [themetoken.dev](https://themetoken.dev)
 - [1Sat Ordinals](https://1satordinals.com)
 - [ShadCN UI](https://ui.shadcn.com)
+- [tweakcn](https://tweakcn.com) - Theme builder
 
 ## License
 
