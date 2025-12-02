@@ -41,16 +41,21 @@ export interface PublishedTheme {
 
 /**
  * Fetch all published ThemeTokens from the blockchain
- * Uses the recent inscriptions endpoint and filters for ThemeToken app
+ * Uses the search endpoint with map.app filter to find all ThemeToken inscriptions
  */
 export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
   const themes: PublishedTheme[] = [];
   const seenOrigins = new Set<string>();
 
   try {
-    // Use the recent inscriptions endpoint - it properly includes origin data
+    // Use search endpoint with base64-encoded query for map.app=ThemeToken
+    const query = JSON.stringify({ map: { app: "ThemeToken" } });
+    const encodedQuery = typeof window !== "undefined"
+      ? btoa(query)
+      : Buffer.from(query).toString("base64");
+
     const response = await fetch(
-      `${ORDINALS_API}/inscriptions/recent?limit=200`
+      `${ORDINALS_API}/inscriptions/search?q=${encodedQuery}&limit=100`
     );
 
     if (response.ok) {
@@ -61,13 +66,7 @@ export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
           // Skip non-ordinals (must be 1 sat)
           if (result.satoshis !== 1) continue;
 
-          // Check if this is a ThemeToken via origin data map
-          const mapData = result.origin?.data?.map || result.data?.map;
-          if (mapData?.app !== "ThemeToken" || mapData?.type !== "theme") {
-            continue;
-          }
-
-          // Skip if no origin or already seen
+          // Get origin outpoint
           const originOutpoint = result.origin?.outpoint;
           if (!originOutpoint || seenOrigins.has(originOutpoint)) continue;
 
