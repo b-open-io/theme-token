@@ -3,20 +3,37 @@
  * https://yours-wallet.gitbook.io/provider-api
  */
 
-export interface OrdinalOrigin {
-  outpoint: string;
-  data?: {
-    insc?: {
-      file?: {
-        type?: string;
-      };
+export interface OrdinalData {
+  types?: string[];
+  insc?: {
+    file?: {
+      type?: string;
+      size?: number;
     };
   };
+  map?: Record<string, unknown>;
+}
+
+export interface Origin {
+  outpoint: string;
+  nonce?: number;
+  data?: OrdinalData;
+  num?: string;
+  map?: Record<string, unknown>;
 }
 
 export interface Ordinal {
-  origin: OrdinalOrigin;
+  txid: string;
+  vout: number;
   outpoint: string;
+  satoshis: number;
+  owner?: string;
+  script?: string;
+  spend?: string;
+  origin?: Origin;
+  height: number;
+  idx: number;
+  data: OrdinalData;
 }
 
 export interface PaginatedOrdinalsResponse {

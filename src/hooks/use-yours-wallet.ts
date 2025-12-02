@@ -85,35 +85,30 @@ export function useYoursWallet(): UseYoursWalletReturn {
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
-          // Get outpoint - could be direct or nested under origin
-          const outpoint = ordinal.outpoint || ordinal.origin?.outpoint;
-          if (!outpoint) {
-            console.log("[ThemeToken] No outpoint for ordinal:", ordinal);
-            continue;
-          }
+          const { outpoint, data } = ordinal;
+          const contentType = data?.insc?.file?.type;
 
-          // Check content type if available
-          const contentType = ordinal.origin?.data?.insc?.file?.type || ordinal.data?.insc?.file?.type;
-          console.log("[ThemeToken] Checking ordinal:", outpoint, "type:", contentType);
+          console.log("[ThemeToken] Ordinal:", outpoint, "type:", contentType);
 
-          // Skip non-JSON ordinals if we can determine the type
+          // Skip non-JSON ordinals
           if (contentType && !contentType.includes("json")) {
             continue;
           }
 
-          console.log("[ThemeToken] Fetching ordinal content:", outpoint);
           const content = await fetchOrdinalContent(outpoint);
-          console.log("[ThemeToken] Ordinal content:", content);
+          console.log("[ThemeToken] Content for", outpoint, ":", content);
 
           if (content) {
             const result = validateThemeToken(content);
-            console.log("[ThemeToken] Validation result:", result);
             if (result.valid) {
+              console.log("[ThemeToken] Valid theme:", result.theme.name);
               tokens.push(result.theme);
+            } else {
+              console.log("[ThemeToken] Invalid:", result.error);
             }
           }
         } catch (err) {
-          console.error("[ThemeToken] Error processing ordinal:", err);
+          console.error("[ThemeToken] Error:", err);
         }
       }
       console.log("[ThemeToken] Found themes:", tokens.length);
