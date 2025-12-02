@@ -1,13 +1,14 @@
 /**
  * Pre-generate OG images for all published themes
- * Run with: bun run scripts/generate-og-images.ts
+ * Run with: bun run scripts/generate-og-images.tsx
  */
 
+import React from "react";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-import { parse, formatHex } from "culori";
+import better from "better-color-tools";
 import { fetchPublishedThemes } from "../src/lib/fetch-themes";
 import { exampleThemes, type ThemeToken } from "../src/lib/schema";
 
@@ -22,11 +23,13 @@ if (!existsSync(OUTPUT_DIR)) {
 // Load font
 const fontData = readFileSync(FONT_PATH);
 
-// Convert OKLCH to hex using culori
+// Convert OKLCH to hex using better-color-tools
 function oklchToHex(oklch: string): string {
-  const color = parse(oklch);
-  if (!color) return "#666666";
-  return formatHex(color);
+  try {
+    return better.from(oklch).hex;
+  } catch {
+    return "#666666";
+  }
 }
 
 // Extract colors from dark mode for stripes (better contrast)
@@ -91,93 +94,79 @@ async function generateOgImage(theme: ThemeToken, outputPath: string) {
 
   // Create SVG using satori
   const svg = await satori(
-    {
-      type: "div",
-      props: {
-        style: {
-          width: "100%",
-          height: "100%",
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#0f172a",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Diagonal stripes */}
+      <div
+        style={{
+          position: "absolute",
+          top: "-50%",
+          left: "-25%",
+          width: "150%",
+          height: "200%",
           display: "flex",
+          transform: "rotate(-35deg)",
+        }}
+      >
+        {stripes.map((stripe, i) => (
+          <div
+            key={i}
+            style={{
+              width: stripe.width,
+              height: "100%",
+              backgroundColor: stripe.color,
+              flexShrink: 0,
+            }}
+          />
+        ))}
+      </div>
+      {/* Text overlay */}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#0f172a",
-          position: "relative",
-          overflow: "hidden",
-        },
-        children: [
-          // Diagonal stripes
-          {
-            type: "div",
-            props: {
-              style: {
-                position: "absolute",
-                top: "-50%",
-                left: "-25%",
-                width: "150%",
-                height: "200%",
-                display: "flex",
-                transform: "rotate(-35deg)",
-              },
-              children: stripes.map((stripe) => ({
-                type: "div",
-                props: {
-                  style: {
-                    width: stripe.width,
-                    height: "100%",
-                    backgroundColor: stripe.color,
-                    flexShrink: 0,
-                  },
-                },
-              })),
-            },
-          },
-          // Text overlay - 2 lines only
-          {
-            type: "div",
-            props: {
-              style: {
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-              },
-              children: [
-                {
-                  type: "div",
-                  props: {
-                    style: {
-                      fontSize: 96,
-                      fontWeight: 700,
-                      color: foregroundColor,
-                      textShadow: "0 4px 20px rgba(0,0,0,0.5)",
-                      fontFamily: "Space Grotesk",
-                      letterSpacing: "-0.02em",
-                    },
-                    children: "Theme Token",
-                  },
-                },
-                {
-                  type: "div",
-                  props: {
-                    style: {
-                      fontSize: 36,
-                      fontWeight: 700,
-                      color: foregroundColor,
-                      textShadow: "0 2px 10px rgba(0,0,0,0.5)",
-                      fontFamily: "Space Grotesk",
-                      marginTop: 8,
-                    },
-                    children: "themetoken.dev",
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 96,
+            fontWeight: 700,
+            color: foregroundColor,
+            textShadow: "0 4px 20px rgba(0,0,0,0.5)",
+            fontFamily: "Space Grotesk",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Theme Token
+        </div>
+        <div
+          style={{
+            fontSize: 36,
+            fontWeight: 700,
+            color: foregroundColor,
+            textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+            fontFamily: "Space Grotesk",
+            marginTop: 8,
+          }}
+        >
+          themetoken.dev
+        </div>
+      </div>
+    </div>,
     {
       width: 1200,
       height: 630,
