@@ -74,30 +74,85 @@ function getMaxRadius(x: number, y: number): number {
   return Math.hypot(Math.max(x, right), Math.max(y, bottom));
 }
 
-// Start view transition with Web Animations API
+// Creative animations for view transitions
+type AnimationConfig = {
+  name: string;
+  keyframes: { clipPath: string[] };
+  options: { duration: number; easing: string };
+};
+
+function getCreativeAnimations(x: number, y: number, maxRadius: number): AnimationConfig[] {
+  const createStarPolygon = (points: number, outerRadius: number, innerRadius: number = 0): string => {
+    const angleStep = (Math.PI * 2) / (points * 2);
+    const path: string[] = [];
+    for (let i = 0; i < points * 2; i++) {
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const angle = i * angleStep - Math.PI / 2;
+      path.push(`${x + radius * Math.cos(angle)}px ${y + radius * Math.sin(angle)}px`);
+    }
+    return `polygon(${path.join(", ")})`;
+  };
+
+  return [
+    {
+      name: "Circle",
+      keyframes: { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`] },
+      options: { duration: 500, easing: "ease-in-out" },
+    },
+    {
+      name: "Diamond",
+      keyframes: {
+        clipPath: [
+          `polygon(${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px)`,
+          `polygon(${x}px ${y - maxRadius}px, ${x + maxRadius}px ${y}px, ${x}px ${y + maxRadius}px, ${x - maxRadius}px ${y}px)`,
+        ],
+      },
+      options: { duration: 600, easing: "cubic-bezier(0.25, 1, 0.5, 1)" },
+    },
+    {
+      name: "Hexagon",
+      keyframes: {
+        clipPath: [
+          `polygon(${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px)`,
+          `polygon(${x + maxRadius}px ${y}px, ${x + maxRadius * 0.5}px ${y + maxRadius * 0.866}px, ${x - maxRadius * 0.5}px ${y + maxRadius * 0.866}px, ${x - maxRadius}px ${y}px, ${x - maxRadius * 0.5}px ${y - maxRadius * 0.866}px, ${x + maxRadius * 0.5}px ${y - maxRadius * 0.866}px)`,
+        ],
+      },
+      options: { duration: 550, easing: "ease-in-out" },
+    },
+    {
+      name: "Starburst",
+      keyframes: { clipPath: [createStarPolygon(8, 0, 0), createStarPolygon(8, maxRadius * 1.2, maxRadius * 0.4), createStarPolygon(8, maxRadius, maxRadius)] },
+      options: { duration: 700, easing: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" },
+    },
+    {
+      name: "Ellipse",
+      keyframes: { clipPath: [`ellipse(0px 0px at ${x}px ${y}px)`, `ellipse(${maxRadius * 0.5}px ${maxRadius}px at ${x}px ${y}px)`, `ellipse(${maxRadius}px ${maxRadius}px at ${x}px ${y}px)`] },
+      options: { duration: 600, easing: "ease-out" },
+    },
+    {
+      name: "Horizontal",
+      keyframes: { clipPath: [`inset(${y}px 0px ${window.innerHeight - y}px 0px)`, `inset(0px 0px 0px 0px)`] },
+      options: { duration: 450, easing: "ease-in-out" },
+    },
+  ];
+}
+
+// Start view transition with random creative animation
 async function startViewTransition(callback: () => void, clickX?: number, clickY?: number): Promise<void> {
   if ("startViewTransition" in document) {
     const x = clickX ?? window.innerWidth / 2;
     const y = clickY ?? window.innerHeight / 2;
     const maxRadius = getMaxRadius(x, y);
+    const animations = getCreativeAnimations(x, y, maxRadius);
+    const selected = animations[Math.floor(Math.random() * animations.length)];
 
     const transition = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } }).startViewTransition(callback);
 
     await transition.ready;
-
-    document.documentElement.animate(
-      {
-        clipPath: [
-          `circle(0px at ${x}px ${y}px)`,
-          `circle(${maxRadius}px at ${x}px ${y}px)`,
-        ],
-      },
-      {
-        duration: 500,
-        easing: "ease-in-out",
-        pseudoElement: "::view-transition-new(root)",
-      }
-    );
+    document.documentElement.animate(selected.keyframes, {
+      ...selected.options,
+      pseudoElement: "::view-transition-new(root)",
+    });
   } else {
     callback();
   }

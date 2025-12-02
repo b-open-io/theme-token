@@ -49,22 +49,115 @@ function getMaxRadius(x: number, y: number): number {
   return Math.hypot(Math.max(x, right), Math.max(y, bottom));
 }
 
-// Animate the view transition with Web Animations API
+// Creative animations for view transitions
+type AnimationConfig = {
+  name: string;
+  keyframes: { clipPath: string[] };
+  options: { duration: number; easing: string };
+};
+
+function getCreativeAnimations(x: number, y: number, maxRadius: number): AnimationConfig[] {
+  // Helper for starburst polygon
+  const createStarPolygon = (points: number, outerRadius: number, innerRadius: number = 0): string => {
+    const angleStep = (Math.PI * 2) / (points * 2);
+    const path: string[] = [];
+    for (let i = 0; i < points * 2; i++) {
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const angle = i * angleStep - Math.PI / 2;
+      path.push(`${x + radius * Math.cos(angle)}px ${y + radius * Math.sin(angle)}px`);
+    }
+    return `polygon(${path.join(", ")})`;
+  };
+
+  return [
+    // 1. Classic Circle
+    {
+      name: "Circle",
+      keyframes: {
+        clipPath: [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${maxRadius}px at ${x}px ${y}px)`,
+        ],
+      },
+      options: { duration: 500, easing: "ease-in-out" },
+    },
+    // 2. Diamond Wipe
+    {
+      name: "Diamond",
+      keyframes: {
+        clipPath: [
+          `polygon(${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px)`,
+          `polygon(${x}px ${y - maxRadius}px, ${x + maxRadius}px ${y}px, ${x}px ${y + maxRadius}px, ${x - maxRadius}px ${y}px)`,
+        ],
+      },
+      options: { duration: 600, easing: "cubic-bezier(0.25, 1, 0.5, 1)" },
+    },
+    // 3. Hexagon Iris
+    {
+      name: "Hexagon",
+      keyframes: {
+        clipPath: [
+          `polygon(${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px)`,
+          `polygon(
+            ${x + maxRadius * Math.cos(0)}px ${y + maxRadius * Math.sin(0)}px,
+            ${x + maxRadius * Math.cos(Math.PI / 3)}px ${y + maxRadius * Math.sin(Math.PI / 3)}px,
+            ${x + maxRadius * Math.cos(2 * Math.PI / 3)}px ${y + maxRadius * Math.sin(2 * Math.PI / 3)}px,
+            ${x + maxRadius * Math.cos(Math.PI)}px ${y + maxRadius * Math.sin(Math.PI)}px,
+            ${x + maxRadius * Math.cos(4 * Math.PI / 3)}px ${y + maxRadius * Math.sin(4 * Math.PI / 3)}px,
+            ${x + maxRadius * Math.cos(5 * Math.PI / 3)}px ${y + maxRadius * Math.sin(5 * Math.PI / 3)}px
+          )`,
+        ],
+      },
+      options: { duration: 550, easing: "ease-in-out" },
+    },
+    // 4. Starburst
+    {
+      name: "Starburst",
+      keyframes: {
+        clipPath: [
+          createStarPolygon(8, 0, 0),
+          createStarPolygon(8, maxRadius * 1.2, maxRadius * 0.4),
+          createStarPolygon(8, maxRadius, maxRadius),
+        ],
+      },
+      options: { duration: 700, easing: "cubic-bezier(0.68, -0.55, 0.27, 1.55)" },
+    },
+    // 5. Asymmetric Ellipse
+    {
+      name: "Ellipse",
+      keyframes: {
+        clipPath: [
+          `ellipse(0px 0px at ${x}px ${y}px)`,
+          `ellipse(${maxRadius * 0.5}px ${maxRadius}px at ${x}px ${y}px)`,
+          `ellipse(${maxRadius}px ${maxRadius}px at ${x}px ${y}px)`,
+        ],
+      },
+      options: { duration: 600, easing: "ease-out" },
+    },
+    // 6. Horizontal Line Reveal
+    {
+      name: "Horizontal",
+      keyframes: {
+        clipPath: [
+          `inset(${y}px 0px ${window.innerHeight - y}px 0px)`,
+          `inset(0px 0px 0px 0px)`,
+        ],
+      },
+      options: { duration: 450, easing: "ease-in-out" },
+    },
+  ];
+}
+
+// Animate the view transition with random creative effect
 function animateTransition(x: number, y: number): void {
   const maxRadius = getMaxRadius(x, y);
-  document.documentElement.animate(
-    {
-      clipPath: [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${maxRadius}px at ${x}px ${y}px)`,
-      ],
-    },
-    {
-      duration: 500,
-      easing: "ease-in-out",
-      pseudoElement: "::view-transition-new(root)",
-    }
-  );
+  const animations = getCreativeAnimations(x, y, maxRadius);
+  const selected = animations[Math.floor(Math.random() * animations.length)];
+
+  document.documentElement.animate(selected.keyframes, {
+    ...selected.options,
+    pseudoElement: "::view-transition-new(root)",
+  });
 }
 
 interface StoredThemeSelection {
