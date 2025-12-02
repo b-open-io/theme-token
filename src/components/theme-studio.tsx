@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -111,6 +112,7 @@ function PreviewPanel() {
 }
 
 export function ThemeStudio() {
+  const searchParams = useSearchParams();
   const {
     status,
     connect,
@@ -131,11 +133,45 @@ export function ThemeStudio() {
   const [copied, setCopied] = useState<"css" | "json" | null>(null);
   const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [importSource, setImportSource] = useState<string | null>(null);
 
   // Load drafts on mount
   useEffect(() => {
     setDrafts(loadDrafts());
   }, []);
+
+  // Handle deep link import from URL (?import=base64 or ?css=base64)
+  useEffect(() => {
+    const importParam = searchParams.get("import") || searchParams.get("css");
+    const nameParam = searchParams.get("name");
+    const sourceParam = searchParams.get("source");
+
+    if (importParam) {
+      try {
+        // Decode base64 CSS
+        const decodedCss = atob(importParam);
+
+        // Parse the CSS
+        const themeName = nameParam || "Imported Theme";
+        const cssResult = parseTweakCnCss(decodedCss, themeName);
+
+        if (cssResult.valid) {
+          setSelectedTheme(cssResult.theme);
+          setCustomInput(decodedCss);
+          setCustomName(themeName);
+          setActiveTab("paste");
+          setImportSource(sourceParam || null);
+          setValidationError(null);
+        } else {
+          setValidationError(cssResult.error);
+          setActiveTab("paste");
+        }
+      } catch {
+        setValidationError("Invalid import data - could not decode");
+        setActiveTab("paste");
+      }
+    }
+  }, [searchParams]);
 
   // Check for remix theme from gallery navigation
   useEffect(() => {
@@ -225,6 +261,7 @@ export function ThemeStudio() {
   const handleInputChange = (value: string) => {
     setCustomInput(value);
     setValidationError(null);
+    setImportSource(null); // Clear import source when user edits
 
     if (!value.trim()) return;
 
@@ -422,9 +459,30 @@ export function ThemeStudio() {
                 </div>
               )}
               {customInput && !validationError && (
-                <div className="flex items-center gap-2 text-xs text-green-600">
-                  <Check className="h-3 w-3" />
-                  Valid theme parsed
+                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+                  <div className="flex items-center gap-2 text-xs font-medium text-green-600">
+                    <Check className="h-3 w-3" />
+                    Theme imported successfully
+                    {importSource && (
+                      <span className="text-muted-foreground">from {importSource}</span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex h-5 overflow-hidden rounded-md border border-green-500/30">
+                      {[
+                        selectedTheme.styles[mode].primary,
+                        selectedTheme.styles[mode].secondary,
+                        selectedTheme.styles[mode].accent,
+                        selectedTheme.styles[mode].muted,
+                        selectedTheme.styles[mode].background,
+                      ].map((color, i) => (
+                        <div key={i} className="w-5" style={{ backgroundColor: color }} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {Object.keys(selectedTheme.styles[mode]).length} properties
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

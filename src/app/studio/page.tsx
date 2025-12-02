@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { motion } from "framer-motion";
 import { ThemeStudio } from "@/components/theme-studio";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -56,7 +57,15 @@ export default function StudioPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <ThemeStudio />
+          <Suspense
+            fallback={
+              <div className="flex h-96 items-center justify-center rounded-xl border border-border bg-card">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
+            <ThemeStudio />
+          </Suspense>
         </motion.div>
       </div>
     </div>
