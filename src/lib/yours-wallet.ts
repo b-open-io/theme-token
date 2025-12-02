@@ -171,27 +171,76 @@ export interface ThemeMarketListing extends MarketListing {
 
 /**
  * Fetch all ordinal lock listings (marketplace)
- * Note: This queries the lock UTXOs, not a dedicated market endpoint
+ * Queries the GorillaPool market API for ordinal lock listings
  */
 export async function fetchMarketListings(): Promise<MarketListing[]> {
-  // TODO: Query for ordinal lock UTXOs with theme token content
-  // The API structure for market listings isn't well documented
-  // For now return empty - needs further investigation
-  return [];
+  try {
+    // Query the market API - limit to JSON types which theme tokens are
+    const response = await fetch(
+      `${ORDINALS_API}/api/market?limit=100&dir=DESC&type=application/json`
+    );
+
+    if (!response.ok) {
+      console.error("[Market] API error:", response.status);
+      return [];
+    }
+
+    const results = await response.json();
+
+    // Map the API response to our MarketListing interface
+    return results.map((item: {
+      txid: string;
+      vout: number;
+      outpoint: string;
+      owner: string;
+      origin?: {
+        outpoint: string;
+        data?: {
+          insc?: { file?: { type?: string } };
+          map?: Record<string, string>;
+        };
+      };
+      data?: {
+        list?: { price: number };
+        insc?: { file?: { type?: string } };
+        map?: Record<string, string>;
+      };
+    }) => ({
+      outpoint: item.outpoint,
+      origin: item.origin?.outpoint || item.outpoint,
+      price: item.data?.list?.price || 0,
+      owner: item.owner,
+      data: {
+        insc: item.origin?.data?.insc || item.data?.insc,
+        map: item.origin?.data?.map || item.data?.map,
+      },
+    }));
+  } catch (err) {
+    console.error("[Market] Failed to fetch listings:", err);
+    return [];
+  }
 }
 
 /**
  * Fetch theme token listings from the marketplace
+ * First filters by map.app="ThemeToken", then validates the JSON content
  */
 export async function fetchThemeMarketListings(): Promise<ThemeMarketListing[]> {
   const listings = await fetchMarketListings();
   const themeListings: ThemeMarketListing[] = [];
 
-  for (const listing of listings) {
+  // Filter for potential theme tokens first (by map metadata)
+  const potentialThemes = listings.filter(
+    (l) => l.data?.map?.app === "ThemeToken"
+  );
+
+  const { validateThemeToken } = await import("./schema");
+
+  for (const listing of potentialThemes) {
     try {
+      // Try to fetch the content from ordfs
       const content = await fetchOrdinalContent(listing.origin);
       if (content) {
-        const { validateThemeToken } = await import("./schema");
         const result = validateThemeToken(content);
         if (result.valid) {
           themeListings.push({
