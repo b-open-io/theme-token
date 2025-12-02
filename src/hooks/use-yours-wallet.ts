@@ -85,15 +85,23 @@ export function useYoursWallet(): UseYoursWalletReturn {
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
-          // Only process JSON ordinals
-          const contentType = ordinal.origin?.data?.insc?.file?.type;
+          // Get outpoint - could be direct or nested under origin
+          const outpoint = ordinal.outpoint || ordinal.origin?.outpoint;
+          if (!outpoint) {
+            console.log("[ThemeToken] No outpoint for ordinal:", ordinal);
+            continue;
+          }
+
+          // Check content type if available
+          const contentType = ordinal.origin?.data?.insc?.file?.type || ordinal.data?.insc?.file?.type;
+          console.log("[ThemeToken] Checking ordinal:", outpoint, "type:", contentType);
+
+          // Skip non-JSON ordinals if we can determine the type
           if (contentType && !contentType.includes("json")) {
             continue;
           }
 
-          const outpoint = ordinal.origin.outpoint;
-          console.log("[ThemeToken] Fetching ordinal:", outpoint, "type:", contentType);
-
+          console.log("[ThemeToken] Fetching ordinal content:", outpoint);
           const content = await fetchOrdinalContent(outpoint);
           console.log("[ThemeToken] Ordinal content:", content);
 
