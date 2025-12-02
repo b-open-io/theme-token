@@ -80,17 +80,19 @@ export function useYoursWallet(): UseYoursWalletReturn {
       console.log("[ThemeToken] getOrdinals response:", response);
 
       const tokens: ThemeToken[] = [];
-      const ordinals = response?.ordinals ?? [];
+      // Response can be array directly or { ordinals: [] }
+      const ordinals = Array.isArray(response) ? response : (response?.ordinals ?? []);
 
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
           // JSON is in origin.data.insc.file.json (persists across transfers)
           const content = ordinal?.origin?.data?.insc?.file?.json;
+          console.log("[ThemeToken] Ordinal:", ordinal.outpoint, "json:", content);
 
           if (content && typeof content === "object") {
-            console.log("[ThemeToken] Checking:", ordinal.outpoint, content);
             const result = validateThemeToken(content);
+            console.log("[ThemeToken] Validation:", ordinal.outpoint, result);
             if (result.valid) {
               console.log("[ThemeToken] Valid theme:", result.theme.name);
               tokens.push(result.theme);
