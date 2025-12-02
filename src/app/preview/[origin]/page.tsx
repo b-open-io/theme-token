@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,28 @@ interface Props {
   params: Promise<{ origin: string }>;
 }
 
+// Extract Google Font name from CSS font-family value
+function extractGoogleFontName(fontFamily: string): string | null {
+  // Get the first font in the stack (before the comma)
+  const firstFont = fontFamily.split(",")[0].trim();
+  // Skip generic families
+  const genericFamilies = ["sans-serif", "serif", "monospace", "ui-sans-serif", "ui-serif", "ui-monospace", "system-ui"];
+  if (genericFamilies.includes(firstFont.toLowerCase())) return null;
+  return firstFont;
+}
+
+// Load Google Font dynamically
+function loadGoogleFont(fontName: string): void {
+  const linkId = `google-font-${fontName.replace(/\s+/g, "-").toLowerCase()}`;
+  if (document.getElementById(linkId)) return; // Already loaded
+
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;500;600;700&display=swap`;
+  document.head.appendChild(link);
+}
+
 // Apply theme styles to a container element
 function applyStylesToElement(element: HTMLElement, styles: ThemeStyleProps) {
   Object.entries(styles).forEach(([key, value]) => {
@@ -34,10 +57,16 @@ function applyStylesToElement(element: HTMLElement, styles: ThemeStyleProps) {
       element.style.setProperty(`--${key}`, value);
     }
   });
+
+  // Apply font-family directly to the element for it to take effect
+  if (styles["font-sans"]) {
+    element.style.fontFamily = styles["font-sans"];
+  }
 }
 
 export default function PreviewPage({ params }: Props) {
   const { origin } = use(params);
+  const router = useRouter();
   const { mode: globalMode } = useTheme();
   const [theme, setTheme] = useState<ThemeToken | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,11 +109,33 @@ export default function PreviewPage({ params }: Props) {
     fetchTheme();
   }, [origin]);
 
+  // Load Google Fonts when theme changes
+  useEffect(() => {
+    if (!theme) return;
+
+    const styles = theme.styles[previewMode];
+    const fontProps = ["font-sans", "font-serif", "font-mono"] as const;
+
+    fontProps.forEach((prop) => {
+      const fontValue = styles[prop];
+      if (fontValue) {
+        const fontName = extractGoogleFontName(fontValue);
+        if (fontName) {
+          loadGoogleFont(fontName);
+        }
+      }
+    });
+  }, [theme, previewMode]);
+
   // Apply theme styles to the preview container
   useEffect(() => {
     if (!theme || !containerRef.current) return;
     applyStylesToElement(containerRef.current, theme.styles[previewMode]);
   }, [theme, previewMode]);
+
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
 
   if (isLoading) {
     return (
@@ -121,11 +172,9 @@ export default function PreviewPage({ params }: Props) {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/market/browse">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Link>
+            <Button variant="ghost" size="sm" onClick={handleBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
             </Button>
             <div>
               <h1 className="text-xl font-semibold">{theme.name}</h1>
@@ -166,7 +215,7 @@ export default function PreviewPage({ params }: Props) {
 
             <Button asChild size="sm" variant="outline">
               <a
-                href={`https://1satordinals.com/outpoint/${origin}`}
+                href={`https://1sat.market/outpoint/${origin}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
