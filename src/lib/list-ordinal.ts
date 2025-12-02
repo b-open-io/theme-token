@@ -3,15 +3,15 @@
  * Uses Yours Wallet's getSignatures and broadcast
  */
 
-import { Transaction, P2PKH, Script, Utils } from "@bsv/sdk";
-import { OrdLock } from "js-1sat-ord";
+import { Transaction, P2PKH, Script, Utils, SatoshisPerKilobyte } from "@bsv/sdk";
+import { OrdLock, OrdP2PKH } from "js-1sat-ord";
 import type {
   YoursWallet,
   SignatureRequest,
   Ordinal,
 } from "./yours-wallet";
 
-const SATS_PER_KB = 1;
+const SATS_PER_KB = 10;
 
 export interface ListOrdinalParams {
   ordinal: Ordinal;
@@ -127,6 +127,14 @@ export async function listOrdinal(
   const payUtxoScriptHex = Utils.toHex(Utils.toArray(payUtxo.script, "base64"));
   console.log("[listOrdinal] Ordinal script (hex):", ordinalScriptHex);
   console.log("[listOrdinal] PayUtxo script (hex):", payUtxoScriptHex);
+  console.log("[listOrdinal] Ordinal owner:", ordinal.owner);
+
+  // Use ordinal's owner address for signing (may be different from ordAddress due to key derivation)
+  const ordinalOwner = ordinal.owner || ordAddress;
+
+  // SIGHASH_ALL | SIGHASH_ANYONECANPAY | SIGHASH_FORKID = 0xC1 (193)
+  // js-1sat-ord uses anyoneCanPay=true for listing transactions
+  const SIGHASH_ALL_ANYONECANPAY_FORKID = 0xC1;
 
   // Build signature requests
   const sigRequests: SignatureRequest[] = [
@@ -135,8 +143,9 @@ export async function listOrdinal(
       outputIndex: ordinal.vout,
       inputIndex: 0,
       satoshis: ordinal.satoshis,
-      address: ordAddress,
+      address: ordinalOwner,
       script: ordinalScriptHex,
+      sigHashType: SIGHASH_ALL_ANYONECANPAY_FORKID,
     },
     {
       prevTxid: payUtxo.txid,
@@ -145,6 +154,7 @@ export async function listOrdinal(
       satoshis: payUtxo.satoshis,
       address: bsvAddress,
       script: payUtxoScriptHex,
+      sigHashType: SIGHASH_ALL_ANYONECANPAY_FORKID,
     },
   ];
 
@@ -186,22 +196,9 @@ export async function listOrdinal(
   console.log("[listOrdinal] Input 0 unlocking script:", tx.inputs[0]?.unlockingScript?.toHex());
   console.log("[listOrdinal] Input 1 unlocking script:", tx.inputs[1]?.unlockingScript?.toHex());
 
-  // Broadcast directly to GorillaPool API (wallet broadcast has verification issues)
-  console.log("[listOrdinal] Broadcasting to GorillaPool...");
-  const txBytes = new Uint8Array(Utils.toArray(signedRawtx, "hex"));
-  const broadcastResponse = await fetch("https://ordinals.gorillapool.io/api/tx", {
-    method: "POST",
-    headers: { "Content-Type": "application/octet-stream" },
-    body: txBytes,
-  });
-
-  if (!broadcastResponse.ok) {
-    const errorText = await broadcastResponse.text();
-    console.error("[listOrdinal] Broadcast failed:", errorText);
-    throw new Error(`Broadcast failed: ${errorText}`);
-  }
-
-  const txid = await broadcastResponse.text();
+  // Broadcast through wallet
+  console.log("[listOrdinal] Broadcasting through wallet...");
+  const txid = await wallet.broadcast({ rawtx: signedRawtx });
   console.log("[listOrdinal] Broadcast success, txid:", txid);
 
   return {
