@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og",
+        url: "/og/default.png",
         width: 1200,
         height: 630,
         alt: "Theme Token - On-Chain Themes for ShadCN UI",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Theme Token | On-Chain Themes for ShadCN UI",
     description: "Install ShadCN themes from blockchain with one command",
-    images: ["/og"],
+    images: ["/og/default.png"],
   },
 };
 
