@@ -103,7 +103,7 @@ export default function SpecPage() {
                 json={{
                   $schema: "https://themetoken.dev/v1/schema.json",
                   name: "My Theme",
-                  author: "designer@paymail",
+                  author: "WildSatchmo (https://github.com/rohenaz)",
                   styles: {
                     light: {
                       background: "oklch(1 0 0)",
@@ -125,6 +125,35 @@ export default function SpecPage() {
                 </a>{" "}
                 and ShadCN UI. Uses flat kebab-case CSS property names.
               </p>
+
+              {/* Author Field Documentation */}
+              <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
+                <h4 className="mb-2 text-sm font-semibold">Author Field Format</h4>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  The <code className="rounded bg-muted px-1">author</code> field follows the{" "}
+                  <a
+                    href="https://docs.npmjs.com/cli/v10/configuring-npm/package-json#people-fields-author-contributors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    npm package.json author string format
+                  </a>
+                  :
+                </p>
+                <code className="block rounded bg-muted px-2 py-1 text-xs">
+                  Name &lt;email&gt; (url)
+                </code>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  All parts are optional. Valid examples:
+                </p>
+                <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                  <li>• <code className="rounded bg-muted px-1">WildSatchmo</code></li>
+                  <li>• <code className="rounded bg-muted px-1">WildSatchmo (https://github.com/rohenaz)</code></li>
+                  <li>• <code className="rounded bg-muted px-1">WildSatchmo &lt;email@example.com&gt;</code></li>
+                  <li>• <code className="rounded bg-muted px-1">WildSatchmo &lt;email@example.com&gt; (https://github.com/rohenaz)</code></li>
+                </ul>
+              </div>
             </motion.div>
           </div>
         </div>
