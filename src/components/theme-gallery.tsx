@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
-import { exampleThemes, type ThemeToken } from "@/lib/schema";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { type ThemeToken } from "@/lib/schema";
+import { fetchPublishedThemes, type PublishedTheme } from "@/lib/fetch-themes";
+import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
 
 // Custom event for theme remixing (works on same page)
 export const REMIX_THEME_EVENT = "remix-theme";
@@ -74,6 +76,14 @@ function ThemeCard({
 
 export function ThemeGallery() {
   const router = useRouter();
+  const [publishedThemes, setPublishedThemes] = useState<PublishedTheme[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPublishedThemes()
+      .then(setPublishedThemes)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const handleRemix = (theme: ThemeToken) => {
     // Store theme for the studio page to pick up
@@ -88,7 +98,7 @@ export function ThemeGallery() {
         {/* Header */}
         <div className="mb-4 flex items-center justify-between px-6">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Example Themes
+            Published Themes
           </h3>
           <Link
             href="/market"
@@ -101,19 +111,30 @@ export function ThemeGallery() {
 
         {/* Horizontal scroll container */}
         <div className="flex gap-4 overflow-x-auto px-6 pb-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border">
-          {exampleThemes.map((theme) => (
-            <motion.div
-              key={theme.name}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ThemeCard
-                theme={theme}
-                onRemix={() => handleRemix(theme)}
-              />
-            </motion.div>
-          ))}
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Loading themes...</span>
+            </div>
+          ) : publishedThemes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No themes published yet. Be the first!
+            </p>
+          ) : (
+            publishedThemes.map((published) => (
+              <motion.div
+                key={published.origin}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ThemeCard
+                  theme={published.theme}
+                  onRemix={() => handleRemix(published.theme)}
+                />
+              </motion.div>
+            ))
+          )}
 
           {/* "More" card linking to market */}
           <Link
