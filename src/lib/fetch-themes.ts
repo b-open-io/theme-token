@@ -6,11 +6,6 @@ import { type ThemeToken, validateThemeToken } from "./schema";
 
 const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 
-// Known theme origins - for themes minted before search API indexing
-const KNOWN_THEME_ORIGINS = [
-  "b540df234cfe05262f9e76abf63d975b7b133a0dc9a2db2751f31d2524c986a9_0", // Gorilla Pool
-];
-
 interface OrdinalSearchResult {
   txid: string;
   vout: number;
@@ -39,26 +34,12 @@ export interface PublishedTheme {
 /**
  * Fetch all published ThemeTokens from the blockchain
  * Searches for inscriptions with app="ThemeToken" in their map data
- * Also includes known theme origins
  */
 export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
   const themes: PublishedTheme[] = [];
   const seenOrigins = new Set<string>();
 
-  // First, fetch known themes by origin
-  for (const origin of KNOWN_THEME_ORIGINS) {
-    try {
-      const theme = await fetchThemeByOrigin(origin);
-      if (theme && !seenOrigins.has(theme.origin)) {
-        themes.push(theme);
-        seenOrigins.add(theme.origin);
-      }
-    } catch {
-      // Skip failed fetches
-    }
-  }
-
-  // Then search for themes via API
+  // Search for themes via GorillaPool API
   try {
     const response = await fetch(
       `${ORDINALS_API}/inscriptions/search?map.app=ThemeToken&map.type=theme&limit=100`
@@ -77,7 +58,7 @@ export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
           if (result.satoshis !== 1) continue;
 
           // Try embedded JSON first
-          let json = result.origin?.data?.insc?.file?.json;
+          const json = result.origin?.data?.insc?.file?.json;
           if (!json) {
             // Only fetch from ordfs if it's JSON content type
             const fileType = result.origin?.data?.insc?.file?.type;
@@ -133,7 +114,7 @@ export async function fetchThemeByOrigin(
       if (validation.valid) {
         return {
           theme: validation.theme,
-          outpoint: origin, // For direct fetches, outpoint is same as origin
+          outpoint: origin,
           origin,
         };
       }

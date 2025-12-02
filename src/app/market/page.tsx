@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,8 @@ import {
   AlertCircle,
   Check,
 } from "lucide-react";
+
+type TabType = "browse" | "my-themes" | "sell";
 
 // Color stripes for theme preview
 function ThemeStripes({
@@ -70,21 +73,34 @@ function formatUSD(satoshis: number, rate: number): string {
 }
 
 export default function MarketPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { status, connect, balance, themeTokens, ownedThemes, listTheme, isListing, error: walletError } = useYoursWallet();
   const { mode } = useTheme();
   const [listings, setListings] = useState<ThemeMarketListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [listingError, setListingError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"browse" | "my-themes" | "sell">(
-    "browse"
-  );
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<OwnedTheme | null>(null);
   const [listingPrice, setListingPrice] = useState("");
   const [listingSuccess, setListingSuccess] = useState<string | null>(null);
 
+  // Get active tab from URL, default to "browse"
+  const activeTab = (searchParams.get("tab") as TabType) || "browse";
+
+  const setActiveTab = (tab: TabType) => {
+    router.push(`/market?tab=${tab}`);
+  };
+
   const isConnected = status === "connected";
+
+  // Filter out themes that are already listed
+  const listedOrigins = useMemo(() => new Set(listings.map((l) => l.origin)), [listings]);
+  const availableToList = useMemo(
+    () => ownedThemes.filter((t) => !listedOrigins.has(t.origin)),
+    [ownedThemes, listedOrigins]
+  );
 
   // Fetch market listings
   useEffect(() => {
@@ -392,12 +408,14 @@ export default function MarketPage() {
                   List Another Theme
                 </Button>
               </div>
-            ) : ownedThemes.length === 0 ? (
+            ) : availableToList.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border py-20 text-center">
                 <Tag className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
                 <h3 className="mb-2 text-lg font-semibold">No themes to list</h3>
                 <p className="mb-4 text-muted-foreground">
-                  You need to own a theme token to list it for sale
+                  {ownedThemes.length > 0
+                    ? "All your themes are already listed on the marketplace"
+                    : "You need to own a theme token to list it for sale"}
                 </p>
                 <Link href="/studio">
                   <Button>Create a Theme</Button>
@@ -409,7 +427,7 @@ export default function MarketPage() {
                 <div>
                   <h3 className="mb-4 font-semibold">Select Theme to List</h3>
                   <div className="space-y-2">
-                    {ownedThemes.map((owned) => (
+                    {availableToList.map((owned) => (
                       <button
                         key={owned.outpoint}
                         onClick={() => setSelectedTheme(owned)}
