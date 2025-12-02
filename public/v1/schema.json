@@ -4,7 +4,7 @@
   "title": "Theme Token",
   "description": "ShadCN UI theme token for blockchain inscription. Compatible with tweakcn.com",
   "type": "object",
-  "required": ["name", "styles"],
+  "required": ["$schema", "name", "styles"],
   "properties": {
     "$schema": {
       "type": "string",
