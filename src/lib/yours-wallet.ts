@@ -177,7 +177,7 @@ export async function fetchMarketListings(): Promise<MarketListing[]> {
   try {
     // Query the market API - limit to JSON types which theme tokens are
     const response = await fetch(
-      `${ORDINALS_API}/api/market?limit=100&dir=DESC&type=application/json`
+      `${ORDINALS_API}/market?limit=100&dir=DESC&type=application/json`
     );
 
     if (!response.ok) {
