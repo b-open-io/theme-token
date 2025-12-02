@@ -76,13 +76,17 @@ export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
           // Skip non-ordinals (must be 1 sat)
           if (result.satoshis !== 1) continue;
 
-          // Try embedded JSON first, otherwise fetch from ordfs
+          // Try embedded JSON first
           let json = result.origin?.data?.insc?.file?.json;
           if (!json) {
-            const theme = await fetchThemeByOrigin(originOutpoint);
-            if (theme) {
-              themes.push(theme);
-              seenOrigins.add(originOutpoint);
+            // Only fetch from ordfs if it's JSON content type
+            const fileType = result.origin?.data?.insc?.file?.type;
+            if (fileType === "application/json") {
+              const theme = await fetchThemeByOrigin(originOutpoint);
+              if (theme) {
+                themes.push(theme);
+                seenOrigins.add(originOutpoint);
+              }
             }
             continue;
           }

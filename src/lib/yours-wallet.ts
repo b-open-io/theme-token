@@ -90,6 +90,42 @@ export interface SocialProfile {
   avatar: string;
 }
 
+export interface Utxo {
+  satoshis: number;
+  script: string;
+  txid: string;
+  vout: number;
+}
+
+export interface SignatureRequest {
+  prevTxid: string;
+  outputIndex: number;
+  inputIndex: number;
+  satoshis: number;
+  address: string | string[];
+  script?: string;
+  sigHashType?: number;
+}
+
+export interface SignatureResponse {
+  inputIndex: number;
+  sig: string;
+  pubKey: string;
+  sigHashType: number;
+}
+
+export interface GetSignaturesRequest {
+  rawtx: string;
+  sigRequests: SignatureRequest[];
+  format?: "tx" | "beef" | "ef";
+}
+
+export interface BroadcastRequest {
+  rawtx: string;
+  format?: "tx" | "beef" | "ef";
+  fund?: boolean;
+}
+
 export type WalletEvent = "switchAccount" | "signedOut";
 
 export interface YoursWallet {
@@ -100,9 +136,12 @@ export interface YoursWallet {
   getBalance: () => Promise<Balance>;
   getSocialProfile: () => Promise<SocialProfile>;
   getOrdinals: (opts?: GetOrdinalsOptions) => Promise<PaginatedOrdinalsResponse>;
+  getPaymentUtxos: () => Promise<Utxo[]>;
   inscribe: (inscriptions: InscribeRequest[]) => Promise<InscribeResponse>;
   transferOrdinal: (req: TransferOrdinalRequest) => Promise<string>; // returns txid
   purchaseOrdinal: (req: PurchaseOrdinalRequest) => Promise<string>; // returns txid
+  getSignatures: (req: GetSignaturesRequest) => Promise<SignatureResponse[]>;
+  broadcast: (req: BroadcastRequest) => Promise<string>; // returns txid
   on: (event: WalletEvent, callback: () => void) => void;
   removeListener: (event: WalletEvent, callback: () => void) => void;
 }

@@ -10,7 +10,9 @@ import {
   type Balance,
   type SocialProfile,
   type InscribeResponse,
+  type Ordinal,
 } from "@/lib/yours-wallet";
+import { listOrdinal, type ListOrdinalResult } from "@/lib/list-ordinal";
 import { type ThemeToken, validateThemeToken, THEME_TOKEN_SCHEMA_URL } from "@/lib/schema";
 import { useTheme } from "@/components/theme-provider";
 
@@ -21,12 +23,20 @@ export type WalletStatus =
   | "connected"
   | "error";
 
+// Theme token with ordinal metadata for listing
+export interface OwnedTheme {
+  theme: ThemeToken;
+  outpoint: string;
+  origin: string;
+}
+
 interface UseYoursWalletReturn {
   status: WalletStatus;
   error: string | null;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   themeTokens: ThemeToken[];
+  ownedThemes: OwnedTheme[];
   isLoading: boolean;
   refresh: () => Promise<void>;
   addresses: Addresses | null;
@@ -34,17 +44,21 @@ interface UseYoursWalletReturn {
   profile: SocialProfile | null;
   inscribeTheme: (theme: ThemeToken) => Promise<InscribeResponse | null>;
   isInscribing: boolean;
+  listTheme: (outpoint: string, priceSatoshis: number) => Promise<ListOrdinalResult | null>;
+  isListing: boolean;
 }
 
 export function useYoursWallet(): UseYoursWalletReturn {
   const [status, setStatus] = useState<WalletStatus>("disconnected");
   const [error, setError] = useState<string | null>(null);
   const [themeTokens, setThemeTokens] = useState<ThemeToken[]>([]);
+  const [ownedThemes, setOwnedThemes] = useState<OwnedTheme[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [addresses, setAddresses] = useState<Addresses | null>(null);
   const [balance, setBalance] = useState<Balance | null>(null);
   const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [isInscribing, setIsInscribing] = useState(false);
+  const [isListing, setIsListing] = useState(false);
   const walletRef = useRef<YoursWallet | null>(null);
   const { setAvailableThemes, resetTheme } = useTheme();
 
@@ -58,6 +72,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
     // Reset state when user signs out
     setStatus("disconnected");
     setThemeTokens([]);
+    setOwnedThemes([]);
     setAvailableThemes([]);
     resetTheme();
     walletRef.current?.disconnect().catch(console.error);
@@ -80,6 +95,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
       console.log("[ThemeToken] getOrdinals response:", response);
 
       const tokens: ThemeToken[] = [];
+      const owned: OwnedTheme[] = [];
       // Response can be array directly or { ordinals: [] }
       const ordinals = Array.isArray(response) ? response : (response?.ordinals ?? []);
 
@@ -96,6 +112,11 @@ export function useYoursWallet(): UseYoursWalletReturn {
             if (result.valid) {
               console.log("[ThemeToken] Valid theme:", result.theme.name);
               tokens.push(result.theme);
+              owned.push({
+                theme: result.theme,
+                outpoint: ordinal.outpoint,
+                origin: ordinal.origin?.outpoint || ordinal.outpoint,
+              });
             }
           }
         } catch (err) {
@@ -104,6 +125,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
       }
       console.log("[ThemeToken] Found themes:", tokens.length);
       setThemeTokens(tokens);
+      setOwnedThemes(owned);
       setAvailableThemes(tokens);
     } catch (err) {
       console.error("[ThemeToken] Error fetching ordinals:", err);
@@ -200,6 +222,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
       await wallet.disconnect();
       setStatus("disconnected");
       setThemeTokens([]);
+      setOwnedThemes([]);
       setAvailableThemes([]);
       resetTheme();
     } catch (err) {
@@ -278,6 +301,55 @@ export function useYoursWallet(): UseYoursWalletReturn {
     [addresses, fetchThemeTokens, fetchWalletInfo]
   );
 
+  // List a theme on the marketplace
+  const listTheme = useCallback(
+    async (outpoint: string, priceSatoshis: number): Promise<ListOrdinalResult | null> => {
+      const wallet = walletRef.current;
+      if (!wallet) {
+        setError("Wallet not connected");
+        return null;
+      }
+
+      // Find the ordinal by outpoint
+      const ownedTheme = ownedThemes.find((t) => t.outpoint === outpoint);
+      if (!ownedTheme) {
+        setError("Theme not found in wallet");
+        return null;
+      }
+
+      setIsListing(true);
+      setError(null);
+
+      try {
+        // Get the ordinal details from the wallet
+        const response = await wallet.getOrdinals({ limit: 100 });
+        const ordinals = Array.isArray(response) ? response : (response?.ordinals ?? []);
+        const ordinal = ordinals.find((o) => o.outpoint === outpoint) as Ordinal | undefined;
+
+        if (!ordinal) {
+          throw new Error("Ordinal not found");
+        }
+
+        const result = await listOrdinal(wallet, {
+          ordinal,
+          priceSatoshis,
+        });
+
+        // Refresh after listing
+        await fetchThemeTokens();
+        await fetchWalletInfo();
+
+        return result;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Listing failed");
+        return null;
+      } finally {
+        setIsListing(false);
+      }
+    },
+    [ownedThemes, fetchThemeTokens, fetchWalletInfo]
+  );
+
   // Fetch wallet info when connected
   useEffect(() => {
     if (status === "connected") {
@@ -295,6 +367,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
     connect,
     disconnect,
     themeTokens,
+    ownedThemes,
     isLoading,
     refresh,
     addresses,
@@ -302,5 +375,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
     profile,
     inscribeTheme,
     isInscribing,
+    listTheme,
+    isListing,
   };
 }
