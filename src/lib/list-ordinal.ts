@@ -31,10 +31,12 @@ export async function listOrdinal(
   params: ListOrdinalParams
 ): Promise<ListOrdinalResult> {
   const { ordinal, priceSatoshis } = params;
+  console.log("[listOrdinal] Starting with ordinal:", ordinal, "price:", priceSatoshis);
 
   // Get wallet addresses
   const addresses = await wallet.getAddresses();
   const { ordAddress, bsvAddress } = addresses;
+  console.log("[listOrdinal] Addresses:", { ordAddress, bsvAddress });
 
   // Get payment UTXOs for fees
   const paymentUtxos = await wallet.getPaymentUtxos();

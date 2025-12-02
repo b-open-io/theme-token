@@ -70,11 +70,12 @@ function formatUSD(satoshis: number, rate: number): string {
 }
 
 export default function MarketPage() {
-  const { status, connect, balance, themeTokens, ownedThemes, listTheme, isListing } = useYoursWallet();
+  const { status, connect, balance, themeTokens, ownedThemes, listTheme, isListing, error: walletError } = useYoursWallet();
   const { mode } = useTheme();
   const [listings, setListings] = useState<ThemeMarketListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [listingError, setListingError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"browse" | "my-themes" | "sell">(
     "browse"
   );
@@ -477,10 +478,10 @@ export default function MarketPage() {
                         )}
                       </div>
 
-                      {error && (
+                      {(listingError || walletError) && (
                         <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                           <AlertCircle className="h-4 w-4" />
-                          {error}
+                          {listingError || walletError}
                         </div>
                       )}
 
@@ -488,13 +489,21 @@ export default function MarketPage() {
                         className="w-full"
                         disabled={isListing || !listingPrice || parseInt(listingPrice) < 1}
                         onClick={async () => {
-                          const result = await listTheme(
-                            selectedTheme.outpoint,
-                            parseInt(listingPrice)
-                          );
-                          if (result) {
-                            setListingSuccess(result.txid);
-                            handleRefresh();
+                          console.log("[Market] Listing theme:", selectedTheme.outpoint, "price:", listingPrice);
+                          setListingError(null);
+                          try {
+                            const result = await listTheme(
+                              selectedTheme.outpoint,
+                              parseInt(listingPrice)
+                            );
+                            console.log("[Market] List result:", result);
+                            if (result) {
+                              setListingSuccess(result.txid);
+                              handleRefresh();
+                            }
+                          } catch (err) {
+                            console.error("[Market] Listing error:", err);
+                            setListingError(err instanceof Error ? err.message : "Listing failed");
                           }
                         }}
                       >

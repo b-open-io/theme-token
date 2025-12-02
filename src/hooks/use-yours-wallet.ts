@@ -304,15 +304,20 @@ export function useYoursWallet(): UseYoursWalletReturn {
   // List a theme on the marketplace
   const listTheme = useCallback(
     async (outpoint: string, priceSatoshis: number): Promise<ListOrdinalResult | null> => {
+      console.log("[listTheme] Starting, outpoint:", outpoint, "price:", priceSatoshis);
+
       const wallet = walletRef.current;
       if (!wallet) {
+        console.error("[listTheme] Wallet not connected");
         setError("Wallet not connected");
         return null;
       }
 
       // Find the ordinal by outpoint
+      console.log("[listTheme] ownedThemes:", ownedThemes);
       const ownedTheme = ownedThemes.find((t) => t.outpoint === outpoint);
       if (!ownedTheme) {
+        console.error("[listTheme] Theme not found in wallet");
         setError("Theme not found in wallet");
         return null;
       }
@@ -322,18 +327,26 @@ export function useYoursWallet(): UseYoursWalletReturn {
 
       try {
         // Get the ordinal details from the wallet
+        console.log("[listTheme] Getting ordinals from wallet...");
         const response = await wallet.getOrdinals({ limit: 100 });
+        console.log("[listTheme] Ordinals response:", response);
         const ordinals = Array.isArray(response) ? response : (response?.ordinals ?? []);
         const ordinal = ordinals.find((o) => o.outpoint === outpoint) as Ordinal | undefined;
 
         if (!ordinal) {
+          console.error("[listTheme] Ordinal not found in response");
           throw new Error("Ordinal not found");
         }
+
+        console.log("[listTheme] Found ordinal:", ordinal);
+        console.log("[listTheme] Calling listOrdinal...");
 
         const result = await listOrdinal(wallet, {
           ordinal,
           priceSatoshis,
         });
+
+        console.log("[listTheme] listOrdinal result:", result);
 
         // Refresh after listing
         await fetchThemeTokens();
@@ -341,6 +354,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
 
         return result;
       } catch (err) {
+        console.error("[listTheme] Error:", err);
         setError(err instanceof Error ? err.message : "Listing failed");
         return null;
       } finally {
