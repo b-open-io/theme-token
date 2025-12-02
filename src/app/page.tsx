@@ -34,7 +34,7 @@ const stagger = {
 const minimalSchema = {
   $schema: "https://themetoken.dev/v1",
   label: "My Theme",
-  author: "designer@paymail",
+  author: "WildSatchmo (https://github.com/rohenaz)",
   styles: {
     light: {
       background: "oklch(1 0 0)",

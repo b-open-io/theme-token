@@ -2,6 +2,7 @@
   "name": "theme-token",
   "version": "0.1.0",
   "description": "Theme Token - An open standard for tokenizing ShadCN UI themes on blockchain",
+  "author": "WildSatchmo (https://github.com/rohenaz)",
   "homepage": "https://themetoken.dev",
   "repository": {
     "type": "git",

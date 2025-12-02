@@ -51,6 +51,8 @@ export default function BrowsePage() {
 
       const txid = await wallet.purchaseOrdinal({
         outpoint: listing.outpoint,
+        marketplaceRate: 0.02, // 2% commission
+        marketplaceAddress: "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z",
       });
 
       console.log("Purchase successful:", txid);
