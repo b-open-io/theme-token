@@ -67,6 +67,11 @@ export interface PurchaseOrdinalRequest {
   marketplaceAddress?: string;
 }
 
+export interface SocialProfile {
+  displayName: string;
+  avatar: string;
+}
+
 export type WalletEvent = "switchAccount" | "signedOut";
 
 export interface YoursWallet {
@@ -75,6 +80,7 @@ export interface YoursWallet {
   disconnect: () => Promise<void>;
   getAddresses: () => Promise<Addresses>;
   getBalance: () => Promise<Balance>;
+  getSocialProfile: () => Promise<SocialProfile>;
   getOrdinals: (opts?: GetOrdinalsOptions) => Promise<PaginatedOrdinalsResponse>;
   inscribe: (inscriptions: InscribeRequest[]) => Promise<InscribeResponse>;
   transferOrdinal: (req: TransferOrdinalRequest) => Promise<string>; // returns txid

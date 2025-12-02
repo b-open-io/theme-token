@@ -7,13 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { useTheme } from "@/components/theme-provider";
-import { WalletConnect } from "@/components/wallet-connect";
 import {
   type ThemeMarketListing,
   fetchThemeMarketListings,
 } from "@/lib/yours-wallet";
 import {
-  ArrowLeft,
   Loader2,
   ShoppingCart,
   Tag,
@@ -139,23 +137,14 @@ export default function MarketPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold">Theme Token Market</h1>
-          </div>
-          <WalletConnect />
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        {/* Page Title */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Theme Token Market</h1>
+          <p className="text-muted-foreground">
+            Buy, sell, and trade theme tokens on the decentralized marketplace
+          </p>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-8">
         {/* Tab Navigation */}
         <div className="mb-8 flex gap-2 rounded-lg bg-muted p-1">
           <button
@@ -393,25 +382,7 @@ export default function MarketPage() {
             )}
           </div>
         )}
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-8">
-        <div className="mx-auto max-w-7xl px-4 text-center text-sm text-muted-foreground">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://1satordinals.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              1Sat Ordinals
-            </a>{" "}
-            on BSV
-          </p>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,371 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { useTheme } from "@/components/theme-provider";
+import {
+  type ThemeToken,
+  exampleThemes,
+  validateThemeToken,
+  parseTweakCnCss,
+} from "@/lib/schema";
+import {
+  Loader2,
+  Check,
+  AlertCircle,
+  Sparkles,
+  ExternalLink,
+} from "lucide-react";
+
+// Preview components that show the theme in action
+function PreviewCard({ className = "" }: { className?: string }) {
+  return (
+    <div className={`rounded-lg border border-border bg-card p-4 ${className}`}>
+      <h4 className="mb-2 font-semibold text-card-foreground">Card Title</h4>
+      <p className="mb-3 text-sm text-muted-foreground">
+        This is a sample card component.
+      </p>
+      <div className="flex gap-2">
+        <Button size="sm">Primary</Button>
+        <Button size="sm" variant="secondary">Secondary</Button>
+        <Button size="sm" variant="outline">Outline</Button>
+      </div>
+    </div>
+  );
+}
+
+function PreviewInputs({ className = "" }: { className?: string }) {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      <div>
+        <label className="mb-1 block text-sm font-medium">Text Input</label>
+        <input
+          type="text"
+          placeholder="Type something..."
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+      <div className="flex gap-2">
+        <Badge>Default</Badge>
+        <Badge variant="secondary">Secondary</Badge>
+        <Badge variant="outline">Outline</Badge>
+        <Badge variant="destructive">Destructive</Badge>
+      </div>
+    </div>
+  );
+}
+
+function PreviewPanel() {
+  return (
+    <div className="space-y-4">
+      <PreviewCard />
+      <PreviewInputs />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-primary p-3 text-center text-primary-foreground">
+          Primary
+        </div>
+        <div className="rounded-lg bg-secondary p-3 text-center text-secondary-foreground">
+          Secondary
+        </div>
+        <div className="rounded-lg bg-accent p-3 text-center text-accent-foreground">
+          Accent
+        </div>
+        <div className="rounded-lg bg-muted p-3 text-center text-muted-foreground">
+          Muted
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ThemeStudio() {
+  const {
+    status,
+    connect,
+    balance,
+    profile,
+    inscribeTheme,
+    isInscribing,
+    error: walletError,
+  } = useYoursWallet();
+  const { mode, applyTheme, resetTheme } = useTheme();
+
+  const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(exampleThemes[0]);
+  const [customInput, setCustomInput] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"presets" | "paste">("presets");
+  const [txid, setTxid] = useState<string | null>(null);
+  const [customName, setCustomName] = useState("");
+
+  const isConnected = status === "connected";
+  const canMint = isConnected && !isInscribing && !validationError;
+
+  // Apply theme to preview when selected
+  useEffect(() => {
+    applyTheme(selectedTheme);
+    return () => resetTheme();
+  }, [selectedTheme, applyTheme, resetTheme]);
+
+  const handleInputChange = (value: string) => {
+    setCustomInput(value);
+    setValidationError(null);
+
+    if (!value.trim()) return;
+
+    // Try parsing as JSON first
+    try {
+      const parsed = JSON.parse(value);
+      const result = validateThemeToken(parsed);
+      if (result.valid) {
+        setSelectedTheme(result.theme);
+        return;
+      }
+    } catch {
+      // Not JSON, try CSS
+    }
+
+    // Try parsing as CSS
+    const cssResult = parseTweakCnCss(value, customName || "Custom Theme");
+    if (cssResult.valid) {
+      setSelectedTheme(cssResult.theme);
+      setValidationError(null);
+    } else {
+      setValidationError(cssResult.error);
+    }
+  };
+
+  const handleMint = async () => {
+    const themeToMint: ThemeToken = {
+      ...selectedTheme,
+      name: customName.trim() || selectedTheme.name,
+      // Add author from profile if available
+      ...(profile?.displayName && { author: profile.displayName }),
+    };
+
+    const result = await inscribeTheme(themeToMint);
+    if (result) {
+      setTxid(result.txid);
+    }
+  };
+
+  // Success state
+  if (txid) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-xl border border-green-500/50 bg-green-500/10 p-8 text-center"
+      >
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+          <Check className="h-8 w-8 text-green-500" />
+        </div>
+        <h3 className="mb-2 text-xl font-bold">Theme Token Inscribed!</h3>
+        <p className="mb-4 text-muted-foreground">
+          Your theme has been permanently inscribed on the BSV blockchain.
+        </p>
+        <div className="mb-6 rounded-lg bg-muted/50 p-4">
+          <p className="mb-1 text-xs text-muted-foreground">Transaction ID</p>
+          <p className="break-all font-mono text-sm">{txid}</p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button asChild variant="outline">
+            <a
+              href={`https://whatsonchain.com/tx/${txid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on Explorer
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </a>
+          </Button>
+          <Button onClick={() => setTxid(null)}>Create Another</Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+      {/* Split pane layout */}
+      <div className="flex flex-col lg:flex-row">
+        {/* Left Panel: Controls */}
+        <div className="w-full border-b border-border bg-muted/10 p-6 lg:w-2/5 lg:border-b-0 lg:border-r">
+          {/* Tab switcher */}
+          <div className="mb-4 flex gap-1 rounded-lg bg-muted p-1">
+            <button
+              onClick={() => setActiveTab("presets")}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === "presets"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Presets
+            </button>
+            <button
+              onClick={() => setActiveTab("paste")}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === "paste"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Paste CSS/JSON
+            </button>
+          </div>
+
+          {/* Presets Tab */}
+          {activeTab === "presets" && (
+            <div className="grid grid-cols-2 gap-2">
+              {exampleThemes.map((theme) => (
+                <button
+                  key={theme.name}
+                  onClick={() => setSelectedTheme(theme)}
+                  className={`rounded-lg border p-3 text-left transition-all ${
+                    selectedTheme.name === theme.name
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="mb-2 flex h-4 overflow-hidden rounded">
+                    {[
+                      theme.styles[mode].primary,
+                      theme.styles[mode].secondary,
+                      theme.styles[mode].accent,
+                      theme.styles[mode].background,
+                    ].map((color, i) => (
+                      <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
+                  <p className="text-xs font-medium">{theme.name}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Paste Tab */}
+          {activeTab === "paste" && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Paste CSS from{" "}
+                <a
+                  href="https://tweakcn.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  tweakcn.com
+                </a>{" "}
+                or Theme Token JSON.
+              </p>
+              <textarea
+                value={customInput}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder={`:root {\n  --primary: oklch(0.6 0.15 145);\n  /* ... */\n}`}
+                className="h-40 w-full rounded-lg border border-border bg-background p-3 font-mono text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              {validationError && (
+                <div className="flex items-center gap-2 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" />
+                  {validationError}
+                </div>
+              )}
+              {customInput && !validationError && (
+                <div className="flex items-center gap-2 text-xs text-green-600">
+                  <Check className="h-3 w-3" />
+                  Valid theme parsed
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Theme name input */}
+          <div className="mt-4">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Theme Name
+            </label>
+            <input
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder={selectedTheme.name}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+        </div>
+
+        {/* Right Panel: Preview */}
+        <div className="flex-1 bg-background p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <Badge variant="secondary">Live Preview</Badge>
+            <Badge variant="outline">{mode} mode</Badge>
+          </div>
+          <PreviewPanel />
+        </div>
+      </div>
+
+      {/* Bottom Bar: Mint Action */}
+      <div className="flex items-center justify-between border-t border-border bg-muted/30 px-6 py-4">
+        <div>
+          {isConnected && balance ? (
+            <div>
+              <p className="text-sm font-medium">
+                {profile?.displayName && (
+                  <span className="text-primary">{profile.displayName}</span>
+                )}
+                {profile?.displayName && " · "}
+                {balance.bsv.toFixed(8)} BSV
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Inscription cost: ~0.00001 BSV
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Connect wallet to inscribe
+            </p>
+          )}
+        </div>
+
+        {walletError && (
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            {walletError}
+          </div>
+        )}
+
+        <Button
+          size="lg"
+          disabled={!canMint}
+          onClick={isConnected ? handleMint : connect}
+          className="gap-2"
+        >
+          {isInscribing ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Inscribing...
+            </>
+          ) : isConnected ? (
+            <>
+              <Sparkles className="h-5 w-5" />
+              Inscribe Theme
+            </>
+          ) : status === "connecting" ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-5 w-5" />
+              Connect to Inscribe
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}

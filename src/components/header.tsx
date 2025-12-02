@@ -1,7 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { WalletConnect } from "@/components/wallet-connect";
+import { Github, Star } from "lucide-react";
+
+function useGitHubStars() {
+  const [stars, setStars] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("https://api.github.com/repos/b-open-io/theme-token")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.stargazers_count !== undefined) {
+          setStars(data.stargazers_count);
+        }
+      })
+      .catch(() => {
+        // Ignore errors
+      });
+  }, []);
+
+  return stars;
+}
 
 function ThemeTokenIcon({ className }: { className?: string }) {
   return (
@@ -21,14 +42,49 @@ function ThemeTokenIcon({ className }: { className?: string }) {
 }
 
 export function Header() {
+  const stars = useGitHubStars();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <ThemeTokenIcon className="h-6 w-6" />
           <span className="font-display text-lg font-semibold">Theme Token</span>
         </Link>
-        <WalletConnect />
+
+        {/* Center Nav Links */}
+        <nav className="hidden items-center gap-6 md:flex">
+          <a
+            href="#schema"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Spec
+          </a>
+          <Link
+            href="/market"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Market
+          </Link>
+        </nav>
+
+        {/* Right Side: GitHub + Wallet */}
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/b-open-io/theme-token"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Github className="h-4 w-4" />
+            <Star className="h-3 w-3" />
+            {stars !== null && (
+              <span className="font-medium">{stars}</span>
+            )}
+          </a>
+          <WalletConnect />
+        </div>
       </div>
     </header>
   );

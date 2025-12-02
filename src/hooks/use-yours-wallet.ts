@@ -8,6 +8,7 @@ import {
   type YoursWallet,
   type Addresses,
   type Balance,
+  type SocialProfile,
   type InscribeResponse,
 } from "@/lib/yours-wallet";
 import { type ThemeToken, validateThemeToken } from "@/lib/schema";
@@ -30,6 +31,7 @@ interface UseYoursWalletReturn {
   refresh: () => Promise<void>;
   addresses: Addresses | null;
   balance: Balance | null;
+  profile: SocialProfile | null;
   inscribeTheme: (theme: ThemeToken) => Promise<InscribeResponse | null>;
   isInscribing: boolean;
 }
@@ -41,6 +43,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [addresses, setAddresses] = useState<Addresses | null>(null);
   const [balance, setBalance] = useState<Balance | null>(null);
+  const [profile, setProfile] = useState<SocialProfile | null>(null);
   const [isInscribing, setIsInscribing] = useState(false);
   const walletRef = useRef<YoursWallet | null>(null);
   const { setAvailableThemes, resetTheme } = useTheme();
@@ -202,18 +205,20 @@ export function useYoursWallet(): UseYoursWalletReturn {
     }
   }, [status, fetchThemeTokens]);
 
-  // Fetch wallet info (addresses and balance)
+  // Fetch wallet info (addresses, balance, profile)
   const fetchWalletInfo = useCallback(async () => {
     const wallet = walletRef.current;
     if (!wallet) return;
 
     try {
-      const [addrs, bal] = await Promise.all([
+      const [addrs, bal, prof] = await Promise.all([
         wallet.getAddresses(),
         wallet.getBalance(),
+        wallet.getSocialProfile().catch(() => null),
       ]);
       setAddresses(addrs);
       setBalance(bal);
+      if (prof) setProfile(prof);
     } catch (err) {
       console.error("Failed to fetch wallet info:", err);
     }
@@ -272,6 +277,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
     } else {
       setAddresses(null);
       setBalance(null);
+      setProfile(null);
     }
   }, [status, fetchWalletInfo]);
 
@@ -285,6 +291,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
     refresh,
     addresses,
     balance,
+    profile,
     inscribeTheme,
     isInscribing,
   };
