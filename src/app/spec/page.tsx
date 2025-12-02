@@ -129,41 +129,64 @@ export default function SpecPage() {
               animate={{ opacity: 1, x: 0 }}
               className="space-y-4"
             >
-              <h3 className="font-semibold">19 Semantic Color Properties</h3>
-              <div className="grid grid-cols-2 gap-2 font-mono text-sm">
-                {[
-                  ["background", "Page background"],
-                  ["foreground", "Text color"],
-                  ["primary", "Brand color"],
-                  ["secondary", "Muted actions"],
-                  ["muted", "Muted backgrounds"],
-                  ["accent", "Highlights"],
-                  ["destructive", "Error/danger"],
-                  ["card", "Card surfaces"],
-                  ["popover", "Dropdowns"],
-                  ["border", "Borders"],
-                  ["input", "Input borders"],
-                  ["ring", "Focus rings"],
-                ].map(([name, desc]) => (
-                  <div
-                    key={name}
-                    className="flex items-center gap-2 rounded border border-border bg-muted/30 px-3 py-2"
-                  >
-                    <div
-                      className="h-3 w-3 rounded-full border"
-                      style={{ backgroundColor: `var(--${name})` }}
-                    />
-                    <span className="text-xs">{name}</span>
+              <h3 className="font-semibold">Theme Properties</h3>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">19 Core Colors <span className="text-primary">*</span></p>
+                  <div className="grid grid-cols-3 gap-1 font-mono text-xs">
+                    {["background", "foreground", "card", "popover", "primary", "secondary", "muted", "accent", "destructive", "border", "input", "ring"].map((name) => (
+                      <div key={name} className="flex items-center gap-1 rounded border border-border bg-muted/30 px-2 py-1">
+                        <div className="h-2 w-2 rounded-full border" style={{ backgroundColor: `var(--${name})` }} />
+                        <span>{name}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Charts (optional)</p>
+                  <div className="flex gap-1 font-mono text-xs">
+                    {["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"].map((name) => (
+                      <div key={name} className="rounded border border-border bg-muted/30 px-2 py-1">{name}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Sidebar (optional)</p>
+                  <div className="flex flex-wrap gap-1 font-mono text-xs">
+                    {["sidebar", "sidebar-primary", "sidebar-accent", "sidebar-border", "sidebar-ring"].map((name) => (
+                      <div key={name} className="rounded border border-border bg-muted/30 px-2 py-1">{name}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Typography & Layout</p>
+                  <div className="flex flex-wrap gap-1 font-mono text-xs">
+                    {["radius", "font-sans", "font-serif", "font-mono", "letter-spacing", "spacing"].map((name) => (
+                      <div key={name} className="rounded border border-border bg-muted/30 px-2 py-1">
+                        {name}{name === "radius" && <span className="text-primary ml-1">*</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Shadows (optional)</p>
+                  <div className="flex flex-wrap gap-1 font-mono text-xs">
+                    {["shadow-2xs", "shadow-xs", "shadow-sm", "shadow", "shadow-md", "shadow-lg", "shadow-xl", "shadow-2xl"].map((name) => (
+                      <div key={name} className="rounded border border-border bg-muted/30 px-2 py-1">{name}</div>
+                    ))}
+                  </div>
+                </div>
               </div>
+
               <p className="text-xs text-muted-foreground">
-                Colors like <code className="rounded bg-muted px-1">primary</code>,{" "}
-                <code className="rounded bg-muted px-1">card</code>, and{" "}
-                <code className="rounded bg-muted px-1">destructive</code> include{" "}
-                <code className="rounded bg-muted px-1">-foreground</code> variants for
-                accessible text contrast. All values use{" "}
-                <code className="rounded bg-muted px-1">oklch()</code> format.
+                Colors include <code className="rounded bg-muted px-1">-foreground</code> variants.
+                All color values use <code className="rounded bg-muted px-1">oklch()</code> format.
+                <span className="text-primary">*</span> = required.
               </p>
             </motion.div>
 
