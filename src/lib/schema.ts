@@ -91,12 +91,12 @@ export const themeStylesSchema = z.object({
 export type ThemeStyles = z.infer<typeof themeStylesSchema>;
 
 /**
- * Theme Token - matches tweakcn format with optional extension fields
- * Required: name, styles
- * Optional: $schema (for validation), author (paymail/identity)
+ * Theme Token - matches tweakcn format with extension fields
+ * Required: $schema, name, styles
+ * Optional: author (paymail/identity)
  */
 export const themeTokenSchema = z.object({
-  $schema: z.string().optional(),
+  $schema: z.string(),
   name: z.string(),
   author: z.string().optional(),
   styles: themeStylesSchema,
@@ -134,6 +134,7 @@ export function validateThemeToken(
  */
 export const exampleThemes: ThemeToken[] = [
   {
+    $schema: THEME_TOKEN_SCHEMA_URL,
     name: "Blueprint",
     styles: {
       light: {
@@ -193,6 +194,7 @@ export const exampleThemes: ThemeToken[] = [
     },
   },
   {
+    $schema: THEME_TOKEN_SCHEMA_URL,
     name: "Ocean Depths",
     styles: {
       light: {
@@ -252,6 +254,7 @@ export const exampleThemes: ThemeToken[] = [
     },
   },
   {
+    $schema: THEME_TOKEN_SCHEMA_URL,
     name: "Cyberpunk Neon",
     styles: {
       light: {
@@ -311,6 +314,7 @@ export const exampleThemes: ThemeToken[] = [
     },
   },
   {
+    $schema: THEME_TOKEN_SCHEMA_URL,
     name: "Forest Moss",
     styles: {
       light: {
@@ -439,6 +443,7 @@ export function parseTweakCnCss(
     }
 
     const theme: ThemeToken = {
+      $schema: THEME_TOKEN_SCHEMA_URL,
       name,
       styles: {
         light: lightStyles,

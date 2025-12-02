@@ -243,12 +243,8 @@ export function useYoursWallet(): UseYoursWalletReturn {
       setError(null);
 
       try {
-        // Add $schema if not present
-        const themeWithSchema = {
-          $schema: THEME_TOKEN_SCHEMA_URL,
-          ...theme,
-        };
-        const jsonString = JSON.stringify(themeWithSchema);
+        // Theme already has $schema (required field)
+        const jsonString = JSON.stringify(theme);
         const base64Data = btoa(jsonString);
 
         const response = await wallet.inscribe([
