@@ -346,7 +346,10 @@ export function ThemeStudio() {
               {exampleThemes.map((theme) => (
                 <button
                   key={theme.name}
-                  onClick={() => setSelectedTheme(theme)}
+                  onClick={() => {
+                    setSelectedTheme(theme);
+                    setCustomName("");
+                  }}
                   className={`rounded-lg border p-3 text-left transition-all ${
                     selectedTheme.name === theme.name
                       ? "border-primary bg-primary/5"

@@ -15,7 +15,8 @@ interface OrdinalSearchResult {
   txid: string;
   vout: number;
   outpoint: string;
-  origin: {
+  satoshis: number;
+  origin?: {
     outpoint: string;
     data?: {
       insc?: {
@@ -68,19 +69,32 @@ export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
 
       for (const result of results) {
         try {
-          if (seenOrigins.has(result.origin.outpoint)) continue;
+          // Skip if no origin or already seen
+          const originOutpoint = result.origin?.outpoint;
+          if (!originOutpoint || seenOrigins.has(originOutpoint)) continue;
 
-          const json = result.origin?.data?.insc?.file?.json;
-          if (json) {
-            const validation = validateThemeToken(json);
-            if (validation.valid) {
-              themes.push({
-                theme: validation.theme,
-                outpoint: result.outpoint,
-                origin: result.origin.outpoint,
-              });
-              seenOrigins.add(result.origin.outpoint);
+          // Skip non-ordinals (must be 1 sat)
+          if (result.satoshis !== 1) continue;
+
+          // Try embedded JSON first, otherwise fetch from ordfs
+          let json = result.origin?.data?.insc?.file?.json;
+          if (!json) {
+            const theme = await fetchThemeByOrigin(originOutpoint);
+            if (theme) {
+              themes.push(theme);
+              seenOrigins.add(originOutpoint);
             }
+            continue;
+          }
+
+          const validation = validateThemeToken(json);
+          if (validation.valid) {
+            themes.push({
+              theme: validation.theme,
+              outpoint: result.outpoint,
+              origin: originOutpoint,
+            });
+            seenOrigins.add(originOutpoint);
           }
         } catch {
           // Skip invalid themes
