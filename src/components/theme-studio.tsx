@@ -95,7 +95,7 @@ export function ThemeStudio() {
     isInscribing,
     error: walletError,
   } = useYoursWallet();
-  const { mode, applyTheme, resetTheme } = useTheme();
+  const { mode, toggleMode, applyTheme, resetTheme } = useTheme();
 
   const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(exampleThemes[0]);
   const [customInput, setCustomInput] = useState("");
@@ -103,7 +103,6 @@ export function ThemeStudio() {
   const [activeTab, setActiveTab] = useState<"presets" | "paste">("presets");
   const [txid, setTxid] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
-  const [previewMode, setPreviewMode] = useState<"light" | "dark">(mode);
   const [copied, setCopied] = useState<"css" | "json" | null>(null);
 
   const isConnected = status === "connected";
@@ -273,10 +272,10 @@ export function ThemeStudio() {
                 >
                   <div className="mb-2 flex h-4 overflow-hidden rounded">
                     {[
-                      theme.styles[previewMode].primary,
-                      theme.styles[previewMode].secondary,
-                      theme.styles[previewMode].accent,
-                      theme.styles[previewMode].background,
+                      theme.styles[mode].primary,
+                      theme.styles[mode].secondary,
+                      theme.styles[mode].accent,
+                      theme.styles[mode].background,
                     ].map((color, i) => (
                       <div key={i} className="flex-1" style={{ backgroundColor: color }} />
                     ))}
@@ -339,16 +338,16 @@ export function ThemeStudio() {
         </div>
 
         {/* Right Panel: Preview */}
-        <div className={`flex-1 p-6 ${previewMode === "dark" ? "dark bg-zinc-950" : "bg-background"}`}>
+        <div className="flex-1 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="secondary">Live Preview</Badge>
-              {/* Mode Toggle */}
+              {/* Mode Toggle - uses global mode with splash animation */}
               <button
-                onClick={() => setPreviewMode(previewMode === "light" ? "dark" : "light")}
+                onClick={(e) => toggleMode(e)}
                 className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
               >
-                {previewMode === "light" ? (
+                {mode === "light" ? (
                   <>
                     <Sun className="h-3 w-3" />
                     Light

@@ -63,7 +63,7 @@ function ModeToggle() {
 export function WalletConnect() {
   const { status, error, connect, disconnect, themeTokens, isLoading } =
     useYoursWallet();
-  const { activeTheme, applyTheme, resetTheme, mode } = useTheme();
+  const { activeTheme, applyThemeAnimated, resetTheme, mode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   // Not installed state
@@ -187,8 +187,8 @@ export function WalletConnect() {
                   {themeTokens.map((token) => (
                     <button
                       key={token.name}
-                      onClick={() => {
-                        applyTheme(token);
+                      onClick={(e) => {
+                        applyThemeAnimated(token, e);
                         setIsOpen(false);
                       }}
                       className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${

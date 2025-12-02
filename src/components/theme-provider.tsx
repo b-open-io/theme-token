@@ -27,6 +27,8 @@ interface ThemeContextValue {
   setAvailableThemes: (themes: ThemeToken[]) => void;
   /** Apply a theme token */
   applyTheme: (theme: ThemeToken | null) => void;
+  /** Apply a theme token with splash animation from click position */
+  applyThemeAnimated: (theme: ThemeToken | null, e?: MouseEvent) => void;
   /** Toggle light/dark mode with optional click event for animation */
   toggleMode: (e?: MouseEvent) => void;
   /** Set mode explicitly */
@@ -146,6 +148,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const applyThemeAnimated = useCallback(
+    (theme: ThemeToken | null, e?: MouseEvent) => {
+      // Set click position for radial animation
+      if (e) {
+        document.documentElement.style.setProperty(
+          "--click-x",
+          `${e.clientX}px`
+        );
+        document.documentElement.style.setProperty(
+          "--click-y",
+          `${e.clientY}px`
+        );
+      }
+
+      // Use View Transitions API if available
+      if (
+        typeof document !== "undefined" &&
+        "startViewTransition" in document
+      ) {
+        (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+          applyTheme(theme);
+        });
+      } else {
+        applyTheme(theme);
+      }
+    },
+    [applyTheme]
+  );
+
   const setMode = useCallback((newMode: "light" | "dark") => {
     setModeState(newMode);
     localStorage.setItem(MODE_STORAGE_KEY, newMode);
@@ -211,6 +242,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         availableThemes,
         setAvailableThemes,
         applyTheme,
+        applyThemeAnimated,
         toggleMode,
         setMode,
         resetTheme,
