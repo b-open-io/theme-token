@@ -12,7 +12,7 @@ import {
   validateThemeToken,
   parseTweakCnCss,
 } from "@/lib/schema";
-import { REMIX_THEME_EVENT } from "@/components/theme-gallery";
+import { REMIX_THEME_EVENT, getAndClearRemixTheme } from "@/components/theme-gallery";
 import {
   Loader2,
   Check,
@@ -135,6 +135,15 @@ export function ThemeStudio() {
   // Load drafts on mount
   useEffect(() => {
     setDrafts(loadDrafts());
+  }, []);
+
+  // Check for remix theme from gallery navigation
+  useEffect(() => {
+    const remixTheme = getAndClearRemixTheme();
+    if (remixTheme) {
+      setSelectedTheme(remixTheme);
+      setCustomName(remixTheme.name);
+    }
   }, []);
 
   const handleSaveDraft = () => {

@@ -1,16 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
 import { exampleThemes, type ThemeToken } from "@/lib/schema";
 import { ArrowRight, Sparkles } from "lucide-react";
 
-// Custom event for theme remixing
+// Custom event for theme remixing (works on same page)
 export const REMIX_THEME_EVENT = "remix-theme";
+
+// LocalStorage key for cross-page theme loading
+const REMIX_STORAGE_KEY = "theme-token-remix";
 
 export function dispatchRemixTheme(theme: ThemeToken) {
   window.dispatchEvent(new CustomEvent(REMIX_THEME_EVENT, { detail: theme }));
+}
+
+export function storeRemixTheme(theme: ThemeToken) {
+  localStorage.setItem(REMIX_STORAGE_KEY, JSON.stringify(theme));
+}
+
+export function getAndClearRemixTheme(): ThemeToken | null {
+  const stored = localStorage.getItem(REMIX_STORAGE_KEY);
+  if (stored) {
+    localStorage.removeItem(REMIX_STORAGE_KEY);
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 function ThemeCard({
@@ -52,6 +73,15 @@ function ThemeCard({
 }
 
 export function ThemeGallery() {
+  const router = useRouter();
+
+  const handleRemix = (theme: ThemeToken) => {
+    // Store theme for the studio page to pick up
+    storeRemixTheme(theme);
+    // Navigate to studio
+    router.push("/studio");
+  };
+
   return (
     <section className="border-y border-border bg-muted/30 py-8">
       <div className="mx-auto max-w-7xl">
@@ -80,11 +110,7 @@ export function ThemeGallery() {
             >
               <ThemeCard
                 theme={theme}
-                onRemix={() => {
-                  // Dispatch event and scroll to studio
-                  dispatchRemixTheme(theme);
-                  document.getElementById("studio")?.scrollIntoView({ behavior: "smooth" });
-                }}
+                onRemix={() => handleRemix(theme)}
               />
             </motion.div>
           ))}
