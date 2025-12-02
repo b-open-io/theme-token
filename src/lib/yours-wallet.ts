@@ -95,6 +95,7 @@ export interface Utxo {
   script: string;
   txid: string;
   vout: number;
+  owner?: string;  // May be at derived address
 }
 
 export interface SignatureRequest {
