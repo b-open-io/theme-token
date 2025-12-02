@@ -6,7 +6,7 @@ import { type ThemeToken, validateThemeToken } from "./schema";
 
 const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 
-interface OrdinalSearchResult {
+interface OrdinalResult {
   txid: string;
   vout: number;
   outpoint: string;
@@ -23,6 +23,14 @@ interface OrdinalSearchResult {
       map?: Record<string, string>;
     };
   };
+  data?: {
+    map?: Record<string, string>;
+    insc?: {
+      file?: {
+        type?: string;
+      };
+    };
+  };
 }
 
 export interface PublishedTheme {
@@ -33,51 +41,46 @@ export interface PublishedTheme {
 
 /**
  * Fetch all published ThemeTokens from the blockchain
- * Searches for inscriptions with app="ThemeToken" in their map data
+ * Uses the recent inscriptions endpoint and filters for ThemeToken app
  */
 export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
   const themes: PublishedTheme[] = [];
   const seenOrigins = new Set<string>();
 
-  // Search for themes via GorillaPool API
   try {
+    // Use the recent inscriptions endpoint - it properly includes origin data
     const response = await fetch(
-      `${ORDINALS_API}/inscriptions/search?map.app=ThemeToken&map.type=theme&limit=100`
+      `${ORDINALS_API}/inscriptions/recent?limit=200`
     );
 
     if (response.ok) {
-      const results: OrdinalSearchResult[] = await response.json();
+      const results: OrdinalResult[] = await response.json();
 
       for (const result of results) {
         try {
+          // Skip non-ordinals (must be 1 sat)
+          if (result.satoshis !== 1) continue;
+
+          // Check if this is a ThemeToken via origin data map
+          const mapData = result.origin?.data?.map || result.data?.map;
+          if (mapData?.app !== "ThemeToken" || mapData?.type !== "theme") {
+            continue;
+          }
+
           // Skip if no origin or already seen
           const originOutpoint = result.origin?.outpoint;
           if (!originOutpoint || seenOrigins.has(originOutpoint)) continue;
 
-          // Skip non-ordinals (must be 1 sat)
-          if (result.satoshis !== 1) continue;
+          // Check content type
+          const fileType = result.origin?.data?.insc?.file?.type || result.data?.insc?.file?.type;
+          if (fileType !== "application/json") continue;
 
-          // Try embedded JSON first
-          const json = result.origin?.data?.insc?.file?.json;
-          if (!json) {
-            // Only fetch from ordfs if it's JSON content type
-            const fileType = result.origin?.data?.insc?.file?.type;
-            if (fileType === "application/json") {
-              const theme = await fetchThemeByOrigin(originOutpoint);
-              if (theme) {
-                themes.push(theme);
-                seenOrigins.add(originOutpoint);
-              }
-            }
-            continue;
-          }
-
-          const validation = validateThemeToken(json);
-          if (validation.valid) {
+          // Fetch actual theme content from ordfs
+          const theme = await fetchThemeByOrigin(originOutpoint);
+          if (theme) {
             themes.push({
-              theme: validation.theme,
-              outpoint: result.outpoint,
-              origin: originOutpoint,
+              ...theme,
+              outpoint: result.outpoint, // Current location
             });
             seenOrigins.add(originOutpoint);
           }
@@ -87,7 +90,7 @@ export async function fetchPublishedThemes(): Promise<PublishedTheme[]> {
       }
     }
   } catch (err) {
-    console.error("[fetchPublishedThemes] Search error:", err);
+    console.error("[fetchPublishedThemes] Fetch error:", err);
   }
 
   return themes;
