@@ -50,8 +50,10 @@ export async function listOrdinal(
   }
 
   // Build the OrdLock script
+  console.log("[listOrdinal] Building OrdLock script...");
   const ordLock = new OrdLock();
   const lockScript = ordLock.lock(ordAddress, bsvAddress, priceSatoshis);
+  console.log("[listOrdinal] OrdLock script:", lockScript);
 
   // Select payment UTXO
   const payUtxo = paymentUtxos[0];
@@ -68,11 +70,15 @@ export async function listOrdinal(
   // Create the transaction
   const tx = new Transaction();
 
+  // Placeholder unlocking script for serialization (will be replaced after signing)
+  const placeholderUnlock = new Script();
+
   // Add the ordinal as input (index 0)
   tx.addInput({
     sourceTXID: ordinal.txid,
     sourceOutputIndex: ordinal.vout,
     sequence: 0xffffffff,
+    unlockingScript: placeholderUnlock,
   });
 
   // Add payment UTXO for fees (index 1)
@@ -80,6 +86,7 @@ export async function listOrdinal(
     sourceTXID: payUtxo.txid,
     sourceOutputIndex: payUtxo.vout,
     sequence: 0xffffffff,
+    unlockingScript: placeholderUnlock,
   });
 
   // Output 0: The ordinal with OrdLock script
@@ -117,13 +124,20 @@ export async function listOrdinal(
   ];
 
   // Get the unsigned raw tx
+  console.log("[listOrdinal] Building raw tx...");
+  console.log("[listOrdinal] Tx inputs:", tx.inputs.length);
+  console.log("[listOrdinal] Tx outputs:", tx.outputs.length);
   const rawtx = tx.toHex();
+  console.log("[listOrdinal] Raw tx:", rawtx);
 
   // Get signatures from wallet - wallet returns signed tx
+  console.log("[listOrdinal] Getting signatures from wallet...");
+  console.log("[listOrdinal] Sig requests:", sigRequests);
   const signatures = await wallet.getSignatures({
     rawtx,
     sigRequests,
   });
+  console.log("[listOrdinal] Signatures received:", signatures);
 
   // Apply signatures to transaction
   for (const sig of signatures) {
