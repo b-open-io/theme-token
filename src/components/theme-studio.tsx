@@ -22,7 +22,32 @@ import {
   Copy,
   Moon,
   Sun,
+  Save,
+  Trash2,
+  FolderOpen,
 } from "lucide-react";
+
+const DRAFTS_STORAGE_KEY = "theme-token-drafts";
+
+interface ThemeDraft {
+  id: string;
+  theme: ThemeToken;
+  savedAt: number;
+}
+
+function loadDrafts(): ThemeDraft[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(DRAFTS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDrafts(drafts: ThemeDraft[]): void {
+  localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+}
 
 // Preview components that show the theme in action
 function PreviewCard({ className = "" }: { className?: string }) {
@@ -100,10 +125,42 @@ export function ThemeStudio() {
   const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(exampleThemes[0]);
   const [customInput, setCustomInput] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"presets" | "paste">("presets");
+  const [activeTab, setActiveTab] = useState<"presets" | "paste" | "drafts">("presets");
   const [txid, setTxid] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
   const [copied, setCopied] = useState<"css" | "json" | null>(null);
+  const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
+  const [savedNotice, setSavedNotice] = useState(false);
+
+  // Load drafts on mount
+  useEffect(() => {
+    setDrafts(loadDrafts());
+  }, []);
+
+  const handleSaveDraft = () => {
+    const draft: ThemeDraft = {
+      id: Date.now().toString(),
+      theme: { ...selectedTheme, name: customName.trim() || selectedTheme.name },
+      savedAt: Date.now(),
+    };
+    const updated = [draft, ...drafts];
+    setDrafts(updated);
+    saveDrafts(updated);
+    setSavedNotice(true);
+    setTimeout(() => setSavedNotice(false), 2000);
+  };
+
+  const handleLoadDraft = (draft: ThemeDraft) => {
+    setSelectedTheme(draft.theme);
+    setCustomName(draft.theme.name);
+    setActiveTab("presets");
+  };
+
+  const handleDeleteDraft = (id: string) => {
+    const updated = drafts.filter((d) => d.id !== id);
+    setDrafts(updated);
+    saveDrafts(updated);
+  };
 
   const isConnected = status === "connected";
   const canMint = isConnected && !isInscribing && !validationError;
@@ -148,6 +205,13 @@ export function ThemeStudio() {
     window.addEventListener(REMIX_THEME_EVENT, handleRemix);
     return () => window.removeEventListener(REMIX_THEME_EVENT, handleRemix);
   }, []);
+
+  // Update theme name when customName changes
+  useEffect(() => {
+    if (customName.trim()) {
+      setSelectedTheme((prev) => ({ ...prev, name: customName.trim() }));
+    }
+  }, [customName]);
 
   const handleInputChange = (value: string) => {
     setCustomInput(value);
@@ -253,7 +317,17 @@ export function ThemeStudio() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Paste CSS/JSON
+              Paste
+            </button>
+            <button
+              onClick={() => setActiveTab("drafts")}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === "drafts"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Drafts{drafts.length > 0 && ` (${drafts.length})`}
             </button>
           </div>
 
@@ -322,18 +396,83 @@ export function ThemeStudio() {
             </div>
           )}
 
-          {/* Theme name input */}
-          <div className="mt-4">
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Theme Name
-            </label>
-            <input
-              type="text"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder={selectedTheme.name}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+          {/* Drafts Tab */}
+          {activeTab === "drafts" && (
+            <div className="space-y-2">
+              {drafts.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  <FolderOpen className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                  <p>No saved drafts</p>
+                  <p className="mt-1 text-xs">Save a theme to work on it later</p>
+                </div>
+              ) : (
+                drafts.map((draft) => (
+                  <div
+                    key={draft.id}
+                    className="flex items-center gap-2 rounded-lg border border-border p-3"
+                  >
+                    <button
+                      onClick={() => handleLoadDraft(draft)}
+                      className="flex flex-1 items-center gap-2 text-left hover:text-primary"
+                    >
+                      <div className="flex h-4 w-8 overflow-hidden rounded">
+                        {[
+                          draft.theme.styles[mode].primary,
+                          draft.theme.styles[mode].secondary,
+                        ].map((color, i) => (
+                          <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+                        ))}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-medium">{draft.theme.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(draft.savedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDraft(draft.id)}
+                      className="p-1 text-muted-foreground hover:text-destructive"
+                      title="Delete draft"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Theme name input + Save Draft */}
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Theme Name
+              </label>
+              <input
+                type="text"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder={selectedTheme.name}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <button
+              onClick={handleSaveDraft}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted"
+            >
+              {savedNotice ? (
+                <>
+                  <Check className="h-4 w-4 text-green-500" />
+                  Saved!
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Draft
+                </>
+              )}
+            </button>
           </div>
         </div>
 

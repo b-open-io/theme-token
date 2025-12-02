@@ -72,11 +72,12 @@ export function useYoursWallet(): UseYoursWalletReturn {
     setError(null);
 
     try {
-      // Get JSON ordinals
+      // Get JSON ordinals - try without mimeType filter first, then filter client-side
       const response = await wallet.getOrdinals({
-        mimeType: "application/json",
         limit: 100,
       });
+
+      console.log("[ThemeToken] getOrdinals response:", response);
 
       const tokens: ThemeToken[] = [];
       const ordinals = response?.ordinals ?? [];
@@ -84,22 +85,34 @@ export function useYoursWallet(): UseYoursWalletReturn {
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
+          // Only process JSON ordinals
+          const contentType = ordinal.origin?.data?.insc?.file?.type;
+          if (contentType && !contentType.includes("json")) {
+            continue;
+          }
+
           const outpoint = ordinal.origin.outpoint;
+          console.log("[ThemeToken] Fetching ordinal:", outpoint, "type:", contentType);
+
           const content = await fetchOrdinalContent(outpoint);
+          console.log("[ThemeToken] Ordinal content:", content);
 
           if (content) {
             const result = validateThemeToken(content);
+            console.log("[ThemeToken] Validation result:", result);
             if (result.valid) {
               tokens.push(result.theme);
             }
           }
-        } catch {
-          // Skip invalid ordinals
+        } catch (err) {
+          console.error("[ThemeToken] Error processing ordinal:", err);
         }
       }
+      console.log("[ThemeToken] Found themes:", tokens.length);
       setThemeTokens(tokens);
       setAvailableThemes(tokens);
     } catch (err) {
+      console.error("[ThemeToken] Error fetching ordinals:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch ordinals");
     } finally {
       setIsLoading(false);

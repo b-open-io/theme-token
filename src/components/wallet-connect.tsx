@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { useTheme } from "@/components/theme-provider";
 import { YOURS_WALLET_URL } from "@/lib/yours-wallet";
@@ -239,16 +238,6 @@ export function WalletConnect() {
         </AnimatePresence>
       </div>
 
-      {/* Active Theme Badge */}
-      {activeTheme && (
-        <Badge variant="secondary" className="hidden gap-1 lg:flex">
-          <div
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: activeTheme.styles[mode].primary }}
-          />
-          {activeTheme.name}
-        </Badge>
-      )}
     </div>
   );
 }
