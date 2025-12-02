@@ -10,7 +10,8 @@ import {
   type ThemeMarketListing,
   fetchThemeMarketListings,
 } from "@/lib/yours-wallet";
-import { Loader2, ShoppingCart, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, ShoppingCart, RefreshCw, AlertCircle, Eye } from "lucide-react";
+import Link from "next/link";
 import { ThemeStripes, formatBSV } from "../_components/theme-stripes";
 
 export default function BrowsePage() {
@@ -113,19 +114,26 @@ export default function BrowsePage() {
               key={listing.outpoint}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-border bg-card p-4"
+              className="group rounded-xl border border-border bg-card p-4"
             >
-              <div className="mb-4 flex items-center justify-between">
-                <ThemeStripes
-                  styles={listing.theme.styles}
-                  mode={mode}
-                  size="lg"
-                />
-                <Badge variant="secondary">
-                  {formatBSV(listing.price)} BSV
-                </Badge>
-              </div>
-              <h3 className="mb-1 font-semibold">{listing.theme.name}</h3>
+              <Link href={`/preview/${listing.origin}`}>
+                <div className="relative mb-4 flex items-center justify-between">
+                  <ThemeStripes
+                    styles={listing.theme.styles}
+                    mode={mode}
+                    size="lg"
+                  />
+                  <Badge variant="secondary">
+                    {formatBSV(listing.price)} BSV
+                  </Badge>
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 transition-all group-hover:bg-black/10">
+                    <Eye className="h-5 w-5 text-foreground opacity-0 transition-opacity group-hover:opacity-70" />
+                  </div>
+                </div>
+              </Link>
+              <Link href={`/preview/${listing.origin}`}>
+                <h3 className="mb-1 font-semibold hover:text-primary">{listing.theme.name}</h3>
+              </Link>
               <p className="mb-4 text-xs text-muted-foreground">
                 {listing.origin.slice(0, 8)}...{listing.origin.slice(-8)}
               </p>

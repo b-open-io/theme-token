@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
 import { type ThemeToken } from "@/lib/schema";
 import { fetchPublishedThemes, type PublishedTheme } from "@/lib/fetch-themes";
-import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Loader2, Eye } from "lucide-react";
 
 // Custom event for theme remixing (works on same page)
 export const REMIX_THEME_EVENT = "remix-theme";
@@ -38,9 +38,11 @@ export function getAndClearRemixTheme(): ThemeToken | null {
 
 function ThemeCard({
   theme,
+  origin,
   onRemix,
 }: {
   theme: ThemeToken;
+  origin: string;
   onRemix?: () => void;
 }) {
   const { mode } = useTheme();
@@ -53,17 +55,27 @@ function ThemeCard({
 
   return (
     <div className="group flex-shrink-0 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md">
-      {/* Color stripes */}
-      <div className="mb-2 flex h-12 w-32 overflow-hidden rounded-md">
-        {colors.map((color, i) => (
-          <div key={i} className="flex-1" style={{ backgroundColor: color }} />
-        ))}
-      </div>
+      {/* Color stripes - clickable to preview */}
+      <Link href={`/preview/${origin}`}>
+        <div className="relative mb-2 flex h-12 w-32 cursor-pointer overflow-hidden rounded-md">
+          {colors.map((color, i) => (
+            <div key={i} className="flex-1" style={{ backgroundColor: color }} />
+          ))}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
+            <Eye className="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+          </div>
+        </div>
+      </Link>
       {/* Theme name and remix button */}
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">{theme.name}</p>
+        <Link href={`/preview/${origin}`} className="text-sm font-medium hover:text-primary">
+          {theme.name}
+        </Link>
         <button
-          onClick={onRemix}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemix?.();
+          }}
           className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary/20"
         >
           <Sparkles className="h-3 w-3" />
@@ -130,6 +142,7 @@ export function ThemeGallery() {
               >
                 <ThemeCard
                   theme={published.theme}
+                  origin={published.origin}
                   onRemix={() => handleRemix(published.theme)}
                 />
               </motion.div>
