@@ -5,45 +5,23 @@ interface ShadcnRegistryItem {
   $schema: string;
   name: string;
   type: "registry:style";
-  css?: {
-    "@layer base"?: Record<string, Record<string, string>>;
+  css: {
+    "@layer base": Record<string, Record<string, string>>;
   };
   cssVars: {
-    theme?: Record<string, string>;
+    theme: Record<string, string>;
     light: Record<string, string>;
     dark: Record<string, string>;
   };
 }
 
-// Extract shared theme values (fonts, radius, etc.) that are the same in light and dark
-function extractSharedThemeVars(
+// Helper to get value from either theme, preferring light
+function getThemeValue(
   light: ThemeStyleProps,
-  dark: ThemeStyleProps
-): Record<string, string> {
-  const shared: Record<string, string> = {};
-  const sharedKeys = [
-    "font-sans",
-    "font-serif",
-    "font-mono",
-    "radius",
-    "spacing",
-    "tracking-normal",
-    "tracking-tighter",
-    "tracking-tight",
-    "tracking-wide",
-    "tracking-wider",
-    "tracking-widest",
-  ];
-
-  for (const key of sharedKeys) {
-    const lightVal = light[key as keyof ThemeStyleProps];
-    const darkVal = dark[key as keyof ThemeStyleProps];
-    if (lightVal && lightVal === darkVal) {
-      shared[key] = lightVal;
-    }
-  }
-
-  return shared;
+  dark: ThemeStyleProps,
+  key: keyof ThemeStyleProps
+): string {
+  return (light[key] || dark[key] || "") as string;
 }
 
 // Convert kebab-case name to a valid shadcn theme name (lowercase, no special chars)
@@ -52,6 +30,25 @@ function toShadcnName(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+// Transform internal theme props to registry cssVars format
+// Maps letter-spacing → tracking-normal for CSS output
+function toRegistryVars(props: ThemeStyleProps): Record<string, string> {
+  const vars: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(props)) {
+    if (value === undefined) continue;
+
+    // Map internal letter-spacing to CSS tracking-normal
+    if (key === "letter-spacing") {
+      vars["tracking-normal"] = value;
+    } else {
+      vars[key] = value;
+    }
+  }
+
+  return vars;
 }
 
 export async function GET(
@@ -85,23 +82,42 @@ export async function GET(
     }
 
     const theme = result.theme;
+    const { light, dark } = theme.styles;
 
-    // Extract shared theme variables
-    const sharedVars = extractSharedThemeVars(
-      theme.styles.light,
-      theme.styles.dark
-    );
-
-    // Build the ShadCN registry item
+    // Build the ShadCN registry item (matching tweakcn format exactly)
     const registryItem: ShadcnRegistryItem = {
       $schema: "https://ui.shadcn.com/schema/registry-item.json",
       name: toShadcnName(theme.name),
       type: "registry:style",
-      ...(theme.css && { css: theme.css }),
+      // CSS section always includes body letter-spacing
+      css: {
+        "@layer base": {
+          body: {
+            "letter-spacing": "var(--tracking-normal)",
+          },
+        },
+      },
       cssVars: {
-        ...(Object.keys(sharedVars).length > 0 ? { theme: sharedVars } : {}),
-        light: theme.styles.light as unknown as Record<string, string>,
-        dark: theme.styles.dark as unknown as Record<string, string>,
+        // Shared theme vars (fonts, radius, tracking calculations)
+        theme: {
+          "font-sans": getThemeValue(light, dark, "font-sans") || "Inter, sans-serif",
+          "font-mono": getThemeValue(light, dark, "font-mono") || "monospace",
+          "font-serif": getThemeValue(light, dark, "font-serif") || "serif",
+          radius: getThemeValue(light, dark, "radius") || "0.5rem",
+          "tracking-tighter": "calc(var(--tracking-normal) - 0.05em)",
+          "tracking-tight": "calc(var(--tracking-normal) - 0.025em)",
+          "tracking-wide": "calc(var(--tracking-normal) + 0.025em)",
+          "tracking-wider": "calc(var(--tracking-normal) + 0.05em)",
+          "tracking-widest": "calc(var(--tracking-normal) + 0.1em)",
+        },
+        // Light mode vars (includes tracking-normal and spacing)
+        light: {
+          ...toRegistryVars(light),
+          "tracking-normal": getThemeValue(light, dark, "letter-spacing") || "0em",
+          spacing: getThemeValue(light, dark, "spacing") || "0.25rem",
+        },
+        // Dark mode vars
+        dark: toRegistryVars(dark),
       },
     };
 
