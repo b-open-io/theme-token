@@ -3,7 +3,9 @@ import { fetchPublishedThemes } from "@/lib/fetch-themes";
 import { exampleThemes } from "@/lib/schema";
 
 export const runtime = "edge";
-export const revalidate = 3600; // Cache for 1 hour
+// Cache for 1 year - this image rarely needs to change
+// Vercel will cache it at the edge, avoiding regeneration costs
+export const revalidate = 31536000;
 
 // Convert oklch to approximate hex for OG image rendering
 function oklchToHex(oklch: string): string {
@@ -89,20 +91,34 @@ export async function GET() {
     }
   }
 
-  // Dedupe and shuffle colors
+  // Dedupe colors
   const uniqueColors = [...new Set(allColors)];
-  const shuffled = uniqueColors.sort(() => Math.random() - 0.5);
+
+  // Use deterministic seeded random for consistent caching
+  // Seed based on month so it changes monthly but stays stable for caching
+  const seed = new Date().getMonth() + new Date().getFullYear() * 12;
+  const seededRandom = (i: number) => {
+    const x = Math.sin(seed + i) * 10000;
+    return x - Math.floor(x);
+  };
+
+  // Shuffle with seeded random
+  const shuffled = uniqueColors
+    .map((c, i) => ({ c, r: seededRandom(i) }))
+    .sort((a, b) => a.r - b.r)
+    .map(({ c }) => c);
 
   // Pick 10-15 colors for stripes
   const stripeColors = shuffled.slice(0, Math.min(15, Math.max(10, shuffled.length)));
 
-  // Generate varying stripe widths
+  // Generate varying stripe widths with seeded random
   const stripeWidths: number[] = [];
   let totalWidth = 0;
   const targetWidth = 1600; // Extra width to cover diagonal
+  let widthSeed = 0;
 
   while (totalWidth < targetWidth) {
-    const width = 40 + Math.random() * 80; // 40-120px
+    const width = 40 + seededRandom(100 + widthSeed++) * 80; // 40-120px
     stripeWidths.push(width);
     totalWidth += width;
   }
