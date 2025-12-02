@@ -11,7 +11,7 @@ import {
   type SocialProfile,
   type InscribeResponse,
 } from "@/lib/yours-wallet";
-import { type ThemeToken, validateThemeToken } from "@/lib/schema";
+import { type ThemeToken, validateThemeToken, THEME_TOKEN_SCHEMA_URL } from "@/lib/schema";
 import { useTheme } from "@/components/theme-provider";
 
 export type WalletStatus =
@@ -85,21 +85,15 @@ export function useYoursWallet(): UseYoursWalletReturn {
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
-          const { outpoint, origin } = ordinal;
+          // JSON is in origin.data.insc.file.json (persists across transfers)
+          const content = ordinal?.origin?.data?.insc?.file?.json;
 
-          // JSON is embedded in origin.data.insc.file.json
-          const file = origin?.data?.insc?.file;
-          const content = file?.json;
-
-          console.log("[ThemeToken] Ordinal:", outpoint, "content:", content);
-
-          if (content) {
+          if (content && typeof content === "object") {
+            console.log("[ThemeToken] Checking:", ordinal.outpoint, content);
             const result = validateThemeToken(content);
             if (result.valid) {
               console.log("[ThemeToken] Valid theme:", result.theme.name);
               tokens.push(result.theme);
-            } else {
-              console.log("[ThemeToken] Invalid:", result.error);
             }
           }
         } catch (err) {
@@ -249,8 +243,12 @@ export function useYoursWallet(): UseYoursWalletReturn {
       setError(null);
 
       try {
-        // Inscribe theme token with clean format (no invented fields)
-        const jsonString = JSON.stringify(theme);
+        // Add $schema if not present
+        const themeWithSchema = {
+          $schema: THEME_TOKEN_SCHEMA_URL,
+          ...theme,
+        };
+        const jsonString = JSON.stringify(themeWithSchema);
         const base64Data = btoa(jsonString);
 
         const response = await wallet.inscribe([
