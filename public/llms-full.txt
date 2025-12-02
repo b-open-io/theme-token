@@ -1,0 +1,542 @@
+# Theme Token - Full Documentation
+
+> A service for inscribing and serving ShadCN-compatible themes as blockchain tokens on BSV
+
+Theme Token allows developers to publish, discover, and install design themes as 1Sat Ordinals on the BSV blockchain. Themes use ShadCN's registry format and can be installed directly via the ShadCN CLI.
+
+## Quick Links
+
+- Homepage: https://themetoken.dev
+- Specification: https://themetoken.dev/spec
+- Theme Studio: https://themetoken.dev/studio
+- Market: https://themetoken.dev/market
+- Schema: https://themetoken.dev/v1/schema.json
+- Registry: https://themetoken.dev/r/themes/[origin].json
+
+## Installation
+
+Install a theme into any ShadCN project:
+
+```bash
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
+```
+
+Replace `[origin]` with the ordinal origin ID (transaction ID + output index, e.g., `abc123_0`).
+
+The ShadCN CLI will:
+1. Fetch the theme JSON from the registry endpoint
+2. Parse the CSS custom properties
+3. Write them to your project's CSS file
+4. Apply the theme to your components
+
+## Complete Schema
+
+### Root Object
+
+```json
+{
+  "$schema": "https://themetoken.dev/v1/schema.json",
+  "name": "string (required)",
+  "author": "string (required, format: 'Name (URL)')",
+  "styles": {
+    "light": { /* StyleMode object */ },
+    "dark": { /* StyleMode object */ }
+  }
+}
+```
+
+### StyleMode Object
+
+Each mode (`light` and `dark`) contains the same properties:
+
+#### Required Colors (19 total)
+
+All colors use OKLCH format: `oklch(lightness chroma hue)`
+
+1. `background` - Main background color
+2. `foreground` - Main text color
+3. `card` - Card background
+4. `card-foreground` - Card text
+5. `popover` - Popover background
+6. `popover-foreground` - Popover text
+7. `primary` - Primary button/action background
+8. `primary-foreground` - Primary button/action text
+9. `secondary` - Secondary button/action background
+10. `secondary-foreground` - Secondary button/action text
+11. `muted` - Muted element background
+12. `muted-foreground` - Muted element text
+13. `accent` - Accent background
+14. `accent-foreground` - Accent text
+15. `destructive` - Destructive action background
+16. `destructive-foreground` - Destructive action text
+17. `border` - Border color
+18. `input` - Input border color
+19. `ring` - Focus ring color
+
+#### Optional Chart Colors (5 total)
+
+For data visualization components:
+
+- `chart-1` - First chart color
+- `chart-2` - Second chart color
+- `chart-3` - Third chart color
+- `chart-4` - Fourth chart color
+- `chart-5` - Fifth chart color
+
+#### Optional Sidebar Colors (5 total)
+
+For sidebar components:
+
+- `sidebar` - Sidebar background
+- `sidebar-primary` - Sidebar primary element
+- `sidebar-accent` - Sidebar accent element
+- `sidebar-border` - Sidebar border
+- `sidebar-ring` - Sidebar focus ring
+
+#### Required Typography
+
+- `radius` - Border radius value (e.g., "0.5rem", "0.75rem")
+
+#### Optional Typography
+
+- `font-sans` - Sans-serif font stack (e.g., "Inter, sans-serif")
+- `font-serif` - Serif font stack (e.g., "Georgia, serif")
+- `font-mono` - Monospace font stack (e.g., "Fira Code, monospace")
+- `letter-spacing` - Letter spacing value (e.g., "0em", "-0.01em")
+- `spacing` - Base spacing unit (e.g., "1rem")
+
+#### Optional Shadow Values
+
+Shadow presets (all strings):
+
+- `shadow-2xs` - Extra extra small shadow
+- `shadow-xs` - Extra small shadow
+- `shadow-sm` - Small shadow
+- `shadow` - Default shadow
+- `shadow-md` - Medium shadow
+- `shadow-lg` - Large shadow
+- `shadow-xl` - Extra large shadow
+- `shadow-2xl` - Extra extra large shadow
+
+Shadow offsets:
+
+- `shadow-offset-x` - Horizontal offset (e.g., "0", "2px")
+- `shadow-offset-y` - Vertical offset (e.g., "1px", "4px")
+
+## OKLCH Color Format
+
+OKLCH is a perceptually uniform color space:
+
+```
+oklch(L C H)
+```
+
+- **L** (Lightness): 0 to 1
+  - 0 = black
+  - 0.5 = medium
+  - 1 = white
+
+- **C** (Chroma): 0 to ~0.4
+  - 0 = grayscale
+  - 0.1 = subtle color
+  - 0.2+ = vibrant color
+
+- **H** (Hue): 0 to 360 degrees
+  - 0/360 = red
+  - 120 = green
+  - 240 = blue
+  - 255 = violet-blue
+  - 285 = purple
+
+Examples:
+
+```css
+oklch(1 0 0)           /* white */
+oklch(0 0 0)           /* black */
+oklch(0.5 0 0)         /* medium gray */
+oklch(0.55 0.22 255)   /* vibrant blue */
+oklch(0.65 0.19 142)   /* fresh green */
+oklch(0.45 0.15 30)    /* warm brown */
+```
+
+## CSS Output
+
+The registry endpoint converts ThemeToken JSON to CSS custom properties:
+
+```css
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --primary: 255 91.7% 54.9%;
+    --radius: 0.5rem;
+    /* ... */
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    /* ... */
+  }
+}
+```
+
+Note: OKLCH values are converted to HSL format for TailwindCSS compatibility.
+
+## Registry API
+
+### Endpoint
+
+```
+GET https://themetoken.dev/r/themes/[origin].json
+```
+
+Parameters:
+- `origin` - Ordinal origin ID (txid_vout format)
+
+### Response Format
+
+ShadCN registry format:
+
+```json
+{
+  "name": "theme-name",
+  "type": "registry:theme",
+  "cssVars": {
+    "light": {
+      "background": "0 0% 100%",
+      "foreground": "240 10% 3.9%",
+      /* ... all color variables */
+    },
+    "dark": {
+      "background": "240 10% 3.9%",
+      "foreground": "0 0% 98%",
+      /* ... all color variables */
+    }
+  }
+}
+```
+
+## Creating Themes
+
+### Using Theme Studio
+
+1. Visit https://themetoken.dev/studio
+2. Design your theme:
+   - Adjust colors using visual pickers
+   - Preview light and dark modes
+   - See live component examples
+3. Export JSON
+4. Inscribe to BSV blockchain
+5. Share registry URL
+
+### Manual Creation
+
+Create a JSON file following the schema:
+
+```json
+{
+  "$schema": "https://themetoken.dev/v1/schema.json",
+  "name": "My Custom Theme",
+  "author": "Your Name (https://yoursite.com)",
+  "styles": {
+    "light": {
+      "background": "oklch(1 0 0)",
+      "foreground": "oklch(0.145 0 0)",
+      "card": "oklch(1 0 0)",
+      "card-foreground": "oklch(0.145 0 0)",
+      "popover": "oklch(1 0 0)",
+      "popover-foreground": "oklch(0.145 0 0)",
+      "primary": "oklch(0.55 0.22 255)",
+      "primary-foreground": "oklch(0.98 0 0)",
+      "secondary": "oklch(0.96 0 0)",
+      "secondary-foreground": "oklch(0.145 0 0)",
+      "muted": "oklch(0.96 0 0)",
+      "muted-foreground": "oklch(0.455 0 0)",
+      "accent": "oklch(0.96 0 0)",
+      "accent-foreground": "oklch(0.145 0 0)",
+      "destructive": "oklch(0.55 0.22 15)",
+      "destructive-foreground": "oklch(0.98 0 0)",
+      "border": "oklch(0.92 0 0)",
+      "input": "oklch(0.92 0 0)",
+      "ring": "oklch(0.55 0.22 255)",
+      "radius": "0.5rem"
+    },
+    "dark": {
+      "background": "oklch(0.145 0 0)",
+      "foreground": "oklch(0.98 0 0)",
+      "card": "oklch(0.145 0 0)",
+      "card-foreground": "oklch(0.98 0 0)",
+      "popover": "oklch(0.145 0 0)",
+      "popover-foreground": "oklch(0.98 0 0)",
+      "primary": "oklch(0.65 0.22 255)",
+      "primary-foreground": "oklch(0.145 0 0)",
+      "secondary": "oklch(0.215 0 0)",
+      "secondary-foreground": "oklch(0.98 0 0)",
+      "muted": "oklch(0.215 0 0)",
+      "muted-foreground": "oklch(0.635 0 0)",
+      "accent": "oklch(0.215 0 0)",
+      "accent-foreground": "oklch(0.98 0 0)",
+      "destructive": "oklch(0.45 0.22 15)",
+      "destructive-foreground": "oklch(0.98 0 0)",
+      "border": "oklch(0.215 0 0)",
+      "input": "oklch(0.215 0 0)",
+      "ring": "oklch(0.65 0.22 255)",
+      "radius": "0.5rem"
+    }
+  }
+}
+```
+
+Validate against the schema at https://themetoken.dev/v1/schema.json
+
+## Inscribing Themes
+
+Themes are inscribed as 1Sat Ordinals on the BSV blockchain:
+
+1. Prepare JSON file (max ~96KB per inscription)
+2. Use inscription service or API
+3. Get ordinal origin ID (txid_vout format)
+4. Theme becomes permanently accessible via origin ID
+5. Registry URL: `https://themetoken.dev/r/themes/{origin}.json`
+
+## Compatibility
+
+### ShadCN
+
+Full compatibility with ShadCN component library:
+- Direct installation via CLI
+- Works with all ShadCN components
+- Supports custom color schemes
+- Compatible with component variants
+
+### TailwindCSS
+
+Requires TailwindCSS v4+ for CSS custom property support:
+
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        background: 'oklch(var(--background) / <alpha-value>)',
+        foreground: 'oklch(var(--foreground) / <alpha-value>)',
+        // ... other color variables
+      }
+    }
+  }
+}
+```
+
+### Tweakcn
+
+Fully compatible with tweakcn.com CSS export format.
+
+## Usage in Components
+
+After installing a theme, use semantic color names in your components:
+
+```tsx
+import { Button } from "@/components/ui/button"
+
+export function MyComponent() {
+  return (
+    <div className="bg-background text-foreground">
+      <Button variant="default">Primary Action</Button>
+      <Button variant="secondary">Secondary Action</Button>
+      <Button variant="destructive">Delete</Button>
+    </div>
+  )
+}
+```
+
+Colors automatically switch based on light/dark mode.
+
+## Color Relationships
+
+Understanding semantic color pairs:
+
+- `background` / `foreground` - Base page colors
+- `card` / `card-foreground` - Elevated surfaces
+- `popover` / `popover-foreground` - Floating elements
+- `primary` / `primary-foreground` - Main CTAs
+- `secondary` / `secondary-foreground` - Alternative actions
+- `muted` / `muted-foreground` - Subdued elements
+- `accent` / `accent-foreground` - Highlights
+- `destructive` / `destructive-foreground` - Warnings/errors
+
+Each pair ensures readable contrast ratios.
+
+## Best Practices
+
+### Color Design
+
+1. **Contrast**: Ensure WCAG AA compliance (4.5:1 for text)
+2. **Consistency**: Use similar chroma values within a mode
+3. **Hierarchy**: Vary lightness to create depth
+4. **Accessibility**: Test with color blindness simulators
+5. **Dark mode**: Reduce lightness, not just invert
+
+### Typography
+
+1. **Font loading**: Use system fonts for instant loading
+2. **Fallbacks**: Always include generic font families
+3. **Variable fonts**: Consider for flexible typography
+4. **Letter spacing**: Adjust based on font choice
+5. **Spacing**: Use consistent rhythm (e.g., 4px/8px grid)
+
+### Shadows
+
+1. **Layering**: Use multiple shadow values for depth
+2. **Direction**: Keep consistent light source
+3. **Blur**: Larger blur for higher elevation
+4. **Color**: Use semi-transparent background color
+5. **Dark mode**: Reduce shadow intensity
+
+## Blockchain Integration
+
+### 1Sat Ordinals
+
+Themes are stored as 1Sat Ordinals:
+- Each ordinal is a unique satoshi on BSV blockchain
+- Theme JSON is inscribed as ordinal data
+- Permanent, immutable storage
+- Transferable and tradeable
+- Discoverable via origin ID
+
+### Origin ID Format
+
+`{txid}_{vout}`
+
+Example: `abc123def456...789_0`
+
+- `txid` - Transaction ID containing the inscription
+- `vout` - Output index (usually 0)
+
+### Verification
+
+Verify theme authenticity:
+1. Fetch ordinal data via BSV explorer
+2. Compare JSON with registry response
+3. Validate schema compliance
+4. Check author attribution
+
+## Error Handling
+
+### Common Issues
+
+**Theme not found**
+- Verify origin ID format
+- Check blockchain confirmation status
+- Ensure inscription is valid JSON
+
+**Invalid color format**
+- All colors must use OKLCH format
+- Verify lightness is 0-1
+- Check chroma is reasonable (0-0.4)
+- Ensure hue is 0-360
+
+**Missing required properties**
+- All 19 core colors required in both modes
+- `radius` is required in both modes
+- `name` and `author` are required at root
+
+**Schema validation failed**
+- Validate against https://themetoken.dev/v1/schema.json
+- Check for typos in property names
+- Ensure proper JSON structure
+
+## Advanced Features
+
+### Chart Colors
+
+For data visualization:
+
+```tsx
+import { BarChart } from "@/components/ui/chart"
+
+<BarChart
+  data={data}
+  colors={["chart-1", "chart-2", "chart-3"]}
+/>
+```
+
+### Sidebar Themes
+
+For sidebar layouts:
+
+```tsx
+<aside className="bg-sidebar border-r border-sidebar-border">
+  <nav className="text-sidebar-foreground">
+    <a className="hover:bg-sidebar-accent">Link</a>
+  </nav>
+</aside>
+```
+
+### Dynamic Themes
+
+Switch themes at runtime:
+
+```typescript
+// Fetch different theme
+const response = await fetch(
+  `https://themetoken.dev/r/themes/${newOrigin}.json`
+)
+const theme = await response.json()
+
+// Apply CSS variables
+for (const [key, value] of Object.entries(theme.cssVars.light)) {
+  document.documentElement.style.setProperty(`--${key}`, value)
+}
+```
+
+## Market
+
+Browse and discover themes at https://themetoken.dev/market
+
+- Filter by color, style, author
+- Preview themes instantly
+- One-click installation
+- View inscription details
+- Check theme popularity
+
+## API Reference
+
+### GET /r/themes/[origin].json
+
+Fetch theme in ShadCN registry format.
+
+**Parameters:**
+- `origin` (path) - Ordinal origin ID
+
+**Response:**
+```json
+{
+  "name": "string",
+  "type": "registry:theme",
+  "cssVars": {
+    "light": { /* CSS variables */ },
+    "dark": { /* CSS variables */ }
+  }
+}
+```
+
+**Status Codes:**
+- 200 - Success
+- 404 - Theme not found
+- 500 - Server error
+
+### GET /v1/schema.json
+
+Fetch JSON schema for validation.
+
+**Response:**
+JSON Schema Draft 7 document.
+
+## Support
+
+- Documentation: https://themetoken.dev/spec
+- GitHub: (check project homepage)
+- Issues: Report via GitHub
+- Community: (check project homepage)

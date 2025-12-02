@@ -1,0 +1,104 @@
+# Theme Token
+
+> A service for inscribing and serving ShadCN-compatible themes as blockchain tokens on BSV
+
+Theme Token allows developers to publish, discover, and install design themes as 1Sat Ordinals on the BSV blockchain. Themes use ShadCN's registry format and can be installed directly via the ShadCN CLI.
+
+## Quick Links
+
+- Homepage: https://themetoken.dev
+- Specification: https://themetoken.dev/spec
+- Theme Studio: https://themetoken.dev/studio
+- Market: https://themetoken.dev/market
+- Schema: https://themetoken.dev/v1/schema.json
+
+## Installation
+
+Install a theme into any ShadCN project:
+
+```bash
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
+```
+
+Replace `[origin]` with the ordinal origin ID (transaction ID + output index, e.g., `abc123_0`).
+
+## Theme Format
+
+Themes are JSON files with light and dark color palettes using OKLCH color format:
+
+```json
+{
+  "$schema": "https://themetoken.dev/v1/schema.json",
+  "name": "Theme Name",
+  "author": "Name (https://github.com/username)",
+  "styles": {
+    "light": {
+      "background": "oklch(1 0 0)",
+      "foreground": "oklch(0.145 0 0)",
+      "primary": "oklch(0.55 0.22 255)",
+      "radius": "0.5rem"
+    },
+    "dark": { /* same properties */ }
+  }
+}
+```
+
+## Color Properties
+
+Each theme mode (light/dark) requires these semantic colors:
+
+- `background`, `foreground` - Base colors
+- `card`, `card-foreground` - Card surfaces
+- `popover`, `popover-foreground` - Popovers
+- `primary`, `primary-foreground` - Primary actions
+- `secondary`, `secondary-foreground` - Secondary actions
+- `muted`, `muted-foreground` - Muted elements
+- `accent`, `accent-foreground` - Accents
+- `destructive`, `destructive-foreground` - Destructive actions
+- `border` - Borders
+- `input` - Input borders
+- `ring` - Focus rings
+
+Optional chart colors: `chart-1` through `chart-5`
+
+Optional sidebar colors: `sidebar`, `sidebar-primary`, `sidebar-accent`, `sidebar-border`, `sidebar-ring`
+
+## Typography & Effects
+
+- `radius` (required) - Border radius (e.g., "0.5rem")
+- `font-sans`, `font-serif`, `font-mono` - Font stacks
+- `letter-spacing` - Letter spacing (e.g., "0em")
+- `spacing` - Base spacing unit
+- `shadow-*` - Shadow values (2xs, xs, sm, md, lg, xl, 2xl)
+- `shadow-offset-x`, `shadow-offset-y` - Shadow offsets
+
+## OKLCH Format
+
+Colors use OKLCH format: `oklch(lightness chroma hue)`
+
+- Lightness: 0-1 (0 = black, 1 = white)
+- Chroma: 0-0.4 (0 = gray, higher = more saturated)
+- Hue: 0-360 (color angle)
+
+Example: `oklch(0.55 0.22 255)` is a vibrant blue.
+
+## Registry Endpoint
+
+Themes are served at: `https://themetoken.dev/r/themes/[origin].json`
+
+Returns ShadCN registry format with theme CSS converted to custom properties.
+
+## Creating Themes
+
+1. Use Theme Studio: https://themetoken.dev/studio
+2. Design light and dark modes
+3. Export JSON
+4. Inscribe on BSV blockchain
+5. Share registry URL
+
+## Compatibility
+
+- Works with any ShadCN-based project
+- Compatible with tweakcn.com CSS output
+- Supports TailwindCSS v4+ with CSS custom properties
+- No build-time processing required

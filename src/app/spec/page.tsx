@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { JsonSyntax } from "@/components/json-syntax";
 import { ChainImplementations } from "@/components/chain-implementations";
-import { Terminal, Copy, Check } from "lucide-react";
+import { Terminal, Copy, Check, Bot, FileText } from "lucide-react";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -288,6 +288,76 @@ export default function SpecPage() {
             viewport={{ once: true }}
           >
             <ChainImplementations />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* LLM Documentation */}
+      <section className="border-t border-border py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <motion.div
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={stagger}
+          >
+            <motion.p
+              variants={fadeIn}
+              className="font-mono text-sm text-primary"
+            >
+              // For AI Assistants
+            </motion.p>
+            <motion.h2
+              variants={fadeIn}
+              className="mb-4 text-3xl font-bold sm:text-4xl"
+            >
+              LLM Documentation
+            </motion.h2>
+            <motion.p variants={fadeIn} className="mb-8 max-w-2xl text-muted-foreground">
+              Machine-readable documentation for AI assistants and LLMs.
+              Following the <a href="https://llmstxt.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">llms.txt</a> specification.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid gap-4 sm:grid-cols-2"
+          >
+            <a
+              href="/llms.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/50 hover:bg-muted/50"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Bot className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">llms.txt</h3>
+                <p className="text-sm text-muted-foreground">
+                  Concise overview for quick context
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/llms-full.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/50 hover:bg-muted/50"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">llms-full.txt</h3>
+                <p className="text-sm text-muted-foreground">
+                  Complete API and schema reference
+                </p>
+              </div>
+            </a>
           </motion.div>
         </div>
       </section>
