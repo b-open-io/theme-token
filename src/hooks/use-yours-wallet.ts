@@ -84,7 +84,9 @@ export function useYoursWallet(): UseYoursWalletReturn {
       // Fetch and validate each ordinal
       for (const ordinal of ordinals) {
         try {
-          const content = await fetchOrdinalContent(ordinal.origin.outpoint);
+          const outpoint = ordinal.origin.outpoint;
+          const content = await fetchOrdinalContent(outpoint);
+
           if (content) {
             const result = validateThemeToken(content);
             if (result.valid) {
@@ -95,7 +97,6 @@ export function useYoursWallet(): UseYoursWalletReturn {
           // Skip invalid ordinals
         }
       }
-
       setThemeTokens(tokens);
       setAvailableThemes(tokens);
     } catch (err) {

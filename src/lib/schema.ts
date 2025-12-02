@@ -38,11 +38,11 @@ export const themeStylePropsSchema = z.object({
   ring: z.string(),
 
   // Charts
-  "chart-1": z.string(),
-  "chart-2": z.string(),
-  "chart-3": z.string(),
-  "chart-4": z.string(),
-  "chart-5": z.string(),
+  "chart-1": z.string().optional(),
+  "chart-2": z.string().optional(),
+  "chart-3": z.string().optional(),
+  "chart-4": z.string().optional(),
+  "chart-5": z.string().optional(),
 
   // Sidebar (optional)
   sidebar: z.string().optional(),
@@ -71,7 +71,12 @@ export const themeStylePropsSchema = z.object({
   "shadow-spread": z.string().optional(),
   "shadow-offset-x": z.string().optional(),
   "shadow-offset-y": z.string().optional(),
-});
+  "shadow-x": z.string().optional(),
+  "shadow-y": z.string().optional(),
+
+  // Tracking (optional)
+  "tracking-normal": z.string().optional(),
+}).catchall(z.string()); // Allow additional CSS properties from tweakcn (must be strings)
 
 export type ThemeStyleProps = z.infer<typeof themeStylePropsSchema>;
 
