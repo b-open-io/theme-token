@@ -86,13 +86,13 @@ export default function Home() {
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="lg" className="gap-2" asChild>
-                <a href="#studio">
+                <a href="/studio">
                   <Sparkles className="h-5 w-5" />
                   Launch Studio
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="gap-2" asChild>
-                <a href="#schema">
+                <a href="/spec">
                   Read the Spec
                   <ArrowRight className="h-4 w-4" />
                 </a>

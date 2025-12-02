@@ -56,13 +56,13 @@ export function Header() {
         {/* Center Nav Links */}
         <nav className="hidden items-center gap-6 md:flex">
           <Link
-            href="/#schema"
+            href="/spec"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Spec
           </Link>
           <Link
-            href="/#studio"
+            href="/studio"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Studio
