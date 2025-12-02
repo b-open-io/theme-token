@@ -393,23 +393,38 @@ export const exampleThemes: ThemeToken[] = [
 
 /**
  * Parse @layer base rules from CSS
+ * Also captures root-level body { } rules (tweakcn outputs these outside @layer base)
  * Returns the body styles if found
  */
 function parseLayerBase(
   css: string
 ): { "@layer base": Record<string, Record<string, string>> } | undefined {
-  // Match @layer base { ... } - need to handle nested braces
+  // First try to match @layer base { ... body ... }
   const layerMatch = css.match(/@layer\s+base\s*\{([\s\S]*?body[\s\S]*?)\}/);
-  if (!layerMatch) return undefined;
 
-  // Extract body { ... } within @layer base
-  const bodyMatch = layerMatch[1].match(/body\s*\{([^}]+)\}/);
-  if (!bodyMatch) return undefined;
+  let bodyContent: string | null = null;
+
+  if (layerMatch) {
+    // Extract body { ... } within @layer base
+    const bodyMatch = layerMatch[1].match(/body\s*\{([^}]+)\}/);
+    if (bodyMatch) {
+      bodyContent = bodyMatch[1];
+    }
+  } else {
+    // Try root-level body { } (tweakcn outputs this outside @layer base)
+    // Match body { } that's NOT inside :root, .dark, or @theme inline
+    const rootBodyMatch = css.match(/(?:^|\n)body\s*\{([^}]+)\}/);
+    if (rootBodyMatch) {
+      bodyContent = rootBodyMatch[1];
+    }
+  }
+
+  if (!bodyContent) return undefined;
 
   const bodyProps: Record<string, string> = {};
   const propRegex = /([a-z-]+)\s*:\s*([^;]+);/gi;
   let match;
-  while ((match = propRegex.exec(bodyMatch[1])) !== null) {
+  while ((match = propRegex.exec(bodyContent)) !== null) {
     bodyProps[match[1].trim()] = match[2].trim();
   }
 
