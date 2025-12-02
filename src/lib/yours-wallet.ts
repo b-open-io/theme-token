@@ -9,6 +9,7 @@ export interface OrdinalData {
     file?: {
       type?: string;
       size?: number;
+      json?: unknown;
     };
   };
   map?: Record<string, unknown>;
