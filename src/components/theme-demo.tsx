@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,12 @@ import {
   Settings,
   Star,
   User,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 // Color swatch component
@@ -55,6 +62,157 @@ function DemoSection({ title, children }: { title: string; children: React.React
       <h3 className="text-lg font-semibold">{title}</h3>
       {children}
     </div>
+  );
+}
+
+// Audio Player Demo Component
+function AudioPlayerDemo() {
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(false);
+  const [volume, setVolume] = React.useState([70]);
+  const [currentTime, setCurrentTime] = React.useState([0]);
+  const [duration, setDuration] = React.useState(180); // 3 minutes demo
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        {/* Track Info */}
+        <div className="mb-6 flex items-start gap-4">
+          <div className="h-16 w-16 rounded-md bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-8 w-8 text-primary-foreground"
+            >
+              <path d="M9 18V5l12-2v13M9 13c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-1c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold">Demo Audio Track</h4>
+            <p className="text-sm text-muted-foreground">Theme Token Demo</p>
+          </div>
+        </div>
+
+        {/* Seek Bar */}
+        <div className="mb-2 space-y-2">
+          <Slider
+            value={currentTime}
+            onValueChange={setCurrentTime}
+            max={duration}
+            step={1}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{formatTime(currentTime[0])}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setCurrentTime([Math.max(0, currentTime[0] - 10)])}
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="default"
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              onClick={() => setIsPlaying(!isPlaying)}
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5 ml-0.5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setCurrentTime([Math.min(duration, currentTime[0] + 10)])}
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Volume Control */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setIsMuted(!isMuted)}
+            >
+              {isMuted ? (
+                <VolumeX className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </Button>
+            <div className="w-24">
+              <Slider
+                value={isMuted ? [0] : volume}
+                onValueChange={(v) => {
+                  setVolume(v);
+                  if (v[0] > 0) setIsMuted(false);
+                }}
+                max={100}
+                step={1}
+              />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Waveform Visualizer Demo
+function WaveformDemo() {
+  const bars = 40;
+  const [heights] = React.useState(
+    Array.from({ length: bars }, () => Math.random() * 100)
+  );
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="mb-4">
+          <h4 className="mb-1 font-semibold">Waveform Visualizer</h4>
+          <p className="text-sm text-muted-foreground">
+            Audio visualization with theme colors
+          </p>
+        </div>
+        <div className="flex h-32 items-end justify-between gap-0.5">
+          {heights.map((height, i) => (
+            <div
+              key={i}
+              className="w-full rounded-t-sm bg-primary/20 transition-all hover:bg-primary/40"
+              style={{ height: `${height}%` }}
+            />
+          ))}
+        </div>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <Badge variant="secondary">0:00</Badge>
+          <Progress value={33} className="w-full" />
+          <Badge variant="secondary">3:24</Badge>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -450,6 +608,132 @@ export function ThemeDemo() {
             </div>
           </CardContent>
         </Card>
+      </DemoSection>
+
+      <Separator />
+
+      {/* Audio Components */}
+      <DemoSection title="Audio Components">
+        <div className="space-y-4">
+          <AudioPlayerDemo />
+          <WaveformDemo />
+
+          {/* Volume Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Volume Controls</CardTitle>
+              <CardDescription>
+                Standalone volume and playback controls
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Master Volume</Label>
+                <div className="flex items-center gap-3">
+                  <Volume2 className="h-4 w-4 text-muted-foreground" />
+                  <Slider defaultValue={[75]} max={100} step={1} className="flex-1" />
+                  <span className="w-12 text-right text-sm text-muted-foreground">75%</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Bass</Label>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">−</span>
+                  <Slider defaultValue={[50]} max={100} step={1} className="flex-1" />
+                  <span className="text-xs text-muted-foreground">+</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Treble</Label>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">−</span>
+                  <Slider defaultValue={[50]} max={100} step={1} className="flex-1" />
+                  <span className="text-xs text-muted-foreground">+</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="mono" />
+                  <Label htmlFor="mono" className="text-sm font-normal">
+                    Mono audio
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="normalize" defaultChecked />
+                  <Label htmlFor="normalize" className="text-sm font-normal">
+                    Normalize volume
+                  </Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Playlist Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Playlist</CardTitle>
+              <CardDescription>Queue management and track selection</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[
+                  { name: "Track One", duration: "3:24", active: true },
+                  { name: "Track Two", duration: "4:12", active: false },
+                  { name: "Track Three", duration: "2:58", active: false },
+                ].map((track, i) => (
+                  <button
+                    key={i}
+                    className={`flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors ${
+                      track.active
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded ${
+                          track.active ? "bg-primary-foreground/20" : "bg-muted"
+                        }`}
+                      >
+                        {track.active ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4 ml-0.5" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{track.name}</p>
+                        <p
+                          className={`text-xs ${
+                            track.active
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          Theme Token Demo
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-sm ${
+                        track.active
+                          ? "text-primary-foreground/80"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {track.duration}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </DemoSection>
     </div>
   );

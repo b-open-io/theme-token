@@ -22,6 +22,9 @@ import {
   Layers,
   ExternalLink,
   Sparkles,
+  Terminal,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface Props {
@@ -72,7 +75,16 @@ export default function PreviewPage({ params }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
+  const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}.json`;
+
+  const copyCommand = useCallback(() => {
+    navigator.clipboard.writeText(installCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [installCommand]);
 
   // Sync preview mode with global mode initially
   useEffect(() => {
@@ -282,6 +294,45 @@ export default function PreviewPage({ params }: Props) {
                   )
                 )}
               </div>
+            </div>
+          </motion.div>
+
+          {/* CLI Install */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-12 rounded-xl p-6"
+            style={{
+              backgroundColor: "var(--muted)",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Terminal className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+              <p className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>
+                Install via CLI
+              </p>
+            </div>
+            <div
+              className="flex items-center gap-2 rounded-lg p-3 font-mono text-sm"
+              style={{
+                backgroundColor: "var(--background)",
+                borderColor: "var(--border)",
+                borderWidth: "1px",
+              }}
+            >
+              <code className="flex-1 overflow-x-auto">{installCommand}</code>
+              <button
+                onClick={copyCommand}
+                className="flex-shrink-0 rounded-md p-2 transition-colors hover:bg-muted"
+                title="Copy command"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+                )}
+              </button>
             </div>
           </motion.div>
 

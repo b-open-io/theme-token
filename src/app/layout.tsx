@@ -17,22 +17,22 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Theme Token | Tokenize UI Themes on Blockchain",
+  title: "Theme Token | On-Chain Themes for ShadCN UI",
   description:
-    "An open standard for tokenizing ShadCN UI themes as NFT assets. Own, trade, and apply themes across any compatible application.",
+    "Install ShadCN themes from blockchain with one command. Create, own, trade, and apply themes across any compatible application.",
   keywords: [
     "theme token",
-    "NFT themes",
+    "ShadCN themes",
     "ShadCN UI",
-    "blockchain",
+    "blockchain themes",
     "1sat ordinals",
-    "Bitcoin SV",
-    "tokenized themes",
+    "shadcn registry",
+    "NFT themes",
   ],
   metadataBase: new URL("https://themetoken.dev"),
   openGraph: {
     title: "Theme Token",
-    description: "Tokenize UI Themes on Blockchain",
+    description: "On-Chain Themes for ShadCN UI",
     url: "https://themetoken.dev",
     siteName: "Theme Token",
     type: "website",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Theme Token",
-    description: "Tokenize UI Themes on Blockchain",
+    description: "Install ShadCN themes directly from blockchain",
   },
 };
 

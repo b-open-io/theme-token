@@ -1,7 +1,7 @@
 {
   "name": "theme-token",
   "version": "0.1.0",
-  "description": "Theme Token - An open standard for tokenizing ShadCN UI themes on blockchain",
+  "description": "Tokenize ShadCN UI themes on blockchain using the ShadCN Registry Format",
   "author": "WildSatchmo (https://github.com/rohenaz)",
   "homepage": "https://themetoken.dev",
   "repository": {
@@ -13,7 +13,8 @@
     "dev": "next dev --port 3033",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cli": "bun run cli/index.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
@@ -36,7 +37,8 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.1.13"
+    "zod": "^4.1.13",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { JsonSyntax } from "@/components/json-syntax";
 import { ChainImplementations } from "@/components/chain-implementations";
+import { Terminal, Copy, Check } from "lucide-react";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -19,14 +21,87 @@ const stagger = {
 };
 
 export default function SpecPage() {
+  const [copied, setCopied] = useState(false);
+  const installCommand = "bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json";
+
+  const copyCommand = useCallback(() => {
+    navigator.clipboard.writeText(installCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [installCommand]);
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Hero - CLI Install */}
+      <section className="border-b border-border bg-gradient-to-b from-primary/5 to-transparent py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <motion.div
+            initial="initial"
+            animate="animate"
+            variants={stagger}
+            className="text-center"
+          >
+            <motion.p
+              variants={fadeIn}
+              className="font-mono text-sm text-primary"
+            >
+              // ShadCN Registry Format
+            </motion.p>
+            <motion.h1
+              variants={fadeIn}
+              className="mb-4 text-3xl font-bold sm:text-4xl"
+            >
+              Install Themes from Blockchain
+            </motion.h1>
+            <motion.p variants={fadeIn} className="mx-auto mb-8 max-w-2xl text-muted-foreground">
+              Theme Token uses the ShadCN Registry Format. Install any on-chain theme
+              directly with the ShadCN CLI.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mx-auto max-w-2xl"
+          >
+            <div className="rounded-xl border border-primary/20 bg-card p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Terminal className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Install via CLI</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 font-mono text-sm">
+                <code className="flex-1 overflow-x-auto text-muted-foreground">
+                  <span className="text-primary">bunx</span> shadcn@latest add{" "}
+                  <span className="text-foreground">https://themetoken.dev/r/themes/[origin].json</span>
+                </code>
+                <button
+                  onClick={copyCommand}
+                  className="flex-shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Copy command"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                Replace <code className="rounded bg-muted px-1">[origin]</code> with the inscription origin ID
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Schema Documentation */}
       <section className="py-16">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             initial="initial"
-            animate="animate"
+            whileInView="animate"
+            viewport={{ once: true }}
             variants={stagger}
           >
             <motion.p
@@ -35,16 +110,15 @@ export default function SpecPage() {
             >
               // The Schema
             </motion.p>
-            <motion.h1
+            <motion.h2
               variants={fadeIn}
               className="mb-4 text-3xl font-bold sm:text-4xl"
             >
-              Built on ShadCN UI Standards
-            </motion.h1>
+              ShadCN Registry Format
+            </motion.h2>
             <motion.p variants={fadeIn} className="mb-12 max-w-2xl text-muted-foreground">
               Theme Token uses the same CSS custom properties that power thousands of
-              ShadCN-based applications. If your app uses ShadCN UI, it&apos;s already
-              compatible.
+              ShadCN-based applications. 100% compatible with the ShadCN CLI ecosystem.
             </motion.p>
           </motion.div>
 
@@ -119,11 +193,16 @@ export default function SpecPage() {
                 className="text-xs"
               />
               <p className="mt-3 text-xs text-muted-foreground">
-                Directly compatible with{" "}
+                Our <code className="rounded bg-muted px-1">/r/themes/[origin].json</code> endpoint
+                serves this as{" "}
+                <a href="https://ui.shadcn.com/docs/registry" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  ShadCN Registry Format
+                </a>
+                . Also compatible with{" "}
                 <a href="https://tweakcn.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   tweakcn
-                </a>{" "}
-                and ShadCN UI.{" "}
+                </a>
+                .{" "}
                 <a
                   href="https://docs.npmjs.com/cli/v10/configuring-npm/package-json#name"
                   target="_blank"
@@ -141,7 +220,7 @@ export default function SpecPage() {
                 >
                   author
                 </a>
-                {" "}fields follow npm conventions.
+                {" "}follow npm conventions.
               </p>
             </motion.div>
           </div>

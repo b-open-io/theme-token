@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://themetoken.dev/v1/schema.json",
   "title": "Theme Token",
-  "description": "ShadCN UI theme token for blockchain inscription. Compatible with tweakcn.com",
+  "description": "ShadCN UI theme token for blockchain inscription. ShadCN Registry Format compatible. Install via: bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json",
   "type": "object",
   "required": ["$schema", "name", "styles"],
   "properties": {

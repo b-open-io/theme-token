@@ -14,7 +14,11 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
+  Terminal,
+  Copy,
+  Check,
 } from "lucide-react";
+import { useState, useCallback } from "react";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -30,10 +34,10 @@ const stagger = {
   },
 };
 
-// New simplified schema - tweakcn compatible
+// ShadCN Registry Format - the standard
 const minimalSchema = {
-  $schema: "https://themetoken.dev/v1",
-  label: "My Theme",
+  $schema: "https://themetoken.dev/v1/schema.json",
+  name: "midnight-aurora",
   author: "WildSatchmo (https://github.com/rohenaz)",
   styles: {
     light: {
@@ -50,7 +54,19 @@ const minimalSchema = {
   },
 };
 
+// Example CLI install command
+const exampleOrigin = "85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf_0";
+
 export default function Home() {
+  const [copied, setCopied] = useState(false);
+  const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}.json`;
+
+  const copyCommand = useCallback(() => {
+    navigator.clipboard.writeText(installCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [installCommand]);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -67,45 +83,80 @@ export default function Home() {
           >
             <Badge className="mb-6" variant="outline">
               <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
-              Open Standard v1.0
+              ShadCN Registry Format
             </Badge>
 
             <h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-              <span className="block">Tokenize UI Themes</span>
-              <span className="block text-primary">On Blockchain</span>
+              <span className="block">On-Chain Themes</span>
+              <span className="block text-primary">For ShadCN UI</span>
             </h1>
 
             <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              An open standard for inscribing{" "}
-              <span className="font-semibold text-foreground">ShadCN UI</span> themes
-              as NFT assets. Own, trade, and apply themes across any compatible
-              application.
+              Install themes directly from blockchain using the{" "}
+              <span className="font-semibold text-foreground">ShadCN CLI</span>.
+              Own, trade, and apply themes across any compatible application.
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="lg" className="gap-2" asChild>
-                <a href="/studio">
-                  <Sparkles className="h-5 w-5" />
-                  Launch Studio
+                <a href="/market">
+                  <Palette className="h-5 w-5" />
+                  Browse Themes
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="gap-2" asChild>
-                <a href="/spec">
-                  Read the Spec
-                  <ArrowRight className="h-4 w-4" />
+                <a href="/studio">
+                  <Sparkles className="h-5 w-5" />
+                  Create Theme
                 </a>
               </Button>
             </div>
           </motion.div>
 
-          {/* Animated Schema Preview */}
+          {/* CLI Install - Primary CTA */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mx-auto mt-16 max-w-2xl"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mx-auto mt-12 max-w-3xl"
           >
-            <div className="rounded-xl border border-border bg-card/50 p-1 shadow-2xl backdrop-blur">
+            <div className="rounded-xl border border-primary/20 bg-card/80 p-6 shadow-2xl backdrop-blur">
+              <div className="mb-4 flex items-center gap-2">
+                <Terminal className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Install from Blockchain</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 font-mono text-sm">
+                <code className="flex-1 overflow-x-auto text-muted-foreground">
+                  <span className="text-primary">bunx</span> shadcn@latest add{" "}
+                  <span className="text-foreground">https://themetoken.dev/r/themes/[origin].json</span>
+                </code>
+                <button
+                  onClick={copyCommand}
+                  className="flex-shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Copy command"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              <p className="mt-3 text-center text-sm text-muted-foreground">
+                Replace <code className="rounded bg-muted px-1 font-mono">[origin]</code> with any theme&apos;s blockchain ID.{" "}
+                <a href="/market" className="text-primary hover:underline">Browse themes</a> to find one.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Schema Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mx-auto mt-8 max-w-2xl"
+          >
+            <div className="rounded-xl border border-border bg-card/50 p-1 shadow-xl backdrop-blur">
               <div className="flex items-center gap-2 border-b border-border px-4 py-2">
                 <div className="h-3 w-3 rounded-full bg-destructive/60" />
                 <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
@@ -199,20 +250,20 @@ export default function Home() {
               </div>
               <h3 className="mb-2 text-xl font-semibold">For Developers</h3>
               <p className="mb-4 text-sm text-muted-foreground">
-                Universal & decentralized
+                ShadCN Registry Format
               </p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start gap-2">
+                  <Terminal className="mt-0.5 h-4 w-4 text-primary" />
+                  <span>Install with bunx shadcn@latest add</span>
+                </li>
+                <li className="flex items-start gap-2">
                   <Layers className="mt-0.5 h-4 w-4 text-primary" />
-                  <span>One standard, infinite community themes</span>
+                  <span>100% compatible with ShadCN ecosystem</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Globe className="mt-0.5 h-4 w-4 text-primary" />
-                  <span>No central point of failure</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Code2 className="mt-0.5 h-4 w-4 text-primary" />
-                  <span>Simple JSON schema, easy integration</span>
+                  <span>Decentralized, immutable theme CDN</span>
                 </li>
               </ul>
             </motion.div>

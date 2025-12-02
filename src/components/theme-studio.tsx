@@ -266,6 +266,10 @@ export function ThemeStudio() {
 
   // Success state
   if (txid) {
+    const origin = `${txid}_0`;
+    const installUrl = `https://themetoken.dev/r/themes/${origin}.json`;
+    const installCommand = `bunx shadcn@latest add ${installUrl}`;
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -279,18 +283,36 @@ export function ThemeStudio() {
         <p className="mb-4 text-muted-foreground">
           Your theme has been permanently inscribed on the BSV blockchain.
         </p>
-        <div className="mb-6 rounded-lg bg-muted/50 p-4">
-          <p className="mb-1 text-xs text-muted-foreground">Transaction ID</p>
-          <p className="break-all font-mono text-sm">{txid}</p>
+
+        {/* Install Command */}
+        <div className="mb-6 rounded-lg border border-primary/30 bg-card p-4 text-left">
+          <p className="mb-2 text-xs font-medium text-primary">Install via CLI</p>
+          <div className="flex items-center gap-2 rounded-md bg-muted p-2 font-mono text-xs">
+            <code className="flex-1 overflow-x-auto">{installCommand}</code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(installCommand);
+              }}
+              className="flex-shrink-0 rounded p-1 hover:bg-background"
+              title="Copy"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-lg bg-muted/50 p-4">
+          <p className="mb-1 text-xs text-muted-foreground">Origin ID</p>
+          <p className="break-all font-mono text-sm">{origin}</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button asChild variant="outline">
             <a
-              href={`https://whatsonchain.com/tx/${txid}`}
+              href={`https://1sat.market/outpoint/${origin}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              View on Explorer
+              View on Market
               <ExternalLink className="ml-2 h-4 w-4" />
             </a>
           </Button>
@@ -376,7 +398,7 @@ export function ThemeStudio() {
           {activeTab === "paste" && (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground">
-                Paste CSS from{" "}
+                Paste ShadCN theme CSS from{" "}
                 <a
                   href="https://tweakcn.com"
                   target="_blank"
@@ -385,7 +407,7 @@ export function ThemeStudio() {
                 >
                   tweakcn.com
                 </a>{" "}
-                or Theme Token JSON.
+                or any ShadCN-compatible JSON.
               </p>
               <textarea
                 value={customInput}
