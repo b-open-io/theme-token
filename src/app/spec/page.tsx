@@ -123,16 +123,25 @@ export default function SpecPage() {
                 <a href="https://tweakcn.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   tweakcn
                 </a>{" "}
-                and ShadCN UI. Author field uses{" "}
+                and ShadCN UI.{" "}
+                <a
+                  href="https://docs.npmjs.com/cli/v10/configuring-npm/package-json#name"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Name
+                </a>
+                {" "}and{" "}
                 <a
                   href="https://docs.npmjs.com/cli/v10/configuring-npm/package-json#people-fields-author-contributors"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  npm author format
+                  author
                 </a>
-                .
+                {" "}fields follow npm conventions.
               </p>
             </motion.div>
           </div>
