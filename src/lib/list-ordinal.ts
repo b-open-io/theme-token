@@ -149,8 +149,15 @@ export async function listOrdinal(
   for (const sig of signatures) {
     const input = tx.inputs[sig.inputIndex];
     if (input) {
+      console.log("[listOrdinal] Applying sig to input", sig.inputIndex, "sig:", sig.sig, "pubKey:", sig.pubKey);
       // P2PKH unlocking script: <sig> <pubkey>
-      input.unlockingScript = Script.fromASM(`${sig.sig} ${sig.pubKey}`);
+      // Build script by pushing hex data properly
+      const sigBytes = Utils.toArray(sig.sig, "hex");
+      const pubKeyBytes = Utils.toArray(sig.pubKey, "hex");
+      const unlockScript = new Script();
+      unlockScript.writeBin(sigBytes);
+      unlockScript.writeBin(pubKeyBytes);
+      input.unlockingScript = unlockScript;
     }
   }
 
