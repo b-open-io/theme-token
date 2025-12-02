@@ -31,16 +31,25 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL("https://themetoken.dev"),
   openGraph: {
-    title: "Theme Token",
-    description: "On-Chain Themes for ShadCN UI",
+    title: "Theme Token | On-Chain Themes for ShadCN UI",
+    description: "Install ShadCN themes from blockchain with one command. Create, own, trade, and apply themes across any compatible application.",
     url: "https://themetoken.dev",
     siteName: "Theme Token",
     type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 675,
+        alt: "Theme Token - Blockchain-Powered ShadCN UI Themes",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Theme Token",
-    description: "Install ShadCN themes directly from blockchain",
+    title: "Theme Token | On-Chain Themes for ShadCN UI",
+    description: "Install ShadCN themes from blockchain with one command",
+    images: ["/og-image.jpg"],
   },
 };
 
