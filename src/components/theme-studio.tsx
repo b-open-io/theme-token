@@ -12,6 +12,7 @@ import {
   exampleThemes,
   validateThemeToken,
   parseTweakCnCss,
+  applyTheme as applyThemeToDOM,
 } from "@/lib/schema";
 import { REMIX_THEME_EVENT, getAndClearRemixTheme } from "@/components/theme-gallery";
 import {
@@ -122,13 +123,12 @@ export function ThemeStudio() {
     isInscribing,
     error: walletError,
   } = useYoursWallet();
-  const { mode, toggleMode, applyTheme, resetTheme, activeTheme } = useTheme();
+  const { mode, toggleMode, activeTheme } = useTheme();
 
   // Use wallet's active theme as default if available, otherwise use first preset
   const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
     activeTheme || exampleThemes[0]
   );
-  const [hasInitialized, setHasInitialized] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"presets" | "paste" | "drafts">("presets");
@@ -261,24 +261,10 @@ export function ThemeStudio() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // Apply theme to preview when selected (skip initial if wallet theme is active)
+  // Apply theme to DOM directly (not through provider to avoid loops)
   useEffect(() => {
-    // Skip applying on first render if we already have an active wallet theme
-    if (!hasInitialized && activeTheme) {
-      setHasInitialized(true);
-      return;
-    }
-    setHasInitialized(true);
-    applyTheme(selectedTheme);
-    return () => resetTheme();
-  }, [selectedTheme, applyTheme, resetTheme, activeTheme, hasInitialized]);
-
-  // Sync selected theme when wallet theme changes
-  useEffect(() => {
-    if (activeTheme && hasInitialized) {
-      setSelectedTheme(activeTheme);
-    }
-  }, [activeTheme, hasInitialized]);
+    applyThemeToDOM(selectedTheme.styles[mode]);
+  }, [selectedTheme, mode]);
 
   // Listen for remix events from gallery
   useEffect(() => {
