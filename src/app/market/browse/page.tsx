@@ -32,7 +32,7 @@ import {
 	FilterSidebar,
 	type FilterState,
 } from "@/components/market/filter-sidebar";
-import { RemixCard } from "@/components/market/remix-card";
+import { GenerateCard } from "@/components/market/generate-card";
 import { ThemeCard } from "@/components/market/theme-card";
 
 const DEFAULT_FILTERS: FilterState = {
@@ -44,7 +44,7 @@ const DEFAULT_FILTERS: FilterState = {
 
 export default function BrowsePage() {
 	const { status, connect } = useYoursWallet();
-	const { mode } = useTheme();
+	const { mode, applyThemeAnimated } = useTheme();
 	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -235,64 +235,76 @@ export default function BrowsePage() {
 						<div className="flex items-center justify-center py-20">
 							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 						</div>
-					) : listings.length === 0 ? (
-						<div className="rounded-xl border border-dashed border-border py-20 text-center">
-							<ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-							<h3 className="mb-2 text-lg font-semibold">
-								No listings available
-							</h3>
-							<p className="text-muted-foreground">
-								The marketplace is currently empty. Be the first to list a
-								theme!
-							</p>
-						</div>
-					) : filteredListings.length === 0 ? (
-						<div className="rounded-xl border border-dashed border-border py-20 text-center">
-							<Filter className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-							<h3 className="mb-2 text-lg font-semibold">
-								No themes match your filters
-							</h3>
-							<p className="mb-4 text-muted-foreground">
-								Try adjusting your filters or create a custom theme
-							</p>
-							<Button
-								variant="outline"
-								onClick={() => setFilters(DEFAULT_FILTERS)}
-							>
-								Clear filters
-							</Button>
-						</div>
 					) : (
-						<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-							{filteredListings.map((listing, index) => (
+						<>
+							{/* Show message when no themes match */}
+							{listings.length > 0 && filteredListings.length === 0 && (
+								<div className="mb-6 flex items-center justify-between rounded-lg border border-muted bg-muted/30 p-4">
+									<div className="flex items-center gap-3">
+										<Filter className="h-5 w-5 text-muted-foreground" />
+										<div>
+											<p className="text-sm font-medium">No themes match your filters</p>
+											<p className="text-xs text-muted-foreground">
+												Generate a custom theme with AI or adjust filters
+											</p>
+										</div>
+									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setFilters(DEFAULT_FILTERS)}
+									>
+										Clear filters
+									</Button>
+								</div>
+							)}
+
+							{/* Theme grid - always show with RemixCard */}
+							<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+								{filteredListings.map((listing, index) => (
+									<motion.div
+										key={listing.outpoint}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: index * 0.05 }}
+									>
+										<ThemeCard
+											theme={listing.theme}
+											origin={listing.origin}
+											price={listing.price}
+											mode={mode}
+											isConnected={isConnected}
+											isPurchasing={purchasing === listing.outpoint}
+											onPurchase={() => handlePurchase(listing)}
+											onConnect={connect}
+											onApplyTheme={(e) => applyThemeAnimated(listing.theme, e)}
+										/>
+									</motion.div>
+								))}
+
+								{/* AI Generate Card - Always visible */}
 								<motion.div
-									key={listing.outpoint}
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: index * 0.05 }}
+									transition={{ delay: filteredListings.length * 0.05 }}
 								>
-									<ThemeCard
-										theme={listing.theme}
-										origin={listing.origin}
-										price={listing.price}
-										mode={mode}
-										isConnected={isConnected}
-										isPurchasing={purchasing === listing.outpoint}
-										onPurchase={() => handlePurchase(listing)}
-										onConnect={connect}
-									/>
+									<GenerateCard filters={filters} />
 								</motion.div>
-							))}
+							</div>
 
-							{/* Remix Card - Always at the end */}
-							<motion.div
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ delay: filteredListings.length * 0.05 }}
-							>
-								<RemixCard filters={filters} />
-							</motion.div>
-						</div>
+							{/* Empty marketplace state */}
+							{listings.length === 0 && (
+								<div className="mt-8 rounded-xl border border-dashed border-border py-12 text-center">
+									<ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+									<h3 className="mb-2 text-lg font-semibold">
+										Marketplace is empty
+									</h3>
+									<p className="text-muted-foreground">
+										Be the first to list a theme!
+									</p>
+								</div>
+							)}
+						</>
 					)}
 				</main>
 			</div>

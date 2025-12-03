@@ -1,7 +1,7 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { Eye, Loader2, ShoppingCart } from "lucide-react";
+import { ExternalLink, Loader2, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatBSV } from "./theme-stripes";
@@ -15,6 +15,7 @@ interface ThemeCardProps {
 	isPurchasing: boolean;
 	onPurchase: () => void;
 	onConnect: () => void;
+	onApplyTheme?: (e: React.MouseEvent) => void;
 }
 
 export function ThemeCard({
@@ -26,6 +27,7 @@ export function ThemeCard({
 	isPurchasing,
 	onPurchase,
 	onConnect,
+	onApplyTheme,
 }: ThemeCardProps) {
 	const styles = theme.styles[mode];
 
@@ -50,11 +52,15 @@ export function ThemeCard({
 
 	return (
 		<div className="group flex flex-col gap-3">
-			{/* Live Preview Area */}
-			<Link href={`/preview/${origin}`}>
+			{/* Live Preview Area - Click to apply theme */}
+			<button
+				type="button"
+				onClick={onApplyTheme}
+				className="text-left"
+			>
 				<div
 					style={themeVars}
-					className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border shadow-sm transition-all group-hover:shadow-lg"
+					className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border shadow-sm transition-all group-hover:shadow-lg cursor-pointer"
 				>
 					{/* Background */}
 					<div
@@ -162,21 +168,19 @@ export function ThemeCard({
 					{/* Hover overlay */}
 					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20">
 						<div className="flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100">
-							<Eye className="h-4 w-4" />
-							Preview
+							<Sparkles className="h-4 w-4" />
+							Apply Theme
 						</div>
 					</div>
 				</div>
-			</Link>
+			</button>
 
 			{/* Metadata */}
 			<div className="flex items-start justify-between gap-2">
 				<div className="min-w-0 flex-1">
-					<Link href={`/preview/${origin}`}>
-						<h3 className="font-semibold text-sm truncate hover:text-primary transition-colors">
-							{theme.name}
-						</h3>
-					</Link>
+					<h3 className="font-semibold text-sm truncate">
+						{theme.name}
+					</h3>
 					<p className="text-xs text-muted-foreground">
 						{theme.author || "Anonymous"} &middot;{" "}
 						<span className="font-mono">{origin.slice(0, 8)}</span>
@@ -189,27 +193,40 @@ export function ThemeCard({
 				</div>
 			</div>
 
-			{/* Action */}
-			<Button
-				size="sm"
-				className="w-full"
-				disabled={isPurchasing}
-				onClick={() => (isConnected ? onPurchase() : onConnect())}
-			>
-				{isPurchasing ? (
-					<>
-						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						Purchasing...
-					</>
-				) : !isConnected ? (
-					"Connect Wallet"
-				) : (
-					<>
-						<ShoppingCart className="mr-2 h-4 w-4" />
-						Buy Now
-					</>
-				)}
-			</Button>
+			{/* Actions */}
+			<div className="flex gap-2">
+				<Button
+					variant="outline"
+					size="sm"
+					className="flex-1"
+					asChild
+				>
+					<Link href={`/preview/${origin}`}>
+						<ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+						Details
+					</Link>
+				</Button>
+				<Button
+					size="sm"
+					className="flex-1"
+					disabled={isPurchasing}
+					onClick={() => (isConnected ? onPurchase() : onConnect())}
+				>
+					{isPurchasing ? (
+						<>
+							<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+							Buying...
+						</>
+					) : !isConnected ? (
+						"Connect"
+					) : (
+						<>
+							<ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+							Buy
+						</>
+					)}
+				</Button>
+			</div>
 		</div>
 	);
 }
