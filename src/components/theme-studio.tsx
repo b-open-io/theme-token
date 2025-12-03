@@ -595,42 +595,36 @@ export function ThemeStudio() {
 
 							{/* Sub-tabs for editor sections */}
 							<div className="flex gap-1 rounded-lg bg-muted/50 p-1">
-								<button
-									type="button"
-									onClick={() => setEditorSubTab("colors")}
-									className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-										editorSubTab === "colors"
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
-									}`}
-								>
-									<Pipette className="h-3 w-3" />
-									Colors
-								</button>
-								<button
-									type="button"
-									onClick={() => setEditorSubTab("typography")}
-									className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-										editorSubTab === "typography"
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
-									}`}
-								>
-									<Type className="h-3 w-3" />
-									Type
-								</button>
-								<button
-									type="button"
-									onClick={() => setEditorSubTab("other")}
-									className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-										editorSubTab === "other"
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
-									}`}
-								>
-									<Settings2 className="h-3 w-3" />
-									Other
-								</button>
+								{(
+									[
+										{ id: "colors", label: "Colors", icon: Pipette },
+										{ id: "typography", label: "Type", icon: Type },
+										{ id: "other", label: "Other", icon: Settings2 },
+									] as const
+								).map((tab) => {
+									const Icon = tab.icon;
+									const isActive = editorSubTab === tab.id;
+									return (
+										<button
+											key={tab.id}
+											type="button"
+											onClick={() => setEditorSubTab(tab.id)}
+											className="relative flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors"
+										>
+											{isActive && (
+												<motion.div
+													layoutId="studio-editor-tab"
+													className="absolute inset-0 rounded-md bg-background shadow-sm"
+													transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+												/>
+											)}
+											<Icon className={`relative z-10 h-3 w-3 ${isActive ? "text-foreground" : "text-muted-foreground"}`} />
+											<span className={`relative z-10 ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+												{tab.label}
+											</span>
+										</button>
+									);
+								})}
 							</div>
 
 							{/* Colors Sub-tab */}
