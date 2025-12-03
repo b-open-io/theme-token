@@ -1,12 +1,15 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { generateTintsPalette, type TintsPalette } from "@/lib/tints";
 
 /**
- * AI SDK Tool for generating color palettes via tints.dev
+ * AI SDK Tool for generating color palettes using tints.dev library
  *
  * This tool allows the AI to generate a full 50-950 color scale
  * from any hex color, following the tints.dev philosophy of
  * creating harmonious, accessible color palettes.
+ *
+ * NO EXTERNAL API DEPENDENCY - uses local tints.dev library
  *
  * Usage in generateObject/generateText:
  * ```ts
@@ -20,46 +23,7 @@ import { z } from "zod";
  * ```
  */
 
-export interface TintsPalette {
-	"50": string;
-	"100": string;
-	"200": string;
-	"300": string;
-	"400": string;
-	"500": string;
-	"600": string;
-	"700": string;
-	"800": string;
-	"900": string;
-	"950": string;
-}
-
-interface TintsResponse {
-	[name: string]: TintsPalette;
-}
-
-async function fetchTintsPalette(
-	name: string,
-	hex: string,
-): Promise<TintsPalette | null> {
-	try {
-		const cleanHex = hex.replace(/^#/, "");
-		const response = await fetch(
-			`https://www.tints.dev/api/${encodeURIComponent(name)}/${encodeURIComponent(cleanHex)}`,
-		);
-
-		if (!response.ok) {
-			console.error("tints.dev API error:", response.status);
-			return null;
-		}
-
-		const data: TintsResponse = await response.json();
-		return data[name] ?? null;
-	} catch (error) {
-		console.error("Failed to fetch tints palette:", error);
-		return null;
-	}
-}
+export type { TintsPalette };
 
 /**
  * Generate Palette Tool
@@ -91,7 +55,7 @@ The returned palette includes:
 			.describe("Name for the palette, e.g., 'primary', 'accent', 'brand'"),
 	}),
 	execute: async ({ hex, name }) => {
-		const palette = await fetchTintsPalette(name, hex);
+		const palette = generateTintsPalette(name, hex);
 
 		if (!palette) {
 			return {

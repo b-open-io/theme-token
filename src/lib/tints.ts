@@ -1,7 +1,10 @@
 /**
- * Tints.dev API integration
+ * Tints.dev local library integration
  * Generates harmonious color palettes from a single hex color
+ * NO external API dependency - runs entirely client-side
  */
+
+import { createPaletteFromNameValue } from "tints.dev";
 
 export interface TintsPalette {
 	"50": string;
@@ -15,41 +18,52 @@ export interface TintsPalette {
 	"800": string;
 	"900": string;
 	"950": string;
+	[key: string]: string;
 }
 
-export interface TintsResponse {
-	[name: string]: TintsPalette;
+const PALETTE_KEYS = ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"] as const;
+
+/**
+ * Type guard to validate that an object has all required palette keys
+ */
+function isTintsPalette(obj: Record<string, string>): obj is TintsPalette {
+	return PALETTE_KEYS.every((key) => typeof obj[key] === "string");
 }
 
 /**
- * Fetch a color palette from tints.dev API via our proxy
+ * Generate a color palette locally using tints.dev algorithm
  * @param name - Name for the palette (e.g., "primary", "accent")
  * @param hex - Hex color without # (e.g., "2522FC")
+ */
+export function generateTintsPalette(
+	name: string,
+	hex: string,
+): TintsPalette | null {
+	try {
+		// Remove # if present
+		const cleanHex = hex.replace(/^#/, "");
+
+		const result = createPaletteFromNameValue(name, cleanHex);
+
+		if (result && result[name] && isTintsPalette(result[name])) {
+			return result[name];
+		}
+		return null;
+	} catch (error) {
+		console.error("Failed to generate tints palette:", error);
+		return null;
+	}
+}
+
+/**
+ * Async wrapper for compatibility with existing code
+ * (Library is synchronous but we keep async interface)
  */
 export async function fetchTintsPalette(
 	name: string,
 	hex: string,
 ): Promise<TintsPalette | null> {
-	try {
-		// Remove # if present
-		const cleanHex = hex.replace(/^#/, "");
-
-		// Use our API proxy to avoid CORS issues
-		const response = await fetch(
-			`/api/tints?name=${encodeURIComponent(name)}&hex=${encodeURIComponent(cleanHex)}`,
-		);
-
-		if (!response.ok) {
-			console.error("tints API error:", response.status);
-			return null;
-		}
-
-		const data: TintsResponse = await response.json();
-		return data[name] ?? null;
-	} catch (error) {
-		console.error("Failed to fetch tints palette:", error);
-		return null;
-	}
+	return generateTintsPalette(name, hex);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { type TintsPalette } from "@/lib/tools";
+import { generateTintsPalette, type TintsPalette } from "@/lib/tints";
 
 // Theme color schema for OKLCH colors
 const oklchColorSchema = z
@@ -90,38 +90,16 @@ const themeSchema = z.object({
 	dark: styleModeSchema.describe("Dark mode colors"),
 });
 
-/**
- * Fetch a color palette from tints.dev API
- */
-async function fetchTintsPalette(hex: string): Promise<TintsPalette | null> {
-	try {
-		const cleanHex = hex.replace(/^#/, "");
-		const response = await fetch(
-			`https://www.tints.dev/api/primary/${encodeURIComponent(cleanHex)}`,
-		);
-
-		if (!response.ok) {
-			console.error("tints.dev API error:", response.status);
-			return null;
-		}
-
-		const data = await response.json();
-		return data.primary ?? null;
-	} catch (error) {
-		console.error("Failed to fetch tints palette:", error);
-		return null;
-	}
-}
 
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
 		const { prompt, primaryColor, radius, style } = body;
 
-		// If primaryColor provided, fetch real palette from tints.dev
+		// If primaryColor provided, generate palette locally using tints.dev library
 		let paletteContext = "";
 		if (primaryColor) {
-			const palette = await fetchTintsPalette(primaryColor);
+			const palette = generateTintsPalette("primary", primaryColor);
 			if (palette) {
 				paletteContext = `
 ## Pre-Generated Primary Palette (from tints.dev)

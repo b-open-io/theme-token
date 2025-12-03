@@ -884,9 +884,9 @@ function ColorSection() {
 	];
 
 	return (
-		<div className="grid gap-3 lg:grid-cols-3">
+		<div className="grid gap-4 @2xl:grid-cols-3">
 			{/* Current Theme Colors - 2/3 */}
-			<Card className="lg:col-span-2">
+			<Card className="@2xl:col-span-2">
 				<CardHeader className="pb-2">
 					<CardTitle className="text-sm">Theme Colors</CardTitle>
 				</CardHeader>
@@ -915,8 +915,8 @@ function ColorSection() {
 // Main Preview Panel
 export function ThemePreviewPanel() {
 	return (
-		<div className="min-h-full w-full p-4">
-			<div className="space-y-4">
+		<div className="@container min-h-full w-full p-2 md:p-4 **:data-[slot=card]:shadow-none">
+			<div className="flex flex-col gap-4">
 				{/* Color Section - Theme colors + Palette Explorer side by side */}
 				<ColorSection />
 
@@ -924,31 +924,31 @@ export function ThemePreviewPanel() {
 				<StatsCards />
 
 				{/* Charts Row - like tweakcn */}
-				<div className="grid gap-6 lg:grid-cols-3">
+				<div className="grid gap-4 @2xl:grid-cols-3">
 					<RevenueChart />
 					<CalendarCard />
 					<MoveGoalCard />
 				</div>
 
 				{/* More Charts */}
-				<div className="grid gap-6 lg:grid-cols-2">
+				<div className="grid gap-4 @xl:grid-cols-2">
 					<ActivityChart />
 					<ExerciseChart />
 				</div>
 
 				{/* Two Column Layout */}
-				<div className="grid gap-6 lg:grid-cols-2">
+				<div className="grid gap-4 @xl:grid-cols-2">
 					<FormDemo />
-					<div className="space-y-6">
+					<div className="flex flex-col gap-4">
 						<NotificationsCard />
 						<TeamMembers />
 					</div>
 				</div>
 
 				{/* Buttons & Alerts */}
-				<div className="grid gap-6 lg:grid-cols-2">
+				<div className="grid gap-4 @xl:grid-cols-2">
 					<ButtonsShowcase />
-					<div className="space-y-6">
+					<div className="flex flex-col gap-4">
 						<AlertsShowcase />
 						<ProgressDemo />
 					</div>
