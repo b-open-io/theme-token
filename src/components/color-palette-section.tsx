@@ -435,12 +435,12 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 			</Card>
 
 			{/* Theme Colors - 1/3 width */}
-			<Card>
+			<Card className="overflow-hidden">
 				<CardHeader className="py-2 px-3">
 					<CardTitle className="text-xs font-medium">Active Theme</CardTitle>
 				</CardHeader>
-				<CardContent className="px-3 pt-0">
-					<div className="grid gap-1.5">
+				<CardContent className="px-3 pt-0 overflow-x-auto">
+					<div className="grid gap-1.5 min-w-max">
 						<div className="flex gap-0.5">
 							{THEME_SWATCHES_ROW1.map((swatch) => (
 								<ThemeSwatch
