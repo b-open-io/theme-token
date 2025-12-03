@@ -143,13 +143,15 @@ export default function PatternGeneratorPage() {
 		if (!pattern?.svg) return;
 
 		const response = await inscribePattern(pattern.svg, {
+			name: patternName || undefined,
 			prompt: pattern.prompt,
+			// license defaults to CC0 in buildPatternMetadata
 		});
 
 		if (response?.txid) {
 			setInscribedOrigin(`${response.txid}_0`);
 		}
-	}, [pattern, inscribePattern]);
+	}, [pattern, patternName, inscribePattern]);
 
 	return (
 		<div className="relative px-4 py-6 md:px-8 lg:px-12">

@@ -81,6 +81,9 @@ interface WalletContextValue {
 	inscribePattern: (
 		svg: string,
 		metadata?: {
+			name?: string;
+			author?: string;
+			license?: string;
 			prompt?: string;
 		},
 	) => Promise<InscribeResponse | null>;
@@ -413,6 +416,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		async (
 			svg: string,
 			metadata?: {
+				name?: string;
+				author?: string;
+				license?: string;
 				prompt?: string;
 			},
 		): Promise<InscribeResponse | null> => {
@@ -429,8 +435,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				// SVG is text, encode to base64
 				const base64Data = btoa(svg);
 
-				// Build metadata - only include non-derivable data (prompt for provenance)
+				// Build metadata with name, author, license, and prompt
 				const mapData = buildPatternMetadata({
+					name: metadata?.name,
+					author: metadata?.author,
+					license: metadata?.license,
 					prompt: metadata?.prompt,
 				});
 

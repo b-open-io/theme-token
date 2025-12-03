@@ -95,10 +95,13 @@ const ASSET_SCHEMAS: Record<
 		label: "Patterns",
 		description: "Tileable SVG backgrounds and textures",
 		contentInfo:
-			"SVG content is self-describing. Only the AI prompt (if AI-generated) is stored as provenance.",
+			"Patterns include name, author, and license metadata. License defaults to CC0 (public domain) if not specified.",
 		example: {
 			app: "theme-token",
 			type: "pattern",
+			name: "Dot Grid",
+			author: "Jane Doe",
+			license: "CC0",
 			prompt: "evenly spaced dots",
 		},
 		fields: [
@@ -113,6 +116,22 @@ const ASSET_SCHEMAS: Record<
 				type: "string",
 				required: true,
 				description: 'Always "pattern"',
+			},
+			{
+				name: "name",
+				type: "string",
+				description: "Pattern name for display",
+			},
+			{
+				name: "author",
+				type: "string",
+				description: "Pattern creator/author",
+			},
+			{
+				name: "license",
+				type: "string",
+				required: true,
+				description: "License identifier (defaults to CC0)",
 			},
 			{
 				name: "prompt",

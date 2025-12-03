@@ -1,4 +1,7 @@
 export function buildPatternMetadata(params: {
+	name?: string;
+	author?: string;
+	license?: string;
 	prompt?: string;
 }): Record<string, string> {
 	const result: Record<string, string> = {
@@ -6,6 +9,10 @@ export function buildPatternMetadata(params: {
 		type: "pattern",
 	};
 
+	if (params.name) result.name = params.name;
+	if (params.author) result.author = params.author;
+	// Default to CC0 (public domain) if no license specified
+	result.license = params.license || "CC0";
 	if (params.prompt) result.prompt = params.prompt;
 
 	return result;

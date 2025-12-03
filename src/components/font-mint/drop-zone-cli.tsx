@@ -133,7 +133,10 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 			};
 
 			// Notify parent about detected metadata
+			console.log("[DropZone] zipPackage.metadata:", zipPackage?.metadata);
+			console.log("[DropZone] onZipMetadataDetected:", !!onZipMetadataDetected);
 			if (onZipMetadataDetected && zipPackage?.metadata) {
+				console.log("[DropZone] Calling onZipMetadataDetected with:", zipPackage.metadata);
 				onZipMetadataDetected(zipPackage.metadata);
 			}
 
