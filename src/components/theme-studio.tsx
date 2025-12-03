@@ -1400,19 +1400,6 @@ export function ThemeStudio() {
 							</div>
 						)}
 
-						{/* Theme name input */}
-						<div className="mt-4">
-							<label className="mb-1 block text-xs font-medium text-muted-foreground">
-								Theme Name
-							</label>
-							<input
-								type="text"
-								value={customName}
-								onChange={(e) => setCustomName(e.target.value)}
-								placeholder={selectedTheme.name}
-								className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-							/>
-						</div>
 					</div>
 					{/* Close scrollable area */}
 				</div>
@@ -1465,12 +1452,21 @@ export function ThemeStudio() {
 			{/* Close main content area */}
 
 			{/* Bottom Bar: Mint Action */}
-			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-3">
-				<div className="flex items-center gap-3">
+			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
+				<div className="flex items-center gap-2">
+					{/* Theme Name Input */}
+					<input
+						type="text"
+						value={customName}
+						onChange={(e) => setCustomName(e.target.value)}
+						placeholder={selectedTheme.name}
+						className="h-9 w-40 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+					/>
+
 					{/* Save Draft Button */}
 					<button
 						onClick={handleSaveDraft}
-						className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted"
+						className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm transition-colors hover:bg-muted"
 					>
 						{savedNotice ? (
 							<>
@@ -1480,7 +1476,7 @@ export function ThemeStudio() {
 						) : (
 							<>
 								<Save className="h-4 w-4" />
-								Save Draft
+								Save
 							</>
 						)}
 					</button>
@@ -1488,15 +1484,12 @@ export function ThemeStudio() {
 					{/* Wallet info */}
 					{isConnected && balance && (
 						<div className="hidden sm:block">
-							<p className="text-sm font-medium">
+							<p className="text-xs font-medium">
 								{profile?.displayName && (
 									<span className="text-primary">{profile.displayName}</span>
 								)}
 								{profile?.displayName && " · "}
 								{balance.bsv.toFixed(8)} BSV
-							</p>
-							<p className="text-xs text-muted-foreground">
-								Inscription cost: ~0.00001 BSV
 							</p>
 						</div>
 					)}

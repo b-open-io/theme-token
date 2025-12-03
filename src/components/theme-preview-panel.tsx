@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PaletteExplorer } from "@/components/palette-explorer";
 import {
 	Activity,
@@ -832,76 +833,92 @@ function TabsDemo() {
 	);
 }
 
-// Color Palette Display - Theme colors + Palette Explorer
-function ColorPalette() {
-	const colors = [
-		{ name: "Background", var: "bg-background", text: "text-foreground" },
-		{ name: "Card", var: "bg-card", text: "text-card-foreground" },
-		{ name: "Primary", var: "bg-primary", text: "text-primary-foreground" },
-		{
-			name: "Secondary",
-			var: "bg-secondary",
-			text: "text-secondary-foreground",
-		},
-		{ name: "Muted", var: "bg-muted", text: "text-muted-foreground" },
-		{ name: "Accent", var: "bg-accent", text: "text-accent-foreground" },
-		{
-			name: "Destructive",
-			var: "bg-destructive",
-			text: "text-destructive-foreground",
-		},
-	];
+// Clickable color swatch with copy functionality
+function ColorSwatch({
+	name,
+	bgClass,
+	textClass,
+	cssVar,
+}: {
+	name: string;
+	bgClass: string;
+	textClass: string;
+	cssVar: string;
+}) {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		// Get computed color value
+		const el = document.createElement("div");
+		el.className = bgClass;
+		document.body.appendChild(el);
+		const computedColor = getComputedStyle(el).backgroundColor;
+		document.body.removeChild(el);
+
+		await navigator.clipboard.writeText(`var(--${cssVar})`);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 1000);
+	};
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Color Palette</CardTitle>
-				<CardDescription>Your theme colors at a glance</CardDescription>
-			</CardHeader>
-			<CardContent className="space-y-4">
-				<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-					{colors.map((color) => (
-						<div key={color.name} className="text-center">
-							<div
-								className={`${color.var} ${color.text} mb-2 flex h-16 items-center justify-center rounded-lg border text-xs font-medium`}
-							>
-								{color.name}
-							</div>
-						</div>
-					))}
-				</div>
-			</CardContent>
-		</Card>
+		<button
+			onClick={handleCopy}
+			className={`${bgClass} ${textClass} group relative flex h-10 flex-1 items-center justify-center rounded border border-border/50 text-[10px] font-medium transition-all hover:scale-105 hover:shadow-md`}
+			title={`Copy var(--${cssVar})`}
+		>
+			{copied ? <Check className="h-3 w-3" /> : name}
+		</button>
 	);
 }
 
-// Palette Explorer Card
-function PaletteExplorerCard() {
+// Combined Color Section - Theme colors + Palette Explorer side by side
+function ColorSection() {
+	const themeColors = [
+		{ name: "BG", bgClass: "bg-background", textClass: "text-foreground", cssVar: "background" },
+		{ name: "Card", bgClass: "bg-card", textClass: "text-card-foreground", cssVar: "card" },
+		{ name: "Primary", bgClass: "bg-primary", textClass: "text-primary-foreground", cssVar: "primary" },
+		{ name: "Secondary", bgClass: "bg-secondary", textClass: "text-secondary-foreground", cssVar: "secondary" },
+		{ name: "Muted", bgClass: "bg-muted", textClass: "text-muted-foreground", cssVar: "muted" },
+		{ name: "Accent", bgClass: "bg-accent", textClass: "text-accent-foreground", cssVar: "accent" },
+		{ name: "Destructive", bgClass: "bg-destructive", textClass: "text-destructive-foreground", cssVar: "destructive" },
+	];
+
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Palette Explorer</CardTitle>
-				<CardDescription>
-					Generate a full color scale from any color
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<PaletteExplorer />
-			</CardContent>
-		</Card>
+		<div className="grid gap-3 lg:grid-cols-3">
+			{/* Current Theme Colors - 2/3 */}
+			<Card className="lg:col-span-2">
+				<CardHeader className="pb-2">
+					<CardTitle className="text-sm">Theme Colors</CardTitle>
+				</CardHeader>
+				<CardContent className="pb-3">
+					<div className="flex gap-1">
+						{themeColors.map((color) => (
+							<ColorSwatch key={color.name} {...color} />
+						))}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Palette Explorer - 1/3 */}
+			<Card>
+				<CardHeader className="pb-2">
+					<CardTitle className="text-sm">Palette Generator</CardTitle>
+				</CardHeader>
+				<CardContent className="pb-3">
+					<PaletteExplorer />
+				</CardContent>
+			</Card>
+		</div>
 	);
 }
 
 // Main Preview Panel
 export function ThemePreviewPanel() {
 	return (
-		<div className="min-h-full w-full p-6">
-			<div className="space-y-6">
-				{/* Palette Explorer - Interactive */}
-				<PaletteExplorerCard />
-
-				{/* Color Palette */}
-				<ColorPalette />
+		<div className="min-h-full w-full p-4">
+			<div className="space-y-4">
+				{/* Color Section - Theme colors + Palette Explorer side by side */}
+				<ColorSection />
 
 				{/* Stats */}
 				<StatsCards />
