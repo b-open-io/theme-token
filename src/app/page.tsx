@@ -7,11 +7,12 @@ import {
 	Copy,
 	Globe,
 	Layers,
+	LayoutGrid,
 	Lock,
 	Palette,
-	Sparkles,
 	Terminal,
 	Wallet,
+	Wand2,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { JsonSyntax } from "@/components/json-syntax";
@@ -100,13 +101,13 @@ export default function Home() {
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
 							<Button size="lg" className="gap-2" asChild>
 								<a href="/market">
-									<Palette className="h-5 w-5" />
+									<LayoutGrid className="h-5 w-5" />
 									Browse Themes
 								</a>
 							</Button>
 							<Button size="lg" variant="outline" className="gap-2" asChild>
 								<a href="/studio">
-									<Sparkles className="h-5 w-5" />
+									<Wand2 className="h-5 w-5" />
 									Create Theme
 								</a>
 							</Button>
