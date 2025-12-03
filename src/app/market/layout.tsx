@@ -6,7 +6,7 @@ import {
 	useSpring,
 	useTransform,
 } from "framer-motion";
-import { ShoppingCart, Tag, Wallet } from "lucide-react";
+import { ShoppingCart, Tag, Type, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +17,7 @@ const tabs = [
 	{ href: "/market/browse", label: "Browse", icon: ShoppingCart },
 	{ href: "/market/my-themes", label: "My Themes", icon: Wallet },
 	{ href: "/market/sell", label: "Sell", icon: Tag },
+	{ href: "/market/fonts", label: "Fonts", icon: Type },
 ];
 
 // Format satoshis as BSV

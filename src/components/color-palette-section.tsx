@@ -370,7 +370,7 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 						</button>
 					</div>
 				</CardHeader>
-				<CardContent className="space-y-1.5 px-3 pb-3 pt-0">
+				<CardContent className="grid gap-1.5 px-3 pt-0">
 					{/* Primary Scale (0°) */}
 					<div className="flex gap-0.5">
 						{primaryArray.map(({ shade, color: c }) => (
@@ -414,8 +414,8 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 				<CardHeader className="py-2 px-3">
 					<CardTitle className="text-xs font-medium">Active Theme</CardTitle>
 				</CardHeader>
-				<CardContent className="px-3 pb-3 pt-0">
-					<div className="space-y-1.5">
+				<CardContent className="px-3 pt-0">
+					<div className="grid gap-1.5">
 						<div className="flex gap-0.5">
 							{THEME_SWATCHES_ROW1.map((swatch) => (
 								<ThemeSwatch
