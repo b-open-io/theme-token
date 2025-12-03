@@ -1,10 +1,12 @@
 "use client";
 
-import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import { Sparkles, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ThemeToken } from "@theme-token/sdk";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ai-elements/loader";
+import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import { storeRemixTheme } from "@/components/theme-gallery";
 import type { FilterState } from "./filter-sidebar";
 
@@ -12,44 +14,48 @@ interface GenerateCardProps {
 	filters: FilterState;
 }
 
-const STYLE_PRESETS = [
-	{ id: "modern", label: "Modern", description: "Clean and minimal" },
-	{ id: "vibrant", label: "Vibrant", description: "Bold and colorful" },
-	{ id: "corporate", label: "Corporate", description: "Professional" },
-	{ id: "playful", label: "Playful", description: "Fun and friendly" },
-	{ id: "dark-elegant", label: "Elegant", description: "Sophisticated" },
+const STYLE_SUGGESTIONS = [
+	{ id: "modern", label: "Modern & Minimal" },
+	{ id: "vibrant", label: "Bold & Vibrant" },
+	{ id: "corporate", label: "Professional" },
+	{ id: "playful", label: "Fun & Playful" },
+	{ id: "dark-elegant", label: "Dark Elegant" },
+	{ id: "nature", label: "Nature Inspired" },
 ];
 
 export function GenerateCard({ filters }: GenerateCardProps) {
 	const router = useRouter();
 	const [isGenerating, setIsGenerating] = useState(false);
-	const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
-	const [customPrompt, setCustomPrompt] = useState("");
-	const [showAdvanced, setShowAdvanced] = useState(false);
+	const [prompt, setPrompt] = useState("");
+	const [error, setError] = useState<string | null>(null);
 
 	const hasFilters =
 		filters.primaryColor !== null ||
 		filters.radius !== null ||
 		filters.fontTypes.length > 0;
 
-	const handleGenerate = async () => {
+	const handleGenerate = async (stylePrompt?: string) => {
 		setIsGenerating(true);
+		setError(null);
+
+		const finalPrompt = stylePrompt || prompt || "Generate a modern, professional theme";
+
 		try {
 			const response = await fetch("/api/generate-theme", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					prompt: customPrompt || (selectedStyle ? `Generate a ${selectedStyle} style theme` : undefined),
+					prompt: finalPrompt,
 					primaryColor: filters.primaryColor
 						? `oklch(${filters.primaryColor.l.toFixed(3)} ${filters.primaryColor.c.toFixed(3)} ${filters.primaryColor.h.toFixed(1)})`
 						: undefined,
 					radius: filters.radius,
-					style: selectedStyle,
 				}),
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to generate theme");
+				const data = await response.json();
+				throw new Error(data.error || "Failed to generate theme");
 			}
 
 			const data = await response.json();
@@ -58,15 +64,20 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			// Store the theme and navigate to studio
 			storeRemixTheme(theme);
 			router.push("/studio");
-		} catch (error) {
-			console.error("Generation failed:", error);
+		} catch (err) {
+			console.error("Generation failed:", err);
+			setError(err instanceof Error ? err.message : "Generation failed");
 		} finally {
 			setIsGenerating(false);
 		}
 	};
 
+	const handleSuggestionClick = (suggestion: string) => {
+		handleGenerate(`Generate a ${suggestion.toLowerCase()} style theme`);
+	};
+
 	return (
-		<div className="flex h-full min-h-[280px] flex-col rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-5">
+		<div className="flex h-full min-h-[280px] flex-col rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 p-5">
 			{/* Header */}
 			<div className="mb-4 flex items-center gap-3">
 				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -84,7 +95,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			{hasFilters && (
 				<div className="mb-4 space-y-1.5 rounded-lg bg-muted/50 p-3">
 					<p className="text-xs font-medium text-muted-foreground">
-						Generating with your filters:
+						Using your filters:
 					</p>
 					{filters.primaryColor && (
 						<div className="flex items-center gap-2 text-xs">
@@ -108,55 +119,51 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				</div>
 			)}
 
-			{/* Style presets */}
-			<div className="mb-4 flex flex-wrap gap-1.5">
-				{STYLE_PRESETS.map((preset) => (
-					<button
-						key={preset.id}
-						type="button"
-						onClick={() => setSelectedStyle(selectedStyle === preset.id ? null : preset.id)}
-						className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-							selectedStyle === preset.id
-								? "bg-primary text-primary-foreground"
-								: "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-						}`}
-						title={preset.description}
-					>
-						{preset.label}
-					</button>
-				))}
+			{/* Quick style suggestions */}
+			<div className="mb-4">
+				<p className="mb-2 text-xs font-medium text-muted-foreground">Quick styles</p>
+				<Suggestions>
+					{STYLE_SUGGESTIONS.map((style) => (
+						<Suggestion
+							key={style.id}
+							suggestion={style.label}
+							onClick={handleSuggestionClick}
+							disabled={isGenerating}
+							className="text-xs"
+						/>
+					))}
+				</Suggestions>
 			</div>
 
-			{/* Advanced toggle */}
-			<button
-				type="button"
-				onClick={() => setShowAdvanced(!showAdvanced)}
-				className="mb-2 text-left text-xs text-muted-foreground hover:text-foreground"
-			>
-				{showAdvanced ? "Hide" : "Show"} custom prompt
-			</button>
-
 			{/* Custom prompt input */}
-			{showAdvanced && (
+			<div className="mb-4">
 				<textarea
-					value={customPrompt}
-					onChange={(e) => setCustomPrompt(e.target.value)}
-					placeholder="Describe your ideal theme... (e.g., 'A warm, cozy theme inspired by autumn colors')"
-					className="mb-4 h-20 w-full resize-none rounded-lg border border-border bg-background p-2 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+					value={prompt}
+					onChange={(e) => setPrompt(e.target.value)}
+					placeholder="Or describe your ideal theme..."
+					disabled={isGenerating}
+					className="h-16 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
 				/>
+			</div>
+
+			{/* Error message */}
+			{error && (
+				<div className="mb-3 rounded-lg border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
+					{error}
+				</div>
 			)}
 
 			{/* Generate button */}
 			<div className="mt-auto">
 				<Button
-					onClick={handleGenerate}
+					onClick={() => handleGenerate()}
 					disabled={isGenerating}
 					className="w-full gap-2"
 					size="sm"
 				>
 					{isGenerating ? (
 						<>
-							<Loader2 className="h-4 w-4 animate-spin" />
+							<Loader size={16} />
 							Generating...
 						</>
 					) : (

@@ -1,4 +1,3 @@
-import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -78,7 +77,7 @@ Key principles:
 		}
 
 		const { object: theme } = await generateObject({
-			model: google("gemini-2.5-flash"),
+			model: "google/gemini-3-pro-preview" as Parameters<typeof generateObject>[0]["model"],
 			schema: themeSchema,
 			system: systemPrompt,
 			prompt: userPrompt,
