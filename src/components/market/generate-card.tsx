@@ -26,7 +26,13 @@ const STYLE_SUGGESTIONS = [
 ];
 
 // Format satoshis as BSV
-const formatBsv = (sats: number) => (sats / 100_000_000).toFixed(1);
+const formatBsv = (sats: number) => {
+	const bsv = sats / 100_000_000;
+	// Show more decimals for small amounts
+	if (bsv < 0.01) return bsv.toFixed(5);
+	if (bsv < 1) return bsv.toFixed(2);
+	return bsv.toFixed(1);
+};
 
 type GenerationState = "idle" | "paying" | "generating";
 
