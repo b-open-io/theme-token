@@ -470,7 +470,7 @@ export function ThemeStudio() {
 	}
 
 	return (
-		<div className="flex h-screen flex-col">
+		<div className="flex h-[calc(100vh-3.5rem)] flex-col">
 			{/* AI Generation Success Dialog */}
 			<Dialog
 				open={aiGenerationInfo !== null}
