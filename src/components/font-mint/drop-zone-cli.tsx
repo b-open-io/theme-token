@@ -322,6 +322,11 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 								</span>
 							</button>
 						))}
+						{zipPackage.otherFileCount > 0 && (
+							<div className="flex w-full items-center justify-between px-2 py-2 text-muted-foreground/50 cursor-not-allowed">
+								<span className="italic">and {zipPackage.otherFileCount} other {zipPackage.otherFileCount === 1 ? "item" : "items"}</span>
+							</div>
+						)}
 					</div>
 				</div>
 

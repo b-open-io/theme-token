@@ -19,6 +19,7 @@ export interface ZipFontPackage {
 	fonts: ExtractedFontFile[];
 	metadata: ZipFontMetadata;
 	readme: string | null;
+	otherFileCount: number;
 }
 
 /**
@@ -440,9 +441,11 @@ export async function loadFontZip(zipFile: File): Promise<ZipFontPackage> {
 
 	// Collect all files
 	const textFiles: Map<string, string> = new Map();
+	let totalFileCount = 0;
 
 	for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
 		if (zipEntry.dir) continue;
+		totalFileCount++;
 
 		const fileName = relativePath.split("/").pop() || relativePath;
 		const ext = fileName.slice(fileName.lastIndexOf(".")).toLowerCase();
@@ -587,6 +590,7 @@ export async function loadFontZip(zipFile: File): Promise<ZipFontPackage> {
 		fonts,
 		metadata,
 		readme,
+		otherFileCount: totalFileCount - fonts.length,
 	};
 }
 
