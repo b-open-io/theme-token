@@ -122,6 +122,7 @@ function ColorSection({
 	return (
 		<div className="border-b border-border pb-2">
 			<button
+				type="button"
 				onClick={() => setIsOpen(!isOpen)}
 				className="flex w-full items-center justify-between py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
 			>
@@ -369,6 +370,7 @@ export function ThemeStudio() {
 					<div className="flex items-center gap-2 rounded-md bg-muted p-2 font-mono text-xs">
 						<code className="flex-1 overflow-x-auto">{installCommand}</code>
 						<button
+							type="button"
 							onClick={() => {
 								navigator.clipboard.writeText(installCommand);
 							}}
@@ -504,9 +506,9 @@ export function ThemeStudio() {
 													selectedTheme.styles[mode].primary,
 													selectedTheme.styles[mode].secondary,
 													selectedTheme.styles[mode].accent,
-												].map((color, i) => (
+												].map((color) => (
 													<div
-														key={i}
+														key={color}
 														className="flex-1"
 														style={{ backgroundColor: color }}
 													/>
@@ -534,9 +536,9 @@ export function ThemeStudio() {
 																published.theme.styles[mode].primary,
 																published.theme.styles[mode].secondary,
 																published.theme.styles[mode].accent,
-															].map((color, i) => (
+															].map((color) => (
 																<div
-																	key={i}
+																	key={color}
 																	className="flex-1"
 																	style={{ backgroundColor: color }}
 																/>
@@ -568,9 +570,9 @@ export function ThemeStudio() {
 																theme.styles[mode].primary,
 																theme.styles[mode].secondary,
 																theme.styles[mode].accent,
-															].map((color, i) => (
+															].map((color) => (
 																<div
-																	key={i}
+																	key={color}
 																	className="flex-1"
 																	style={{ backgroundColor: color }}
 																/>
@@ -596,9 +598,9 @@ export function ThemeStudio() {
 																draft.theme.styles[mode].primary,
 																draft.theme.styles[mode].secondary,
 																draft.theme.styles[mode].accent,
-															].map((color, i) => (
+															].map((color) => (
 																<div
-																	key={i}
+																	key={color}
 																	className="flex-1"
 																	style={{ backgroundColor: color }}
 																/>
@@ -623,9 +625,9 @@ export function ThemeStudio() {
 															theme.styles[mode].primary,
 															theme.styles[mode].secondary,
 															theme.styles[mode].accent,
-														].map((color, i) => (
+														].map((color) => (
 															<div
-																key={i}
+																key={color}
 																className="flex-1"
 																style={{ backgroundColor: color }}
 															/>
@@ -642,6 +644,7 @@ export function ThemeStudio() {
 							{/* Sub-tabs for editor sections */}
 							<div className="flex gap-1 rounded-lg bg-muted/50 p-1">
 								<button
+									type="button"
 									onClick={() => setEditorSubTab("colors")}
 									className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
 										editorSubTab === "colors"
@@ -653,6 +656,7 @@ export function ThemeStudio() {
 									Colors
 								</button>
 								<button
+									type="button"
 									onClick={() => setEditorSubTab("typography")}
 									className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
 										editorSubTab === "typography"
@@ -664,6 +668,7 @@ export function ThemeStudio() {
 									Type
 								</button>
 								<button
+									type="button"
 									onClick={() => setEditorSubTab("other")}
 									className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
 										editorSubTab === "other"
@@ -925,10 +930,14 @@ export function ThemeStudio() {
 										</div>
 										<div className="space-y-3">
 											<div>
-												<label className="mb-1 block text-[10px] text-muted-foreground">
+												<label
+													htmlFor="font-sans"
+													className="mb-1 block text-[10px] text-muted-foreground"
+												>
 													Sans-Serif (--font-sans)
 												</label>
 												<input
+													id="font-sans"
 													type="text"
 													value={selectedTheme.styles[mode]["font-sans"] || ""}
 													onChange={(e) =>
@@ -939,10 +948,14 @@ export function ThemeStudio() {
 												/>
 											</div>
 											<div>
-												<label className="mb-1 block text-[10px] text-muted-foreground">
+												<label
+													htmlFor="font-serif"
+													className="mb-1 block text-[10px] text-muted-foreground"
+												>
 													Serif (--font-serif)
 												</label>
 												<input
+													id="font-serif"
 													type="text"
 													value={selectedTheme.styles[mode]["font-serif"] || ""}
 													onChange={(e) =>
@@ -953,10 +966,14 @@ export function ThemeStudio() {
 												/>
 											</div>
 											<div>
-												<label className="mb-1 block text-[10px] text-muted-foreground">
+												<label
+													htmlFor="font-mono"
+													className="mb-1 block text-[10px] text-muted-foreground"
+												>
 													Monospace (--font-mono)
 												</label>
 												<input
+													id="font-mono"
 													type="text"
 													value={selectedTheme.styles[mode]["font-mono"] || ""}
 													onChange={(e) =>
@@ -1232,6 +1249,7 @@ export function ThemeStudio() {
 							<span className="text-sm font-medium">Preview</span>
 							{/* Mode Toggle */}
 							<button
+								type="button"
 								onClick={(e) => toggleMode(e)}
 								className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
 							>
@@ -1305,6 +1323,7 @@ export function ThemeStudio() {
 
 					{/* Save Draft Button */}
 					<button
+						type="button"
 						onClick={handleSaveDraft}
 						className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm transition-colors hover:bg-muted"
 					>
