@@ -19,6 +19,7 @@ import {
 	Moon,
 	PenLine,
 	Pipette,
+	RotateCcw,
 	Save,
 	Settings2,
 	Sparkles,
@@ -60,6 +61,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { exampleThemes } from "@/lib/example-themes";
+import { loadThemeFonts } from "@/lib/fonts";
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
 
@@ -158,8 +160,15 @@ export function ThemeStudio() {
 	const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
 		activeTheme || exampleThemes[0],
 	);
+	// Track the original theme for dirty detection and reset
+	const [originalTheme, setOriginalTheme] = useState<ThemeToken>(
+		activeTheme || exampleThemes[0],
+	);
 	const [txid, setTxid] = useState<string | null>(null);
 	const [customName, setCustomName] = useState("");
+
+	// Dirty state detection - compare selectedTheme styles with originalTheme styles
+	const isDirty = JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles);
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
 	const [onChainThemes, setOnChainThemes] = useState<PublishedTheme[]>([]);
@@ -190,6 +199,7 @@ export function ThemeStudio() {
 	useEffect(() => {
 		if (activeTheme) {
 			setSelectedTheme(activeTheme);
+			setOriginalTheme(activeTheme);
 			setCustomName("");
 		}
 	}, [activeTheme]);
@@ -212,7 +222,9 @@ export function ThemeStudio() {
 							author: data.author,
 							styles: data.styles,
 						};
+						loadThemeFonts(theme);
 						setSelectedTheme(theme);
+						setOriginalTheme(theme);
 						setCustomName(`${theme.name} (remix)`);
 					}
 				})
@@ -232,7 +244,9 @@ export function ThemeStudio() {
 				const cssResult = parseCss(decodedCss, themeName);
 
 				if (cssResult.valid) {
+					loadThemeFonts(cssResult.theme);
 					setSelectedTheme(cssResult.theme);
+					setOriginalTheme(cssResult.theme);
 					setCustomName(themeName);
 				} else {
 					console.error("Failed to parse imported CSS:", cssResult.error);
@@ -247,7 +261,9 @@ export function ThemeStudio() {
 	useEffect(() => {
 		const remixData = getAndClearRemixTheme();
 		if (remixData) {
+			loadThemeFonts(remixData.theme);
 			setSelectedTheme(remixData.theme);
+			setOriginalTheme(remixData.theme);
 			setCustomName(remixData.theme.name);
 
 			// If from AI generation, show success dialog and auto-save draft
@@ -301,6 +317,7 @@ export function ThemeStudio() {
 		const handleRemix = (e: Event) => {
 			const theme = (e as CustomEvent<ThemeToken>).detail;
 			setSelectedTheme(theme);
+			setOriginalTheme(theme);
 			setCustomName(""); // Clear custom name for remix
 		};
 
@@ -332,8 +349,21 @@ export function ThemeStudio() {
 		}
 	};
 
+	// Reset to original theme
+	const handleReset = async () => {
+		isAnimatingRef.current = true;
+		setSelectedTheme(originalTheme);
+		setCustomName("");
+		await applyThemeAnimated(originalTheme);
+		isAnimatingRef.current = false;
+	};
+
 	// Update a single color in the current mode
 	const updateColor = (key: string, value: string) => {
+		// Auto-generate custom name on first modification
+		if (!isDirty && !customName) {
+			setCustomName(`${originalTheme.name} 2`);
+		}
 		setSelectedTheme((prev: ThemeToken) => ({
 			...prev,
 			styles: {
@@ -442,8 +472,10 @@ export function ThemeStudio() {
 									const theme =
 										onChain?.theme || wallet || draft?.theme || example;
 									if (theme) {
+										loadThemeFonts(theme);
 										isAnimatingRef.current = true;
 										setSelectedTheme(theme);
+										setOriginalTheme(theme); // Reset original when selecting a new theme
 										setCustomName("");
 										await applyThemeAnimated(theme);
 										isAnimatingRef.current = false;
@@ -1218,6 +1250,7 @@ export function ThemeStudio() {
 								onImport={async (theme) => {
 									isAnimatingRef.current = true;
 									setSelectedTheme(theme);
+									setOriginalTheme(theme); // Reset original when importing
 									setCustomName(theme.name);
 									await applyThemeAnimated(theme);
 									isAnimatingRef.current = false;
@@ -1245,11 +1278,23 @@ export function ThemeStudio() {
 									</button>
 								}
 							/>
+							{/* Reset Button - only show when dirty */}
+							{isDirty && (
+								<button
+									type="button"
+									onClick={handleReset}
+									className="flex items-center gap-1.5 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs text-destructive transition-colors hover:bg-destructive/20"
+									title={`Reset to ${originalTheme.name}`}
+								>
+									<RotateCcw className="h-3 w-3" />
+									Reset
+								</button>
+							)}
 						</div>
 					</div>
 					{/* Scrollable Preview Area */}
 					<div className="flex-1 overflow-y-auto bg-background">
-						<ThemePreviewPanel onUpdateColor={updateColor} primaryColor={selectedTheme.styles[mode].primary} />
+						<ThemePreviewPanel onUpdateColor={updateColor} primaryColor={selectedTheme.styles[mode].primary} themeColors={selectedTheme.styles[mode]} />
 					</div>
 				</div>
 			</div>
@@ -1258,13 +1303,20 @@ export function ThemeStudio() {
 			{/* Bottom Bar: Mint Action */}
 			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
 				<div className="flex items-center gap-2">
+					{/* Dirty indicator and base theme name */}
+					{isDirty && (
+						<div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400">
+							<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+							Modified from {originalTheme.name}
+						</div>
+					)}
 					{/* Theme Name Input */}
 					<input
 						type="text"
 						value={customName}
 						onChange={(e) => setCustomName(e.target.value)}
 						placeholder={selectedTheme.name}
-						className="h-9 w-40 rounded-lg border border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+						className={`h-9 w-40 rounded-lg border bg-background px-3 text-sm focus:border-primary focus:outline-none ${isDirty ? "border-amber-500/50" : "border-border"}`}
 					/>
 
 					{/* Save Draft Button */}

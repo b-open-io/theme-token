@@ -22,6 +22,18 @@ import {
 	paletteToArray,
 	type TintsPalette,
 } from "@/lib/tints";
+import { oklchToHex, parseOklch } from "@/lib/color-utils";
+
+// Helper to convert any color format to hex
+function toHex(color: string): string {
+	if (color.startsWith("#")) return color;
+	if (color.startsWith("oklch")) {
+		const parsed = parseOklch(color);
+		if (parsed) return oklchToHex(parsed);
+	}
+	// For other formats, return as-is (will fail hex validation and use default)
+	return color;
+}
 
 // Theme color keys that can be assigned
 const THEME_COLOR_KEYS = [
@@ -43,34 +55,60 @@ const THEME_COLOR_KEYS = [
 	{ key: "ring", label: "Ring" },
 ] as const;
 
-// Current theme swatches for compact display - row 1
+// Theme swatches - 11 items per row to match palette generator
+// Row 1: Backgrounds & surfaces
 const THEME_SWATCHES_ROW1 = [
-	{ name: "BG", bgClass: "bg-background", cssVar: "background" },
-	{ name: "Card", bgClass: "bg-card", cssVar: "card" },
-	{ name: "Primary", bgClass: "bg-primary", cssVar: "primary" },
-	{ name: "Secondary", bgClass: "bg-secondary", cssVar: "secondary" },
+	{ name: "BG", cssVar: "background" },
+	{ name: "FG", cssVar: "foreground" },
+	{ name: "Card", cssVar: "card" },
+	{ name: "Popover", cssVar: "popover" },
+	{ name: "Muted", cssVar: "muted" },
+	{ name: "Border", cssVar: "border" },
+	{ name: "Input", cssVar: "input" },
+	{ name: "Ring", cssVar: "ring" },
+	{ name: "C1", cssVar: "chart-1" },
+	{ name: "C2", cssVar: "chart-2" },
+	{ name: "C3", cssVar: "chart-3" },
 ];
 
-// Row 2
+// Row 2: Primary & semantic colors
 const THEME_SWATCHES_ROW2 = [
-	{ name: "Muted", bgClass: "bg-muted", cssVar: "muted" },
-	{ name: "Accent", bgClass: "bg-accent", cssVar: "accent" },
-	{ name: "Destructive", bgClass: "bg-destructive", cssVar: "destructive" },
-	{ name: "Border", bgClass: "bg-border", cssVar: "border" },
+	{ name: "Primary", cssVar: "primary" },
+	{ name: "PriFG", cssVar: "primary-foreground" },
+	{ name: "Secondary", cssVar: "secondary" },
+	{ name: "SecFG", cssVar: "secondary-foreground" },
+	{ name: "Accent", cssVar: "accent" },
+	{ name: "AccFG", cssVar: "accent-foreground" },
+	{ name: "Destruct", cssVar: "destructive" },
+	{ name: "DesFG", cssVar: "destructive-foreground" },
+	{ name: "C4", cssVar: "chart-4" },
+	{ name: "C5", cssVar: "chart-5" },
+	{ name: "MutedFG", cssVar: "muted-foreground" },
 ];
 
-// Chart colors - row 3
-const CHART_SWATCHES = [
-	{ name: "1", bgClass: "bg-chart-1", cssVar: "chart-1" },
-	{ name: "2", bgClass: "bg-chart-2", cssVar: "chart-2" },
-	{ name: "3", bgClass: "bg-chart-3", cssVar: "chart-3" },
-	{ name: "4", bgClass: "bg-chart-4", cssVar: "chart-4" },
-	{ name: "5", bgClass: "bg-chart-5", cssVar: "chart-5" },
+// Row 3: Foreground variants & additional
+const THEME_SWATCHES_ROW3 = [
+	{ name: "CardFG", cssVar: "card-foreground" },
+	{ name: "PopFG", cssVar: "popover-foreground" },
+	{ name: "MutedFG", cssVar: "muted-foreground" },
+	{ name: "C4", cssVar: "chart-4" },
+	{ name: "C5", cssVar: "chart-5" },
+	{ name: "Sidebar", cssVar: "sidebar" },
+	{ name: "SideFG", cssVar: "sidebar-foreground" },
+	{ name: "SidePri", cssVar: "sidebar-primary" },
+	{ name: "SideAcc", cssVar: "sidebar-accent" },
+	{ name: "SideBdr", cssVar: "sidebar-border" },
+	{ name: "SideRng", cssVar: "sidebar-ring" },
 ];
+
+interface ThemeColors {
+	[key: string]: string | undefined;
+}
 
 interface ColorPaletteSectionProps {
 	onUpdateColor?: (key: string, value: string) => void;
 	primaryColor?: string;
+	themeColors?: ThemeColors;
 }
 
 // Unified swatch component - used for both palette and theme swatches
@@ -152,7 +190,7 @@ function Swatch({
 	);
 }
 
-export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPaletteSectionProps) {
+export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }: ColorPaletteSectionProps) {
 	const [color, setColor] = useState(primaryColor || "#3B82F6");
 	const [primaryPalette, setPrimaryPalette] = useState<TintsPalette | null>(null);
 	const [complementaryPalette, setComplementaryPalette] = useState<TintsPalette | null>(null);
@@ -161,9 +199,10 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 
 	// Auto-generate on mount and when primaryColor changes
 	useEffect(() => {
-		const newColor = primaryColor || "#3B82F6";
-		setColor(newColor);
-		generatePalettes(newColor);
+		const rawColor = primaryColor || "#3B82F6";
+		const hexColor = toHex(rawColor);
+		setColor(hexColor);
+		generatePalettes(hexColor);
 	}, [primaryColor]);
 
 	const generatePalettes = async (inputColor: string) => {
@@ -277,7 +316,7 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 								<Swatch
 									key={swatch.name}
 									label={swatch.name}
-									bgClass={swatch.bgClass}
+									color={themeColors?.[swatch.cssVar]}
 								/>
 							))}
 						</div>
@@ -286,16 +325,16 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 								<Swatch
 									key={swatch.name}
 									label={swatch.name}
-									bgClass={swatch.bgClass}
+									color={themeColors?.[swatch.cssVar]}
 								/>
 							))}
 						</div>
 						<div className="flex gap-0.5">
-							{CHART_SWATCHES.map((swatch) => (
+							{THEME_SWATCHES_ROW3.map((swatch) => (
 								<Swatch
 									key={swatch.name}
 									label={swatch.name}
-									bgClass={swatch.bgClass}
+									color={themeColors?.[swatch.cssVar]}
 								/>
 							))}
 						</div>

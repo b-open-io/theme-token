@@ -6,6 +6,7 @@ import {
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
+import { loadThemeFonts } from "@/lib/fonts";
 import {
 	createContext,
 	type MouseEvent,
@@ -250,6 +251,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 	// Apply theme when activeTheme or mode changes
 	useEffect(() => {
 		if (activeTheme) {
+			loadThemeFonts(activeTheme);
 			applyThemeToDocument(activeTheme.styles[mode]);
 		}
 	}, [activeTheme, mode]);
@@ -259,6 +261,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 			setActiveTheme(theme);
 
 			if (theme) {
+				loadThemeFonts(theme);
 				applyThemeToDocument(theme.styles[mode]);
 				// Save selection
 				localStorage.setItem(

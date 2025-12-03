@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
+import { loadThemeFonts } from "@/lib/fonts";
 import { formatBSV } from "./theme-stripes";
 
 interface ThemeCardProps {
@@ -65,7 +66,7 @@ export function ThemeCard({
 	} as React.CSSProperties;
 
 	return (
-		<div className="group flex flex-col gap-3">
+		<div className="group flex flex-col gap-3" onMouseEnter={() => loadThemeFonts(theme)}>
 			{/* Live Preview Area - Click to apply theme */}
 			<button
 				type="button"

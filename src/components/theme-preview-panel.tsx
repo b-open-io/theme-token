@@ -832,18 +832,23 @@ function TabsDemo() {
 	);
 }
 
+interface ThemeColors {
+	[key: string]: string | undefined;
+}
+
 interface ThemePreviewPanelProps {
 	onUpdateColor?: (key: string, value: string) => void;
 	primaryColor?: string;
+	themeColors?: ThemeColors;
 }
 
 // Main Preview Panel
-export function ThemePreviewPanel({ onUpdateColor, primaryColor }: ThemePreviewPanelProps) {
+export function ThemePreviewPanel({ onUpdateColor, primaryColor, themeColors }: ThemePreviewPanelProps) {
 	return (
 		<div className="@container min-h-full w-full p-2 md:p-4 **:data-[slot=card]:shadow-none">
 			<div className="flex flex-col gap-4">
 				{/* Color Section - Palette Generator + Theme Colors side by side */}
-				<ColorPaletteSection onUpdateColor={onUpdateColor} primaryColor={primaryColor} />
+				<ColorPaletteSection onUpdateColor={onUpdateColor} primaryColor={primaryColor} themeColors={themeColors} />
 
 				{/* Stats */}
 				<StatsCards />
