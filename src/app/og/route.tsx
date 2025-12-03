@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-// Space Grotesk Bold TTF from Fontsource (static, non-variable for satori compatibility)
+// Space Grotesk Bold TTF from Fontsource CDN
 const FONT_URL =
 	"https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.ttf";
 
