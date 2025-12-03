@@ -1,7 +1,8 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { generateTintsPalette, type TintsPalette } from "@/lib/tints";
+import { FONT_NAMES, SYSTEM_FONTS } from "@/lib/fonts";
+import { generateTintsPalette } from "@/lib/tints";
 
 // Theme color schema for OKLCH colors
 const oklchColorSchema = z
@@ -81,6 +82,24 @@ const styleModeSchema = z.object({
 	"chart-5": oklchColorSchema.describe(
 		"Chart color 5 - completes the data viz palette",
 	),
+	"font-sans": z
+		.string()
+		.optional()
+		.describe(
+			'Sans-serif font family. Format: "FontName", fallback-stack. Example: "Inter", ui-sans-serif, system-ui, sans-serif',
+		),
+	"font-serif": z
+		.string()
+		.optional()
+		.describe(
+			'Serif font family. Format: "FontName", fallback-stack. Example: "Playfair Display", ui-serif, Georgia, serif',
+		),
+	"font-mono": z
+		.string()
+		.optional()
+		.describe(
+			'Monospace font family. Format: "FontName", fallback-stack. Example: "JetBrains Mono", ui-monospace, monospace',
+		),
 });
 
 // Full theme schema
@@ -169,7 +188,33 @@ ${paletteContext}
 ## Color Harmony
 - accent: Shift hue 30-60° from primary (analogous) or 180° (complementary)
 - destructive: H=20-35 (red-orange), high visibility
-- chart-1 to chart-5: Equidistant hues, all distinguishable`;
+- chart-1 to chart-5: Equidistant hues, all distinguishable
+
+## Typography (Google Fonts)
+Select fonts that complement the theme's personality. Always include fallback stacks.
+
+### Available Sans-Serif Fonts (--font-sans)
+${FONT_NAMES.sans.join(", ")}
+
+### Available Serif Fonts (--font-serif)
+${FONT_NAMES.serif.join(", ")}
+
+### Available Monospace Fonts (--font-mono)
+${FONT_NAMES.mono.join(", ")}
+
+### Font Format
+Always use this format: "FontName", ${SYSTEM_FONTS.sans}
+Examples:
+- "Inter", ${SYSTEM_FONTS.sans}
+- "Playfair Display", ${SYSTEM_FONTS.serif}
+- "JetBrains Mono", ${SYSTEM_FONTS.mono}
+
+### Font Pairing Guidelines
+- Modern/Tech: Inter or Space Grotesk + JetBrains Mono
+- Elegant/Luxury: Playfair Display (headings) + Lora (body)
+- Playful: Poppins or Nunito + Fira Code
+- Professional: IBM Plex Sans + IBM Plex Mono
+- Minimalist: DM Sans or Outfit + Source Code Pro`;
 
 		let userPrompt = prompt || "Generate a modern, professional theme";
 

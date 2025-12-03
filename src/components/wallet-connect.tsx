@@ -154,7 +154,7 @@ export function WalletConnect() {
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: -10 }}
 							transition={{ duration: 0.15 }}
-							className="absolute right-0 top-full z-50 mt-2 min-w-[200px] max-w-[240px] rounded-lg border border-border bg-card p-2 shadow-lg"
+							className="absolute right-0 top-full z-[100] mt-2 min-w-[200px] max-w-[240px] rounded-lg border border-border bg-card p-2 shadow-lg"
 						>
 							{/* Theme List */}
 							{themeTokens.length === 0 ? (

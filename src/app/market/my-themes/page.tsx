@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Tag, Wallet } from "lucide-react";
+import { Eye, Tag, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { ThemeStripes } from "@/components/market/theme-stripes";
 
 export default function MyThemesPage() {
-	const { status, connect, themeTokens } = useYoursWallet();
+	const { status, connect, ownedThemes } = useYoursWallet();
 	const { mode } = useTheme();
 
 	const isConnected = status === "connected";
@@ -28,7 +28,7 @@ export default function MyThemesPage() {
 		);
 	}
 
-	if (themeTokens.length === 0) {
+	if (ownedThemes.length === 0) {
 		return (
 			<div className="rounded-xl border border-dashed border-border py-20 text-center">
 				<Wallet className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
@@ -53,24 +53,33 @@ export default function MyThemesPage() {
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{themeTokens.map((theme, i) => (
+				{ownedThemes.map((owned, i) => (
 					<motion.div
-						key={i}
+						key={owned.outpoint}
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: i * 0.05 }}
 						className="rounded-xl border border-border bg-card p-4"
 					>
-						<div className="mb-4 flex items-center justify-between">
-							<ThemeStripes styles={theme.styles} mode={mode} size="lg" />
+						<div className="mb-3 flex items-center justify-between">
+							<ThemeStripes styles={owned.theme.styles} mode={mode} size="lg" />
 							<Badge variant="outline">Owned</Badge>
 						</div>
-						<h3 className="mb-4 font-semibold">{theme.name}</h3>
+						<h3 className="mb-1 font-semibold">{owned.theme.name}</h3>
+						<p className="mb-4 truncate font-mono text-[10px] text-muted-foreground">
+							{owned.origin}
+						</p>
 						<div className="flex gap-2">
+							<Button variant="outline" size="sm" className="flex-1" asChild>
+								<Link href={`/preview/${owned.origin}`}>
+									<Eye className="mr-2 h-4 w-4" />
+									Preview
+								</Link>
+							</Button>
 							<Button variant="outline" size="sm" className="flex-1" asChild>
 								<Link href="/market/sell">
 									<Tag className="mr-2 h-4 w-4" />
-									List for Sale
+									Sell
 								</Link>
 							</Button>
 						</div>

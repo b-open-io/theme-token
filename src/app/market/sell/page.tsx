@@ -3,11 +3,10 @@
 import { AlertCircle, Check, Loader2, Tag } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { PriceInput } from "@/components/price-input";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { type OwnedTheme, useYoursWallet } from "@/hooks/use-yours-wallet";
 import { fetchThemeMarketListings } from "@/lib/yours-wallet";
 import { formatBSV, ThemeStripes } from "@/components/market/theme-stripes";
@@ -24,7 +23,8 @@ export default function SellPage() {
 	const { mode } = useTheme();
 	const [listedOrigins, setListedOrigins] = useState<Set<string>>(new Set());
 	const [selectedTheme, setSelectedTheme] = useState<OwnedTheme | null>(null);
-	const [listingPrice, setListingPrice] = useState("");
+	const [priceUsd, setPriceUsd] = useState(0);
+	const [priceSats, setPriceSats] = useState(0);
 	const [listingSuccess, setListingSuccess] = useState<string | null>(null);
 	const [listingError, setListingError] = useState<string | null>(null);
 
@@ -43,15 +43,17 @@ export default function SellPage() {
 		[ownedThemes, listedOrigins],
 	);
 
+	const handlePriceChange = (usd: number, sats: number) => {
+		setPriceUsd(usd);
+		setPriceSats(sats);
+	};
+
 	const handleList = async () => {
-		if (!selectedTheme || !listingPrice) return;
+		if (!selectedTheme || priceSats < 1) return;
 
 		setListingError(null);
 		try {
-			const result = await listTheme(
-				selectedTheme.outpoint,
-				parseInt(listingPrice, 10),
-			);
+			const result = await listTheme(selectedTheme.outpoint, priceSats);
 			if (result) {
 				setListingSuccess(result.txid);
 			}
@@ -92,7 +94,8 @@ export default function SellPage() {
 					onClick={() => {
 						setListingSuccess(null);
 						setSelectedTheme(null);
-						setListingPrice("");
+						setPriceUsd(0);
+						setPriceSats(0);
 					}}
 				>
 					List Another Theme
@@ -190,22 +193,11 @@ export default function SellPage() {
 								</div>
 							</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="price">Price (satoshis)</Label>
-								<Input
-									id="price"
-									type="number"
-									min="1"
-									placeholder="10000"
-									value={listingPrice}
-									onChange={(e) => setListingPrice(e.target.value)}
-								/>
-								{listingPrice && (
-									<p className="text-xs text-muted-foreground">
-										= {formatBSV(parseInt(listingPrice, 10) || 0)} BSV
-									</p>
-								)}
-							</div>
+							<PriceInput
+								value={priceUsd}
+								onChange={handlePriceChange}
+								exchangeRate={50}
+							/>
 
 							{(listingError || walletError) && (
 								<div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
@@ -216,9 +208,7 @@ export default function SellPage() {
 
 							<Button
 								className="w-full"
-								disabled={
-									isListing || !listingPrice || parseInt(listingPrice, 10) < 1
-								}
+								disabled={isListing || priceSats < 1}
 								onClick={handleList}
 							>
 								{isListing ? (
@@ -229,9 +219,7 @@ export default function SellPage() {
 								) : (
 									<>
 										<Tag className="mr-2 h-4 w-4" />
-										List for{" "}
-										{listingPrice ? formatBSV(parseInt(listingPrice, 10)) : "0"}{" "}
-										BSV
+										List for ${priceUsd.toFixed(2)} ({formatBSV(priceSats)} BSV)
 									</>
 								)}
 							</Button>
