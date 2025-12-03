@@ -7,6 +7,7 @@ import { PriceInput } from "@/components/price-input";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useBsvRate } from "@/hooks/use-bsv-rate";
 import { type OwnedTheme, useYoursWallet } from "@/hooks/use-yours-wallet";
 import { fetchThemeMarketListings } from "@/lib/yours-wallet";
 import { formatBSV, ThemeStripes } from "@/components/market/theme-stripes";
@@ -21,6 +22,7 @@ export default function SellPage() {
 		error: walletError,
 	} = useYoursWallet();
 	const { mode } = useTheme();
+	const { rate: bsvRate, isLoading: isRateLoading } = useBsvRate();
 	const [listedOrigins, setListedOrigins] = useState<Set<string>>(new Set());
 	const [selectedTheme, setSelectedTheme] = useState<OwnedTheme | null>(null);
 	const [priceUsd, setPriceUsd] = useState(0);
@@ -193,11 +195,21 @@ export default function SellPage() {
 								</div>
 							</div>
 
-							<PriceInput
-								value={priceUsd}
-								onChange={handlePriceChange}
-								exchangeRate={50}
-							/>
+							{isRateLoading ? (
+								<div className="flex items-center justify-center py-8">
+									<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+								</div>
+							) : bsvRate ? (
+								<PriceInput
+									value={priceUsd}
+									onChange={handlePriceChange}
+									exchangeRate={bsvRate}
+								/>
+							) : (
+								<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-sm text-destructive">
+									Failed to fetch BSV rate. Please refresh the page.
+								</div>
+							)}
 
 							{(listingError || walletError) && (
 								<div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">

@@ -19,7 +19,7 @@ const SATS_PER_BSV = 100_000_000;
 interface PriceInputProps {
 	value: number;
 	onChange: (usd: number, sats: number) => void;
-	exchangeRate?: number; // USD per 1 BSV
+	exchangeRate: number; // USD per 1 BSV (required - use useBsvRate hook)
 	className?: string;
 }
 
@@ -44,7 +44,7 @@ function formatBsv(sats: number): string {
 export function PriceInput({
 	value,
 	onChange,
-	exchangeRate = 50,
+	exchangeRate,
 	className,
 }: PriceInputProps) {
 	const [isAnimating, setIsAnimating] = useState(false);
