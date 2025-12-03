@@ -7,6 +7,12 @@ import type { FontMetadata } from "./metadata-form";
 import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import {
+	buildFontMetadata,
+	inferFontRoleFromWeight,
+	type FontWeight,
+	type FontStyle,
+} from "@/lib/asset-metadata";
 import { getYoursWallet } from "@/lib/yours-wallet";
 
 interface TransactionTerminalProps {
@@ -76,22 +82,24 @@ export function TransactionTerminal({
 				addLog("ENCODING_AI_GENERATED_WOFF2...", "info");
 				await new Promise((r) => setTimeout(r, 200));
 
+				const mapData = buildFontMetadata({
+					name: metadata.name,
+					weight: "400" as FontWeight,
+					style: "normal",
+					role: inferFontRoleFromWeight("400"),
+					author: metadata.author || undefined,
+					license: metadata.license,
+					website: metadata.website || undefined,
+					aiGenerated: true,
+					glyphCount: compiledFont.glyphCount,
+					contentType: "font/woff2",
+				});
+
 				inscriptions.push({
 					address: addresses.ordAddress,
 					base64Data: compiledFont.woff2Base64,
 					mimeType: "font/woff2",
-					map: {
-						app: "theme-token",
-						type: "font",
-						name: metadata.name,
-						weight: "400",
-						style: "normal",
-						author: metadata.author || "",
-						license: metadata.license,
-						website: metadata.website || "",
-						aiGenerated: "true",
-						glyphCount: String(compiledFont.glyphCount),
-					},
+					map: mapData,
 				});
 			} else {
 				// Otherwise inscribe uploaded font files
@@ -100,27 +108,30 @@ export function TransactionTerminal({
 					const base64Data = await fileToBase64(fontFile.file);
 
 					// Determine MIME type
-					let mimeType = "application/font-woff2";
+					let mimeType = "font/woff2";
 					if (fontFile.name.endsWith(".woff")) {
 						mimeType = "font/woff";
 					} else if (fontFile.name.endsWith(".ttf")) {
 						mimeType = "font/ttf";
 					}
 
+					const weight = String(fontFile.weight || 400) as FontWeight;
+					const mapData = buildFontMetadata({
+						name: metadata.name,
+						weight,
+						style: (fontFile.style || "normal") as FontStyle,
+						role: inferFontRoleFromWeight(weight),
+						author: metadata.author || undefined,
+						license: metadata.license,
+						website: metadata.website || undefined,
+						contentType: mimeType,
+					});
+
 					inscriptions.push({
 						address: addresses.ordAddress,
 						base64Data,
 						mimeType,
-						map: {
-							app: "theme-token",
-							type: "font",
-							name: metadata.name,
-							weight: String(fontFile.weight || 400),
-							style: fontFile.style || "normal",
-							author: metadata.author || "",
-							license: metadata.license,
-							website: metadata.website || "",
-						},
+						map: mapData,
 					});
 				}
 			}

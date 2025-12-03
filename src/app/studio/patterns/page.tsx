@@ -28,37 +28,12 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 
-import type { ColorMode } from "@/lib/asset-metadata";
+import { type ColorMode, extractTileDimensions } from "@/lib/asset-metadata";
 
 interface PatternState {
 	svg: string;
 	prompt: string;
 	colorMode: ColorMode;
-}
-
-// Extract pattern tile dimensions from SVG
-function extractTileDimensions(svg: string): {
-	width: number;
-	height: number;
-} | null {
-	const patternMatch = svg.match(
-		/<pattern[^>]*width="(\d+)"[^>]*height="(\d+)"/,
-	);
-	if (patternMatch) {
-		return {
-			width: Number.parseInt(patternMatch[1], 10),
-			height: Number.parseInt(patternMatch[2], 10),
-		};
-	}
-	// Try alternate order
-	const altMatch = svg.match(/<pattern[^>]*height="(\d+)"[^>]*width="(\d+)"/);
-	if (altMatch) {
-		return {
-			width: Number.parseInt(altMatch[2], 10),
-			height: Number.parseInt(altMatch[1], 10),
-		};
-	}
-	return null;
 }
 
 // Pattern type presets for quick prompts

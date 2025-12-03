@@ -11,7 +11,13 @@ import {
 	type ReactNode,
 } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { buildPatternMetadata, type ColorMode } from "@/lib/asset-metadata";
+import {
+	buildPatternMetadata,
+	buildThemeMetadata,
+	type ColorMode,
+	countThemeColors,
+	inferThemeMode,
+} from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import {
 	type Addresses,
@@ -391,16 +397,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				const jsonString = JSON.stringify(theme);
 				const base64Data = btoa(jsonString);
 
+				// Infer mode from background color and count colors
+				const bgColor = theme.styles?.light?.background || theme.styles?.dark?.background || "#000000";
+				const mode = inferThemeMode(bgColor);
+				const colorCount = countThemeColors(theme as Record<string, unknown>);
+
+				const mapData = buildThemeMetadata({
+					name: theme.name,
+					mode,
+					colorCount,
+				});
+
 				const response = await wallet.inscribe([
 					{
 						address: addresses.ordAddress,
 						base64Data,
 						mimeType: "application/json",
-						map: {
-							app: "ThemeToken",
-							type: "theme",
-							name: theme.name,
-						},
+						map: mapData,
 						satoshis: 1,
 					},
 				]);
