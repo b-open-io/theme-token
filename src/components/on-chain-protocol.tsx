@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Check, Copy, Database, FileCode, Palette, Type } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -257,17 +256,17 @@ export function OnChainProtocol() {
 								Pointer Fields
 							</p>
 							<div
-								className="group flex items-center gap-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3 transition-colors hover:border-cyan-500/50"
+								className="group flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 transition-colors hover:border-primary/50"
 								onMouseEnter={() => setHoveredField("context")}
 								onMouseLeave={() => setHoveredField(null)}
 							>
-								<div className="h-3 w-3 rounded-full bg-cyan-500" />
+								<div className="h-3 w-3 rounded-full bg-primary" />
 								<code className="font-mono text-sm">
 									<span className="text-muted-foreground">context:</span>{" "}
-									<span className="text-cyan-400">"name"</span>
+									<span className="text-primary">"name"</span>
 								</code>
 								<svg
-									className="ml-auto h-4 w-4 text-cyan-500 opacity-50 group-hover:opacity-100"
+									className="ml-auto h-4 w-4 text-primary opacity-50 group-hover:opacity-100"
 									viewBox="0 0 24 24"
 									fill="none"
 									stroke="currentColor"
@@ -277,14 +276,14 @@ export function OnChainProtocol() {
 								</svg>
 							</div>
 							<div
-								className="group flex items-center gap-3 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/5 p-3 transition-colors hover:border-fuchsia-500/50"
+								className="group flex items-center gap-3 rounded-lg border border-accent-foreground/30 bg-accent/30 p-3 transition-colors hover:border-accent-foreground/50"
 								onMouseEnter={() => setHoveredField("subcontext")}
 								onMouseLeave={() => setHoveredField(null)}
 							>
-								<div className="h-3 w-3 rounded-full bg-fuchsia-500" />
+								<div className="h-3 w-3 rounded-full bg-accent-foreground" />
 								<code className="font-mono text-sm">
 									<span className="text-muted-foreground">subcontext:</span>{" "}
-									<span className="text-fuchsia-400">
+									<span className="text-accent-foreground">
 										"
 										{activeTab === "pattern"
 											? "render"
@@ -295,7 +294,7 @@ export function OnChainProtocol() {
 									</span>
 								</code>
 								<svg
-									className="ml-auto h-4 w-4 text-fuchsia-500 opacity-50 group-hover:opacity-100"
+									className="ml-auto h-4 w-4 text-accent-foreground opacity-50 group-hover:opacity-100"
 									viewBox="0 0 24 24"
 									fill="none"
 									stroke="currentColor"
@@ -314,18 +313,18 @@ export function OnChainProtocol() {
 							<div
 								className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
 									hoveredField === "context"
-										? "border-cyan-500 bg-cyan-500/10"
+										? "border-primary bg-primary/10"
 										: "border-border bg-muted/30"
 								}`}
 							>
 								<code className="font-mono text-sm">
 									<span className="text-muted-foreground">name:</span>{" "}
-									<span className="text-emerald-400">
+									<span className="text-foreground">
 										"{schema.example.name}"
 									</span>
 								</code>
 								{hoveredField === "context" && (
-									<span className="ml-auto rounded bg-cyan-500/20 px-2 py-0.5 text-xs text-cyan-400">
+									<span className="ml-auto rounded bg-primary/20 px-2 py-0.5 text-xs text-primary">
 										Primary ID
 									</span>
 								)}
@@ -333,7 +332,7 @@ export function OnChainProtocol() {
 							<div
 								className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
 									hoveredField === "subcontext"
-										? "border-fuchsia-500 bg-fuchsia-500/10"
+										? "border-accent-foreground bg-accent/30"
 										: "border-border bg-muted/30"
 								}`}
 							>
@@ -346,7 +345,7 @@ export function OnChainProtocol() {
 												: "mode"}
 										:
 									</span>{" "}
-									<span className="text-emerald-400">
+									<span className="text-foreground">
 										"
 										{activeTab === "pattern"
 											? schema.example.render
@@ -357,7 +356,7 @@ export function OnChainProtocol() {
 									</span>
 								</code>
 								{hoveredField === "subcontext" && (
-									<span className="ml-auto rounded bg-fuchsia-500/20 px-2 py-0.5 text-xs text-fuchsia-400">
+									<span className="ml-auto rounded bg-accent/50 px-2 py-0.5 text-xs text-accent-foreground">
 										Variant
 									</span>
 								)}
@@ -367,7 +366,7 @@ export function OnChainProtocol() {
 
 					<p className="text-center text-xs text-muted-foreground">
 						<Database className="mr-1 inline h-3 w-3" />
-						Indexers read <code className="text-cyan-400">context</code> to know
+						Indexers read <code className="text-primary">context</code> to know
 						which field contains the ID - no guessing required
 					</p>
 				</div>
@@ -423,7 +422,7 @@ export function OnChainProtocol() {
 								>
 									{copied === "json" ? (
 										<>
-											<Check className="h-3 w-3 text-green-500" />
+											<Check className="h-3 w-3 text-primary" />
 											Copied
 										</>
 									) : (
@@ -434,7 +433,7 @@ export function OnChainProtocol() {
 									)}
 								</button>
 							</div>
-							<div className="rounded-lg border border-border bg-black/50 p-4 font-mono text-xs">
+							<div className="rounded-lg border border-border bg-muted/30 p-4 font-mono text-xs">
 								<pre className="overflow-x-auto">
 									{Object.entries(schema.example).map(([key, value], i) => {
 										const field = schema.fields.find((f) => f.name === key);
@@ -450,7 +449,7 @@ export function OnChainProtocol() {
 											<div
 												key={key}
 												className={`transition-colors ${
-													hoveredField === key ? "bg-muted/30" : ""
+													hoveredField === key ? "bg-muted" : ""
 												}`}
 												onMouseEnter={() => setHoveredField(key)}
 												onMouseLeave={() => setHoveredField(null)}
@@ -462,22 +461,22 @@ export function OnChainProtocol() {
 												<span
 													className={
 														isContext
-															? "text-cyan-400"
+															? "text-primary"
 															: isSubcontext
-																? "text-fuchsia-400"
+																? "text-accent-foreground"
 																: isContextTarget
-																	? "text-cyan-300"
+																	? "text-primary/70"
 																	: isSubcontextTarget
-																		? "text-fuchsia-300"
-																		: "text-slate-400"
+																		? "text-accent-foreground/70"
+																		: "text-muted-foreground"
 													}
 												>
 													"{key}"
 												</span>
-												<span className="text-slate-500">: </span>
-												<span className="text-emerald-400">"{value}"</span>
+												<span className="text-muted-foreground/50">: </span>
+												<span className="text-foreground">"{value}"</span>
 												{i < Object.keys(schema.example).length - 1 && (
-													<span className="text-slate-500">,</span>
+													<span className="text-muted-foreground/50">,</span>
 												)}
 											</div>
 										);
@@ -507,9 +506,9 @@ export function OnChainProtocol() {
 											<code
 												className={`font-mono text-sm font-semibold ${
 													field.badge === "context"
-														? "text-cyan-400"
+														? "text-primary"
 														: field.badge === "subcontext"
-															? "text-fuchsia-400"
+															? "text-accent-foreground"
 															: "text-foreground"
 												}`}
 											>
@@ -519,8 +518,8 @@ export function OnChainProtocol() {
 												<span
 													className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
 														field.badge === "context"
-															? "bg-cyan-500/20 text-cyan-400"
-															: "bg-fuchsia-500/20 text-fuchsia-400"
+															? "bg-primary/20 text-primary"
+															: "bg-accent/50 text-accent-foreground"
 													}`}
 												>
 													{field.badge}
@@ -566,7 +565,7 @@ export function OnChainProtocol() {
 					>
 						{copied === "indexer" ? (
 							<>
-								<Check className="h-3 w-3 text-green-500" />
+								<Check className="h-3 w-3 text-primary" />
 								Copied
 							</>
 						) : (
@@ -578,27 +577,27 @@ export function OnChainProtocol() {
 					</button>
 				</div>
 
-				<div className="rounded-lg border border-border bg-black/50 p-4">
+				<div className="rounded-lg border border-border bg-muted/30 p-4">
 					<pre className="overflow-x-auto font-mono text-xs">
 						<code>
 							{INDEXER_CODE.split("\n").map((line, i) => {
-								// Simple syntax highlighting
+								// Simple syntax highlighting using theme colors
 								let highlighted = line
 									.replace(
 										/(\/\/.*)/g,
-										'<span class="text-slate-500">$1</span>',
+										'<span class="text-muted-foreground">$1</span>',
 									)
 									.replace(
 										/\b(function|return|if|const)\b/g,
-										'<span class="text-fuchsia-400">$1</span>',
+										'<span class="text-primary">$1</span>',
 									)
 									.replace(
 										/(".*?")/g,
-										'<span class="text-emerald-400">$1</span>',
+										'<span class="text-foreground">$1</span>',
 									)
 									.replace(
 										/\b(context|subcontext)\b/g,
-										'<span class="text-cyan-400">$1</span>',
+										'<span class="text-primary font-semibold">$1</span>',
 									);
 
 								return (
