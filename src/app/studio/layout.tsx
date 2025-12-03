@@ -144,7 +144,7 @@ export default function StudioLayout({
 			</header>
 
 			{/* Content */}
-			<div className="flex-1">
+			<div className="flex min-h-0 flex-1 flex-col">
 				{children}
 			</div>
 		</div>
