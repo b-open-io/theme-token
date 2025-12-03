@@ -132,13 +132,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 				zipMetadata: zipPackage?.metadata,
 			};
 
-			// Notify parent about detected metadata
-			console.log("[DropZone] zipPackage.metadata:", zipPackage?.metadata);
-			console.log("[DropZone] onZipMetadataDetected:", !!onZipMetadataDetected);
-			if (onZipMetadataDetected && zipPackage?.metadata) {
-				console.log("[DropZone] Calling onZipMetadataDetected with:", zipPackage.metadata);
-				onZipMetadataDetected(zipPackage.metadata);
-			}
+			// Metadata already sent when zip was loaded, no need to send again
 
 			const currentFiles = filesRef.current;
 			const newFilesList = [...currentFiles, fontFile];
@@ -195,12 +189,19 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 					if (pkg.fonts.length === 0) {
 						// No fonts found in zip
 						console.warn("[DropZone] No font files found in zip");
-					} else if (pkg.fonts.length === 1) {
-						// Only one font, select it automatically
-						handleSelectFromZip(pkg.fonts[0]);
 					} else {
-						// Multiple fonts, show picker
-						setZipPackage(pkg);
+						// Pre-fill form with metadata immediately
+						if (onZipMetadataDetected && pkg.metadata) {
+							onZipMetadataDetected(pkg.metadata);
+						}
+
+						if (pkg.fonts.length === 1) {
+							// Only one font, select it automatically
+							handleSelectFromZip(pkg.fonts[0]);
+						} else {
+							// Multiple fonts, show picker
+							setZipPackage(pkg);
+						}
 					}
 				} catch (error) {
 					console.error("[DropZone] Error loading zip:", error);

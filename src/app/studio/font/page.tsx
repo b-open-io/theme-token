@@ -122,8 +122,6 @@ export default function FontMintPage() {
 
 	// Handle metadata detected from zip file
 	const handleZipMetadataDetected = useCallback((zipMeta: ZipFontMetadata) => {
-		console.log("[FontPage] handleZipMetadataDetected called with:", zipMeta);
-
 		// Map common license names to our dropdown values
 		const licenseMap: Record<string, FontMetadata["license"]> = {
 			OFL: "SIL_OFL_1.1",
@@ -160,7 +158,6 @@ export default function FontMintPage() {
 				updates.website = zipMeta.website;
 			}
 
-			console.log("[FontPage] Updating metadata with:", updates);
 			return { ...prev, ...updates };
 		});
 	}, []);
