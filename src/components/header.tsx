@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WalletConnect } from "@/components/wallet-connect";
 
-// Width configurations per page type
+// Width configurations per page type - must match content widths on each page
 const WIDTH_CONFIG = {
-	spec: "max-w-4xl",
-	studio: "max-w-[95%]",
-	market: "max-w-6xl",
-	default: "max-w-7xl",
+	spec: "max-w-6xl", // matches spec/page.tsx content width
+	studio: "max-w-[95%]", // studio is full-width editor
+	market: "max-w-[1400px]", // matches market/layout.tsx content width
+	default: "max-w-6xl", // matches home page content width
 } as const;
 
 function useGitHubStars() {
