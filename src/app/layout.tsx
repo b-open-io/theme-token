@@ -66,7 +66,7 @@ export default function RootLayout({
 			>
 				<Providers>
 					<Header />
-					<main className="flex-1">{children}</main>
+					<main className="flex-1 overflow-hidden">{children}</main>
 				</Providers>
 			</body>
 		</html>
