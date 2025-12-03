@@ -367,7 +367,7 @@ export function ThemeStudio() {
 
   // Update a single color in the current mode
   const updateColor = (key: string, value: string) => {
-    setSelectedTheme((prev) => ({
+    setSelectedTheme((prev: ThemeToken) => ({
       ...prev,
       styles: {
         ...prev.styles,
