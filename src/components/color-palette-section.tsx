@@ -18,6 +18,7 @@ import {
 import {
 	fetchTintsPalette,
 	getComplementaryColor,
+	getTriadicColor,
 	paletteToArray,
 	type TintsPalette,
 } from "@/lib/tints";
@@ -42,16 +43,29 @@ const THEME_COLOR_KEYS = [
 	{ key: "ring", label: "Ring" },
 ] as const;
 
-// Current theme swatches for compact display
-const THEME_SWATCHES = [
+// Current theme swatches for compact display - row 1
+const THEME_SWATCHES_ROW1 = [
 	{ name: "BG", bgClass: "bg-background", cssVar: "background" },
 	{ name: "Card", bgClass: "bg-card", cssVar: "card" },
 	{ name: "Primary", bgClass: "bg-primary", cssVar: "primary" },
 	{ name: "Secondary", bgClass: "bg-secondary", cssVar: "secondary" },
+];
+
+// Row 2
+const THEME_SWATCHES_ROW2 = [
 	{ name: "Muted", bgClass: "bg-muted", cssVar: "muted" },
 	{ name: "Accent", bgClass: "bg-accent", cssVar: "accent" },
 	{ name: "Destructive", bgClass: "bg-destructive", cssVar: "destructive" },
 	{ name: "Border", bgClass: "bg-border", cssVar: "border" },
+];
+
+// Chart colors - row 3
+const CHART_SWATCHES = [
+	{ name: "1", bgClass: "bg-chart-1", cssVar: "chart-1" },
+	{ name: "2", bgClass: "bg-chart-2", cssVar: "chart-2" },
+	{ name: "3", bgClass: "bg-chart-3", cssVar: "chart-3" },
+	{ name: "4", bgClass: "bg-chart-4", cssVar: "chart-4" },
+	{ name: "5", bgClass: "bg-chart-5", cssVar: "chart-5" },
 ];
 
 interface ColorPaletteSectionProps {
@@ -141,17 +155,16 @@ function Swatch({
 export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPaletteSectionProps) {
 	const [color, setColor] = useState(primaryColor || "#3B82F6");
 	const [primaryPalette, setPrimaryPalette] = useState<TintsPalette | null>(null);
-	const [accentPalette, setAccentPalette] = useState<TintsPalette | null>(null);
+	const [complementaryPalette, setComplementaryPalette] = useState<TintsPalette | null>(null);
+	const [triadicPalette, setTriadicPalette] = useState<TintsPalette | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
-	const [initialized, setInitialized] = useState(false);
 
-	// Auto-generate on mount
+	// Auto-generate on mount and when primaryColor changes
 	useEffect(() => {
-		if (!initialized) {
-			generatePalettes(color);
-			setInitialized(true);
-		}
-	}, [initialized, color]);
+		const newColor = primaryColor || "#3B82F6";
+		setColor(newColor);
+		generatePalettes(newColor);
+	}, [primaryColor]);
 
 	const generatePalettes = async (inputColor: string) => {
 		const hex = inputColor.replace(/^#/, "");
@@ -161,10 +174,13 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 
 		const primary = await fetchTintsPalette("primary", hex);
 		const complementaryHex = getComplementaryColor(inputColor);
-		const accent = await fetchTintsPalette("accent", complementaryHex.replace("#", ""));
+		const complementary = await fetchTintsPalette("complementary", complementaryHex.replace("#", ""));
+		const triadicHex = getTriadicColor(inputColor);
+		const triadic = await fetchTintsPalette("triadic", triadicHex.replace("#", ""));
 
 		if (primary) setPrimaryPalette(primary);
-		if (accent) setAccentPalette(accent);
+		if (complementary) setComplementaryPalette(complementary);
+		if (triadic) setTriadicPalette(triadic);
 
 		setIsLoading(false);
 	};
@@ -172,7 +188,8 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 	const handleGenerate = () => generatePalettes(color);
 
 	const primaryArray = primaryPalette ? paletteToArray(primaryPalette) : [];
-	const accentArray = accentPalette ? paletteToArray(accentPalette) : [];
+	const complementaryArray = complementaryPalette ? paletteToArray(complementaryPalette) : [];
+	const triadicArray = triadicPalette ? paletteToArray(triadicPalette) : [];
 
 	return (
 		<div className="grid gap-3 @2xl:grid-cols-3">
@@ -206,41 +223,44 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 						</button>
 					</div>
 				</CardHeader>
-				<CardContent className="space-y-2 px-3 pb-3 pt-0">
-					{/* Primary Scale */}
-					<div>
-						<p className="mb-1 text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
-							Primary
-						</p>
-						<div className="flex gap-0.5">
-							{primaryArray.map(({ shade, color: c }) => (
-								<Swatch
-									key={shade}
-									label={shade}
-									color={c}
-									onApplyColor={onUpdateColor}
-									showContextMenu
-								/>
-							))}
-						</div>
+				<CardContent className="space-y-1.5 px-3 pb-3 pt-0">
+					{/* Primary Scale (0°) */}
+					<div className="flex gap-0.5">
+						{primaryArray.map(({ shade, color: c }) => (
+							<Swatch
+								key={shade}
+								label={shade}
+								color={c}
+								onApplyColor={onUpdateColor}
+								showContextMenu
+							/>
+						))}
 					</div>
 
-					{/* Accent Scale (Complementary) */}
-					<div>
-						<p className="mb-1 text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
-							Accent (Complementary)
-						</p>
-						<div className="flex gap-0.5">
-							{accentArray.map(({ shade, color: c }) => (
-								<Swatch
-									key={shade}
-									label={shade}
-									color={c}
-									onApplyColor={onUpdateColor}
-									showContextMenu
-								/>
-							))}
-						</div>
+					{/* Triadic Scale (+120°) */}
+					<div className="flex gap-0.5">
+						{triadicArray.map(({ shade, color: c }) => (
+							<Swatch
+								key={shade}
+								label={shade}
+								color={c}
+								onApplyColor={onUpdateColor}
+								showContextMenu
+							/>
+						))}
+					</div>
+
+					{/* Complementary Scale (+180°) */}
+					<div className="flex gap-0.5">
+						{complementaryArray.map(({ shade, color: c }) => (
+							<Swatch
+								key={shade}
+								label={shade}
+								color={c}
+								onApplyColor={onUpdateColor}
+								showContextMenu
+							/>
+						))}
 					</div>
 				</CardContent>
 			</Card>
@@ -251,9 +271,9 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 					<CardTitle className="text-xs font-medium">Active Theme</CardTitle>
 				</CardHeader>
 				<CardContent className="px-3 pb-3 pt-0">
-					<div className="space-y-2">
+					<div className="space-y-1.5">
 						<div className="flex gap-0.5">
-							{THEME_SWATCHES.slice(0, 4).map((swatch) => (
+							{THEME_SWATCHES_ROW1.map((swatch) => (
 								<Swatch
 									key={swatch.name}
 									label={swatch.name}
@@ -262,7 +282,16 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPalett
 							))}
 						</div>
 						<div className="flex gap-0.5">
-							{THEME_SWATCHES.slice(4).map((swatch) => (
+							{THEME_SWATCHES_ROW2.map((swatch) => (
+								<Swatch
+									key={swatch.name}
+									label={swatch.name}
+									bgClass={swatch.bgClass}
+								/>
+							))}
+						</div>
+						<div className="flex gap-0.5">
+							{CHART_SWATCHES.map((swatch) => (
 								<Swatch
 									key={swatch.name}
 									label={swatch.name}

@@ -834,15 +834,16 @@ function TabsDemo() {
 
 interface ThemePreviewPanelProps {
 	onUpdateColor?: (key: string, value: string) => void;
+	primaryColor?: string;
 }
 
 // Main Preview Panel
-export function ThemePreviewPanel({ onUpdateColor }: ThemePreviewPanelProps) {
+export function ThemePreviewPanel({ onUpdateColor, primaryColor }: ThemePreviewPanelProps) {
 	return (
 		<div className="@container min-h-full w-full p-2 md:p-4 **:data-[slot=card]:shadow-none">
 			<div className="flex flex-col gap-4">
 				{/* Color Section - Palette Generator + Theme Colors side by side */}
-				<ColorPaletteSection onUpdateColor={onUpdateColor} />
+				<ColorPaletteSection onUpdateColor={onUpdateColor} primaryColor={primaryColor} />
 
 				{/* Stats */}
 				<StatsCards />

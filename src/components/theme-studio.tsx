@@ -1249,7 +1249,7 @@ export function ThemeStudio() {
 					</div>
 					{/* Scrollable Preview Area */}
 					<div className="flex-1 overflow-y-auto bg-background">
-						<ThemePreviewPanel onUpdateColor={updateColor} />
+						<ThemePreviewPanel onUpdateColor={updateColor} primaryColor={selectedTheme.styles[mode].primary} />
 					</div>
 				</div>
 			</div>

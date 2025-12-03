@@ -118,9 +118,9 @@ export function rgbToHex(r: number, g: number, b: number): string {
 }
 
 /**
- * Get complementary color by rotating hue 180 degrees
+ * Rotate hue by a given number of degrees
  */
-export function getComplementaryColor(hex: string): string {
+export function rotateHue(hex: string, degrees: number): string {
 	// Remove # if present
 	const cleanHex = hex.replace(/^#/, "");
 
@@ -153,8 +153,9 @@ export function getComplementaryColor(hex: string): string {
 		h /= 6;
 	}
 
-	// Rotate 180 degrees (0.5 in 0-1 scale)
-	h = (h + 0.5) % 1;
+	// Rotate by specified degrees
+	h = (h + degrees / 360) % 1;
+	if (h < 0) h += 1;
 
 	// HSL back to RGB
 	const hue2rgb = (p: number, q: number, t: number) => {
@@ -182,3 +183,32 @@ export function getComplementaryColor(hex: string): string {
 
 	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
+
+/**
+ * Get complementary color by rotating hue 180 degrees
+ */
+export function getComplementaryColor(hex: string): string {
+	return rotateHue(hex, 180);
+}
+
+/**
+ * Get triadic color by rotating hue 120 degrees
+ */
+export function getTriadicColor(hex: string): string {
+	return rotateHue(hex, 120);
+}
+
+/**
+ * Get split-complementary colors (150° and 210°)
+ */
+export function getSplitComplementaryColors(hex: string): [string, string] {
+	return [rotateHue(hex, 150), rotateHue(hex, 210)];
+}
+
+/**
+ * Get analogous colors (30° apart)
+ */
+export function getAnalogousColors(hex: string): [string, string] {
+	return [rotateHue(hex, -30), rotateHue(hex, 30)];
+}
+
