@@ -5,6 +5,7 @@ import { Bot, Check, Copy, FileText, Package, Terminal } from "lucide-react";
 import { useCallback, useState } from "react";
 import { ChainImplementations } from "@/components/chain-implementations";
 import { JsonSyntax } from "@/components/json-syntax";
+import { OnChainProtocol } from "@/components/on-chain-protocol";
 
 const fadeIn = {
 	initial: { opacity: 0, y: 20 },
@@ -400,8 +401,51 @@ export default function SpecPage() {
 				</div>
 			</section>
 
-			{/* Protocol Implementations */}
+			{/* On-Chain Protocol / MAP Metadata */}
 			<section className="border-t border-border bg-muted/30 py-16">
+				<div className="mx-auto max-w-6xl px-6">
+					<motion.div
+						initial="initial"
+						whileInView="animate"
+						viewport={{ once: true }}
+						variants={stagger}
+					>
+						<motion.p
+							variants={fadeIn}
+							className="font-mono text-sm text-primary"
+						>
+							{"// On-Chain Metadata Protocol"}
+						</motion.p>
+						<motion.h2
+							variants={fadeIn}
+							className="mb-4 text-3xl font-bold sm:text-4xl"
+						>
+							MAP Context/Subcontext Pattern
+						</motion.h2>
+						<motion.p
+							variants={fadeIn}
+							className="mb-12 max-w-2xl text-muted-foreground"
+						>
+							All theme-token assets use the MAP (Magic Attribute Protocol)
+							context/subcontext pattern for indexer-friendly discovery. The{" "}
+							<code className="rounded bg-muted px-1">context</code> field
+							points to the primary identifier field, enabling efficient O(1)
+							lookups.
+						</motion.p>
+					</motion.div>
+
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+					>
+						<OnChainProtocol />
+					</motion.div>
+				</div>
+			</section>
+
+			{/* Protocol Implementations */}
+			<section className="border-t border-border py-16">
 				<div className="mx-auto max-w-6xl px-6">
 					<motion.div
 						initial="initial"
