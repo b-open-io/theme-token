@@ -9,6 +9,7 @@ import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
+	ContextMenuLabel,
 	ContextMenuSeparator,
 	ContextMenuSub,
 	ContextMenuSubContent,
@@ -35,24 +36,49 @@ function toHex(color: string): string {
 	return color;
 }
 
-// Theme color keys that can be assigned
+// Theme color keys that can be assigned - organized by category
 const THEME_COLOR_KEYS = [
-	{ key: "background", label: "Background" },
-	{ key: "foreground", label: "Foreground" },
-	{ key: "card", label: "Card" },
-	{ key: "card-foreground", label: "Card Foreground" },
-	{ key: "primary", label: "Primary" },
-	{ key: "primary-foreground", label: "Primary Foreground" },
-	{ key: "secondary", label: "Secondary" },
-	{ key: "secondary-foreground", label: "Secondary Foreground" },
-	{ key: "muted", label: "Muted" },
-	{ key: "muted-foreground", label: "Muted Foreground" },
-	{ key: "accent", label: "Accent" },
-	{ key: "accent-foreground", label: "Accent Foreground" },
-	{ key: "destructive", label: "Destructive" },
-	{ key: "border", label: "Border" },
-	{ key: "input", label: "Input" },
-	{ key: "ring", label: "Ring" },
+	// Primary colors
+	{ key: "primary", label: "Primary", category: "Primary" },
+	{ key: "primary-foreground", label: "Primary Foreground", category: "Primary" },
+	// Secondary colors
+	{ key: "secondary", label: "Secondary", category: "Secondary" },
+	{ key: "secondary-foreground", label: "Secondary Foreground", category: "Secondary" },
+	// Background & Foreground
+	{ key: "background", label: "Background", category: "Background" },
+	{ key: "foreground", label: "Foreground", category: "Background" },
+	// Card & Popover
+	{ key: "card", label: "Card", category: "Card & Popover" },
+	{ key: "card-foreground", label: "Card Foreground", category: "Card & Popover" },
+	{ key: "popover", label: "Popover", category: "Card & Popover" },
+	{ key: "popover-foreground", label: "Popover Foreground", category: "Card & Popover" },
+	// Accent & Muted
+	{ key: "accent", label: "Accent", category: "Accent & Muted" },
+	{ key: "accent-foreground", label: "Accent Foreground", category: "Accent & Muted" },
+	{ key: "muted", label: "Muted", category: "Accent & Muted" },
+	{ key: "muted-foreground", label: "Muted Foreground", category: "Accent & Muted" },
+	// Borders & Input
+	{ key: "border", label: "Border", category: "Borders & Input" },
+	{ key: "input", label: "Input", category: "Borders & Input" },
+	{ key: "ring", label: "Ring", category: "Borders & Input" },
+	// Destructive
+	{ key: "destructive", label: "Destructive", category: "Destructive" },
+	{ key: "destructive-foreground", label: "Destructive Foreground", category: "Destructive" },
+	// Chart colors
+	{ key: "chart-1", label: "Chart 1", category: "Chart" },
+	{ key: "chart-2", label: "Chart 2", category: "Chart" },
+	{ key: "chart-3", label: "Chart 3", category: "Chart" },
+	{ key: "chart-4", label: "Chart 4", category: "Chart" },
+	{ key: "chart-5", label: "Chart 5", category: "Chart" },
+	// Sidebar colors
+	{ key: "sidebar", label: "Sidebar", category: "Sidebar" },
+	{ key: "sidebar-foreground", label: "Sidebar Foreground", category: "Sidebar" },
+	{ key: "sidebar-primary", label: "Sidebar Primary", category: "Sidebar" },
+	{ key: "sidebar-primary-foreground", label: "Sidebar Primary FG", category: "Sidebar" },
+	{ key: "sidebar-accent", label: "Sidebar Accent", category: "Sidebar" },
+	{ key: "sidebar-accent-foreground", label: "Sidebar Accent FG", category: "Sidebar" },
+	{ key: "sidebar-border", label: "Sidebar Border", category: "Sidebar" },
+	{ key: "sidebar-ring", label: "Sidebar Ring", category: "Sidebar" },
 ] as const;
 
 // Theme swatches - 11 items per row to match palette generator
@@ -173,15 +199,24 @@ function Swatch({
 						<Pipette className="mr-2 h-3 w-3" />
 						<span className="text-xs">Apply as...</span>
 					</ContextMenuSubTrigger>
-					<ContextMenuSubContent className="w-44 max-h-64 overflow-y-auto">
-						{THEME_COLOR_KEYS.map(({ key, label: keyLabel }) => (
-							<ContextMenuItem
-								key={key}
-								onClick={() => handleApply(key)}
-								className="text-xs"
-							>
-								{keyLabel}
-							</ContextMenuItem>
+					<ContextMenuSubContent className="w-48 max-h-80 overflow-y-auto">
+						{/* Group items by category */}
+						{Array.from(new Set(THEME_COLOR_KEYS.map(k => k.category))).map((category, idx) => (
+							<div key={category}>
+								{idx > 0 && <ContextMenuSeparator />}
+								<ContextMenuLabel className="text-[10px] text-muted-foreground">
+									{category}
+								</ContextMenuLabel>
+								{THEME_COLOR_KEYS.filter(k => k.category === category).map(({ key, label: keyLabel }) => (
+									<ContextMenuItem
+										key={key}
+										onClick={() => handleApply(key)}
+										className="text-xs"
+									>
+										{keyLabel}
+									</ContextMenuItem>
+								))}
+							</div>
 						))}
 					</ContextMenuSubContent>
 				</ContextMenuSub>
