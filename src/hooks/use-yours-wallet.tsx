@@ -133,17 +133,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 		try {
 			// Get addresses and balance first
+			console.log("[Wallet] Fetching addresses and balance...");
 			const [addrs, bal] = await Promise.all([
 				wallet.getAddresses(),
 				wallet.getBalance(),
 			]);
+			console.log("[Wallet] Addresses:", addrs);
+			console.log("[Wallet] Balance:", bal);
 			setAddresses(addrs);
 			setBalance(bal);
 
-			// Only fetch profile after addresses are available
-			if (addrs) {
-				const prof = await wallet.getSocialProfile().catch(() => null);
+			// Only fetch profile after addresses are actually populated
+			if (addrs?.bsvAddress && addrs?.ordAddress) {
+				console.log("[Wallet] Fetching social profile...");
+				const prof = await wallet.getSocialProfile().catch((err) => {
+					console.error("[Wallet] getSocialProfile error:", err);
+					return null;
+				});
+				console.log("[Wallet] Social profile response:", prof);
 				if (prof) setProfile(prof);
+			} else {
+				console.log("[Wallet] Addresses not ready yet:", addrs);
 			}
 		} catch (err) {
 			console.error("[Wallet] Failed to fetch wallet info:", err);
