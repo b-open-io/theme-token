@@ -102,6 +102,48 @@ export function hexToOklch(hex: string): OklchColor {
 }
 
 /**
+ * Convert OKLCH to hex color (approximate)
+ * For displaying selected color in color picker input
+ */
+export function oklchToHex(oklch: OklchColor): string {
+	const { l: L, c, h } = oklch;
+
+	// OKLCH to OKLab
+	const hRad = (h * Math.PI) / 180;
+	const a = c * Math.cos(hRad);
+	const bVal = c * Math.sin(hRad);
+
+	// OKLab to linear RGB (via LMS)
+	const l_ = L + 0.3963377774 * a + 0.2158037573 * bVal;
+	const m_ = L - 0.1055613458 * a - 0.0638541728 * bVal;
+	const s_ = L - 0.0894841775 * a - 1.291485548 * bVal;
+
+	const l = l_ ** 3;
+	const m = m_ ** 3;
+	const s = s_ ** 3;
+
+	// LMS to linear RGB
+	let lr = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+	let lg = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+	let lb = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+
+	// Clamp to valid range
+	lr = Math.max(0, Math.min(1, lr));
+	lg = Math.max(0, Math.min(1, lg));
+	lb = Math.max(0, Math.min(1, lb));
+
+	// Linear to sRGB
+	const toSrgb = (c: number) =>
+		c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+
+	const r = Math.round(toSrgb(lr) * 255);
+	const g = Math.round(toSrgb(lg) * 255);
+	const b = Math.round(toSrgb(lb) * 255);
+
+	return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+/**
  * Color presets for quick filtering
  */
 export const colorPresets = [

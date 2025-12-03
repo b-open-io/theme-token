@@ -14,6 +14,7 @@ import {
 	colorPresets,
 	radiusPresets,
 	hexToOklch,
+	oklchToHex,
 	type OklchColor,
 } from "@/lib/color-utils";
 
@@ -130,12 +131,13 @@ export function FilterSidebar({
 				<div className="flex items-center gap-2 pt-1">
 					<input
 						type="color"
+						value={filters.primaryColor ? oklchToHex(filters.primaryColor) : "#3b82f6"}
 						onChange={handleCustomColor}
 						className="h-8 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
 						title="Pick custom color"
 					/>
 					<span className="text-xs text-muted-foreground">
-						{filters.primaryColor ? "Custom color active" : "Pick any color"}
+						{filters.primaryColor ? "Color filter active" : "Pick any color"}
 					</span>
 				</div>
 			</div>
