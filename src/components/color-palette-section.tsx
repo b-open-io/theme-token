@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Copy, Loader2, Pipette } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,66 +56,79 @@ const THEME_SWATCHES = [
 
 interface ColorPaletteSectionProps {
 	onUpdateColor?: (key: string, value: string) => void;
+	primaryColor?: string;
 }
 
-// Palette swatch with context menu for applying to theme
-function PaletteSwatch({
+// Unified swatch component - used for both palette and theme swatches
+function Swatch({
 	color,
-	shade,
+	label,
+	bgClass,
 	onApplyColor,
+	showContextMenu = false,
 }: {
-	color: string;
-	shade: string;
+	color?: string;
+	label: string;
+	bgClass?: string;
 	onApplyColor?: (key: string, value: string) => void;
+	showContextMenu?: boolean;
 }) {
 	const [copied, setCopied] = useState(false);
 
 	const handleCopy = async () => {
-		await navigator.clipboard.writeText(color);
+		const value = color || `var(--${label.toLowerCase()})`;
+		await navigator.clipboard.writeText(value);
 		setCopied(true);
-		toast.success("Copied", { description: color });
+		toast.success("Copied", { description: value });
 		setTimeout(() => setCopied(false), 1000);
 	};
 
 	const handleApply = (key: string) => {
-		onApplyColor?.(key, color);
-		toast.success("Applied", {
-			description: `Set ${key} to ${color}`,
-		});
+		if (color) {
+			onApplyColor?.(key, color);
+			toast.success("Applied", { description: `Set ${key} to ${color}` });
+		}
 	};
+
+	const buttonContent = (
+		<button
+			onClick={handleCopy}
+			className={`${bgClass || ""} group relative flex h-7 flex-1 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10`}
+			style={color ? { backgroundColor: color } : undefined}
+			title={color ? `${label}: ${color}` : `Copy var(--${label.toLowerCase()})`}
+		>
+			<span className="opacity-0 group-hover:opacity-100 transition-opacity text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+				{copied ? <Check className="h-2.5 w-2.5" /> : label}
+			</span>
+		</button>
+	);
+
+	if (!showContextMenu || !color) {
+		return buttonContent;
+	}
 
 	return (
 		<ContextMenu>
-			<ContextMenuTrigger asChild>
-				<button
-					onClick={handleCopy}
-					className="group relative h-full min-h-[60px] flex-1 cursor-pointer transition-all hover:scale-y-105 hover:z-10"
-					style={{ backgroundColor: color }}
-					title={`${shade}: ${color} (right-click to apply)`}
-				>
-					{/* Shade label on hover */}
-					<div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 py-1 opacity-0 transition-opacity group-hover:opacity-100">
-						<span className="text-[9px] font-medium text-white">
-							{copied ? <Check className="h-3 w-3" /> : shade}
-						</span>
-					</div>
-				</button>
-			</ContextMenuTrigger>
-			<ContextMenuContent className="w-48">
+			<ContextMenuTrigger asChild>{buttonContent}</ContextMenuTrigger>
+			<ContextMenuContent className="w-44">
 				<ContextMenuItem onClick={handleCopy}>
-					<Copy className="mr-2 h-4 w-4" />
-					Copy {color}
+					<Copy className="mr-2 h-3 w-3" />
+					<span className="text-xs">Copy {color}</span>
 				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<Pipette className="mr-2 h-4 w-4" />
-						Apply as...
+						<Pipette className="mr-2 h-3 w-3" />
+						<span className="text-xs">Apply as...</span>
 					</ContextMenuSubTrigger>
-					<ContextMenuSubContent className="w-48">
-						{THEME_COLOR_KEYS.map(({ key, label }) => (
-							<ContextMenuItem key={key} onClick={() => handleApply(key)}>
-								{label}
+					<ContextMenuSubContent className="w-44 max-h-64 overflow-y-auto">
+						{THEME_COLOR_KEYS.map(({ key, label: keyLabel }) => (
+							<ContextMenuItem
+								key={key}
+								onClick={() => handleApply(key)}
+								className="text-xs"
+							>
+								{keyLabel}
 							</ContextMenuItem>
 						))}
 					</ContextMenuSubContent>
@@ -125,44 +138,29 @@ function PaletteSwatch({
 	);
 }
 
-// Theme color swatch for the compact display
-function ThemeSwatch({ name, bgClass, cssVar }: { name: string; bgClass: string; cssVar: string }) {
-	const [copied, setCopied] = useState(false);
-
-	const handleCopy = async () => {
-		await navigator.clipboard.writeText(`var(--${cssVar})`);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 1000);
-	};
-
-	return (
-		<button
-			onClick={handleCopy}
-			className={`${bgClass} group relative flex h-8 flex-1 items-center justify-center rounded border border-border/50 text-[9px] font-medium transition-all hover:scale-105`}
-			title={`Copy var(--${cssVar})`}
-		>
-			{copied ? <Check className="h-3 w-3 text-primary-foreground" /> : name}
-		</button>
-	);
-}
-
-export function ColorPaletteSection({ onUpdateColor }: ColorPaletteSectionProps) {
-	const [color, setColor] = useState("#3B82F6");
+export function ColorPaletteSection({ onUpdateColor, primaryColor }: ColorPaletteSectionProps) {
+	const [color, setColor] = useState(primaryColor || "#3B82F6");
 	const [primaryPalette, setPrimaryPalette] = useState<TintsPalette | null>(null);
 	const [accentPalette, setAccentPalette] = useState<TintsPalette | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [initialized, setInitialized] = useState(false);
 
-	const handleGenerate = async () => {
-		const hex = color.replace(/^#/, "");
+	// Auto-generate on mount
+	useEffect(() => {
+		if (!initialized) {
+			generatePalettes(color);
+			setInitialized(true);
+		}
+	}, [initialized, color]);
+
+	const generatePalettes = async (inputColor: string) => {
+		const hex = inputColor.replace(/^#/, "");
 		if (hex.length !== 6) return;
 
 		setIsLoading(true);
 
-		// Generate primary palette
 		const primary = await fetchTintsPalette("primary", hex);
-
-		// Generate complementary (accent) palette
-		const complementaryHex = getComplementaryColor(color);
+		const complementaryHex = getComplementaryColor(inputColor);
 		const accent = await fetchTintsPalette("accent", complementaryHex.replace("#", ""));
 
 		if (primary) setPrimaryPalette(primary);
@@ -171,112 +169,107 @@ export function ColorPaletteSection({ onUpdateColor }: ColorPaletteSectionProps)
 		setIsLoading(false);
 	};
 
+	const handleGenerate = () => generatePalettes(color);
+
 	const primaryArray = primaryPalette ? paletteToArray(primaryPalette) : [];
 	const accentArray = accentPalette ? paletteToArray(accentPalette) : [];
 
-	// Show empty placeholders for fixed height
-	const emptySlots = Array(11).fill(null);
-
 	return (
-		<div className="grid gap-4 @2xl:grid-cols-3">
+		<div className="grid gap-3 @2xl:grid-cols-3">
 			{/* Palette Generator - 2/3 width */}
 			<Card className="@2xl:col-span-2">
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="text-sm">Palette Generator</CardTitle>
-					{/* Inline input controls */}
-					<div className="flex items-center gap-2">
+				<CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
+					<CardTitle className="text-xs font-medium">Palette Generator</CardTitle>
+					<div className="flex items-center gap-1.5">
 						<ColorPicker
 							value={color}
 							onChange={setColor}
-							className="h-8 w-8 rounded border-2"
+							className="h-6 w-6 rounded"
 						/>
 						<input
 							type="text"
 							value={color}
 							onChange={(e) => setColor(e.target.value)}
-							className="h-8 w-24 rounded border border-border bg-background px-2 font-mono text-xs uppercase focus:border-primary focus:outline-none"
+							className="h-6 w-20 rounded border border-border bg-background px-1.5 font-mono text-[10px] uppercase focus:border-primary focus:outline-none"
 						/>
 						<button
 							onClick={handleGenerate}
 							disabled={isLoading}
-							className="flex h-8 items-center gap-1.5 rounded bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+							className="flex h-6 items-center gap-1 rounded bg-primary px-2 text-[10px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
 						>
 							{isLoading ? (
-								<Loader2 className="h-3 w-3 animate-spin" />
+								<Loader2 className="h-2.5 w-2.5 animate-spin" />
 							) : (
-								<Pipette className="h-3 w-3" />
+								<Pipette className="h-2.5 w-2.5" />
 							)}
 							Generate
 						</button>
 					</div>
 				</CardHeader>
-				<CardContent className="space-y-3 pb-3">
+				<CardContent className="space-y-2 px-3 pb-3 pt-0">
 					{/* Primary Scale */}
 					<div>
-						<p className="mb-1 text-[10px] font-medium text-muted-foreground">
-							PRIMARY SCALE
+						<p className="mb-1 text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+							Primary
 						</p>
-						<div className="flex h-[60px] overflow-hidden rounded-lg border border-border">
-							{primaryArray.length > 0
-								? primaryArray.map(({ shade, color: c }) => (
-										<PaletteSwatch
-											key={shade}
-											shade={shade}
-											color={c}
-											onApplyColor={onUpdateColor}
-										/>
-									))
-								: emptySlots.map((_, i) => (
-										<div
-											key={i}
-											className="flex-1 bg-muted/30"
-											style={{ opacity: 0.3 + (i * 0.05) }}
-										/>
-									))}
+						<div className="flex gap-0.5">
+							{primaryArray.map(({ shade, color: c }) => (
+								<Swatch
+									key={shade}
+									label={shade}
+									color={c}
+									onApplyColor={onUpdateColor}
+									showContextMenu
+								/>
+							))}
 						</div>
 					</div>
 
 					{/* Accent Scale (Complementary) */}
 					<div>
-						<p className="mb-1 text-[10px] font-medium text-muted-foreground">
-							ACCENT SCALE (COMPLEMENTARY)
+						<p className="mb-1 text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+							Accent (Complementary)
 						</p>
-						<div className="flex h-[60px] overflow-hidden rounded-lg border border-border">
-							{accentArray.length > 0
-								? accentArray.map(({ shade, color: c }) => (
-										<PaletteSwatch
-											key={shade}
-											shade={shade}
-											color={c}
-											onApplyColor={onUpdateColor}
-										/>
-									))
-								: emptySlots.map((_, i) => (
-										<div
-											key={i}
-											className="flex-1 bg-muted/30"
-											style={{ opacity: 0.3 + (i * 0.05) }}
-										/>
-									))}
+						<div className="flex gap-0.5">
+							{accentArray.map(({ shade, color: c }) => (
+								<Swatch
+									key={shade}
+									label={shade}
+									color={c}
+									onApplyColor={onUpdateColor}
+									showContextMenu
+								/>
+							))}
 						</div>
 					</div>
-
-					<p className="text-center text-[9px] text-muted-foreground">
-						Click to copy • Right-click to apply to theme
-					</p>
 				</CardContent>
 			</Card>
 
 			{/* Theme Colors - 1/3 width */}
 			<Card>
-				<CardHeader className="pb-2">
-					<CardTitle className="text-sm">Active Theme</CardTitle>
+				<CardHeader className="py-2 px-3">
+					<CardTitle className="text-xs font-medium">Active Theme</CardTitle>
 				</CardHeader>
-				<CardContent className="pb-3">
-					<div className="grid grid-cols-4 gap-1">
-						{THEME_SWATCHES.map((swatch) => (
-							<ThemeSwatch key={swatch.name} {...swatch} />
-						))}
+				<CardContent className="px-3 pb-3 pt-0">
+					<div className="space-y-2">
+						<div className="flex gap-0.5">
+							{THEME_SWATCHES.slice(0, 4).map((swatch) => (
+								<Swatch
+									key={swatch.name}
+									label={swatch.name}
+									bgClass={swatch.bgClass}
+								/>
+							))}
+						</div>
+						<div className="flex gap-0.5">
+							{THEME_SWATCHES.slice(4).map((swatch) => (
+								<Swatch
+									key={swatch.name}
+									label={swatch.name}
+									bgClass={swatch.bgClass}
+								/>
+							))}
+						</div>
 					</div>
 				</CardContent>
 			</Card>
