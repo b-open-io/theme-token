@@ -94,8 +94,6 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			if (!DEV_BYPASS_PAYMENT) {
 				// Step 1: Process payment
 				setState("paying");
-				toast.loading("Processing payment...", { id: "generation" });
-
 				const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
 
 				if (!paymentResult) {
@@ -106,7 +104,6 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 			// Step 2: Generate theme
 			setState("generating");
-			toast.loading("Generating your theme...", { id: "generation" });
 
 			const response = await fetch("/api/generate-theme", {
 				method: "POST",
@@ -135,12 +132,6 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				source: "ai-generate",
 				txid: paymentTxid,
 			});
-
-			toast.success("Theme Generated!", {
-				id: "generation",
-				description: "Opening in studio for customization...",
-			});
-
 			router.push("/studio");
 		} catch (err) {
 			console.error("Generation failed:", err);
@@ -154,10 +145,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				}
 			}
 
-			toast.error("Generation Failed", {
-				id: "generation",
-				description: message,
-			});
+			toast.error("Generation Failed", { description: message });
 			setError(message);
 		} finally {
 			clearTimeout(timeoutId);
