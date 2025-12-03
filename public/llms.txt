@@ -149,6 +149,72 @@ Returns ShadCN registry format with theme CSS converted to custom properties.
 4. Inscribe on BSV blockchain
 5. Share registry URL
 
+## On-Chain Inscription Protocol
+
+Theme Token assets are inscribed as 1Sat Ordinals with MAP (Magic Attribute Protocol) metadata for indexer discovery.
+
+### Asset Types
+
+**Themes** - Inscribed as JSON with minimal metadata:
+```json
+{
+  "app": "theme-token",
+  "type": "theme"
+}
+```
+Theme JSON is self-describing (contains name, author, colors) so no additional metadata needed.
+
+**Fonts** - Inscribed as WOFF2/WOFF/TTF binary with metadata:
+```json
+{
+  "app": "theme-token",
+  "type": "font",
+  "author": "John Doe",
+  "license": "OFL",
+  "prompt": "elegant serif with tall ascenders"
+}
+```
+Font name, weight, style are embedded in the binary. Only author, license, and AI prompt go in metadata.
+
+**Patterns** - Inscribed as SVG with metadata:
+```json
+{
+  "app": "theme-token",
+  "type": "pattern",
+  "name": "Dot Grid",
+  "author": "Jane Doe",
+  "license": "CC0",
+  "prompt": "evenly spaced dots"
+}
+```
+License defaults to CC0 (public domain) if not specified.
+
+### Field Reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| app | string | Yes | Always "theme-token" for indexer filtering |
+| type | string | Yes | Asset type: "theme", "font", or "pattern" |
+| name | string | Patterns only | Display name |
+| author | string | No | Creator/designer |
+| license | string | Patterns (default CC0) | License identifier (OFL, MIT, CC0) |
+| prompt | string | No | AI generation prompt (provenance) |
+
+### Referencing On-Chain Assets
+
+Use the `/content/{origin}` path format to reference inscribed assets in themes:
+
+```json
+{
+  "styles": {
+    "light": {
+      "font-sans": "/content/abc123_0",
+      "bg-image": "/content/def456_0"
+    }
+  }
+}
+```
+
 ## Compatibility
 
 - Works with any ShadCN-based project

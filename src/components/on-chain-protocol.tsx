@@ -1,320 +1,297 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Check, Copy, FileCode, Palette, Type } from "lucide-react";
 import { useCallback, useState } from "react";
 
-type AssetType = "pattern" | "font" | "theme";
+type AssetType = "theme" | "font" | "pattern";
 
-const ASSET_SCHEMAS: Record<
-	AssetType,
+// All possible fields across all asset types (union)
+const ALL_FIELDS = [
 	{
-		icon: typeof Palette;
-		label: string;
-		description: string;
-		contentInfo: string;
-		example: Record<string, string>;
-		fields: Array<{
-			name: string;
-			type: string;
-			required?: boolean;
-			options?: string[];
-			description: string;
-		}>;
-	}
+		key: "app",
+		type: "string",
+		description: 'Always "theme-token" - enables indexer filtering',
+	},
+	{
+		key: "type",
+		type: "string",
+		description: "Asset type identifier (theme, font, pattern)",
+	},
+	{
+		key: "name",
+		type: "string",
+		description: "Display name for the asset",
+	},
+	{
+		key: "author",
+		type: "string",
+		description: "Creator/designer name",
+	},
+	{
+		key: "license",
+		type: "string",
+		description: "License identifier (OFL, MIT, CC0, etc.)",
+	},
+	{
+		key: "prompt",
+		type: "string",
+		description: "AI generation prompt (provenance for AI-created assets)",
+	},
+];
+
+// Which fields are active for each asset type, and which are required
+const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
+	theme: {
+		active: ["app", "type"],
+		required: ["app", "type"],
+	},
+	font: {
+		active: ["app", "type", "author", "license", "prompt"],
+		required: ["app", "type"],
+	},
+	pattern: {
+		active: ["app", "type", "name", "author", "license", "prompt"],
+		required: ["app", "type", "license"],
+	},
+};
+
+// JSON examples for each type
+const JSON_DATA: Record<AssetType, string> = {
+	theme: `{
+  "app": "theme-token",
+  "type": "theme"
+}`,
+	font: `{
+  "app": "theme-token",
+  "type": "font",
+  "author": "John Doe",
+  "license": "OFL",
+  "prompt": "elegant serif with tall ascenders"
+}`,
+	pattern: `{
+  "app": "theme-token",
+  "type": "pattern",
+  "name": "Dot Grid",
+  "author": "Jane Doe",
+  "license": "CC0",
+  "prompt": "evenly spaced dots"
+}`,
+};
+
+// Content info for each type
+const CONTENT_INFO: Record<AssetType, string> = {
+	theme:
+		"Theme JSON already contains name, author, colors, and mode - no additional metadata needed beyond app/type for indexer discovery.",
+	font:
+		"Font name, weight, and style are embedded in the binary. Only author, license, and AI prompt go in metadata.",
+	pattern:
+		"Patterns include name, author, and license metadata. License defaults to CC0 (public domain) if not specified.",
+};
+
+const ASSET_INFO: Record<
+	AssetType,
+	{ icon: typeof Palette; label: string; description: string }
 > = {
 	theme: {
 		icon: FileCode,
-		label: "Themes",
+		label: "Theme",
 		description: "Complete color schemes in ThemeToken JSON format",
-		contentInfo:
-			"Theme JSON already contains name, author, colors, and mode - no additional metadata needed beyond app/type for indexer discovery.",
-		example: {
-			app: "theme-token",
-			type: "theme",
-		},
-		fields: [
-			{
-				name: "app",
-				type: "string",
-				required: true,
-				description: 'Always "theme-token" - enables indexer filtering',
-			},
-			{
-				name: "type",
-				type: "string",
-				required: true,
-				description: 'Always "theme" - asset type identifier',
-			},
-		],
 	},
 	font: {
 		icon: Type,
-		label: "Fonts",
+		label: "Font",
 		description: "Web fonts in WOFF2, WOFF, or TTF format",
-		contentInfo:
-			"Font name, weight, and style are in the binary data itself. Only author, license, and AI prompt (if applicable) go in metadata.",
-		example: {
-			app: "theme-token",
-			type: "font",
-			author: "John Doe",
-			license: "OFL",
-			prompt: "elegant serif with tall ascenders",
-		},
-		fields: [
-			{
-				name: "app",
-				type: "string",
-				required: true,
-				description: 'Always "theme-token"',
-			},
-			{
-				name: "type",
-				type: "string",
-				required: true,
-				description: 'Always "font"',
-			},
-			{
-				name: "author",
-				type: "string",
-				description: "Font designer/author",
-			},
-			{
-				name: "license",
-				type: "string",
-				description: "License identifier (OFL, MIT, CC0, etc.)",
-			},
-			{
-				name: "prompt",
-				type: "string",
-				description: "AI generation prompt (if AI-generated)",
-			},
-		],
 	},
 	pattern: {
 		icon: Palette,
-		label: "Patterns",
+		label: "Pattern",
 		description: "Tileable SVG backgrounds and textures",
-		contentInfo:
-			"Patterns include name, author, and license metadata. License defaults to CC0 (public domain) if not specified.",
-		example: {
-			app: "theme-token",
-			type: "pattern",
-			name: "Dot Grid",
-			author: "Jane Doe",
-			license: "CC0",
-			prompt: "evenly spaced dots",
-		},
-		fields: [
-			{
-				name: "app",
-				type: "string",
-				required: true,
-				description: 'Always "theme-token"',
-			},
-			{
-				name: "type",
-				type: "string",
-				required: true,
-				description: 'Always "pattern"',
-			},
-			{
-				name: "name",
-				type: "string",
-				description: "Pattern name for display",
-			},
-			{
-				name: "author",
-				type: "string",
-				description: "Pattern creator/author",
-			},
-			{
-				name: "license",
-				type: "string",
-				required: true,
-				description: "License identifier (defaults to CC0)",
-			},
-			{
-				name: "prompt",
-				type: "string",
-				description: "AI generation prompt (provenance, if AI-generated)",
-			},
-		],
 	},
 };
 
 export function OnChainProtocol() {
-	const [activeTab, setActiveTab] = useState<AssetType>("theme");
-	const [copied, setCopied] = useState<string | null>(null);
-	const [hoveredField, setHoveredField] = useState<string | null>(null);
+	const [active, setActive] = useState<AssetType>("theme");
+	const [copied, setCopied] = useState(false);
 
-	const copyToClipboard = useCallback((text: string, id: string) => {
-		navigator.clipboard.writeText(text);
-		setCopied(id);
-		setTimeout(() => setCopied(null), 2000);
-	}, []);
+	const copyToClipboard = useCallback(() => {
+		navigator.clipboard.writeText(JSON_DATA[active]);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	}, [active]);
 
-	const schema = ASSET_SCHEMAS[activeTab];
+	const activeFields = FIELD_MAP[active].active;
+	const requiredFields = FIELD_MAP[active].required;
 
 	return (
-		<div className="space-y-8">
-			{/* Schema Explorer with Tabs */}
-			<div className="rounded-xl border border-border bg-card">
-				{/* Tab Navigation */}
-				<div className="flex border-b border-border">
-					{(Object.keys(ASSET_SCHEMAS) as AssetType[]).map((type) => {
-						const s = ASSET_SCHEMAS[type];
-						const Icon = s.icon;
+		<div className="space-y-6">
+			{/* Segmented Control */}
+			<div className="flex justify-center">
+				<div className="inline-flex rounded-lg border border-border bg-muted/30 p-1">
+					{(["theme", "font", "pattern"] as AssetType[]).map((tab) => {
+						const info = ASSET_INFO[tab];
+						const Icon = info.icon;
 						return (
 							<button
-								key={type}
+								key={tab}
 								type="button"
-								onClick={() => setActiveTab(type)}
-								className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-									activeTab === type
-										? "border-b-2 border-primary bg-primary/5 text-foreground"
-										: "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-								}`}
+								onClick={() => setActive(tab)}
+								className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors sm:px-6"
 							>
-								<Icon className="h-4 w-4" />
-								{s.label}
+								{active === tab && (
+									<motion.div
+										layoutId="protocol-active-tab"
+										className="absolute inset-0 rounded-md bg-background shadow-sm"
+										transition={{
+											type: "spring",
+											bounce: 0.15,
+											duration: 0.5,
+										}}
+									/>
+								)}
+								<Icon
+									className={`relative z-10 h-4 w-4 ${
+										active === tab
+											? "text-primary"
+											: "text-muted-foreground"
+									}`}
+								/>
+								<span
+									className={`relative z-10 hidden sm:inline ${
+										active === tab
+											? "text-foreground"
+											: "text-muted-foreground"
+									}`}
+								>
+									{info.label}
+								</span>
 							</button>
 						);
 					})}
 				</div>
+			</div>
 
-				{/* Content */}
-				<div className="p-6">
-					<p className="mb-2 text-sm text-muted-foreground">
-						{schema.description}
-					</p>
-					<p className="mb-6 rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground">
-						{schema.contentInfo}
-					</p>
+			{/* Content Info */}
+			<motion.p
+				key={`info-${active}`}
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				className="mx-auto max-w-2xl rounded-lg bg-muted/30 p-3 text-center text-xs text-muted-foreground"
+			>
+				{CONTENT_INFO[active]}
+			</motion.p>
 
-					<div className="grid gap-6 lg:grid-cols-2">
-						{/* JSON Preview */}
-						<div className="flex flex-col">
-							<div className="mb-2 flex items-center justify-between">
-								<h4 className="font-mono text-xs text-muted-foreground">
-									MAP_DATA
-								</h4>
-								<button
-									type="button"
-									onClick={() =>
-										copyToClipboard(
-											JSON.stringify(schema.example, null, 2),
-											"json",
-										)
-									}
-									className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-								>
-									{copied === "json" ? (
-										<>
-											<Check className="h-3 w-3 text-primary" />
-											Copied
-										</>
-									) : (
-										<>
-											<Copy className="h-3 w-3" />
-											Copy
-										</>
-									)}
-								</button>
-							</div>
-							<div className="flex-1 overflow-auto rounded-lg border border-border bg-muted/30 p-4 font-mono text-xs">
-								<pre>
-									{Object.entries(schema.example).map(([key, value], i) => {
-										const field = schema.fields.find((f) => f.name === key);
-										const isRequired = field?.required;
+			{/* Code Preview (Fixed Height) */}
+			<div className="relative mx-auto max-w-2xl overflow-hidden rounded-xl border border-border bg-card">
+				{/* Header bar */}
+				<div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-2">
+					<span className="font-mono text-xs text-muted-foreground">
+						MAP_DATA
+					</span>
+					<button
+						type="button"
+						onClick={copyToClipboard}
+						className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+					>
+						{copied ? (
+							<>
+								<Check className="h-3 w-3 text-primary" />
+								Copied
+							</>
+						) : (
+							<>
+								<Copy className="h-3 w-3" />
+								Copy
+							</>
+						)}
+					</button>
+				</div>
 
-										return (
-											<div
-												key={key}
-												className={`transition-colors ${
-													hoveredField === key ? "bg-muted" : ""
-												}`}
-												onMouseEnter={() => setHoveredField(key)}
-												onMouseLeave={() => setHoveredField(null)}
-											>
-												<span className="select-none text-muted-foreground/50">
-													{String(i + 1).padStart(2, " ")}
-												</span>
-												{"  "}
-												<span
-													className={
-														isRequired
-															? "text-primary"
-															: "text-muted-foreground"
-													}
-												>
-													"{key}"
-												</span>
-												<span className="text-muted-foreground/50">: </span>
-												<span className="text-foreground">"{value}"</span>
-												{i < Object.keys(schema.example).length - 1 && (
-													<span className="text-muted-foreground/50">,</span>
-												)}
-											</div>
-										);
-									})}
-								</pre>
-							</div>
-						</div>
+				{/* JSON with fixed height */}
+				<div className="h-48 overflow-auto p-4">
+					<motion.pre
+						key={active}
+						initial={{ opacity: 0, filter: "blur(4px)" }}
+						animate={{ opacity: 1, filter: "blur(0px)" }}
+						transition={{ duration: 0.3 }}
+						className="font-mono text-sm"
+					>
+						<code className="text-primary">{JSON_DATA[active]}</code>
+					</motion.pre>
+				</div>
+			</div>
 
-						{/* Field Specs */}
-						<div className="flex flex-col">
-							<h4 className="mb-2 font-mono text-xs text-muted-foreground">
-								FIELD_REFERENCE
-							</h4>
-							<div className="flex-1 space-y-2 overflow-auto">
-								{schema.fields.map((field) => (
-									<div
-										key={field.name}
-										className={`rounded-lg border p-3 transition-colors ${
-											hoveredField === field.name
-												? "border-primary/50 bg-primary/5"
-												: "border-border bg-muted/20"
+			{/* Unified Field Matrix */}
+			<div className="mx-auto max-w-2xl overflow-hidden rounded-xl border border-border bg-card">
+				<div className="border-b border-border bg-muted/30 px-4 py-2">
+					<span className="font-mono text-xs text-muted-foreground">
+						FIELD_REFERENCE
+					</span>
+				</div>
+
+				<div className="divide-y divide-border">
+					{ALL_FIELDS.map((field) => {
+						const isActive = activeFields.includes(field.key);
+						const isRequired = requiredFields.includes(field.key);
+
+						return (
+							<div
+								key={field.key}
+								className={`flex items-center gap-4 px-4 py-3 transition-all duration-300 ${
+									isActive ? "" : "opacity-30"
+								}`}
+							>
+								{/* Field name */}
+								<div className="w-20 shrink-0">
+									<code
+										className={`rounded border px-2 py-1 font-mono text-xs ${
+											isActive
+												? isRequired
+													? "border-primary/30 bg-primary/10 text-primary"
+													: "border-border bg-muted text-foreground"
+												: "border-border bg-muted/50 text-muted-foreground"
 										}`}
-										onMouseEnter={() => setHoveredField(field.name)}
-										onMouseLeave={() => setHoveredField(null)}
 									>
-										<div className="mb-1 flex items-center gap-2">
-											<code
-												className={`font-mono text-sm font-semibold ${
-													field.required ? "text-primary" : "text-foreground"
-												}`}
-											>
-												{field.name}
-											</code>
-											{field.required && (
-												<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
-													required
-												</span>
-											)}
-											<span className="text-xs text-muted-foreground">
-												{field.type}
+										{field.key}
+									</code>
+								</div>
+
+								{/* Type */}
+								<div className="w-16 shrink-0">
+									<span className="font-mono text-xs text-muted-foreground">
+										{field.type}
+									</span>
+								</div>
+
+								{/* Description */}
+								<div className="min-w-0 flex-1">
+									<span className="text-xs text-muted-foreground">
+										{field.description}
+									</span>
+								</div>
+
+								{/* Status */}
+								<div className="w-20 shrink-0 text-right">
+									{isActive ? (
+										isRequired ? (
+											<span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+												<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+												required
 											</span>
-										</div>
-										{field.options && (
-											<div className="mb-1 flex flex-wrap gap-1">
-												{field.options.map((opt) => (
-													<span
-														key={opt}
-														className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
-													>
-														{opt}
-													</span>
-												))}
-											</div>
-										)}
-										<p className="text-xs text-muted-foreground">
-											{field.description}
-										</p>
-									</div>
-								))}
+										) : (
+											<span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+												optional
+											</span>
+										)
+									) : (
+										<span className="text-[10px] text-muted-foreground/50">
+											—
+										</span>
+									)}
+								</div>
 							</div>
-						</div>
-					</div>
+						);
+					})}
 				</div>
 			</div>
 		</div>

@@ -8,7 +8,9 @@ Theme Token allows developers to publish, discover, and install design themes as
 
 - Homepage: https://themetoken.dev
 - Specification: https://themetoken.dev/spec
-- Theme Studio: https://themetoken.dev/studio
+- Theme Studio: https://themetoken.dev/studio/theme
+- Font Studio: https://themetoken.dev/studio/font
+- Pattern Generator: https://themetoken.dev/studio/patterns
 - Market: https://themetoken.dev/market
 - Schema: https://themetoken.dev/v1/schema.json
 - Registry: https://themetoken.dev/r/themes/[origin].json
@@ -534,6 +536,94 @@ Fetch JSON schema for validation.
 
 **Response:**
 JSON Schema Draft 7 document.
+
+## On-Chain Inscription Protocol (MAP Metadata)
+
+Theme Token assets are inscribed as 1Sat Ordinals with MAP (Magic Attribute Protocol) metadata for indexer discovery.
+
+### Asset Types & Required Metadata
+
+**Themes** - Inscribed as `application/json` with minimal metadata:
+```json
+{
+  "app": "theme-token",
+  "type": "theme"
+}
+```
+Theme JSON is self-describing (contains name, author, colors) so no additional metadata is needed.
+
+**Fonts** - Inscribed as `font/woff2`, `font/woff`, or `font/ttf` with metadata:
+```json
+{
+  "app": "theme-token",
+  "type": "font",
+  "author": "John Doe",
+  "license": "OFL",
+  "prompt": "elegant serif with tall ascenders"
+}
+```
+Font name, weight, and style are embedded in the binary file. Only author, license, and AI prompt (if AI-generated) go in metadata.
+
+**Patterns** - Inscribed as `image/svg+xml` with metadata:
+```json
+{
+  "app": "theme-token",
+  "type": "pattern",
+  "name": "Dot Grid",
+  "author": "Jane Doe",
+  "license": "CC0",
+  "prompt": "evenly spaced dots"
+}
+```
+License defaults to CC0 (public domain) if not specified.
+
+### Complete Field Reference
+
+| Field | Type | Theme | Font | Pattern | Description |
+|-------|------|-------|------|---------|-------------|
+| app | string | Required | Required | Required | Always "theme-token" for indexer filtering |
+| type | string | Required | Required | Required | Asset type identifier |
+| name | string | — | — | Optional | Display name for the asset |
+| author | string | — | Optional | Optional | Creator/designer name |
+| license | string | — | Optional | Required (default CC0) | License identifier (OFL, MIT, CC0, Apache-2.0) |
+| prompt | string | — | Optional | Optional | AI generation prompt (provenance for AI-created assets) |
+
+### Why This Schema?
+
+**Themes**: Self-describing JSON containing name, author, colors - no duplication needed.
+
+**Fonts**: Binary files (WOFF2/TTF) contain name, weight, style in OS/2 and name tables. Only truly external data (author, license, AI prompt) goes in metadata.
+
+**Patterns**: SVG files are self-describing for structure/colors, but need explicit name, author, license metadata.
+
+### Referencing On-Chain Assets in Themes
+
+Use the `/content/{origin}` path format to reference inscribed fonts or patterns:
+
+```json
+{
+  "styles": {
+    "light": {
+      "font-sans": "/content/abc123def_0",
+      "bg-image": "/content/xyz789ghi_0",
+      "bg-image-opacity": "0.1",
+      "bg-image-size": "24px",
+      "bg-image-mode": "mask"
+    }
+  }
+}
+```
+
+The `origin` is the ordinal origin ID in `{txid}_{vout}` format.
+
+### Content Loading
+
+Assets are fetched from ORDFS (Ordinals File System):
+- Content URL: `https://ordfs.network/content/{origin}`
+- Metadata URL: `https://ordfs.network/{origin}`
+
+Fonts are loaded via the FontFace API and registered in `document.fonts`.
+Patterns are loaded and applied as CSS `mask-image` for theme-reactive backgrounds.
 
 ## Support
 
