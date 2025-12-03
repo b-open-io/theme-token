@@ -77,21 +77,21 @@ function MarketLayoutInner({
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-background">
-			{/* Terminal-style Header - single compact row */}
+			{/* Terminal-style Header - responsive layout */}
 			<header className="sticky top-14 z-40 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="mx-auto max-w-[1400px] px-4">
-					{/* Single row: Title + Tabs + Stats */}
-					<div className="flex h-11 items-center gap-6">
-						{/* Terminal-style title */}
-						<h1 className="font-mono text-sm font-medium tracking-tight text-foreground/90">
+					{/* Row: Title + Tabs + Stats */}
+					<div className="flex h-11 items-center gap-2 sm:gap-6">
+						{/* Terminal-style title - hidden on mobile */}
+						<h1 className="hidden font-mono text-sm font-medium tracking-tight text-foreground/90 sm:block">
 							<span className="text-primary">$</span> theme-market
 						</h1>
 
-						{/* Divider */}
-						<div className="h-4 w-px bg-border" />
+						{/* Divider - hidden on mobile */}
+						<div className="hidden h-4 w-px bg-border sm:block" />
 
 						{/* Tab Navigation */}
-						<nav className="flex items-center gap-1">
+						<nav className="flex items-center gap-0.5 sm:gap-1">
 							{tabs.map((tab) => {
 								const Icon = tab.icon;
 								const isActive =
@@ -101,7 +101,7 @@ function MarketLayoutInner({
 									<Link
 										key={tab.href}
 										href={tab.href}
-										className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs transition-colors ${
+										className={`relative flex items-center gap-1 rounded-md px-2 py-1.5 font-mono text-xs transition-colors sm:gap-1.5 sm:px-3 ${
 											isActive
 												? "text-foreground"
 												: "text-muted-foreground hover:text-foreground/80"
@@ -125,15 +125,15 @@ function MarketLayoutInner({
 
 						{/* Stats - pushed to right */}
 						{totalThemes > 0 && (
-							<div className="ml-auto flex items-center gap-4 font-mono text-xs">
-								<div className="flex items-center gap-1.5">
+							<div className="ml-auto flex items-center gap-2 font-mono text-xs sm:gap-4">
+								<div className="flex items-center gap-1 sm:gap-1.5">
 									<span className="text-muted-foreground">{totalThemes}</span>
 									<span className="text-muted-foreground/60">themes</span>
 								</div>
-								<div className="flex items-center gap-1.5">
-									<span className="text-muted-foreground/60">floor</span>
+								<div className="flex items-center gap-1 sm:gap-1.5">
+									<span className="hidden text-muted-foreground/60 sm:inline">floor</span>
 									<span className="tabular-nums text-foreground">{formatUsd(floorPrice) || formatBSV(floorPrice)}</span>
-									{!formatUsd(floorPrice) && <span className="text-muted-foreground/60">BSV</span>}
+									{!formatUsd(floorPrice) && <span className="hidden text-muted-foreground/60 sm:inline">BSV</span>}
 								</div>
 							</div>
 						)}

@@ -6,16 +6,104 @@ import {
 	ChevronDown,
 	ExternalLink,
 	Loader2,
+	Monitor,
 	Moon,
 	Sun,
 	Wallet,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { YOURS_WALLET_URL } from "@/lib/yours-wallet";
+
+// Mobile detection hook
+function useIsMobile() {
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const checkMobile = () => {
+			const isTouchDevice =
+				"ontouchstart" in window || navigator.maxTouchPoints > 0;
+			const isSmallScreen = window.innerWidth < 768;
+			const isMobileUserAgent = /iPhone|iPad|iPod|Android/i.test(
+				navigator.userAgent,
+			);
+			setIsMobile((isTouchDevice && isSmallScreen) || isMobileUserAgent);
+		};
+
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
+	return isMobile;
+}
+
+// Mobile wallet dialog
+function MobileWalletDialog({
+	open,
+	onOpenChange,
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-sm">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2">
+						<Monitor className="h-5 w-5" />
+						Desktop Required
+					</DialogTitle>
+					<DialogDescription asChild>
+						<div className="space-y-3 pt-2">
+							<p>
+								Theme Token uses the Yours Wallet browser extension for secure
+								blockchain interactions.
+							</p>
+							<p>
+								Browser extensions are only available on desktop browsers. Please
+								visit this site on a desktop computer to:
+							</p>
+							<ul className="list-inside list-disc space-y-1 text-sm">
+								<li>Purchase themes from the marketplace</li>
+								<li>Mint new themes to the blockchain</li>
+								<li>Access your owned themes</li>
+							</ul>
+							<p className="text-xs text-muted-foreground">
+								You can still browse themes and preview them on mobile.
+							</p>
+						</div>
+					</DialogDescription>
+				</DialogHeader>
+				<div className="mt-4 flex flex-col gap-2">
+					<a
+						href={YOURS_WALLET_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+					>
+						<Wallet className="h-4 w-4" />
+						Learn about Yours Wallet
+						<ExternalLink className="h-3 w-3" />
+					</a>
+					<Button variant="ghost" onClick={() => onOpenChange(false)}>
+						Continue Browsing
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
 
 // Color stripes thumbnail for themes
 function ThemeStripes({
@@ -66,37 +154,76 @@ export function WalletConnect() {
 		useYoursWallet();
 	const { activeTheme, applyThemeAnimated, resetTheme, mode } = useTheme();
 	const [isOpen, setIsOpen] = useState(false);
+	const [showMobileDialog, setShowMobileDialog] = useState(false);
+	const isMobile = useIsMobile();
+
+	const handleConnectClick = () => {
+		if (isMobile) {
+			setShowMobileDialog(true);
+		} else {
+			connect();
+		}
+	};
 
 	// Not installed state
 	if (status === "not-installed") {
 		return (
-			<div className="flex items-center gap-2">
-				<ModeToggle />
-				<a
-					href={YOURS_WALLET_URL}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition-colors hover:bg-muted"
-				>
-					<Wallet className="h-4 w-4" />
-					<span className="hidden sm:inline">Install Yours Wallet</span>
-					<ExternalLink className="h-3 w-3" />
-				</a>
-			</div>
+			<>
+				<div className="flex items-center gap-2">
+					<ModeToggle />
+					{isMobile ? (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setShowMobileDialog(true)}
+							className="gap-2"
+						>
+							<Wallet className="h-4 w-4" />
+							<span className="hidden sm:inline">Connect</span>
+						</Button>
+					) : (
+						<a
+							href={YOURS_WALLET_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition-colors hover:bg-muted"
+						>
+							<Wallet className="h-4 w-4" />
+							<span className="hidden sm:inline">Install Yours Wallet</span>
+							<ExternalLink className="h-3 w-3" />
+						</a>
+					)}
+				</div>
+				<MobileWalletDialog
+					open={showMobileDialog}
+					onOpenChange={setShowMobileDialog}
+				/>
+			</>
 		);
 	}
 
 	// Disconnected state
 	if (status === "disconnected" || status === "error") {
 		return (
-			<div className="flex items-center gap-2">
-				<ModeToggle />
-				<Button variant="outline" size="sm" onClick={connect} className="gap-2">
-					<Wallet className="h-4 w-4" />
-					<span className="hidden sm:inline">Connect</span>
-				</Button>
-				{error && <span className="text-xs text-destructive">{error}</span>}
-			</div>
+			<>
+				<div className="flex items-center gap-2">
+					<ModeToggle />
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={handleConnectClick}
+						className="gap-2"
+					>
+						<Wallet className="h-4 w-4" />
+						<span className="hidden sm:inline">Connect</span>
+					</Button>
+					{error && <span className="text-xs text-destructive">{error}</span>}
+				</div>
+				<MobileWalletDialog
+					open={showMobileDialog}
+					onOpenChange={setShowMobileDialog}
+				/>
+			</>
 		);
 	}
 
