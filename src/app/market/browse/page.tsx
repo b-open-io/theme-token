@@ -35,7 +35,6 @@ import {
 } from "@/components/market/filter-sidebar";
 import { GenerateCard } from "@/components/market/generate-card";
 import { ThemeCard } from "@/components/market/theme-card";
-import { MarketHero } from "@/components/market/market-hero";
 import { TrendingRail } from "@/components/market/trending-rail";
 
 const DEFAULT_FILTERS: FilterState = {
@@ -57,17 +56,9 @@ export default function BrowsePage() {
 	const isConnected = status === "connected";
 
 	// Market history for stats and trending
-	const { stats, trending, featured, getPriceChange } = useMarketHistory({
+	const { stats, trending, getPriceChange } = useMarketHistory({
 		listings: listings.map((l) => ({ origin: l.origin, price: l.price })),
 	});
-
-	// Find the full listing for featured theme
-	const featuredListing = useMemo(() => {
-		if (!featured) return null;
-		const listing = listings.find((l) => l.origin === featured.origin);
-		if (!listing) return null;
-		return { ...featured, theme: listing.theme };
-	}, [featured, listings]);
 
 	// Build trending items with full theme data
 	const trendingItems = useMemo(() => {
@@ -182,7 +173,10 @@ export default function BrowsePage() {
 
 	const maxPrice = useMemo(() => {
 		if (listings.length === 0) return 10;
-		return Math.ceil(Math.max(...listings.map((l) => l.price / 100000000)) * 100) / 100;
+		return (
+			Math.ceil(Math.max(...listings.map((l) => l.price / 100000000)) * 100) /
+			100
+		);
 	}, [listings]);
 
 	const FilterContent = useCallback(
@@ -196,42 +190,20 @@ export default function BrowsePage() {
 		[filters, maxPrice],
 	);
 
-	// Handle purchase for featured theme
-	const handleFeaturedPurchase = useCallback(() => {
-		if (!featuredListing) return;
-		const listing = listings.find((l) => l.origin === featuredListing.origin);
-		if (listing) {
-			handlePurchase(listing);
-		}
-	}, [featuredListing, listings]);
-
 	return (
-		<div className="min-h-[calc(100vh-12rem)]">
-			{/* Market Hero - Stats + Featured Theme */}
-			<MarketHero
-				stats={stats}
-				featured={featuredListing}
-				mode={mode}
-				isLoading={isLoading}
-				isConnected={isConnected}
-				onPurchase={handleFeaturedPurchase}
-				onConnect={connect}
-				onApplyTheme={
-					featuredListing
-						? (e) => applyThemeAnimated(featuredListing.theme, e)
-						: undefined
-				}
-			/>
-
+		<>
 			{/* Trending Rail */}
 			{!isLoading && trendingItems.length > 0 && (
-				<TrendingRail items={trendingItems} mode={mode} />
+				<div className="mb-6">
+					<TrendingRail items={trendingItems} mode={mode} />
+				</div>
 			)}
 
+			{/* Main Grid */}
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Sidebar - Desktop */}
 				<aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
-					<div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
+					<div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
 						<FilterContent />
 					</div>
 				</aside>
@@ -300,7 +272,9 @@ export default function BrowsePage() {
 									<div className="flex items-center gap-3">
 										<Filter className="h-5 w-5 text-muted-foreground" />
 										<div>
-											<p className="text-sm font-medium">No themes match your filters</p>
+											<p className="text-sm font-medium">
+												No themes match your filters
+											</p>
 											<p className="text-xs text-muted-foreground">
 												Generate a custom theme with AI or adjust filters
 											</p>
@@ -334,7 +308,9 @@ export default function BrowsePage() {
 											isPurchasing={purchasing === listing.outpoint}
 											onPurchase={() => handlePurchase(listing)}
 											onConnect={connect}
-											onApplyTheme={(e) => applyThemeAnimated(listing.theme, e)}
+											onApplyTheme={(e) =>
+												applyThemeAnimated(listing.theme, e)
+											}
 											priceChange={getPriceChange(listing.origin)}
 										/>
 									</motion.div>
@@ -366,6 +342,6 @@ export default function BrowsePage() {
 					)}
 				</main>
 			</div>
-		</div>
+		</>
 	);
 }
