@@ -105,12 +105,12 @@ export default function FontMintPage() {
 	const handleAIFontGenerated = useCallback((font: GeneratedFont, compiled?: CompiledFont) => {
 		setGeneratedFont(font);
 		setCompiledFont(compiled ?? null);
-		// Auto-fill metadata from the generated font
 		setMetadata((prev) => ({
 			...prev,
 			name: font.name,
 			author: `AI Generated (${font.generatedBy})`,
 			isAIGenerated: true,
+			prompt: font.prompt,
 		}));
 	}, []);
 

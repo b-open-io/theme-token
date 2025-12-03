@@ -23,6 +23,7 @@ interface GeneratedFont {
 	glyphs: Glyph[];
 	generatedBy: string;
 	generatedAt: string;
+	prompt?: string;
 }
 
 interface CompiledFont {
@@ -125,8 +126,8 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 				throw new Error(data.error || "Failed to generate font");
 			}
 
-			// Store the generated font data
-			setGeneratedFont(data.font);
+			// Store the generated font data with the prompt
+			setGeneratedFont({ ...data.font, prompt });
 			setProgress(70);
 			setProgressStage("COMPILING_FONT...");
 

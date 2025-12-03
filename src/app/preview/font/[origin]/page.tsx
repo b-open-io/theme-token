@@ -200,7 +200,7 @@ export default function FontPreviewPage({
 									</p>
 								</div>
 								<div className="flex gap-2">
-									{metadata?.aiGenerated && (
+									{metadata?.prompt && (
 										<Badge variant="secondary">
 											<Sparkles className="mr-1 h-3 w-3" />
 											AI Generated

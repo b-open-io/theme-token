@@ -230,9 +230,8 @@ export interface FontMetadata {
 	license?: string;
 	weight?: string;
 	style?: string;
-	aiGenerated?: boolean;
+	prompt?: string;
 	glyphCount?: number;
-	website?: string;
 }
 
 export interface FontMarketListing extends MarketListing {
@@ -407,11 +406,10 @@ export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 								license: mapData.license,
 								weight: mapData.weight || "400",
 								style: mapData.style || "normal",
-								aiGenerated: mapData.aiGenerated === "true",
+								prompt: mapData.prompt,
 								glyphCount: mapData.glyphCount
 									? parseInt(mapData.glyphCount)
 									: undefined,
-								website: mapData.website,
 							},
 						};
 					},
@@ -503,11 +501,10 @@ export async function fetchAllInscribedFonts(): Promise<FontMarketListing[]> {
 							license: mapData.license,
 							weight: mapData.weight || "400",
 							style: mapData.style || "normal",
-							aiGenerated: mapData.aiGenerated === "true",
+							prompt: mapData.prompt,
 							glyphCount: mapData.glyphCount
 								? parseInt(mapData.glyphCount)
 								: undefined,
-							website: mapData.website,
 						},
 					};
 				},

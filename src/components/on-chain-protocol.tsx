@@ -52,16 +52,13 @@ const ASSET_SCHEMAS: Record<
 		label: "Fonts",
 		description: "Web fonts in WOFF2, WOFF, or TTF format",
 		contentInfo:
-			"Font binary files don't expose metadata easily. We include name, weight, style, author, license, and aiGenerated flag in MAP data.",
+			"Font name, weight, and style are in the binary data itself. Only author, license, and AI prompt (if applicable) go in metadata.",
 		example: {
 			app: "theme-token",
 			type: "font",
-			name: "MyFont",
-			weight: "400",
-			style: "normal",
 			author: "John Doe",
 			license: "OFL",
-			aiGenerated: "true",
+			prompt: "elegant serif with tall ascenders",
 		},
 		fields: [
 			{
@@ -77,24 +74,6 @@ const ASSET_SCHEMAS: Record<
 				description: 'Always "font"',
 			},
 			{
-				name: "name",
-				type: "string",
-				required: true,
-				description: "Font family name",
-			},
-			{
-				name: "weight",
-				type: "enum",
-				options: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-				description: "CSS font-weight value",
-			},
-			{
-				name: "style",
-				type: "enum",
-				options: ["normal", "italic", "oblique"],
-				description: 'CSS font-style (omit if "normal")',
-			},
-			{
 				name: "author",
 				type: "string",
 				description: "Font designer/author",
@@ -105,9 +84,9 @@ const ASSET_SCHEMAS: Record<
 				description: "License identifier (OFL, MIT, CC0, etc.)",
 			},
 			{
-				name: "aiGenerated",
-				type: "boolean",
-				description: '"true" if AI-generated',
+				name: "prompt",
+				type: "string",
+				description: "AI generation prompt (if AI-generated)",
 			},
 		],
 	},

@@ -41,7 +41,7 @@ export interface FontMetadata {
 	license?: string;
 	weight?: string;
 	style?: string;
-	aiGenerated?: boolean;
+	prompt?: string;
 	glyphCount?: number;
 }
 
@@ -88,7 +88,7 @@ export async function fetchFontMetadata(
 				license: data.map.license,
 				weight: data.map.weight || "400",
 				style: data.map.style || "normal",
-				aiGenerated: data.map.aiGenerated === "true",
+				prompt: data.map.prompt,
 				glyphCount: data.map.glyphCount
 					? parseInt(data.map.glyphCount)
 					: undefined,

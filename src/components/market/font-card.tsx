@@ -140,7 +140,7 @@ export function FontCard({
 				)}
 
 				{/* AI Generated badge */}
-				{metadata.aiGenerated && (
+				{metadata.prompt && (
 					<div className="absolute bottom-2 left-2 rounded bg-primary/20 px-2 py-1 font-mono text-[10px] text-primary backdrop-blur-sm">
 						AI Generated
 					</div>

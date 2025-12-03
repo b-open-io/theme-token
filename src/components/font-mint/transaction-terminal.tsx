@@ -7,11 +7,7 @@ import type { FontMetadata } from "./metadata-form";
 import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import {
-	buildFontMetadata,
-	type FontWeight,
-	type FontStyle,
-} from "@/lib/asset-metadata";
+import { buildFontMetadata } from "@/lib/asset-metadata";
 import { getYoursWallet } from "@/lib/yours-wallet";
 
 interface TransactionTerminalProps {
@@ -82,12 +78,9 @@ export function TransactionTerminal({
 				await new Promise((r) => setTimeout(r, 200));
 
 				const mapData = buildFontMetadata({
-					name: metadata.name,
-					weight: "400" as FontWeight,
-					style: "normal",
 					author: metadata.author || undefined,
 					license: metadata.license,
-					aiGenerated: true,
+					prompt: metadata.prompt,
 				});
 
 				inscriptions.push({
@@ -110,11 +103,7 @@ export function TransactionTerminal({
 						mimeType = "font/ttf";
 					}
 
-					const weight = String(fontFile.weight || 400) as FontWeight;
 					const mapData = buildFontMetadata({
-						name: metadata.name,
-						weight,
-						style: (fontFile.style || "normal") as FontStyle,
 						author: metadata.author || undefined,
 						license: metadata.license,
 					});

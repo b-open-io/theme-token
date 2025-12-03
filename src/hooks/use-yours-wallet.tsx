@@ -48,8 +48,7 @@ export interface OwnedFont {
 		license?: string;
 		weight?: string;
 		style?: string;
-		aiGenerated?: boolean;
-		glyphCount?: number;
+		prompt?: string;
 	};
 }
 
@@ -157,10 +156,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 								license: mapData.license,
 								weight: mapData.weight || "400",
 								style: mapData.style || "normal",
-								aiGenerated: mapData.aiGenerated === "true",
-								glyphCount: mapData.glyphCount
-									? parseInt(mapData.glyphCount)
-									: undefined,
+								prompt: mapData.prompt,
 							},
 						});
 						continue;

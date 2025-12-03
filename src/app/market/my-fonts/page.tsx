@@ -102,7 +102,7 @@ function OwnedFontCard({
 			license?: string;
 			weight?: string;
 			style?: string;
-			aiGenerated?: boolean;
+			prompt?: string;
 			glyphCount?: number;
 		};
 	};
@@ -178,7 +178,7 @@ function OwnedFontCard({
 						{font.metadata.style}
 					</Badge>
 				)}
-				{font.metadata.aiGenerated && (
+				{font.metadata.prompt && (
 					<Badge variant="secondary" className="text-[10px]">
 						AI
 					</Badge>

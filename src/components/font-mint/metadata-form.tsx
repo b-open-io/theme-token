@@ -15,8 +15,9 @@ export interface FontMetadata {
 	author: string;
 	license: LicenseType;
 	website: string;
-	originalAuthor?: string; // For derived works or redistributed fonts
+	originalAuthor?: string;
 	isAIGenerated?: boolean;
+	prompt?: string;
 }
 
 export interface FontAttestations {
