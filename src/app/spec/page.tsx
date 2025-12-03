@@ -430,7 +430,6 @@ export default function SpecPage() {
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
 							Assets use the MAP (Magic Attribute Protocol) for on-chain metadata.
-							Only information that cannot be derived from the inscribed content is stored.
 						</motion.p>
 					</motion.div>
 
