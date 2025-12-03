@@ -1,85 +1,199 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Grid3X3, Palette, Type } from "lucide-react";
+import { ArrowRight, Grid3X3, Palette, Terminal, Type } from "lucide-react";
 import Link from "next/link";
 import { featureFlags } from "@/lib/feature-flags";
 
+// Visual Preview Components
+const ThemePreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-transparent">
+		<div className="relative h-24 w-32 rounded-lg border border-border bg-card shadow-2xl">
+			<div className="flex items-center gap-1 border-b border-border p-2">
+				<div className="h-2 w-2 rounded-full bg-red-500/50" />
+				<div className="h-2 w-2 rounded-full bg-yellow-500/50" />
+				<div className="h-2 w-2 rounded-full bg-green-500/50" />
+			</div>
+			<div className="space-y-2 p-3">
+				<div className="h-2 w-3/4 rounded-full bg-primary/20" />
+				<div className="h-2 w-1/2 rounded-full bg-muted-foreground/20" />
+				<div className="mt-2 flex gap-2">
+					<div className="h-6 w-full rounded bg-primary/80" />
+				</div>
+			</div>
+			{/* Floating abstract elements */}
+			<div className="absolute -right-4 -top-4 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
+			<div className="absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-blue-500/10 blur-xl" />
+		</div>
+	</div>
+);
+
+const FontPreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-bl from-primary/5 to-transparent">
+		<div className="relative z-10 text-center">
+			<span className="block font-serif text-6xl text-primary/80 drop-shadow-lg">
+				Aa
+			</span>
+			<div className="mt-2 flex justify-center gap-1 opacity-50">
+				<div className="h-1 w-1 rounded-full bg-foreground" />
+				<div className="h-1 w-1 rounded-full bg-foreground" />
+				<div className="h-1 w-1 rounded-full bg-foreground" />
+			</div>
+		</div>
+		<div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:14px_24px]" />
+	</div>
+);
+
+const PatternPreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-background">
+		<svg
+			className="absolute inset-0 h-full w-full opacity-20"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<defs>
+				<pattern
+					id="grid-pattern"
+					width="20"
+					height="20"
+					patternUnits="userSpaceOnUse"
+				>
+					<circle cx="2" cy="2" r="1" className="fill-primary" />
+				</pattern>
+			</defs>
+			<rect width="100%" height="100%" fill="url(#grid-pattern)" />
+		</svg>
+		<div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+		<div className="relative z-10 h-20 w-20 rotate-45 rounded-xl border border-primary/30 bg-background/50 backdrop-blur-sm" />
+		<div className="absolute z-0 h-24 w-24 -rotate-12 rounded-full border border-dashed border-muted-foreground/30" />
+	</div>
+);
+
+// Tool Definition
 const allTools = [
 	{
 		href: "/studio/theme",
 		label: "Theme",
 		icon: Palette,
-		description: "Create custom ShadCN UI themes with colors, typography, and styling",
-		feature: null, // Always enabled
+		description:
+			"Design and export ShadCN UI themes. Customize colors, radius, and typography with real-time preview.",
+		feature: null, // Always available
+		preview: ThemePreview,
 	},
 	{
 		href: "/studio/font",
 		label: "Font",
 		icon: Type,
-		description: "Mint fonts to the blockchain for use across applications",
+		description:
+			"Mint exclusive typefaces to the Bitcoin blockchain. Preserve typography history permanently.",
 		feature: "fonts" as const,
+		preview: FontPreview,
 	},
 	{
 		href: "/studio/patterns",
 		label: "Pattern",
 		icon: Grid3X3,
-		description: "Generate seamless SVG patterns with AI for theme backgrounds",
+		description:
+			"Generate infinite SVG patterns using AI. Create seamless backgrounds for your next project.",
 		feature: "patterns" as const,
+		preview: PatternPreview,
 	},
 ];
 
+// Animation Variants
+const containerVariants = {
+	hidden: { opacity: 0 },
+	show: {
+		opacity: 1,
+		transition: {
+			staggerChildren: 0.15,
+		},
+	},
+};
+
+const itemVariants = {
+	hidden: { opacity: 0, y: 20 },
+	show: { opacity: 1, y: 0 },
+};
+
 export default function StudioPage() {
 	// Filter tools based on feature flags
-	const tools = allTools.filter(
-		(tool) => tool.feature === null || featureFlags[tool.feature],
+	const availableTools = allTools.filter(
+		(tool) => !tool.feature || featureFlags[tool.feature],
 	);
-	return (
-		<div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
-			{/* Header */}
-			<div className="mb-8 text-center">
-				<h1 className="font-mono text-sm text-muted-foreground">
-					<span className="text-primary">$</span> studio
-					<span className="animate-pulse">_</span>
-				</h1>
-				<p className="mt-2 text-sm text-muted-foreground">
-					Create and inscribe assets on-chain
-				</p>
-			</div>
 
-			{/* Tool Cards */}
-			<div className="grid w-full max-w-3xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{tools.map((tool, index) => {
-					const Icon = tool.icon;
-					return (
-						<motion.div
-							key={tool.href}
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: index * 0.1 }}
-						>
-							<Link
-								href={tool.href}
-								className="group flex flex-col rounded-lg border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+	return (
+		<div className="min-h-[80vh] w-full bg-background px-4 py-12 md:px-8 lg:px-12">
+			<div className="mx-auto max-w-5xl">
+				{/* Terminal Header */}
+				<div className="mb-12 flex items-center gap-3 border-b border-border/40 pb-6">
+					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+						<Terminal className="h-5 w-5" />
+					</div>
+					<div>
+						<h1 className="font-mono text-2xl font-bold tracking-tight text-foreground">
+							$ studio<span className="animate-pulse text-primary">_</span>
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							Initialize creative tools. Select a module to begin.
+						</p>
+					</div>
+				</div>
+
+				{/* Tools Grid */}
+				<motion.div
+					variants={containerVariants}
+					initial="hidden"
+					animate="show"
+					className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+				>
+					{availableTools.map((tool) => {
+						const Icon = tool.icon;
+						const Preview = tool.preview;
+
+						return (
+							<motion.div
+								key={tool.label}
+								variants={itemVariants}
+								className="h-full"
 							>
-								<div className="mb-4 flex items-center gap-3">
-									<div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-										<Icon className="h-5 w-5" />
+								<Link href={tool.href} className="group block h-full">
+									<div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-card/50 hover:shadow-2xl hover:shadow-primary/5">
+										{/* Visual Preview Area */}
+										<div className="relative h-40 w-full overflow-hidden border-b border-border/50 bg-muted/20">
+											<Preview />
+										</div>
+
+										{/* Content Area */}
+										<div className="flex flex-1 flex-col p-5">
+											<div className="mb-3 flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+														<Icon className="h-4 w-4" />
+													</div>
+													<h2 className="font-mono text-lg font-semibold">
+														{tool.label}
+													</h2>
+												</div>
+												<ArrowRight className="h-4 w-4 -translate-x-2 text-muted-foreground opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+											</div>
+
+											<p className="flex-1 text-sm leading-relaxed text-muted-foreground">
+												{tool.description}
+											</p>
+
+											{/* Footer */}
+											<div className="mt-4 border-t border-border/30 pt-3">
+												<span className="font-mono text-xs text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+													[ LAUNCH ]
+												</span>
+											</div>
+										</div>
 									</div>
-									<h2 className="font-mono text-lg font-semibold">
-										{tool.label}
-									</h2>
-								</div>
-								<p className="text-sm text-muted-foreground">
-									{tool.description}
-								</p>
-								<div className="mt-4 font-mono text-xs text-primary opacity-0 transition-opacity group-hover:opacity-100">
-									[ LAUNCH ]
-								</div>
-							</Link>
-						</motion.div>
-					);
-				})}
+								</Link>
+							</motion.div>
+						);
+					})}
+				</motion.div>
 			</div>
 		</div>
 	);
