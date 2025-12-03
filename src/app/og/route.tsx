@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 	// Redirect to dynamic OG if theme is specified
 	if (themeOrigin) {
 		return NextResponse.redirect(
-			new URL(`/og/${themeOrigin}.png`, url.origin),
+			new URL(`/og/${themeOrigin}`, url.origin),
 		);
 	}
 

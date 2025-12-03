@@ -57,7 +57,6 @@ export async function GET(
 		fetch(FONT_URL).then((res) => res.arrayBuffer()),
 		params,
 	]);
-	const cleanOrigin = origin.replace(/\.png$/, "");
 
 	// Default colors
 	const defaultColors = ["#6366f1", "#a855f7", "#ec4899", "#52525b", "#3b82f6"];
@@ -65,7 +64,7 @@ export async function GET(
 	let foregroundColor = "#fafafa";
 
 	try {
-		const published = await fetchThemeByOrigin(cleanOrigin);
+		const published = await fetchThemeByOrigin(origin);
 		if (published) {
 			const extracted = extractColors(published.theme);
 			if (extracted.length > 0) {
@@ -81,7 +80,7 @@ export async function GET(
 	}
 
 	// Generate seed from origin for deterministic layout
-	const seed = cleanOrigin
+	const seed = origin
 		.split("")
 		.reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
