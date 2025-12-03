@@ -223,7 +223,14 @@ export default function FontMintPage() {
 
 				{/* Right Column: Preview */}
 				<div className="min-h-[400px] lg:sticky lg:top-32">
-					<LiveTypeCanvas files={fontFiles} fontName={metadata.name} />
+					{generatedFont ? (
+						<GeneratedFontPreview
+							font={generatedFont}
+							onClear={() => setGeneratedFont(null)}
+						/>
+					) : (
+						<LiveTypeCanvas files={fontFiles} fontName={metadata.name} />
+					)}
 				</div>
 			</div>
 
