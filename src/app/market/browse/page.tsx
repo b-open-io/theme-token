@@ -31,9 +31,9 @@ import {
 import {
 	FilterSidebar,
 	type FilterState,
-} from "../_components/filter-sidebar";
-import { RemixCard } from "../_components/remix-card";
-import { ThemeCard } from "../_components/theme-card";
+} from "@/components/market/filter-sidebar";
+import { RemixCard } from "@/components/market/remix-card";
+import { ThemeCard } from "@/components/market/theme-card";
 
 const DEFAULT_FILTERS: FilterState = {
 	primaryColor: null,

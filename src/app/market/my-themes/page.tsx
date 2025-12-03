@@ -7,7 +7,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { ThemeStripes } from "../_components/theme-stripes";
+import { ThemeStripes } from "@/components/market/theme-stripes";
 
 export default function MyThemesPage() {
 	const { status, connect, themeTokens } = useYoursWallet();

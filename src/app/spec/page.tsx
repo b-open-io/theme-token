@@ -581,14 +581,14 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							LLM Documentation
+							AI Agent Resources
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mb-8 max-w-2xl text-muted-foreground"
 						>
-							Machine-readable documentation for AI assistants and LLMs.
-							Following the{" "}
+							Machine-readable documentation for AI coding assistants. Copy context
+							directly into your AI tool or feed the URLs. Following the{" "}
 							<a
 								href="https://llmstxt.org"
 								target="_blank"
@@ -601,63 +601,238 @@ export default function SpecPage() {
 						</motion.p>
 					</motion.div>
 
+					{/* Copy Full Context Button */}
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+						className="mb-6"
+					>
+						<button
+							type="button"
+							onClick={async () => {
+								try {
+									const [llmsRes, fullRes] = await Promise.all([
+										fetch("/llms.txt"),
+										fetch("/llms-full.txt"),
+									]);
+									const [llmsText, fullText] = await Promise.all([
+										llmsRes.text(),
+										fullRes.text(),
+									]);
+									const combined = `<context_document name="Theme Token - Quick Reference">\n${llmsText}\n</context_document>\n\n<context_document name="Theme Token - Full Documentation">\n${fullText}\n</context_document>`;
+									await navigator.clipboard.writeText(combined);
+									setCopied("full-context");
+									setTimeout(() => setCopied(null), 2000);
+								} catch (err) {
+									console.error("Failed to copy:", err);
+								}
+							}}
+							className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-sm font-medium transition-all hover:border-primary/50 hover:bg-primary/10"
+						>
+							{copied === "full-context" ? (
+								<>
+									<Check className="h-5 w-5 text-green-500" />
+									<span className="text-green-600">
+										Full system context copied!
+									</span>
+								</>
+							) : (
+								<>
+									<Copy className="h-5 w-5 text-primary" />
+									<span>Copy Full System Context</span>
+									<span className="text-xs text-muted-foreground">
+										(~8KB for comprehensive AI context)
+									</span>
+								</>
+							)}
+						</button>
+					</motion.div>
+
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						className="grid gap-4 sm:grid-cols-3"
 					>
-						<a
-							href="/llms.txt"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/50 hover:bg-muted/50"
-						>
-							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-								<Bot className="h-6 w-6 text-primary" />
+						{/* llms.txt Card */}
+						<div className="flex flex-col rounded-lg border border-border bg-card p-6">
+							<div className="mb-4 flex items-center gap-4">
+								<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+									<Bot className="h-6 w-6 text-primary" />
+								</div>
+								<div className="flex-1">
+									<h3 className="font-semibold">llms.txt</h3>
+									<p className="text-sm text-muted-foreground">
+										Quick reference (~2KB)
+									</p>
+								</div>
 							</div>
-							<div>
-								<h3 className="font-semibold">llms.txt</h3>
-								<p className="text-sm text-muted-foreground">
-									Concise overview for quick context
-								</p>
+							<div className="mt-auto flex gap-2">
+								<button
+									type="button"
+									onClick={async () => {
+										try {
+											const res = await fetch("/llms.txt");
+											const text = await res.text();
+											const payload = `<context_document name="Theme Token Quick Reference">\n${text}\n</context_document>`;
+											await navigator.clipboard.writeText(payload);
+											setCopied("llms");
+											setTimeout(() => setCopied(null), 2000);
+										} catch (err) {
+											console.error("Failed to copy:", err);
+										}
+									}}
+									className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+								>
+									{copied === "llms" ? (
+										<>
+											<Check className="h-4 w-4" />
+											Copied
+										</>
+									) : (
+										<>
+											<Copy className="h-4 w-4" />
+											Copy for AI
+										</>
+									)}
+								</button>
+								<a
+									href="/llms.txt"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
+									title="View raw file"
+								>
+									<FileText className="h-4 w-4" />
+								</a>
 							</div>
-						</a>
+						</div>
 
-						<a
-							href="/llms-full.txt"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/50 hover:bg-muted/50"
-						>
-							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-								<FileText className="h-6 w-6 text-primary" />
+						{/* llms-full.txt Card */}
+						<div className="flex flex-col rounded-lg border border-border bg-card p-6">
+							<div className="mb-4 flex items-center gap-4">
+								<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+									<FileText className="h-6 w-6 text-primary" />
+								</div>
+								<div className="flex-1">
+									<h3 className="font-semibold">llms-full.txt</h3>
+									<p className="text-sm text-muted-foreground">
+										Complete docs (~6KB)
+									</p>
+								</div>
 							</div>
-							<div>
-								<h3 className="font-semibold">llms-full.txt</h3>
-								<p className="text-sm text-muted-foreground">
-									Complete API and schema reference
-								</p>
+							<div className="mt-auto flex gap-2">
+								<button
+									type="button"
+									onClick={async () => {
+										try {
+											const res = await fetch("/llms-full.txt");
+											const text = await res.text();
+											const payload = `<context_document name="Theme Token Full Documentation">\n${text}\n</context_document>`;
+											await navigator.clipboard.writeText(payload);
+											setCopied("llms-full");
+											setTimeout(() => setCopied(null), 2000);
+										} catch (err) {
+											console.error("Failed to copy:", err);
+										}
+									}}
+									className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+								>
+									{copied === "llms-full" ? (
+										<>
+											<Check className="h-4 w-4" />
+											Copied
+										</>
+									) : (
+										<>
+											<Copy className="h-4 w-4" />
+											Copy for AI
+										</>
+									)}
+								</button>
+								<a
+									href="/llms-full.txt"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
+									title="View raw file"
+								>
+									<FileText className="h-4 w-4" />
+								</a>
 							</div>
-						</a>
+						</div>
 
-						<a
-							href="https://github.com/b-open-io/theme-token-sdk"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-4 rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/50 hover:bg-muted/50"
-						>
-							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-								<Package className="h-6 w-6 text-primary" />
+						{/* SDK Card */}
+						<div className="flex flex-col rounded-lg border border-border bg-card p-6">
+							<div className="mb-4 flex items-center gap-4">
+								<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+									<Package className="h-6 w-6 text-primary" />
+								</div>
+								<div className="flex-1">
+									<h3 className="font-semibold">@theme-token/sdk</h3>
+									<p className="text-sm text-muted-foreground">
+										TypeScript SDK
+									</p>
+								</div>
 							</div>
-							<div>
-								<h3 className="font-semibold">@theme-token/sdk</h3>
-								<p className="text-sm text-muted-foreground">
-									TypeScript SDK on GitHub
-								</p>
+							<div className="mt-auto flex gap-2">
+								<button
+									type="button"
+									onClick={() => {
+										navigator.clipboard.writeText("bun add @theme-token/sdk");
+										setCopied("sdk-install");
+										setTimeout(() => setCopied(null), 2000);
+									}}
+									className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+								>
+									{copied === "sdk-install" ? (
+										<>
+											<Check className="h-4 w-4" />
+											Copied
+										</>
+									) : (
+										<>
+											<Terminal className="h-4 w-4" />
+											Copy Install
+										</>
+									)}
+								</button>
+								<a
+									href="https://github.com/b-open-io/theme-token-sdk"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
+									title="View on GitHub"
+								>
+									<svg
+										className="h-4 w-4"
+										viewBox="0 0 24 24"
+										fill="currentColor"
+									>
+										<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+									</svg>
+								</a>
 							</div>
-						</a>
+						</div>
 					</motion.div>
+
+					{/* URL hint for AI tools */}
+					<motion.p
+						initial={{ opacity: 0 }}
+						whileInView={{ opacity: 1 }}
+						viewport={{ once: true }}
+						className="mt-6 text-center text-xs text-muted-foreground"
+					>
+						AI tools can also fetch directly:{" "}
+						<code className="rounded bg-muted px-1.5 py-0.5">
+							themetoken.dev/llms.txt
+						</code>{" "}
+						or{" "}
+						<code className="rounded bg-muted px-1.5 py-0.5">
+							themetoken.dev/llms-full.txt
+						</code>
+					</motion.p>
 				</div>
 			</section>
 		</div>

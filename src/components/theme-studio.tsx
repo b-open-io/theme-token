@@ -787,6 +787,77 @@ export function ThemeStudio() {
 												}
 											/>
 										</ColorSection>
+
+										<ColorSection title="Chart Colors">
+											<ColorControl
+												label="chart-1"
+												value={selectedTheme.styles[mode]["chart-1"] || "oklch(0.646 0.222 41.116)"}
+												onChange={(v) => updateColor("chart-1", v)}
+											/>
+											<ColorControl
+												label="chart-2"
+												value={selectedTheme.styles[mode]["chart-2"] || "oklch(0.6 0.118 184.704)"}
+												onChange={(v) => updateColor("chart-2", v)}
+											/>
+											<ColorControl
+												label="chart-3"
+												value={selectedTheme.styles[mode]["chart-3"] || "oklch(0.398 0.07 227.392)"}
+												onChange={(v) => updateColor("chart-3", v)}
+											/>
+											<ColorControl
+												label="chart-4"
+												value={selectedTheme.styles[mode]["chart-4"] || "oklch(0.828 0.189 84.429)"}
+												onChange={(v) => updateColor("chart-4", v)}
+											/>
+											<ColorControl
+												label="chart-5"
+												value={selectedTheme.styles[mode]["chart-5"] || "oklch(0.769 0.188 70.08)"}
+												onChange={(v) => updateColor("chart-5", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Sidebar Colors">
+											<ColorControl
+												label="sidebar"
+												value={selectedTheme.styles[mode].sidebar || selectedTheme.styles[mode].background}
+												onChange={(v) => updateColor("sidebar", v)}
+											/>
+											<ColorControl
+												label="sidebar-fg"
+												value={selectedTheme.styles[mode]["sidebar-foreground"] || selectedTheme.styles[mode].foreground}
+												onChange={(v) => updateColor("sidebar-foreground", v)}
+											/>
+											<ColorControl
+												label="sidebar-primary"
+												value={selectedTheme.styles[mode]["sidebar-primary"] || selectedTheme.styles[mode].primary}
+												onChange={(v) => updateColor("sidebar-primary", v)}
+											/>
+											<ColorControl
+												label="sidebar-primary-fg"
+												value={selectedTheme.styles[mode]["sidebar-primary-foreground"] || selectedTheme.styles[mode]["primary-foreground"]}
+												onChange={(v) => updateColor("sidebar-primary-foreground", v)}
+											/>
+											<ColorControl
+												label="sidebar-accent"
+												value={selectedTheme.styles[mode]["sidebar-accent"] || selectedTheme.styles[mode].accent}
+												onChange={(v) => updateColor("sidebar-accent", v)}
+											/>
+											<ColorControl
+												label="sidebar-accent-fg"
+												value={selectedTheme.styles[mode]["sidebar-accent-foreground"] || selectedTheme.styles[mode]["accent-foreground"]}
+												onChange={(v) => updateColor("sidebar-accent-foreground", v)}
+											/>
+											<ColorControl
+												label="sidebar-border"
+												value={selectedTheme.styles[mode]["sidebar-border"] || selectedTheme.styles[mode].border}
+												onChange={(v) => updateColor("sidebar-border", v)}
+											/>
+											<ColorControl
+												label="sidebar-ring"
+												value={selectedTheme.styles[mode]["sidebar-ring"] || selectedTheme.styles[mode].ring}
+												onChange={(v) => updateColor("sidebar-ring", v)}
+											/>
+										</ColorSection>
 									</div>
 								)}
 

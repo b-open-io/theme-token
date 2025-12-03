@@ -212,13 +212,6 @@ export function ChainImplementations() {
 				</div>
 			</div>
 
-			{/* Comparison Note */}
-			<p className="mt-6 text-sm text-muted-foreground">
-				<strong>Recommendation:</strong> Use BSV 1Sat Ordinals for lowest cost
-				with full on-chain storage. Use BTC Ordinals for maximum network
-				security. Use Solana for rich ecosystem tooling. Use BCH CashTokens for
-				hybrid on/off-chain flexibility.
-			</p>
 		</div>
 	);
 }
