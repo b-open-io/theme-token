@@ -1,11 +1,12 @@
 "use client";
 
-import { Minus, Plus, X } from "lucide-react";
-import { useState } from "react";
-import type { GeneratedFont } from "./ai-generate-tab";
+import { Minus, Plus, X, Check, AlertCircle } from "lucide-react";
+import { useState, useEffect, useId } from "react";
+import type { GeneratedFont, CompiledFont } from "./ai-generate-tab";
 
 interface GeneratedFontPreviewProps {
 	font: GeneratedFont;
+	compiledFont?: CompiledFont;
 	onClear: () => void;
 }
 
@@ -14,31 +15,77 @@ const ALPHABET_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ALPHABET_LOWER = "abcdefghijklmnopqrstuvwxyz";
 const NUMBERS = "0123456789";
 
-export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProps) {
+export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedFontPreviewProps) {
 	const [fontSize, setFontSize] = useState(48);
 	const [inverted, setInverted] = useState(false);
 	const [sampleText, setSampleText] = useState(PANGRAM);
+	const [fontLoaded, setFontLoaded] = useState(false);
+	const [fontLoadError, setFontLoadError] = useState<string | null>(null);
+
+	// Generate a unique font family name for this instance
+	const uniqueId = useId();
+	const fontFamilyName = `AI-Font-${uniqueId.replace(/:/g, "-")}`;
 
 	const bgColor = inverted ? "#ffffff" : "#050505";
 	const fgColor = inverted ? "#050505" : "#e5e5e5";
 
-	// Create a map for quick glyph lookup
-	const glyphMap = new Map(font.glyphs.map((g) => [g.char, g]));
-
-	// Render a single character as SVG
-	const renderChar = (char: string, index: number, scale: number) => {
-		const glyph = glyphMap.get(char);
-		if (!glyph) {
-			// Space or unknown - return empty space
-			return <g key={index} />;
+	// Load the compiled font via FontFace API
+	useEffect(() => {
+		// Reset and exit early if no compiled font
+		if (!compiledFont) {
+			return () => {
+				// Cleanup any existing font face
+				document.fonts.forEach((fontFace) => {
+					if (fontFace.family === fontFamilyName) {
+						document.fonts.delete(fontFace);
+					}
+				});
+			};
 		}
 
-		return (
-			<g key={index}>
-				<path d={glyph.path} fill={fgColor} />
-			</g>
-		);
-	};
+		let cancelled = false;
+
+		const loadFont = async () => {
+			try {
+				// Create a data URL from the base64 WOFF2
+				const dataUrl = `data:font/woff2;base64,${compiledFont.woff2Base64}`;
+
+				// Create and load the font
+				const fontFace = new FontFace(fontFamilyName, `url(${dataUrl})`);
+				await fontFace.load();
+
+				if (cancelled) return;
+
+				// Add to document fonts
+				document.fonts.add(fontFace);
+				setFontLoaded(true);
+				setFontLoadError(null);
+			} catch (err) {
+				if (cancelled) return;
+				console.error("[GeneratedFontPreview] Font load error:", err);
+				setFontLoadError(err instanceof Error ? err.message : "Failed to load font");
+				setFontLoaded(false);
+			}
+		};
+
+		// Reset state before loading
+		setFontLoaded(false);
+		setFontLoadError(null);
+		loadFont();
+
+		// Cleanup: remove font when component unmounts
+		return () => {
+			cancelled = true;
+			document.fonts.forEach((fontFace) => {
+				if (fontFace.family === fontFamilyName) {
+					document.fonts.delete(fontFace);
+				}
+			});
+		};
+	}, [compiledFont, fontFamilyName]);
+
+	// Create a map for quick glyph lookup
+	const glyphMap = new Map(font.glyphs.map((g) => [g.char, g]));
 
 	// Render text with proper positioning
 	const renderText = (text: string, startX: number, baselineY: number, scale: number) => {
@@ -111,6 +158,19 @@ export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProp
 					{font.glyphs.length} glyphs
 				</span>
 
+				{/* Compiled Font Status */}
+				{compiledFont && (
+					<span className={`flex items-center gap-1 font-mono text-xs ${fontLoaded ? "text-primary" : fontLoadError ? "text-destructive" : "text-muted-foreground"}`}>
+						{fontLoaded ? (
+							<><Check className="h-3 w-3" /> WOFF2</>
+						) : fontLoadError ? (
+							<><AlertCircle className="h-3 w-3" /> Load Error</>
+						) : (
+							"Loading..."
+						)}
+					</span>
+				)}
+
 				{/* Invert Toggle */}
 				<button
 					type="button"
@@ -149,13 +209,27 @@ export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProp
 							className="mb-2 w-full bg-transparent font-mono text-xs text-muted-foreground outline-none placeholder:text-muted-foreground/30"
 							placeholder="Type to preview..."
 						/>
-						<svg
-							viewBox={`0 0 ${Math.max(800, sampleText.length * fontSize * 0.6)} ${fontSize * 1.5}`}
-							className="w-full"
-							style={{ height: `${fontSize * 1.5}px` }}
-						>
-							{renderText(sampleText, 0, fontSize * 1.2, fontSize / 1000)}
-						</svg>
+						{fontLoaded ? (
+							<div
+								style={{
+									fontFamily: `"${fontFamilyName}", sans-serif`,
+									fontSize: `${fontSize}px`,
+									color: fgColor,
+									lineHeight: 1.2,
+									wordBreak: "break-word",
+								}}
+							>
+								{sampleText}
+							</div>
+						) : (
+							<svg
+								viewBox={`0 0 ${Math.max(800, sampleText.length * fontSize * 0.6)} ${fontSize * 1.5}`}
+								className="w-full"
+								style={{ height: `${fontSize * 1.5}px` }}
+							>
+								{renderText(sampleText, 0, fontSize * 1.2, fontSize / 1000)}
+							</svg>
+						)}
 					</div>
 
 					{/* Alphabet Uppercase */}
@@ -166,13 +240,26 @@ export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProp
 						>
 							UPPERCASE:
 						</div>
-						<svg
-							viewBox={`0 0 ${ALPHABET_UPPER.length * 45} 60`}
-							className="w-full"
-							style={{ height: "40px" }}
-						>
-							{renderText(ALPHABET_UPPER, 0, 50, 0.05)}
-						</svg>
+						{fontLoaded ? (
+							<div
+								style={{
+									fontFamily: `"${fontFamilyName}", sans-serif`,
+									fontSize: "32px",
+									color: fgColor,
+									letterSpacing: "0.05em",
+								}}
+							>
+								{ALPHABET_UPPER}
+							</div>
+						) : (
+							<svg
+								viewBox={`0 0 ${ALPHABET_UPPER.length * 45} 60`}
+								className="w-full"
+								style={{ height: "40px" }}
+							>
+								{renderText(ALPHABET_UPPER, 0, 50, 0.05)}
+							</svg>
+						)}
 					</div>
 
 					{/* Alphabet Lowercase */}
@@ -183,13 +270,26 @@ export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProp
 						>
 							LOWERCASE:
 						</div>
-						<svg
-							viewBox={`0 0 ${ALPHABET_LOWER.length * 45} 60`}
-							className="w-full"
-							style={{ height: "40px" }}
-						>
-							{renderText(ALPHABET_LOWER, 0, 50, 0.05)}
-						</svg>
+						{fontLoaded ? (
+							<div
+								style={{
+									fontFamily: `"${fontFamilyName}", sans-serif`,
+									fontSize: "32px",
+									color: fgColor,
+									letterSpacing: "0.05em",
+								}}
+							>
+								{ALPHABET_LOWER}
+							</div>
+						) : (
+							<svg
+								viewBox={`0 0 ${ALPHABET_LOWER.length * 45} 60`}
+								className="w-full"
+								style={{ height: "40px" }}
+							>
+								{renderText(ALPHABET_LOWER, 0, 50, 0.05)}
+							</svg>
+						)}
 					</div>
 
 					{/* Numbers */}
@@ -200,13 +300,26 @@ export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProp
 						>
 							NUMBERS:
 						</div>
-						<svg
-							viewBox={`0 0 ${NUMBERS.length * 45} 60`}
-							className="w-full"
-							style={{ height: "40px" }}
-						>
-							{renderText(NUMBERS, 0, 50, 0.05)}
-						</svg>
+						{fontLoaded ? (
+							<div
+								style={{
+									fontFamily: `"${fontFamilyName}", sans-serif`,
+									fontSize: "32px",
+									color: fgColor,
+									letterSpacing: "0.05em",
+								}}
+							>
+								{NUMBERS}
+							</div>
+						) : (
+							<svg
+								viewBox={`0 0 ${NUMBERS.length * 45} 60`}
+								className="w-full"
+								style={{ height: "40px" }}
+							>
+								{renderText(NUMBERS, 0, 50, 0.05)}
+							</svg>
+						)}
 					</div>
 
 					{/* Glyph Grid */}
@@ -260,10 +373,25 @@ export function GeneratedFontPreview({ font, onClear }: GeneratedFontPreviewProp
 							<span>{font.descender}</span>
 							<span>Generated:</span>
 							<span>{font.generatedBy}</span>
+							{compiledFont && (
+								<>
+									<span>WOFF2 Size:</span>
+									<span className="text-primary">{formatBytes(compiledFont.woff2Size)}</span>
+									<span>OTF Size:</span>
+									<span>{formatBytes(compiledFont.otfSize)}</span>
+								</>
+							)}
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	);
+}
+
+// Helper to format bytes as human-readable
+function formatBytes(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

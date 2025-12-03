@@ -113,7 +113,13 @@ const themeSchema = z.object({
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { prompt, primaryColor, radius, style } = body;
+		const { prompt, primaryColor, radius, style, model, previousTheme } = body;
+
+		// Determine which model to use
+		const modelId =
+			model === "claude-opus-4.5"
+				? "anthropic/claude-opus-4.5"
+				: "google/gemini-3-pro-preview";
 
 		// If primaryColor provided, generate palette locally using tints.dev library
 		let paletteContext = "";
@@ -229,10 +235,21 @@ Examples:
 			userPrompt += `\n\nStyle preference: ${style}`;
 		}
 
+		// Add remix context if previous theme provided
+		if (previousTheme) {
+			userPrompt += `\n\n## Previous Theme Reference
+You are REMIXING an existing theme. Here is the previous design:
+- Name: ${previousTheme.name}
+- Light mode primary: ${previousTheme.styles?.light?.primary || "unknown"}
+- Dark mode primary: ${previousTheme.styles?.dark?.primary || "unknown"}
+- Border radius: ${previousTheme.styles?.light?.radius || "unknown"}
+- Font sans: ${previousTheme.styles?.light?.["font-sans"] || "default"}
+
+Maintain the core identity and color harmony but apply the user's modifications.`;
+		}
+
 		const { object: theme } = await generateObject({
-			model: "google/gemini-3-pro-preview" as Parameters<
-				typeof generateObject
-			>[0]["model"],
+			model: modelId as Parameters<typeof generateObject>[0]["model"],
 			schema: themeSchema,
 			system: systemPrompt,
 			prompt: userPrompt,

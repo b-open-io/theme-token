@@ -96,6 +96,17 @@
 
 	/* Grid background */
 	--grid-color: oklch(0.92 0.005 240);
+
+	/* Background image defaults */
+	--bg-image: none;
+	--bg-image-opacity: 1;
+	--bg-image-size: 24px;
+	--bg-image-position: center;
+	--bg-image-repeat: repeat;
+	--bg-image-mode: mask;
+	--bg-image-color: var(--primary);
+	--card-bg-image: none;
+	--sidebar-bg-image: none;
 }
 
 .dark {
@@ -244,6 +255,34 @@
 		background-color 0.3s ease,
 		border-color 0.3s ease,
 		color 0.15s ease;
+}
+
+/* Pattern background utility class - uses mask-image for theme reactivity */
+.pattern-bg {
+	position: relative;
+}
+
+.pattern-bg::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background-color: oklch(from var(--bg-image-color) l c h / calc(var(--bg-image-opacity) * 0.15));
+	-webkit-mask-image: var(--bg-image);
+	mask-image: var(--bg-image);
+	-webkit-mask-repeat: var(--bg-image-repeat);
+	mask-repeat: var(--bg-image-repeat);
+	-webkit-mask-size: var(--bg-image-size);
+	mask-size: var(--bg-image-size);
+	-webkit-mask-position: var(--bg-image-position);
+	mask-position: var(--bg-image-position);
+}
+
+/* Ensure content stays above pattern */
+.pattern-bg > * {
+	position: relative;
+	z-index: 1;
 }
 
 /* View Transition - Use Web Animations API for dynamic clip-path */

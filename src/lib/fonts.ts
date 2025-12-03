@@ -1,7 +1,9 @@
 /**
  * Font system for Theme Token
- * Supports dynamic Google Fonts loading based on theme configuration
+ * Supports dynamic Google Fonts loading and on-chain fonts via ORDFS
  */
+
+import { isOnChainFont, extractOriginFromPath, loadFontByOrigin } from "./font-loader";
 
 // Available font categories with Google Fonts support
 export const FONT_CATALOG = {
@@ -164,15 +166,16 @@ export function loadGoogleFont(fontName: string): void {
 }
 
 /**
- * Load all fonts from a theme
+ * Load all fonts from a theme (Google Fonts and on-chain fonts)
  */
-export function loadThemeFonts(theme: {
+export async function loadThemeFonts(theme: {
 	styles: {
 		light: Record<string, string>;
 		dark: Record<string, string>;
 	};
-}): void {
-	const fontKeys = ["font-sans", "font-serif", "font-mono"];
+}): Promise<void> {
+	const fontKeys = ["font-sans", "font-serif", "font-mono"] as const;
+	const onChainLoads: Promise<string>[] = [];
 
 	for (const key of fontKeys) {
 		const lightValue = theme.styles.light[key];
@@ -180,11 +183,36 @@ export function loadThemeFonts(theme: {
 
 		for (const value of [lightValue, darkValue]) {
 			if (!value) continue;
-			const fontName = extractFontFamily(value);
-			if (fontName && isGoogleFont(fontName)) {
-				loadGoogleFont(fontName);
+
+			// Check if it's an on-chain font
+			if (isOnChainFont(value)) {
+				const origin = extractOriginFromPath(value);
+				if (origin) {
+					onChainLoads.push(
+						loadFontByOrigin(origin).then((familyName) => {
+							// Update CSS custom property with the loaded font family
+							const slot = key.replace("font-", "") as "sans" | "serif" | "mono";
+							document.documentElement.style.setProperty(
+								`--font-${slot}`,
+								`"${familyName}", ${SYSTEM_FONTS[slot]}`
+							);
+							return familyName;
+						})
+					);
+				}
+			} else {
+				// Google Font or system font
+				const fontName = extractFontFamily(value);
+				if (fontName && isGoogleFont(fontName)) {
+					loadGoogleFont(fontName);
+				}
 			}
 		}
+	}
+
+	// Wait for all on-chain fonts to load
+	if (onChainLoads.length > 0) {
+		await Promise.all(onChainLoads);
 	}
 }
 
@@ -204,28 +232,39 @@ export function buildFontFamily(
 export function getFontDocumentation(): string {
 	return `## Available Fonts
 
-When specifying fonts, use the exact font name. The system will automatically load them from Google Fonts.
+Fonts can be specified as Google Font names or on-chain font paths.
 
-### Sans-Serif Fonts (--font-sans)
+### Google Fonts
+
+#### Sans-Serif Fonts (--font-sans)
 ${FONT_NAMES.sans.join(", ")}
 
-### Serif Fonts (--font-serif)
+#### Serif Fonts (--font-serif)
 ${FONT_NAMES.serif.join(", ")}
 
-### Monospace Fonts (--font-mono)
+#### Monospace Fonts (--font-mono)
 ${FONT_NAMES.mono.join(", ")}
 
-### Display/Decorative Fonts
+#### Display/Decorative Fonts
 ${FONT_NAMES.display.join(", ")}
 
+### On-Chain Fonts
+Reference inscribed fonts using the path format: /content/{txid}_{vout}
+Example: /content/abc123def456_0
+
+These fonts are loaded from ORDFS (Ordinals File System) at runtime.
+
 ### Font Format
-Specify fonts as: "FontName", fallback-stack
+Google Fonts: "FontName", fallback-stack
 Example: "Inter", ui-sans-serif, system-ui, sans-serif
-Example: "JetBrains Mono", ui-monospace, monospace
+
+On-Chain: /content/{origin}
+Example: /content/abc123def_0
 
 ### Recommendations
 - Sans-serif: Inter, DM Sans, Space Grotesk for modern UI
 - Serif: Playfair Display for elegant headings, Lora for readable body
 - Monospace: JetBrains Mono, Fira Code for code blocks
-- Display: Use sparingly for headings only`;
+- Display: Use sparingly for headings only
+- On-chain: Use for unique custom fonts inscribed on blockchain`;
 }

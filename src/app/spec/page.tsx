@@ -246,6 +246,11 @@ export default function SpecPage() {
 											</div>
 										))}
 									</div>
+									<p className="mt-1 text-[10px] text-muted-foreground/70">
+										Font values: Google Font name or{" "}
+										<code className="rounded bg-muted px-1">/content/origin</code>{" "}
+										for on-chain fonts
+									</p>
 								</div>
 
 								<div>
@@ -316,6 +321,8 @@ export default function SpecPage() {
 											input: "oklch(0.9 0.005 240)",
 											ring: "oklch(0.55 0.22 255)",
 											radius: "0.5rem",
+											"font-sans": "Inter",
+											"font-mono": "/content/abc123_0",
 										},
 										dark: {
 											background: "oklch(0.12 0.015 240)",
@@ -338,6 +345,8 @@ export default function SpecPage() {
 											input: "oklch(0.25 0.015 240)",
 											ring: "oklch(0.65 0.22 255)",
 											radius: "0.5rem",
+											"font-sans": "Inter",
+											"font-mono": "/content/abc123_0",
 										},
 									},
 								}}

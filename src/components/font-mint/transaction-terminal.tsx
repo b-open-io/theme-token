@@ -2,8 +2,9 @@
 
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FontFile } from "@/app/market/fonts/page";
+import type { FontFile } from "@/app/studio/font/page";
 import type { FontMetadata } from "./metadata-form";
+import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { getYoursWallet } from "@/lib/yours-wallet";
@@ -11,6 +12,7 @@ import { getYoursWallet } from "@/lib/yours-wallet";
 interface TransactionTerminalProps {
 	files: FontFile[];
 	metadata: FontMetadata;
+	compiledFont?: CompiledFont;
 	onComplete: (result: { txid: string; ordfsUrl: string }) => void;
 	onError: (error: string) => void;
 	onCancel: () => void;
@@ -24,6 +26,7 @@ type LogEntry = {
 export function TransactionTerminal({
 	files,
 	metadata,
+	compiledFont,
 	onComplete,
 	onError,
 	onCancel,
@@ -65,36 +68,61 @@ export function TransactionTerminal({
 			addLog("PACKING_DATA...", "info");
 			await new Promise((r) => setTimeout(r, 300));
 
-			// Build inscription payload for each font file
+			// Build inscription payload
 			const inscriptions = [];
 
-			for (const fontFile of files) {
-				addLog(`ENCODING_${fontFile.name.toUpperCase()}...`, "info");
-				const base64Data = await fileToBase64(fontFile.file);
-
-				// Determine MIME type
-				let mimeType = "application/font-woff2";
-				if (fontFile.name.endsWith(".woff")) {
-					mimeType = "font/woff";
-				} else if (fontFile.name.endsWith(".ttf")) {
-					mimeType = "font/ttf";
-				}
+			// If we have a compiled AI-generated font, use that
+			if (compiledFont) {
+				addLog("ENCODING_AI_GENERATED_WOFF2...", "info");
+				await new Promise((r) => setTimeout(r, 200));
 
 				inscriptions.push({
 					address: addresses.ordAddress,
-					base64Data,
-					mimeType,
+					base64Data: compiledFont.woff2Base64,
+					mimeType: "font/woff2",
 					map: {
 						app: "theme-token",
 						type: "font",
 						name: metadata.name,
-						weight: String(fontFile.weight || 400),
-						style: fontFile.style || "normal",
+						weight: "400",
+						style: "normal",
 						author: metadata.author || "",
 						license: metadata.license,
 						website: metadata.website || "",
+						aiGenerated: "true",
+						glyphCount: String(compiledFont.glyphCount),
 					},
 				});
+			} else {
+				// Otherwise inscribe uploaded font files
+				for (const fontFile of files) {
+					addLog(`ENCODING_${fontFile.name.toUpperCase()}...`, "info");
+					const base64Data = await fileToBase64(fontFile.file);
+
+					// Determine MIME type
+					let mimeType = "application/font-woff2";
+					if (fontFile.name.endsWith(".woff")) {
+						mimeType = "font/woff";
+					} else if (fontFile.name.endsWith(".ttf")) {
+						mimeType = "font/ttf";
+					}
+
+					inscriptions.push({
+						address: addresses.ordAddress,
+						base64Data,
+						mimeType,
+						map: {
+							app: "theme-token",
+							type: "font",
+							name: metadata.name,
+							weight: String(fontFile.weight || 400),
+							style: fontFile.style || "normal",
+							author: metadata.author || "",
+							license: metadata.license,
+							website: metadata.website || "",
+						},
+					});
+				}
 			}
 
 			addLog("PACKING_DATA... OK", "success");
@@ -106,7 +134,9 @@ export function TransactionTerminal({
 			await new Promise((r) => setTimeout(r, 200));
 
 			addLog("CALCULATING_TX_SIZE...", "info");
-			const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+			const totalBytes = compiledFont
+				? compiledFont.woff2Size
+				: files.reduce((acc, f) => acc + f.size, 0);
 			await new Promise((r) => setTimeout(r, 200));
 			addLog(
 				`CALCULATING_TX_SIZE... ${(totalBytes / 1024).toFixed(1)}KB`,
@@ -156,7 +186,7 @@ export function TransactionTerminal({
 			await new Promise((r) => setTimeout(r, 500));
 			onError(errorMessage);
 		}
-	}, [addresses, files, metadata, addLog, fileToBase64, onComplete, onError]);
+	}, [addresses, files, metadata, compiledFont, addLog, fileToBase64, onComplete, onError]);
 
 	useEffect(() => {
 		if (hasStarted.current) return;

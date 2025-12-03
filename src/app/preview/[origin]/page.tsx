@@ -28,6 +28,8 @@ import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isOnChainFont, loadThemeFonts } from "@/lib/font-loader";
+import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
 
 interface Props {
 	params: Promise<{ origin: string }>;
@@ -223,6 +225,7 @@ export default function PreviewPage({ params }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 	const [copied, setCopied] = useState(false);
+	const [showRemixDialog, setShowRemixDialog] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}.json`;
@@ -268,17 +271,30 @@ export default function PreviewPage({ params }: Props) {
 		fetchTheme();
 	}, [origin]);
 
-	// Load Google Fonts when theme changes
+	// Load fonts when theme changes (Google Fonts and on-chain fonts)
 	useEffect(() => {
 		if (!theme) return;
 
 		const styles = theme.styles[previewMode];
 		const fontProps = ["font-sans", "font-serif", "font-mono"] as const;
 
+		// Check if any fonts are on-chain
+		const hasOnChainFonts = fontProps.some(
+			(prop) => styles[prop] && isOnChainFont(styles[prop] as string),
+		);
+
+		if (hasOnChainFonts) {
+			// Load on-chain fonts
+			loadThemeFonts(styles as Record<string, string>).then((resolved) => {
+				console.log("[Preview] Loaded on-chain fonts:", resolved);
+			});
+		}
+
+		// Also load Google Fonts for any non-on-chain fonts
 		fontProps.forEach((prop) => {
 			const fontValue = styles[prop];
-			if (fontValue) {
-				const fontName = extractGoogleFontName(fontValue);
+			if (fontValue && !isOnChainFont(fontValue as string)) {
+				const fontName = extractGoogleFontName(fontValue as string);
 				if (fontName) {
 					loadGoogleFont(fontName);
 				}
@@ -431,11 +447,9 @@ export default function PreviewPage({ params }: Props) {
 								</a>
 							</Button>
 
-							<Button asChild size="sm">
-								<Link href={`/studio?remix=${origin}`}>
-									<Sparkles className="mr-2 h-4 w-4" />
-									Remix
-								</Link>
+							<Button size="sm" onClick={() => setShowRemixDialog(true)}>
+								<Sparkles className="mr-2 h-4 w-4" />
+								Remix
 							</Button>
 						</div>
 					</div>
@@ -996,6 +1010,20 @@ export default function PreviewPage({ params }: Props) {
 						</TabsContent>
 					</Tabs>
 				</div>
+
+				{/* Remix Dialog */}
+				<UnifiedRemixDialog
+					isOpen={showRemixDialog}
+					onClose={() => setShowRemixDialog(false)}
+					type="theme"
+					previousTheme={theme}
+					onThemeRemixComplete={(newTheme) => {
+						// Navigate to studio with the new remixed theme
+						router.push(
+							`/studio?remix=${encodeURIComponent(JSON.stringify(newTheme))}`,
+						);
+					}}
+				/>
 			</div>
 		</div>
 	);

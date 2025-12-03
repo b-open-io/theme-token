@@ -61,6 +61,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { exampleThemes } from "@/lib/example-themes";
+import { FontSelector } from "@/components/font-selector";
 import { loadThemeFonts } from "@/lib/fonts";
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
@@ -906,61 +907,25 @@ export function ThemeStudio() {
 										<div className="mb-3 text-xs font-medium">
 											Font Families
 										</div>
-										<div className="space-y-3">
-											<div>
-												<label
-													htmlFor="font-sans"
-													className="mb-1 block text-[10px] text-muted-foreground"
-												>
-													Sans-Serif (--font-sans)
-												</label>
-												<input
-													id="font-sans"
-													type="text"
-													value={selectedTheme.styles[mode]["font-sans"] || ""}
-													onChange={(e) =>
-														updateColor("font-sans", e.target.value)
-													}
-													placeholder="Inter, system-ui, sans-serif"
-													className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
-												/>
-											</div>
-											<div>
-												<label
-													htmlFor="font-serif"
-													className="mb-1 block text-[10px] text-muted-foreground"
-												>
-													Serif (--font-serif)
-												</label>
-												<input
-													id="font-serif"
-													type="text"
-													value={selectedTheme.styles[mode]["font-serif"] || ""}
-													onChange={(e) =>
-														updateColor("font-serif", e.target.value)
-													}
-													placeholder="Georgia, serif"
-													className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
-												/>
-											</div>
-											<div>
-												<label
-													htmlFor="font-mono"
-													className="mb-1 block text-[10px] text-muted-foreground"
-												>
-													Monospace (--font-mono)
-												</label>
-												<input
-													id="font-mono"
-													type="text"
-													value={selectedTheme.styles[mode]["font-mono"] || ""}
-													onChange={(e) =>
-														updateColor("font-mono", e.target.value)
-													}
-													placeholder="JetBrains Mono, monospace"
-													className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
-												/>
-											</div>
+										<div className="space-y-4">
+											<FontSelector
+												slot="sans"
+												value={selectedTheme.styles[mode]["font-sans"] || ""}
+												onChange={(value) => updateColor("font-sans", value)}
+												label="Sans-Serif (--font-sans)"
+											/>
+											<FontSelector
+												slot="serif"
+												value={selectedTheme.styles[mode]["font-serif"] || ""}
+												onChange={(value) => updateColor("font-serif", value)}
+												label="Serif (--font-serif)"
+											/>
+											<FontSelector
+												slot="mono"
+												value={selectedTheme.styles[mode]["font-mono"] || ""}
+												onChange={(value) => updateColor("font-mono", value)}
+												label="Monospace (--font-mono)"
+											/>
 										</div>
 									</div>
 

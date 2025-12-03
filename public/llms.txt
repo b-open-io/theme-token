@@ -9,6 +9,7 @@ Theme Token allows developers to publish, discover, and install design themes as
 - Homepage: https://themetoken.dev
 - Specification: https://themetoken.dev/spec
 - Theme Studio: https://themetoken.dev/studio
+- Pattern Generator: https://themetoken.dev/studio/patterns
 - Market: https://themetoken.dev/market
 - Schema: https://themetoken.dev/v1/schema.json
 
@@ -66,11 +67,63 @@ Optional sidebar colors: `sidebar`, `sidebar-primary`, `sidebar-accent`, `sideba
 ## Typography & Effects
 
 - `radius` (required) - Border radius (e.g., "0.5rem")
-- `font-sans`, `font-serif`, `font-mono` - Font stacks
+- `font-sans`, `font-serif`, `font-mono` - Google Font name or on-chain path (`/content/{origin}`)
 - `letter-spacing` - Letter spacing (e.g., "0em")
 - `spacing` - Base spacing unit
 - `shadow-*` - Shadow values (2xs, xs, sm, md, lg, xl, 2xl)
 - `shadow-offset-x`, `shadow-offset-y` - Shadow offsets
+
+## Background Images & Patterns
+
+Themes support background images and patterns using the mask-image CSS approach for theme-reactive patterns:
+
+- `bg-image` - Background image URL or on-chain path (`/content/{origin}`)
+- `bg-image-opacity` - Pattern opacity (e.g., "0.1", "0.5")
+- `bg-image-size` - Pattern size (e.g., "24px", "cover", "contain")
+- `bg-image-position` - Position (e.g., "center", "top")
+- `bg-image-repeat` - Repeat behavior (e.g., "repeat", "no-repeat")
+- `bg-image-mode` - Render mode: "mask" (theme-reactive) or "image" (literal)
+- `bg-image-color` - For mask mode: color to show through the pattern
+- `card-bg-image`, `sidebar-bg-image` - Background for cards and sidebars
+
+### Pattern Generator
+
+Generate AI-powered SVG patterns at: https://themetoken.dev/studio/patterns
+
+The pattern generator uses Gemini AI to create seamless, tileable patterns. Patterns can use:
+- **currentColor mode**: Pattern inherits color from CSS (fully theme-reactive)
+- **Theme colors mode**: Hardcodes current theme colors into the SVG
+- **Grayscale mode**: Uses grayscale colors only
+
+Patterns are optimized for the CSS mask-image approach, where:
+1. The SVG pattern defines WHERE color shows (like a stencil)
+2. `background-color` defines WHAT color shows
+3. Result: 100% theme-reactive patterns that update with light/dark mode
+
+### Using Patterns
+
+```css
+.pattern-bg::before {
+  background-color: oklch(from var(--primary) l c h / 0.1);
+  mask-image: url("/content/{origin}");
+  mask-repeat: repeat;
+  mask-size: 24px;
+}
+```
+
+Or reference in theme JSON:
+```json
+{
+  "styles": {
+    "light": {
+      "bg-image": "/content/abc123_0",
+      "bg-image-opacity": "0.1",
+      "bg-image-size": "24px",
+      "bg-image-mode": "mask"
+    }
+  }
+}
+```
 
 ## OKLCH Format
 

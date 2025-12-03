@@ -224,6 +224,21 @@ export interface ThemeMarketListing extends MarketListing {
 	theme: import("@theme-token/sdk").ThemeToken;
 }
 
+export interface FontMetadata {
+	name: string;
+	author?: string;
+	license?: string;
+	weight?: string;
+	style?: string;
+	aiGenerated?: boolean;
+	glyphCount?: number;
+	website?: string;
+}
+
+export interface FontMarketListing extends MarketListing {
+	metadata: FontMetadata;
+}
+
 /**
  * Fetch all ordinal lock listings (marketplace)
  * Queries the GorillaPool market API for ordinal lock listings
@@ -317,6 +332,193 @@ export async function fetchThemeMarketListings(): Promise<
 }
 
 /**
+ * Fetch all font listings from the marketplace
+ * Queries the GorillaPool market API for font inscriptions
+ */
+export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
+	try {
+		// Query the market API for font types (woff2, woff, ttf)
+		const fontTypes = ["font/woff2", "font/woff", "font/ttf"];
+		const allListings: FontMarketListing[] = [];
+
+		for (const fontType of fontTypes) {
+			const response = await fetch(
+				`${ORDINALS_API}/market?limit=100&dir=DESC&type=${encodeURIComponent(fontType)}`,
+			);
+
+			if (!response.ok) {
+				console.error("[Font Market] API error for", fontType, ":", response.status);
+				continue;
+			}
+
+			const results = await response.json();
+
+			// Filter for theme-token fonts and map to FontMarketListing
+			const fontListings = results
+				.filter(
+					(item: {
+						origin?: {
+							data?: {
+								map?: Record<string, string>;
+							};
+						};
+						data?: {
+							map?: Record<string, string>;
+						};
+					}) => {
+						const mapData = item.origin?.data?.map || item.data?.map;
+						return (
+							mapData?.app === "theme-token" && mapData?.type === "font"
+						);
+					},
+				)
+				.map(
+					(item: {
+						txid: string;
+						vout: number;
+						outpoint: string;
+						owner: string;
+						origin?: {
+							outpoint: string;
+							data?: {
+								insc?: { file?: { type?: string } };
+								map?: Record<string, string>;
+							};
+						};
+						data?: {
+							list?: { price: number };
+							insc?: { file?: { type?: string } };
+							map?: Record<string, string>;
+						};
+					}) => {
+						const mapData = item.origin?.data?.map || item.data?.map || {};
+						return {
+							outpoint: item.outpoint,
+							origin: item.origin?.outpoint || item.outpoint,
+							price: item.data?.list?.price || 0,
+							owner: item.owner,
+							data: {
+								insc: item.origin?.data?.insc || item.data?.insc,
+								map: mapData,
+							},
+							metadata: {
+								name: mapData.name || "Unknown Font",
+								author: mapData.author,
+								license: mapData.license,
+								weight: mapData.weight || "400",
+								style: mapData.style || "normal",
+								aiGenerated: mapData.aiGenerated === "true",
+								glyphCount: mapData.glyphCount
+									? parseInt(mapData.glyphCount)
+									: undefined,
+								website: mapData.website,
+							},
+						};
+					},
+				);
+
+			allListings.push(...fontListings);
+		}
+
+		// Dedupe by origin (same font might appear in multiple type queries)
+		const seen = new Set<string>();
+		return allListings.filter((listing) => {
+			if (seen.has(listing.origin)) return false;
+			seen.add(listing.origin);
+			return true;
+		});
+	} catch (err) {
+		console.error("[Font Market] Failed to fetch listings:", err);
+		return [];
+	}
+}
+
+/**
+ * Fetch all inscribed fonts (not necessarily for sale)
+ * Useful for browsing available fonts to use in themes
+ */
+export async function fetchAllInscribedFonts(): Promise<FontMarketListing[]> {
+	try {
+		// Query inscriptions API for fonts with theme-token app tag
+		const response = await fetch(
+			`${ORDINALS_API}/inscriptions?limit=100&dir=DESC&type=font`,
+		);
+
+		if (!response.ok) {
+			console.error("[Fonts] API error:", response.status);
+			return [];
+		}
+
+		const results = await response.json();
+
+		// Filter for theme-token fonts and map to FontMarketListing
+		return results
+			.filter(
+				(item: {
+					origin?: {
+						data?: {
+							map?: Record<string, string>;
+						};
+					};
+					data?: {
+						map?: Record<string, string>;
+					};
+				}) => {
+					const mapData = item.origin?.data?.map || item.data?.map;
+					return mapData?.app === "theme-token" && mapData?.type === "font";
+				},
+			)
+			.map(
+				(item: {
+					txid: string;
+					vout: number;
+					outpoint: string;
+					owner: string;
+					origin?: {
+						outpoint: string;
+						data?: {
+							insc?: { file?: { type?: string } };
+							map?: Record<string, string>;
+						};
+					};
+					data?: {
+						list?: { price: number };
+						insc?: { file?: { type?: string } };
+						map?: Record<string, string>;
+					};
+				}) => {
+					const mapData = item.origin?.data?.map || item.data?.map || {};
+					return {
+						outpoint: item.outpoint,
+						origin: item.origin?.outpoint || item.outpoint,
+						price: item.data?.list?.price || 0,
+						owner: item.owner,
+						data: {
+							insc: item.origin?.data?.insc || item.data?.insc,
+							map: mapData,
+						},
+						metadata: {
+							name: mapData.name || "Unknown Font",
+							author: mapData.author,
+							license: mapData.license,
+							weight: mapData.weight || "400",
+							style: mapData.style || "normal",
+							aiGenerated: mapData.aiGenerated === "true",
+							glyphCount: mapData.glyphCount
+								? parseInt(mapData.glyphCount)
+								: undefined,
+							website: mapData.website,
+						},
+					};
+				},
+			);
+	} catch (err) {
+		console.error("[Fonts] Failed to fetch inscribed fonts:", err);
+		return [];
+	}
+}
+
+/**
  * Fetch inscription details by origin/outpoint
  */
 export async function fetchInscription(origin: string): Promise<unknown> {
@@ -334,8 +536,11 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 // Fee address for AI generation payments
 export const FEE_ADDRESS = "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z";
 
-// AI generation cost: 0.01 BSV = 1,000,000 satoshis
+// AI generation cost: 0.01 BSV = 1,000,000 satoshis (for themes)
 export const AI_GENERATION_COST_SATS = 1_000_000;
+
+// Font generation/remix cost: 0.1 BSV = 10,000,000 satoshis (10x themes - more expensive to generate)
+export const FONT_GENERATION_COST_SATS = 10_000_000;
 
 export interface SendBsvResult {
 	txid: string;

@@ -11,13 +11,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
-import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+import { fetchThemeMarketListings, fetchFontMarketListings, type ThemeMarketListing, type FontMarketListing } from "@/lib/yours-wallet";
 
 const tabs = [
-	{ href: "/market/browse", label: "Browse", icon: ShoppingCart },
-	{ href: "/market/my-themes", label: "My Themes", icon: Wallet },
-	{ href: "/market/sell", label: "Sell", icon: Tag },
+	{ href: "/market/browse", label: "Themes", icon: ShoppingCart },
 	{ href: "/market/fonts", label: "Fonts", icon: Type },
+	{ href: "/market/my-themes", label: "My Themes", icon: Wallet },
+	{ href: "/market/my-fonts", label: "My Fonts", icon: Type },
+	{ href: "/market/sell", label: "Sell", icon: Tag },
 ];
 
 // Format satoshis as BSV
@@ -35,8 +36,10 @@ function MarketLayoutInner({
 }) {
 	const pathname = usePathname();
 	const barRef = useRef<HTMLDivElement>(null);
-	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
+	const [themeListings, setThemeListings] = useState<ThemeMarketListing[]>([]);
+	const [fontListings, setFontListings] = useState<FontMarketListing[]>([]);
 	const { formatUsd } = useBsvRateContext();
+	const isFontsPage = pathname?.includes("/fonts");
 
 	// Mouse tracking for spotlight effect
 	const mouseX = useMotionValue(0);
@@ -62,8 +65,12 @@ function MarketLayoutInner({
 	useEffect(() => {
 		async function loadListings() {
 			try {
-				const data = await fetchThemeMarketListings();
-				setListings(data);
+				const [themes, fonts] = await Promise.all([
+					fetchThemeMarketListings(),
+					fetchFontMarketListings(),
+				]);
+				setThemeListings(themes);
+				setFontListings(fonts);
 			} catch (error) {
 				console.error("[MarketLayout] Failed to fetch listings:", error);
 			}
@@ -71,9 +78,11 @@ function MarketLayoutInner({
 		loadListings();
 	}, []);
 
-	// Compute stats from listings
-	const totalThemes = listings.length;
+	// Compute stats from listings (show fonts stats on fonts page, themes otherwise)
+	const listings = isFontsPage ? fontListings : themeListings;
+	const totalCount = listings.length;
 	const floorPrice = listings.length > 0 ? Math.min(...listings.map(l => l.price)) : 0;
+	const label = isFontsPage ? "fonts" : "themes";
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-background">
@@ -124,11 +133,11 @@ function MarketLayoutInner({
 						</nav>
 
 						{/* Stats - pushed to right */}
-						{totalThemes > 0 && (
+						{totalCount > 0 && (
 							<div className="ml-auto flex items-center gap-2 font-mono text-xs sm:gap-4">
 								<div className="flex items-center gap-1 sm:gap-1.5">
-									<span className="text-muted-foreground">{totalThemes}</span>
-									<span className="text-muted-foreground/60">themes</span>
+									<span className="text-muted-foreground">{totalCount}</span>
+									<span className="text-muted-foreground/60">{label}</span>
 								</div>
 								<div className="flex items-center gap-1 sm:gap-1.5">
 									<span className="hidden text-muted-foreground/60 sm:inline">floor</span>

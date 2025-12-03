@@ -72,9 +72,9 @@
         "sidebar-accent-foreground": { "type": "string" },
         "sidebar-border": { "type": "string" },
         "sidebar-ring": { "type": "string" },
-        "font-sans": { "type": "string", "description": "Primary UI font family" },
-        "font-serif": { "type": "string", "description": "Serif font family" },
-        "font-mono": { "type": "string", "description": "Monospace font family" },
+        "font-sans": { "type": "string", "description": "Primary UI font: Google Font name (e.g. 'Inter'), system font, or on-chain path '/content/{outpoint}'" },
+        "font-serif": { "type": "string", "description": "Serif font: Google Font name, system font, or on-chain path '/content/{outpoint}'" },
+        "font-mono": { "type": "string", "description": "Monospace font: Google Font name, system font, or on-chain path '/content/{outpoint}'" },
         "radius": { "type": "string", "description": "Border radius (e.g. 0.5rem)" },
         "shadow-color": { "type": "string" },
         "shadow-opacity": { "type": "string" },
@@ -83,7 +83,16 @@
         "shadow-offset-x": { "type": "string" },
         "shadow-offset-y": { "type": "string" },
         "letter-spacing": { "type": "string" },
-        "spacing": { "type": "string" }
+        "spacing": { "type": "string" },
+        "bg-image": { "type": "string", "description": "Page background image: URL or on-chain path '/content/{outpoint}'" },
+        "bg-image-opacity": { "type": "string", "description": "Background image opacity (e.g. '0.1', '0.5', '1')" },
+        "bg-image-size": { "type": "string", "description": "Background size: 'cover', 'contain', 'auto', or pixel value" },
+        "bg-image-position": { "type": "string", "description": "Background position: 'center', 'top', 'bottom', etc." },
+        "bg-image-repeat": { "type": "string", "description": "Background repeat: 'no-repeat', 'repeat', 'repeat-x', 'repeat-y'" },
+        "bg-image-mode": { "type": "string", "description": "Render mode: 'mask' (theme-reactive) or 'image' (literal)" },
+        "bg-image-color": { "type": "string", "description": "For mask mode: color to show through the pattern" },
+        "card-bg-image": { "type": "string", "description": "Card background image: URL or on-chain path" },
+        "sidebar-bg-image": { "type": "string", "description": "Sidebar background image: URL or on-chain path" }
       }
     }
   }

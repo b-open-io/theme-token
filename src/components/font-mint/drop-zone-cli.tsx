@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, CheckCircle, Loader2, Upload, X } from "lucide-react";
-import { useCallback, useState } from "react";
-import type { FontFile } from "@/app/market/fonts/page";
+import { useCallback, useRef, useState, useEffect } from "react";
+import type { FontFile } from "@/app/studio/font/page";
 import type { FontValidationResult } from "@/lib/font-validation";
 
 export interface FontFileWithValidation extends FontFile {
@@ -39,6 +39,13 @@ function parseStyleFromName(filename: string): "normal" | "italic" {
 export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 	const [isDragging, setIsDragging] = useState(false);
 
+	// Use ref to always have current files without causing re-renders
+	// This fixes stale closure issues in async callbacks
+	const filesRef = useRef(files);
+	useEffect(() => {
+		filesRef.current = files;
+	}, [files]);
+
 	// Validate a single font file via API
 	const validateFont = useCallback(
 		async (fontFile: FontFileWithValidation, index: number) => {
@@ -54,9 +61,9 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 				const result = await response.json();
 
 				if (!response.ok) {
-					// Update file with error
+					// Update file with error - use ref for current files
 					onFilesChange(
-						files.map((f, i) =>
+						filesRef.current.map((f, i) =>
 							i === index
 								? { ...f, isValidating: false, validationError: result.error }
 								: f,
@@ -65,9 +72,9 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 					return;
 				}
 
-				// Update file with validation result
+				// Update file with validation result - use ref for current files
 				onFilesChange(
-					files.map((f, i) =>
+					filesRef.current.map((f, i) =>
 						i === index
 							? { ...f, isValidating: false, validation: result }
 							: f,
@@ -75,7 +82,7 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 				);
 			} catch (error) {
 				onFilesChange(
-					files.map((f, i) =>
+					filesRef.current.map((f, i) =>
 						i === index
 							? {
 									...f,
@@ -90,7 +97,7 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 				);
 			}
 		},
-		[files, onFilesChange],
+		[onFilesChange],
 	);
 
 	const handleFiles = useCallback(
@@ -119,17 +126,19 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 			}
 
 			if (validFiles.length > 0) {
-				const newFilesList = [...files, ...validFiles];
+				// Use ref for current files to avoid stale closure
+				const currentFiles = filesRef.current;
+				const newFilesList = [...currentFiles, ...validFiles];
 				onFilesChange(newFilesList);
 
 				// Validate each new file
-				const startIndex = files.length;
+				const startIndex = currentFiles.length;
 				for (let i = 0; i < validFiles.length; i++) {
 					validateFont(validFiles[i], startIndex + i);
 				}
 			}
 		},
-		[files, onFilesChange, validateFont],
+		[onFilesChange, validateFont],
 	);
 
 	const handleDrop = useCallback(
@@ -153,9 +162,9 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 
 	const removeFile = useCallback(
 		(index: number) => {
-			onFilesChange(files.filter((_, i) => i !== index));
+			onFilesChange(filesRef.current.filter((_, i) => i !== index));
 		},
-		[files, onFilesChange],
+		[onFilesChange],
 	);
 
 	const formatSize = (bytes: number): string => {

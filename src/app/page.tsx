@@ -47,6 +47,7 @@ const minimalSchema = {
 			primary: "oklch(0.55 0.22 255)",
 			"primary-foreground": "oklch(0.98 0 0)",
 			radius: "0.5rem",
+			"font-mono": "/content/abc123_0",
 			"...": "// all ShadCN CSS vars",
 		},
 		dark: {
@@ -107,7 +108,7 @@ export default function Home() {
 								</Link>
 							</Button>
 							<Button size="lg" variant="outline" className="gap-2" asChild>
-								<Link href="/studio">
+								<Link href="/studio/theme">
 									<Wand2 className="h-5 w-5" />
 									Create Theme
 								</Link>

@@ -1,4 +1,5 @@
 import { generateObject } from "ai";
+import { kv } from "@vercel/kv";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -8,7 +9,15 @@ import { z } from "zod";
  * Uses AI to generate SVG glyph paths for each character in a font.
  * The client receives SVG data that can be previewed and eventually
  * compiled into a proper font file.
+ *
+ * Supports:
+ * - Fresh generation: Just prompt + model
+ * - Seeded remix: prompt + model + previousFont (iterative refinement)
+ * - Results stored in Vercel KV keyed by origin for recovery
  */
+
+// Cache expiry: 7 days
+const CACHE_TTL_SECONDS = 86400 * 7;
 
 // Schema for a single glyph
 const glyphSchema = z.object({
@@ -33,9 +42,23 @@ const fontSchema = z.object({
 // Characters to generate - basic Latin set
 const CHARS_TO_GENERATE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?-'\"()";
 
+// Type for previous font data (for seeded remix)
+interface PreviousFontData {
+	name: string;
+	style: string;
+	capHeight: number;
+	xHeight: number;
+	glyphs: Array<{ char: string; path: string; width: number }>;
+}
+
 export async function POST(request: NextRequest) {
 	try {
-		const { prompt, model } = await request.json();
+		const { prompt, model, paymentTxid, previousFont } = await request.json() as {
+			prompt: string;
+			model?: string;
+			paymentTxid?: string;
+			previousFont?: PreviousFontData;
+		};
 
 		if (!prompt) {
 			return NextResponse.json(
@@ -49,57 +72,131 @@ export async function POST(request: NextRequest) {
 			? "anthropic/claude-opus-4.5"
 			: "google/gemini-3-pro-preview";
 
-		const systemPrompt = `You are a master typographer and font designer. Your task is to generate SVG path data for font glyphs based on a style description.
+		// Build seeded remix context if previous font provided
+		const seedContext = previousFont ? `
+## Previous Font Reference (SEEDED REMIX)
+You are REMIXING an existing font. Here is the previous design to use as a reference:
+- Original Style: ${previousFont.style}
+- Metrics: capHeight=${previousFont.capHeight}, xHeight=${previousFont.xHeight}
+- Key glyph paths for reference (first 10 characters):
+${previousFont.glyphs.slice(0, 10).map(g => `  ${g.char}: width=${g.width}, path="${g.path.substring(0, 100)}..."`).join('\n')}
 
-## Font Metrics
-- Units per Em: 1000
-- Baseline: y = 200 (descenders go below this)
-- x-Height: around y = 550 (top of lowercase letters like 'x')
-- Cap Height: around y = 800 (top of uppercase letters)
-- Ascender: around y = 850 (top of tall lowercase like 'h', 'l')
-- Descender: around y = 0-100 (bottom of 'g', 'y', 'p')
+IMPORTANT: Maintain the core identity and proportions of this font while applying the user's modifications.
+The result should feel like an evolution of the original, not a completely different font.
+` : '';
 
-## SVG Path Guidelines
-- Use absolute coordinates (M, L, C, Q, Z commands)
-- Paths should be clockwise for outer contours
-- Coordinate space: x from 0 to glyph width, y from 0 to ~1000
-- Higher y values are UP (opposite of screen coordinates)
-- Create smooth, professional letterforms
-- Maintain consistent stroke weight across all glyphs
-- Ensure proper spacing (advance width should include side bearings)
+		const systemPrompt = `You are a master typographer and font designer with deep expertise in letterform construction. Generate precise SVG path data for professional-quality font glyphs.
+${seedContext}
 
-## Style Interpretation
-Interpret the user's style description and create cohesive glyphs that embody that aesthetic. Consider:
-- Stroke contrast (thick/thin variation)
-- Terminal style (rounded, flat, angled)
-- x-height proportion
-- Letter spacing feel
-- Overall personality (friendly, formal, technical, etc.)
+## CRITICAL: Coordinate System
+- Units per Em: 1000 (ALWAYS use 1000)
+- Y-axis: Higher values = UP (opposite of screen SVG!)
+- Baseline: y = 200
+- x-Height: y = 500 (top of lowercase x, a, e, etc.)
+- Cap Height: y = 700 (top of H, E, A, etc.)
+- Ascender: y = 800 (top of b, d, h, l)
+- Descender: y = 0-50 (bottom of g, p, y, j)
 
-Generate glyphs for these characters: ${CHARS_TO_GENERATE}`;
+## SVG Path Construction Rules
+1. Use ONLY absolute commands: M (moveTo), L (lineTo), C (cubic bezier), Q (quadratic bezier), Z (close)
+2. Outer contours: CLOCKWISE direction
+3. Inner contours (counters): COUNTER-CLOCKWISE direction
+4. Start each glyph with M (move to starting point)
+5. End closed shapes with Z
+
+## Stroke Weight Consistency
+- Main stems: Define a consistent vertical stroke width (e.g., 80-120 units for regular weight)
+- Horizontal strokes: Slightly thinner (85-90% of vertical)
+- Hairlines (for high-contrast styles): 20-40 units
+- Keep stroke weights consistent across ALL glyphs
+
+## Character Width Guidelines (advance width including side bearings)
+- Narrow: i I l 1 | : ; . , ! (200-300 units)
+- Medium-narrow: j J f t r (350-450 units)
+- Medium: a c e g n o s u v x z (500-600 units)
+- Medium-wide: A B C D E F G H K N P R S U V X Y Z b d h k p q (600-750 units)
+- Wide: M W m w O Q (750-900 units)
+- Numbers: All same width for tabular alignment (600 units)
+
+## Design Principles
+- Optical corrections: Round letters (O, C, e, o) should extend 2-3% beyond flat letters
+- Pointed letters (A, V, W) should overshoot cap height slightly
+- Bowl shapes need smooth, continuous curves (use C commands, not L)
+- Maintain consistent x-height across all lowercase letters
+- Counters (holes in a, e, g, etc.) should be open and legible
+
+## Path Quality
+- Use cubic bezier (C) for smooth curves - minimum 2-4 control points per curve
+- Avoid jagged paths - no sequences of short L commands for curves
+- Off-curve points (bezier handles) should create tangent-continuous curves
+- Stems should be perfectly vertical or horizontal where intended
+
+## Example Path Structure for Letter "O":
+M 350 700 C 350 720 320 750 250 750 C 180 750 100 720 100 550 C 100 380 180 350 250 350 C 320 350 350 380 350 550 Z
+M 280 650 C 280 680 260 700 220 700 C 180 700 150 680 150 550 C 150 420 180 400 220 400 C 260 400 280 420 280 550 Z
+
+Generate glyphs for: ${CHARS_TO_GENERATE}`;
 
 		const { object: font } = await generateObject({
 			model: modelId as Parameters<typeof generateObject>[0]["model"],
 			schema: fontSchema,
 			system: systemPrompt,
-			prompt: `Design a font with this style: ${prompt}
+			prompt: `Design a professional font with this style: "${prompt}"
 
-Generate complete SVG path data for all basic Latin characters. Each glyph should have:
-1. Proper width based on the character (e.g., 'M' is wider than 'i')
-2. Professional-quality bezier curves for smooth outlines
-3. Consistent design language matching the requested style
+Requirements:
+1. Generate high-quality SVG path data for ALL characters: ${CHARS_TO_GENERATE}
+2. Maintain CONSISTENT stroke weight, cap height, x-height, and baseline across all glyphs
+3. Use smooth cubic bezier curves (C command) for all curved shapes
+4. Each glyph's width should be appropriate for the character (narrow for i, wide for M/W)
+5. Apply the style consistently - if it's bold, ALL letters should have thick stems; if it's geometric, ALL letters should have circular bowls
 
-Characters to generate: ${CHARS_TO_GENERATE}`,
+Style interpretation for "${prompt}":
+- Translate the style description into specific typographic choices (stroke contrast, terminal style, proportions)
+- Create a cohesive design where all characters feel like they belong to the same family
+- The style should be evident in every single glyph
+
+Technical requirements:
+- All paths MUST use absolute coordinates
+- Outer contours clockwise, inner contours counter-clockwise
+- Close all paths with Z command
+- Numbers should all have the same width (600 units) for tabular alignment`,
 		});
+
+		const fontData = {
+			...font,
+			generatedBy: model || "gemini-3-pro",
+			generatedAt: new Date().toISOString(),
+			isRemix: !!previousFont,
+		};
+
+		// Store in KV if we have a payment txid (for recovery)
+		// Use paymentTxid as the origin for now - in production this would be the inscription origin
+		if (paymentTxid) {
+			try {
+				await kv.set(
+					`font:generation:${paymentTxid}`,
+					{
+						font: fontData,
+						prompt,
+						model: model || "gemini-3-pro",
+						createdAt: Date.now(),
+						isRemix: !!previousFont,
+					},
+					{ ex: CACHE_TTL_SECONDS }
+				);
+				console.log(`[generate-font] Stored generation for txid: ${paymentTxid}`);
+			} catch (kvError) {
+				// Don't fail the request if KV storage fails
+				console.error("[generate-font] KV storage error:", kvError);
+			}
+		}
 
 		// Return the font data as JSON - client will handle preview/compilation
 		return NextResponse.json({
 			success: true,
-			font: {
-				...font,
-				generatedBy: model || "gemini-3-pro",
-				generatedAt: new Date().toISOString(),
-			},
+			font: fontData,
+			cached: !!paymentTxid,
+			cacheKey: paymentTxid || null,
 		});
 	} catch (error) {
 		console.error("[generate-font] Error:", error);

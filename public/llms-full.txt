@@ -99,9 +99,9 @@ For sidebar components:
 
 #### Optional Typography
 
-- `font-sans` - Sans-serif font stack (e.g., "Inter, sans-serif")
-- `font-serif` - Serif font stack (e.g., "Georgia, serif")
-- `font-mono` - Monospace font stack (e.g., "Fira Code, monospace")
+- `font-sans` - Google Font name (e.g., "Inter") or on-chain path (`/content/{origin}`)
+- `font-serif` - Google Font name (e.g., "Georgia") or on-chain path (`/content/{origin}`)
+- `font-mono` - Google Font name (e.g., "Fira Code") or on-chain path (`/content/{origin}`)
 - `letter-spacing` - Letter spacing value (e.g., "0em", "-0.01em")
 - `spacing` - Base spacing unit (e.g., "1rem")
 
@@ -380,11 +380,12 @@ Each pair ensures readable contrast ratios.
 
 ### Typography
 
-1. **Font loading**: Use system fonts for instant loading
+1. **Font loading**: Use system fonts for instant loading, or on-chain fonts via `/content/{origin}`
 2. **Fallbacks**: Always include generic font families
 3. **Variable fonts**: Consider for flexible typography
 4. **Letter spacing**: Adjust based on font choice
 5. **Spacing**: Use consistent rhythm (e.g., 4px/8px grid)
+6. **On-chain fonts**: Reference inscribed fonts with path format `/content/{txid}_{vout}`
 
 ### Shadows
 

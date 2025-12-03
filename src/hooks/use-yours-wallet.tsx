@@ -38,6 +38,30 @@ export interface OwnedTheme {
 	origin: string;
 }
 
+export interface OwnedFont {
+	outpoint: string;
+	origin: string;
+	metadata: {
+		name: string;
+		author?: string;
+		license?: string;
+		weight?: string;
+		style?: string;
+		aiGenerated?: boolean;
+		glyphCount?: number;
+	};
+}
+
+export interface OwnedPattern {
+	outpoint: string;
+	origin: string;
+	metadata: {
+		name?: string;
+		prompt?: string;
+		colorMode?: string;
+	};
+}
+
 interface WalletContextValue {
 	status: WalletStatus;
 	error: string | null;
@@ -45,6 +69,8 @@ interface WalletContextValue {
 	disconnect: () => Promise<void>;
 	themeTokens: ThemeToken[];
 	ownedThemes: OwnedTheme[];
+	ownedFonts: OwnedFont[];
+	ownedPatterns: OwnedPattern[];
 	pendingThemes: OwnedTheme[];
 	isLoading: boolean;
 	refresh: () => Promise<void>;
@@ -52,6 +78,11 @@ interface WalletContextValue {
 	balance: Balance | null;
 	profile: SocialProfile | null;
 	inscribeTheme: (theme: ThemeToken) => Promise<InscribeResponse | null>;
+	inscribePattern: (
+		svg: string,
+		name: string,
+		metadata?: { prompt?: string; colorMode?: string },
+	) => Promise<InscribeResponse | null>;
 	isInscribing: boolean;
 	listTheme: (
 		outpoint: string,
@@ -73,6 +104,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const [error, setError] = useState<string | null>(null);
 	const [themeTokens, setThemeTokens] = useState<ThemeToken[]>([]);
 	const [ownedThemes, setOwnedThemes] = useState<OwnedTheme[]>([]);
+	const [ownedFonts, setOwnedFonts] = useState<OwnedFont[]>([]);
+	const [ownedPatterns, setOwnedPatterns] = useState<OwnedPattern[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [addresses, setAddresses] = useState<Addresses | null>(null);
 	const [balance, setBalance] = useState<Balance | null>(null);
@@ -84,7 +117,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const walletRef = useRef<YoursWallet | null>(null);
 	const { availableThemes, setAvailableThemes, resetTheme } = useTheme();
 
-	// Fetch theme tokens from wallet
+	// Fetch theme tokens, fonts, and patterns from wallet
 	const fetchThemeTokens = useCallback(async () => {
 		const wallet = walletRef.current;
 		if (!wallet) return;
@@ -96,12 +129,60 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			const response = await wallet.getOrdinals({ limit: 100 });
 			const tokens: ThemeToken[] = [];
 			const owned: OwnedTheme[] = [];
+			const fonts: OwnedFont[] = [];
+			const patterns: OwnedPattern[] = [];
 			const ordinals = Array.isArray(response)
 				? response
 				: (response?.ordinals ?? []);
 
 			for (const ordinal of ordinals) {
 				try {
+					const mapData = ordinal?.origin?.data?.map as Record<string, string> | undefined;
+					const fileType = ordinal?.origin?.data?.insc?.file?.type;
+
+					// Check if it's a theme-token font
+					if (
+						mapData?.app === "theme-token" &&
+						mapData?.type === "font" &&
+						fileType?.startsWith("font/")
+					) {
+						fonts.push({
+							outpoint: ordinal.outpoint,
+							origin: ordinal.origin?.outpoint || ordinal.outpoint,
+							metadata: {
+								name: mapData.name || "Unknown Font",
+								author: mapData.author,
+								license: mapData.license,
+								weight: mapData.weight || "400",
+								style: mapData.style || "normal",
+								aiGenerated: mapData.aiGenerated === "true",
+								glyphCount: mapData.glyphCount
+									? parseInt(mapData.glyphCount)
+									: undefined,
+							},
+						});
+						continue;
+					}
+
+					// Check if it's a theme-token pattern (SVG)
+					if (
+						mapData?.app === "theme-token" &&
+						mapData?.type === "pattern" &&
+						fileType === "image/svg+xml"
+					) {
+						patterns.push({
+							outpoint: ordinal.outpoint,
+							origin: ordinal.origin?.outpoint || ordinal.outpoint,
+							metadata: {
+								name: mapData.name,
+								prompt: mapData.prompt,
+								colorMode: mapData.colorMode,
+							},
+						});
+						continue;
+					}
+
+					// Check if it's a theme token
 					const content = ordinal?.origin?.data?.insc?.file?.json;
 					if (content && typeof content === "object") {
 						const result = validateThemeToken(content);
@@ -120,6 +201,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			}
 			setThemeTokens(tokens);
 			setOwnedThemes(owned);
+			setOwnedFonts(fonts);
+			setOwnedPatterns(patterns);
 			setAvailableThemes(tokens);
 		} catch (err) {
 			console.error("[Wallet] Error fetching ordinals:", err);
@@ -173,6 +256,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		setStatus("disconnected");
 		setThemeTokens([]);
 		setOwnedThemes([]);
+		setOwnedFonts([]);
+		setOwnedPatterns([]);
 		setAddresses(null);
 		setBalance(null);
 		setProfile(null);
@@ -266,6 +351,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setStatus("disconnected");
 			setThemeTokens([]);
 			setOwnedThemes([]);
+			setOwnedFonts([]);
+			setOwnedPatterns([]);
 			setAddresses(null);
 			setBalance(null);
 			setProfile(null);
@@ -307,6 +394,54 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 							app: "ThemeToken",
 							type: "theme",
 							name: theme.name,
+						},
+						satoshis: 1,
+					},
+				]);
+
+				await fetchThemeTokens();
+				await fetchWalletInfo();
+				return response;
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Inscription failed");
+				return null;
+			} finally {
+				setIsInscribing(false);
+			}
+		},
+		[addresses, fetchThemeTokens, fetchWalletInfo],
+	);
+
+	const inscribePattern = useCallback(
+		async (
+			svg: string,
+			name: string,
+			metadata?: { prompt?: string; colorMode?: string },
+		): Promise<InscribeResponse | null> => {
+			const wallet = walletRef.current;
+			if (!wallet || !addresses) {
+				setError("Wallet not connected");
+				return null;
+			}
+
+			setIsInscribing(true);
+			setError(null);
+
+			try {
+				// SVG is text, encode to base64
+				const base64Data = btoa(svg);
+
+				const response = await wallet.inscribe([
+					{
+						address: addresses.ordAddress,
+						base64Data,
+						mimeType: "image/svg+xml",
+						map: {
+							app: "theme-token",
+							type: "pattern",
+							name: name || "Untitled Pattern",
+							...(metadata?.prompt && { prompt: metadata.prompt }),
+							...(metadata?.colorMode && { colorMode: metadata.colorMode }),
 						},
 						satoshis: 1,
 					},
@@ -423,6 +558,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				disconnect,
 				themeTokens,
 				ownedThemes,
+				ownedFonts,
+				ownedPatterns,
 				pendingThemes,
 				isLoading,
 				refresh,
@@ -430,6 +567,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				balance,
 				profile,
 				inscribeTheme,
+				inscribePattern,
 				isInscribing,
 				listTheme,
 				isListing,
