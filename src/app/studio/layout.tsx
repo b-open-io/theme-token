@@ -9,12 +9,13 @@ import {
 import { Grid3X3, Palette, Type } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
+import { featureFlags } from "@/lib/feature-flags";
 
-const tabs = [
-	{ href: "/studio/theme", label: "Theme", icon: Palette },
-	{ href: "/studio/font", label: "Font", icon: Type },
-	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3 },
+const allTabs = [
+	{ href: "/studio/theme", label: "Theme", icon: Palette, feature: null },
+	{ href: "/studio/font", label: "Font", icon: Type, feature: "fonts" as const },
+	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3, feature: "patterns" as const },
 ];
 
 export default function StudioLayout({
@@ -24,6 +25,15 @@ export default function StudioLayout({
 }) {
 	const pathname = usePathname();
 	const barRef = useRef<HTMLDivElement>(null);
+
+	// Filter tabs based on feature flags
+	const tabs = useMemo(
+		() =>
+			allTabs.filter(
+				(tab) => tab.feature === null || featureFlags[tab.feature],
+			),
+		[],
+	);
 
 	// Only show header on subroutes, not on /studio landing
 	const isSubroute = pathname !== "/studio";

@@ -3,29 +3,37 @@
 import { motion } from "framer-motion";
 import { Grid3X3, Palette, Type } from "lucide-react";
 import Link from "next/link";
+import { featureFlags } from "@/lib/feature-flags";
 
-const tools = [
+const allTools = [
 	{
 		href: "/studio/theme",
 		label: "Theme",
 		icon: Palette,
 		description: "Create custom ShadCN UI themes with colors, typography, and styling",
+		feature: null, // Always enabled
 	},
 	{
 		href: "/studio/font",
 		label: "Font",
 		icon: Type,
 		description: "Mint fonts to the blockchain for use across applications",
+		feature: "fonts" as const,
 	},
 	{
 		href: "/studio/patterns",
 		label: "Pattern",
 		icon: Grid3X3,
 		description: "Generate seamless SVG patterns with AI for theme backgrounds",
+		feature: "patterns" as const,
 	},
 ];
 
 export default function StudioPage() {
+	// Filter tools based on feature flags
+	const tools = allTools.filter(
+		(tool) => tool.feature === null || featureFlags[tool.feature],
+	);
 	return (
 		<div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
 			{/* Header */}
