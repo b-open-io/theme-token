@@ -1400,36 +1400,18 @@ export function ThemeStudio() {
 							</div>
 						)}
 
-						{/* Theme name input + Save Draft */}
-						<div className="mt-4 space-y-3">
-							<div>
-								<label className="mb-1 block text-xs font-medium text-muted-foreground">
-									Theme Name
-								</label>
-								<input
-									type="text"
-									value={customName}
-									onChange={(e) => setCustomName(e.target.value)}
-									placeholder={selectedTheme.name}
-									className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-								/>
-							</div>
-							<button
-								onClick={handleSaveDraft}
-								className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted"
-							>
-								{savedNotice ? (
-									<>
-										<Check className="h-4 w-4 text-green-500" />
-										Saved!
-									</>
-								) : (
-									<>
-										<Save className="h-4 w-4" />
-										Save Draft
-									</>
-								)}
-							</button>
+						{/* Theme name input */}
+						<div className="mt-4">
+							<label className="mb-1 block text-xs font-medium text-muted-foreground">
+								Theme Name
+							</label>
+							<input
+								type="text"
+								value={customName}
+								onChange={(e) => setCustomName(e.target.value)}
+								placeholder={selectedTheme.name}
+								className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+							/>
 						</div>
 					</div>
 					{/* Close scrollable area */}
@@ -1484,9 +1466,28 @@ export function ThemeStudio() {
 
 			{/* Bottom Bar: Mint Action */}
 			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-3">
-				<div>
-					{isConnected && balance ? (
-						<div>
+				<div className="flex items-center gap-3">
+					{/* Save Draft Button */}
+					<button
+						onClick={handleSaveDraft}
+						className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted"
+					>
+						{savedNotice ? (
+							<>
+								<Check className="h-4 w-4 text-green-500" />
+								Saved!
+							</>
+						) : (
+							<>
+								<Save className="h-4 w-4" />
+								Save Draft
+							</>
+						)}
+					</button>
+
+					{/* Wallet info */}
+					{isConnected && balance && (
+						<div className="hidden sm:block">
 							<p className="text-sm font-medium">
 								{profile?.displayName && (
 									<span className="text-primary">{profile.displayName}</span>
@@ -1498,10 +1499,6 @@ export function ThemeStudio() {
 								Inscription cost: ~0.00001 BSV
 							</p>
 						</div>
-					) : (
-						<p className="text-sm text-muted-foreground">
-							Connect wallet to inscribe
-						</p>
 					)}
 				</div>
 
