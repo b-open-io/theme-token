@@ -19,6 +19,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { useMarketHistory } from "@/hooks/use-market-history";
 import {
 	getColorDistance,
 	parseOklch,
@@ -34,6 +35,8 @@ import {
 } from "@/components/market/filter-sidebar";
 import { GenerateCard } from "@/components/market/generate-card";
 import { ThemeCard } from "@/components/market/theme-card";
+import { MarketHero } from "@/components/market/market-hero";
+import { TrendingRail } from "@/components/market/trending-rail";
 
 const DEFAULT_FILTERS: FilterState = {
 	primaryColor: null,
@@ -52,6 +55,30 @@ export default function BrowsePage() {
 	const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
 	const isConnected = status === "connected";
+
+	// Market history for stats and trending
+	const { stats, trending, featured, getPriceChange } = useMarketHistory({
+		listings: listings.map((l) => ({ origin: l.origin, price: l.price })),
+	});
+
+	// Find the full listing for featured theme
+	const featuredListing = useMemo(() => {
+		if (!featured) return null;
+		const listing = listings.find((l) => l.origin === featured.origin);
+		if (!listing) return null;
+		return { ...featured, theme: listing.theme };
+	}, [featured, listings]);
+
+	// Build trending items with full theme data
+	const trendingItems = useMemo(() => {
+		return trending
+			.map((t) => {
+				const listing = listings.find((l) => l.origin === t.origin);
+				if (!listing) return null;
+				return { ...t, theme: listing.theme };
+			})
+			.filter((t): t is NonNullable<typeof t> => t !== null);
+	}, [trending, listings]);
 
 	useEffect(() => {
 		loadListings();
@@ -169,8 +196,38 @@ export default function BrowsePage() {
 		[filters, maxPrice],
 	);
 
+	// Handle purchase for featured theme
+	const handleFeaturedPurchase = useCallback(() => {
+		if (!featuredListing) return;
+		const listing = listings.find((l) => l.origin === featuredListing.origin);
+		if (listing) {
+			handlePurchase(listing);
+		}
+	}, [featuredListing, listings]);
+
 	return (
 		<div className="min-h-[calc(100vh-12rem)]">
+			{/* Market Hero - Stats + Featured Theme */}
+			<MarketHero
+				stats={stats}
+				featured={featuredListing}
+				mode={mode}
+				isLoading={isLoading}
+				isConnected={isConnected}
+				onPurchase={handleFeaturedPurchase}
+				onConnect={connect}
+				onApplyTheme={
+					featuredListing
+						? (e) => applyThemeAnimated(featuredListing.theme, e)
+						: undefined
+				}
+			/>
+
+			{/* Trending Rail */}
+			{!isLoading && trendingItems.length > 0 && (
+				<TrendingRail items={trendingItems} mode={mode} />
+			)}
+
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 				{/* Sidebar - Desktop */}
 				<aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
@@ -184,10 +241,10 @@ export default function BrowsePage() {
 					{/* Header */}
 					<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
 						<div>
-							<h2 className="text-2xl font-bold">Available Themes</h2>
+							<h2 className="text-xl font-semibold">All Themes</h2>
 							<p className="text-sm text-muted-foreground">
 								{filteredListings.length} theme
-								{filteredListings.length !== 1 ? "s" : ""} found
+								{filteredListings.length !== 1 ? "s" : ""} available
 								{filters.primaryColor && " matching your color"}
 							</p>
 						</div>
@@ -278,6 +335,7 @@ export default function BrowsePage() {
 											onPurchase={() => handlePurchase(listing)}
 											onConnect={connect}
 											onApplyTheme={(e) => applyThemeAnimated(listing.theme, e)}
+											priceChange={getPriceChange(listing.origin)}
 										/>
 									</motion.div>
 								))}

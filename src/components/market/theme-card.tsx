@@ -1,7 +1,14 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { ExternalLink, Loader2, ShoppingCart, Sparkles } from "lucide-react";
+import {
+	ExternalLink,
+	Loader2,
+	ShoppingCart,
+	Sparkles,
+	TrendingDown,
+	TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatBSV } from "./theme-stripes";
@@ -16,6 +23,7 @@ interface ThemeCardProps {
 	onPurchase: () => void;
 	onConnect: () => void;
 	onApplyTheme?: (e: React.MouseEvent) => void;
+	priceChange?: number | null;
 }
 
 export function ThemeCard({
@@ -28,8 +36,11 @@ export function ThemeCard({
 	onPurchase,
 	onConnect,
 	onApplyTheme,
+	priceChange,
 }: ThemeCardProps) {
 	const styles = theme.styles[mode];
+	const hasChange = priceChange !== null && priceChange !== undefined;
+	const isPositive = (priceChange ?? 0) >= 0;
 
 	// Build CSS custom properties from theme
 	const themeVars = {
@@ -153,12 +164,12 @@ export function ThemeCard({
 							</div>
 						</div>
 
-						{/* Accent bar at bottom */}
-						<div className="flex gap-1">
+						{/* Spectrum bar at bottom - animated on hover */}
+						<div className="flex h-2 gap-0.5 overflow-hidden rounded">
 							{["primary", "secondary", "accent", "muted"].map((color) => (
 								<div
 									key={color}
-									className="h-1.5 flex-1 rounded-full"
+									className="flex-1 transition-all duration-300 group-hover:first:flex-[2] group-hover:last:flex-[0.5]"
 									style={{ backgroundColor: `var(--${color})` }}
 								/>
 							))}
@@ -178,9 +189,7 @@ export function ThemeCard({
 			{/* Metadata */}
 			<div className="flex items-start justify-between gap-2">
 				<div className="min-w-0 flex-1">
-					<h3 className="font-semibold text-sm truncate">
-						{theme.name}
-					</h3>
+					<h3 className="font-semibold text-sm truncate">{theme.name}</h3>
 					<p className="text-xs text-muted-foreground">
 						{theme.author || "Anonymous"} &middot;{" "}
 						<span className="font-mono">{origin.slice(0, 8)}</span>
@@ -190,6 +199,21 @@ export function ThemeCard({
 					<p className="font-mono text-sm font-semibold">
 						{formatBSV(price)} BSV
 					</p>
+					{hasChange && (
+						<span
+							className={`inline-flex items-center gap-0.5 font-mono text-[10px] font-medium ${
+								isPositive ? "text-emerald-500" : "text-rose-500"
+							}`}
+						>
+							{isPositive ? (
+								<TrendingUp className="h-2.5 w-2.5" />
+							) : (
+								<TrendingDown className="h-2.5 w-2.5" />
+							)}
+							{isPositive ? "+" : ""}
+							{priceChange?.toFixed(1)}%
+						</span>
+					)}
 				</div>
 			</div>
 

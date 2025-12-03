@@ -4,9 +4,9 @@ import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
 
 export const runtime = "edge";
 
-// Space Grotesk font URL - TTF format for satori compatibility
+// Space Grotesk Bold TTF from Fontsource (static, non-variable for satori compatibility)
 const FONT_URL =
-	"https://fonts.gstatic.com/s/spacegrotesk/v22/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj4PVksj.ttf";
+	"https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.ttf";
 
 // Convert any color format to hex for ImageResponse compatibility
 function toHex(color: string | undefined, fallback: string): string {
