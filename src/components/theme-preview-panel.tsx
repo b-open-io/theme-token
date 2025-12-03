@@ -1,5 +1,6 @@
 "use client";
 
+import { PaletteExplorer } from "@/components/palette-explorer";
 import {
 	Activity,
 	AlertCircle,
@@ -831,7 +832,7 @@ function TabsDemo() {
 	);
 }
 
-// Color Palette Display
+// Color Palette Display - Theme colors + Palette Explorer
 function ColorPalette() {
 	const colors = [
 		{ name: "Background", var: "bg-background", text: "text-foreground" },
@@ -857,7 +858,7 @@ function ColorPalette() {
 				<CardTitle>Color Palette</CardTitle>
 				<CardDescription>Your theme colors at a glance</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="space-y-4">
 				<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
 					{colors.map((color) => (
 						<div key={color.name} className="text-center">
@@ -874,11 +875,31 @@ function ColorPalette() {
 	);
 }
 
+// Palette Explorer Card
+function PaletteExplorerCard() {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Palette Explorer</CardTitle>
+				<CardDescription>
+					Generate a full color scale from any color
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<PaletteExplorer />
+			</CardContent>
+		</Card>
+	);
+}
+
 // Main Preview Panel
 export function ThemePreviewPanel() {
 	return (
 		<div className="min-h-full w-full p-6">
 			<div className="space-y-6">
+				{/* Palette Explorer - Interactive */}
+				<PaletteExplorerCard />
+
 				{/* Color Palette */}
 				<ColorPalette />
 
