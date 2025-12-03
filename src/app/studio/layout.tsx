@@ -105,6 +105,34 @@ export default function StudioLayout({
 								);
 							})}
 						</nav>
+
+						{/* Spacer */}
+						<div className="flex-1" />
+
+						{/* Page Path - right aligned */}
+						<div className="hidden font-mono text-xs text-muted-foreground sm:block">
+							{pathname === "/studio/font" && (
+								<>
+									<span className="text-primary">root</span>/mint/
+									<span className="text-foreground">font</span>{" "}
+									<span className="animate-pulse">_</span>
+								</>
+							)}
+							{pathname === "/studio/patterns" && (
+								<>
+									<span className="text-primary">root</span>/studio/
+									<span className="text-foreground">patterns</span>{" "}
+									<span className="text-muted-foreground/60">— AI SVG patterns</span>
+								</>
+							)}
+							{pathname === "/studio/theme" && (
+								<>
+									<span className="text-primary">root</span>/studio/
+									<span className="text-foreground">theme</span>{" "}
+									<span className="animate-pulse">_</span>
+								</>
+							)}
+						</div>
 					</div>
 
 					{/* Animated Gradient Bar with Spotlight */}

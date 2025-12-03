@@ -153,18 +153,6 @@ export default function PatternGeneratorPage() {
 
 	return (
 		<div className="relative px-4 py-6 md:px-8 lg:px-12">
-			{/* Header */}
-			<div className="mb-6">
-				<h1 className="font-mono text-sm text-muted-foreground">
-					<span className="text-primary">root</span>/studio/
-					<span className="text-foreground">patterns</span>{" "}
-					<span className="animate-pulse">_</span>
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Generate seamless SVG patterns with AI
-				</p>
-			</div>
-
 			<div className="grid gap-6 lg:grid-cols-2">
 				{/* Left Column: Generator Controls */}
 				<div className="space-y-6">

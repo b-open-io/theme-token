@@ -54,6 +54,7 @@
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.25",
     "js-1sat-ord": "^0.1.88",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.555.0",
     "motion": "^12.23.25",
     "nanoid": "^5.1.6",

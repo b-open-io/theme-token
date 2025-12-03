@@ -1,19 +1,29 @@
 "use client";
 
-import { AlertTriangle, CheckCircle, Loader2, Upload, X } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle, Loader2, Upload, X } from "lucide-react";
 import { useCallback, useRef, useState, useEffect } from "react";
 import type { FontFile } from "@/app/studio/font/page";
 import type { FontValidationResult } from "@/lib/font-validation";
+import {
+	isZipFile,
+	loadFontZip,
+	extractedFontToFile,
+	type ZipFontPackage,
+	type ExtractedFontFile,
+} from "@/lib/zip-font-loader";
 
 export interface FontFileWithValidation extends FontFile {
 	validation?: FontValidationResult;
 	isValidating?: boolean;
 	validationError?: string;
+	zipLicense?: string | null;
+	zipLicenseSource?: string | null;
 }
 
 interface DropZoneCLIProps {
 	files: FontFileWithValidation[];
 	onFilesChange: (files: FontFileWithValidation[]) => void;
+	onZipLicenseDetected?: (license: string | null, source: string | null) => void;
 }
 
 // Parse font weight from filename (e.g., "Inter-Bold.woff2" -> 700)
@@ -36,8 +46,16 @@ function parseStyleFromName(filename: string): "normal" | "italic" {
 	return filename.toLowerCase().includes("italic") ? "italic" : "normal";
 }
 
-export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
+// Format file size
+function formatSize(bytes: number): string {
+	if (bytes < 1024) return `${bytes}b`;
+	return `${(bytes / 1024).toFixed(1)}kb`;
+}
+
+export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: DropZoneCLIProps) {
 	const [isDragging, setIsDragging] = useState(false);
+	const [isLoadingZip, setIsLoadingZip] = useState(false);
+	const [zipPackage, setZipPackage] = useState<ZipFontPackage | null>(null);
 
 	// Use ref to always have current files without causing re-renders
 	// This fixes stale closure issues in async callbacks
@@ -100,14 +118,56 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 		[onFilesChange],
 	);
 
+	// Handle selecting a font from zip
+	const handleSelectFromZip = useCallback(
+		(font: ExtractedFontFile) => {
+			const file = extractedFontToFile(font);
+			const fontFile: FontFileWithValidation = {
+				file,
+				name: font.name,
+				size: font.size,
+				weight: parseWeightFromName(font.name),
+				style: parseStyleFromName(font.name),
+				isValidating: true,
+				zipLicense: zipPackage?.detectedLicense,
+				zipLicenseSource: zipPackage?.licenseSource,
+			};
+
+			// Notify parent about detected license
+			if (onZipLicenseDetected && zipPackage?.detectedLicense) {
+				onZipLicenseDetected(zipPackage.detectedLicense, zipPackage.licenseSource);
+			}
+
+			const currentFiles = filesRef.current;
+			const newFilesList = [...currentFiles, fontFile];
+			onFilesChange(newFilesList);
+
+			// Validate the new file
+			validateFont(fontFile, currentFiles.length);
+
+			// Clear zip picker
+			setZipPackage(null);
+		},
+		[onFilesChange, validateFont, zipPackage, onZipLicenseDetected],
+	);
+
 	const handleFiles = useCallback(
 		async (newFiles: FileList | null) => {
 			if (!newFiles) return;
 
 			const validFiles: FontFileWithValidation[] = [];
+			let zipFile: File | null = null;
+
 			for (let i = 0; i < newFiles.length; i++) {
 				const file = newFiles[i];
-				// Accept WOFF2, WOFF, and TTF
+
+				// Check if it's a zip file
+				if (isZipFile(file)) {
+					zipFile = file;
+					continue;
+				}
+
+				// Accept WOFF2, WOFF, TTF, OTF
 				if (
 					file.name.endsWith(".woff2") ||
 					file.name.endsWith(".woff") ||
@@ -125,6 +185,29 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 				}
 			}
 
+			// Handle zip file - show picker
+			if (zipFile) {
+				setIsLoadingZip(true);
+				try {
+					const pkg = await loadFontZip(zipFile);
+					if (pkg.fonts.length === 0) {
+						// No fonts found in zip
+						console.warn("[DropZone] No font files found in zip");
+					} else if (pkg.fonts.length === 1) {
+						// Only one font, select it automatically
+						handleSelectFromZip(pkg.fonts[0]);
+					} else {
+						// Multiple fonts, show picker
+						setZipPackage(pkg);
+					}
+				} catch (error) {
+					console.error("[DropZone] Error loading zip:", error);
+				} finally {
+					setIsLoadingZip(false);
+				}
+				return;
+			}
+
 			if (validFiles.length > 0) {
 				// Use ref for current files to avoid stale closure
 				const currentFiles = filesRef.current;
@@ -138,7 +221,7 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 				}
 			}
 		},
-		[onFilesChange, validateFont],
+		[onFilesChange, validateFont, handleSelectFromZip],
 	);
 
 	const handleDrop = useCallback(
@@ -167,10 +250,87 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 		[onFilesChange],
 	);
 
-	const formatSize = (bytes: number): string => {
-		if (bytes < 1024) return `${bytes}b`;
-		return `${(bytes / 1024).toFixed(1)}kb`;
-	};
+	// Zip picker modal
+	if (zipPackage) {
+		return (
+			<div className="rounded border border-border bg-background">
+				{/* Header */}
+				<div className="flex items-center justify-between border-b border-border px-3 py-2">
+					<span className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+						<Archive className="h-3.5 w-3.5" />
+						SELECT_FONT_FROM_ZIP
+					</span>
+					<button
+						type="button"
+						onClick={() => setZipPackage(null)}
+						className="text-muted-foreground hover:text-foreground"
+					>
+						<X className="h-4 w-4" />
+					</button>
+				</div>
+
+				{/* License detected banner */}
+				{zipPackage.detectedLicense && (
+					<div className="border-b border-border bg-green-500/10 px-3 py-2">
+						<span className="font-mono text-xs text-green-600 dark:text-green-400">
+							LICENSE_DETECTED: {zipPackage.detectedLicense}
+							{zipPackage.licenseSource && (
+								<span className="text-muted-foreground">
+									{" "}(from {zipPackage.licenseSource})
+								</span>
+							)}
+						</span>
+					</div>
+				)}
+
+				{/* Font list */}
+				<div className="max-h-[300px] overflow-y-auto p-3">
+					<div className="space-y-1 font-mono text-xs">
+						{zipPackage.fonts.map((font) => (
+							<button
+								key={font.path}
+								type="button"
+								onClick={() => handleSelectFromZip(font)}
+								className="flex w-full items-center justify-between rounded border border-transparent px-2 py-2 text-left transition-colors hover:border-primary/50 hover:bg-primary/5"
+							>
+								<span className="truncate text-foreground">{font.name}</span>
+								<span className="ml-2 shrink-0 text-muted-foreground">
+									{formatSize(font.size)}
+								</span>
+							</button>
+						))}
+					</div>
+				</div>
+
+				<div className="border-t border-border px-3 py-2">
+					<p className="text-center font-mono text-[10px] text-muted-foreground">
+						SELECT_ONE_FONT_TO_INSCRIBE
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Loading zip state
+	if (isLoadingZip) {
+		return (
+			<div className="rounded border border-border bg-background">
+				<div className="border-b border-border px-3 py-2">
+					<span className="font-mono text-xs text-muted-foreground">
+						// DROP_ZONE
+					</span>
+				</div>
+				<div className="flex min-h-[120px] items-center justify-center p-4">
+					<div className="flex flex-col items-center gap-2">
+						<Loader2 className="h-6 w-6 animate-spin text-primary" />
+						<span className="font-mono text-xs text-muted-foreground">
+							EXTRACTING_ZIP...
+						</span>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="rounded border border-border bg-background">
@@ -198,13 +358,13 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 							}`}
 						/>
 						<div className="text-center font-mono text-xs">
-							<p className="text-muted-foreground">DRAG WOFF2 OR</p>
+							<p className="text-muted-foreground">DRAG FONT FILE OR ZIP</p>
 							<p className="text-primary hover:underline">CLICK TO BROWSE</p>
 						</div>
 						<input
 							type="file"
 							className="hidden"
-							accept=".woff2,.woff,.ttf"
+							accept=".woff2,.woff,.ttf,.otf,.zip"
 							multiple
 							onChange={(e) => handleFiles(e.target.files)}
 						/>
@@ -289,6 +449,18 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 											Google Font (Open Source)
 										</div>
 									)}
+
+									{/* Zip-detected license */}
+									{f.zipLicense && !f.validation?.checks?.isGoogleFont && (
+										<div className="mb-2 ml-6 rounded border border-green-500/50 bg-green-500/10 px-2 py-1.5 text-[10px] text-green-600 dark:text-green-400">
+											License: {f.zipLicense}
+											{f.zipLicenseSource && (
+												<span className="text-muted-foreground">
+													{" "}(from {f.zipLicenseSource})
+												</span>
+											)}
+										</div>
+									)}
 								</div>
 							);
 						})}
@@ -299,7 +471,7 @@ export function DropZoneCLI({ files, onFilesChange }: DropZoneCLIProps) {
 							<input
 								type="file"
 								className="hidden"
-								accept=".woff2,.woff,.ttf"
+								accept=".woff2,.woff,.ttf,.otf,.zip"
 								multiple
 								onChange={(e) => handleFiles(e.target.files)}
 							/>

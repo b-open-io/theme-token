@@ -119,6 +119,28 @@ export default function FontMintPage() {
 		setFontFiles(files);
 	}, []);
 
+	// Handle license detected from zip file
+	const handleZipLicenseDetected = useCallback((license: string | null, _source: string | null) => {
+		if (license) {
+			// Map common license names to our dropdown values
+			const licenseMap: Record<string, FontMetadata["license"]> = {
+				OFL: "SIL_OFL_1.1",
+				"Apache-2.0": "APACHE_2.0",
+				MIT: "MIT",
+				CC0: "CC0_1.0",
+				"Public Domain": "CC0_1.0",
+				CC: "CC_BY_4.0",
+			};
+			const mappedLicense = licenseMap[license];
+			if (mappedLicense) {
+				setMetadata((prev) => ({
+					...prev,
+					license: mappedLicense,
+				}));
+			}
+		}
+	}, []);
+
 	if (mintResult) {
 		return (
 			<div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-6 text-center md:px-8 lg:px-12">
@@ -175,15 +197,6 @@ export default function FontMintPage() {
 
 	return (
 		<div className="relative px-4 py-6 md:px-8 lg:px-12">
-			{/* Header */}
-			<div className="mb-6">
-				<h1 className="font-mono text-sm text-muted-foreground">
-					<span className="text-primary">root</span>/mint/
-					<span className="text-foreground">font</span>{" "}
-					<span className="animate-pulse">_</span>
-				</h1>
-			</div>
-
 			{/* Mode Tabs */}
 			<div className="mb-6 flex gap-1 rounded border border-border bg-muted/30 p-1">
 				{[
@@ -222,7 +235,11 @@ export default function FontMintPage() {
 				{/* Left Column: Input Console */}
 				<div className="space-y-6">
 					{inputMode === "upload" ? (
-						<DropZoneCLI files={fontFiles} onFilesChange={handleFilesChange} />
+						<DropZoneCLI
+							files={fontFiles}
+							onFilesChange={handleFilesChange}
+							onZipLicenseDetected={handleZipLicenseDetected}
+						/>
 					) : (
 						<AIGenerateTab onFontGenerated={handleAIFontGenerated} />
 					)}
