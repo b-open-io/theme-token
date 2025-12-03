@@ -9,6 +9,7 @@ import { useTheme } from "@/components/theme-provider";
 import { JsonSyntax } from "@/components/json-syntax";
 import {
   type ThemeToken,
+  type ParseMetadata,
   validateThemeToken,
   parseCss,
 } from "@theme-token/sdk";
@@ -44,6 +45,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
   const [activeTab, setActiveTab] = useState<"presets" | "css" | "json">("presets");
   const [txid, setTxid] = useState<string | null>(null);
   const [customLabel, setCustomLabel] = useState("");
+  const [parseMetadata, setParseMetadata] = useState<ParseMetadata | null>(null);
 
   const handleCustomJsonChange = (value: string) => {
     setCustomJson(value);
@@ -69,6 +71,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
   const handleCustomCssChange = (value: string) => {
     setCustomCss(value);
     setValidationError(null);
+    setParseMetadata(null);
 
     if (!value.trim()) return;
 
@@ -76,6 +79,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 
     if (result.valid) {
       setSelectedTheme(result.theme);
+      setParseMetadata(result.metadata);
       setValidationError(null);
     } else {
       setValidationError(result.error);
@@ -268,10 +272,12 @@ export function MintTheme({ className = "" }: MintThemeProps) {
               {validationError}
             </div>
           )}
-          {customCss && !validationError && (
+          {customCss && !validationError && parseMetadata && (
             <div className="flex items-center gap-2 text-sm text-green-600">
               <Check className="h-4 w-4" />
-              Valid CSS parsed successfully
+              Theme imported successfully - {parseMetadata.totalPropertyCount} properties
+              {!parseMetadata.hasDarkMode && " (light only)"}
+              {!parseMetadata.hasLightMode && " (dark only)"}
             </div>
           )}
         </div>

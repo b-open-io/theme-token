@@ -14,9 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import {
   type ThemeToken,
   type ThemeStyleProps,
+  type ParseMetadata,
   validateThemeToken,
   parseCss,
-  applyTheme,
 } from "@theme-token/sdk";
 import { exampleThemes } from "@/lib/example-themes";
 import { JsonSyntax } from "./json-syntax";
@@ -33,6 +33,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
   const [customCss, setCustomCss] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"presets" | "css" | "json">("presets");
+  const [parseMetadata, setParseMetadata] = useState<ParseMetadata | null>(null);
 
   const applyThemeToPreview = useCallback((styles: ThemeStyleProps) => {
     const previewEl = document.getElementById("theme-preview-container");
@@ -73,6 +74,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
   const handleCustomCssChange = (value: string) => {
     setCustomCss(value);
     setValidationError(null);
+    setParseMetadata(null);
 
     if (!value.trim()) return;
 
@@ -80,7 +82,16 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 
     if (result.valid) {
       setSelectedTheme(result.theme);
+      setParseMetadata(result.metadata);
       setValidationError(null);
+
+      // Auto-switch mode if only one mode is defined
+      if (result.metadata.hasLightMode && !result.metadata.hasDarkMode) {
+        setMode("light");
+      } else if (!result.metadata.hasLightMode && result.metadata.hasDarkMode) {
+        setMode("dark");
+      }
+      // If both modes exist, don't switch
     } else {
       setValidationError(result.error);
     }
@@ -199,10 +210,12 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
                 {validationError}
               </div>
             )}
-            {customCss && !validationError && (
+            {customCss && !validationError && parseMetadata && (
               <div className="flex items-center gap-2 text-sm text-green-600">
                 <Check className="h-4 w-4" />
-                Valid CSS parsed successfully
+                Theme imported successfully - {parseMetadata.totalPropertyCount} properties
+                {!parseMetadata.hasDarkMode && " (light only)"}
+                {!parseMetadata.hasLightMode && " (dark only)"}
               </div>
             )}
           </div>
