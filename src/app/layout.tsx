@@ -60,13 +60,13 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="scroll-smooth" suppressHydrationWarning>
+		<html lang="en" className="h-full scroll-smooth" suppressHydrationWarning>
 			<body
-				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} flex h-full flex-col font-sans antialiased`}
 			>
 				<Providers>
 					<Header />
-					<main>{children}</main>
+					<main className="flex-1">{children}</main>
 				</Providers>
 			</body>
 		</html>
