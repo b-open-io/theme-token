@@ -137,53 +137,42 @@ interface ColorPaletteSectionProps {
 	themeColors?: ThemeColors;
 }
 
-// Unified swatch component - used for both palette and theme swatches
-function Swatch({
+// Palette swatch - for palette generator (can apply to theme keys)
+function PaletteSwatch({
 	color,
 	label,
-	bgClass,
 	onApplyColor,
-	showContextMenu = false,
 }: {
-	color?: string;
+	color: string;
 	label: string;
-	bgClass?: string;
 	onApplyColor?: (key: string, value: string) => void;
-	showContextMenu?: boolean;
 }) {
 	const [copied, setCopied] = useState(false);
 
 	const handleCopy = async () => {
-		const value = color || `var(--${label.toLowerCase()})`;
-		await navigator.clipboard.writeText(value);
+		await navigator.clipboard.writeText(color);
 		setCopied(true);
-		toast.success("Copied", { description: value });
+		toast.success("Copied", { description: color });
 		setTimeout(() => setCopied(false), 1000);
 	};
 
 	const handleApply = (key: string) => {
-		if (color) {
-			onApplyColor?.(key, color);
-			toast.success("Applied", { description: `Set ${key} to ${color}` });
-		}
+		onApplyColor?.(key, color);
+		toast.success("Applied", { description: `Set ${key} to ${color}` });
 	};
 
 	const buttonContent = (
 		<button
 			onClick={handleCopy}
-			className={`${bgClass || ""} group relative flex h-7 flex-1 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10`}
-			style={color ? { backgroundColor: color } : undefined}
-			title={color ? `${label}: ${color}` : `Copy var(--${label.toLowerCase()})`}
+			className="group relative flex h-7 flex-1 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
+			style={{ backgroundColor: color }}
+			title={`${label}: ${color}`}
 		>
 			<span className="opacity-0 group-hover:opacity-100 transition-opacity text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
 				{copied ? <Check className="h-2.5 w-2.5" /> : label}
 			</span>
 		</button>
 	);
-
-	if (!showContextMenu || !color) {
-		return buttonContent;
-	}
 
 	return (
 		<ContextMenu>
@@ -200,7 +189,6 @@ function Swatch({
 						<span className="text-xs">Apply as...</span>
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48 max-h-80 overflow-y-auto">
-						{/* Group items by category */}
 						{Array.from(new Set(THEME_COLOR_KEYS.map(k => k.category))).map((category, idx) => (
 							<div key={category}>
 								{idx > 0 && <ContextMenuSeparator />}
@@ -220,6 +208,84 @@ function Swatch({
 						))}
 					</ContextMenuSubContent>
 				</ContextMenuSub>
+			</ContextMenuContent>
+		</ContextMenu>
+	);
+}
+
+// Theme swatch - for active theme display (can pick from palette colors)
+function ThemeSwatch({
+	color,
+	label,
+	cssVar,
+	paletteColors,
+	onApplyFromPalette,
+}: {
+	color?: string;
+	label: string;
+	cssVar: string;
+	paletteColors: string[];
+	onApplyFromPalette?: (key: string, value: string) => void;
+}) {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		const value = color || `var(--${cssVar})`;
+		await navigator.clipboard.writeText(value);
+		setCopied(true);
+		toast.success("Copied", { description: value });
+		setTimeout(() => setCopied(false), 1000);
+	};
+
+	const handleApplyFromPalette = (paletteColor: string) => {
+		onApplyFromPalette?.(cssVar, paletteColor);
+		toast.success("Applied", { description: `Set ${cssVar} to ${paletteColor}` });
+	};
+
+	const buttonContent = (
+		<button
+			onClick={handleCopy}
+			className="group relative flex h-7 flex-1 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
+			style={color ? { backgroundColor: color } : undefined}
+			title={color ? `${label}: ${color}` : `Copy var(--${cssVar})`}
+		>
+			<span className="opacity-0 group-hover:opacity-100 transition-opacity text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+				{copied ? <Check className="h-2.5 w-2.5" /> : label}
+			</span>
+		</button>
+	);
+
+	// No context menu if no palette colors or no update handler
+	if (paletteColors.length === 0 || !onApplyFromPalette) {
+		return buttonContent;
+	}
+
+	return (
+		<ContextMenu>
+			<ContextMenuTrigger asChild>{buttonContent}</ContextMenuTrigger>
+			<ContextMenuContent className="w-auto">
+				<ContextMenuItem onClick={handleCopy}>
+					<Copy className="mr-2 h-3 w-3" />
+					<span className="text-xs">Copy {color || `var(--${cssVar})`}</span>
+				</ContextMenuItem>
+				<ContextMenuSeparator />
+				<ContextMenuLabel className="text-[10px] text-muted-foreground px-2">
+					Apply from palette
+				</ContextMenuLabel>
+				{/* Color grid - 11 colors per row to match palette */}
+				<div className="px-2 pb-2 pt-1">
+					<div className="grid grid-cols-11 gap-0.5">
+						{paletteColors.map((paletteColor, idx) => (
+							<button
+								key={idx}
+								onClick={() => handleApplyFromPalette(paletteColor)}
+								className="h-5 w-5 rounded border border-border/50 transition-all hover:scale-110 hover:border-border hover:z-10"
+								style={{ backgroundColor: paletteColor }}
+								title={paletteColor}
+							/>
+						))}
+					</div>
+				</div>
 			</ContextMenuContent>
 		</ContextMenu>
 	);
@@ -265,6 +331,13 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 	const complementaryArray = complementaryPalette ? paletteToArray(complementaryPalette) : [];
 	const triadicArray = triadicPalette ? paletteToArray(triadicPalette) : [];
 
+	// All palette colors combined for theme swatch picker (3 rows x 11 colors = 33 total)
+	const allPaletteColors = [
+		...primaryArray.map(p => p.color),
+		...triadicArray.map(p => p.color),
+		...complementaryArray.map(p => p.color),
+	];
+
 	return (
 		<div className="grid gap-3 @2xl:grid-cols-3">
 			{/* Palette Generator - 2/3 width */}
@@ -301,12 +374,11 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 					{/* Primary Scale (0°) */}
 					<div className="flex gap-0.5">
 						{primaryArray.map(({ shade, color: c }) => (
-							<Swatch
+							<PaletteSwatch
 								key={shade}
 								label={shade}
 								color={c}
 								onApplyColor={onUpdateColor}
-								showContextMenu
 							/>
 						))}
 					</div>
@@ -314,12 +386,11 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 					{/* Triadic Scale (+120°) */}
 					<div className="flex gap-0.5">
 						{triadicArray.map(({ shade, color: c }) => (
-							<Swatch
+							<PaletteSwatch
 								key={shade}
 								label={shade}
 								color={c}
 								onApplyColor={onUpdateColor}
-								showContextMenu
 							/>
 						))}
 					</div>
@@ -327,12 +398,11 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 					{/* Complementary Scale (+180°) */}
 					<div className="flex gap-0.5">
 						{complementaryArray.map(({ shade, color: c }) => (
-							<Swatch
+							<PaletteSwatch
 								key={shade}
 								label={shade}
 								color={c}
 								onApplyColor={onUpdateColor}
-								showContextMenu
 							/>
 						))}
 					</div>
@@ -348,28 +418,37 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 					<div className="space-y-1.5">
 						<div className="flex gap-0.5">
 							{THEME_SWATCHES_ROW1.map((swatch) => (
-								<Swatch
+								<ThemeSwatch
 									key={swatch.name}
 									label={swatch.name}
+									cssVar={swatch.cssVar}
 									color={themeColors?.[swatch.cssVar]}
+									paletteColors={allPaletteColors}
+									onApplyFromPalette={onUpdateColor}
 								/>
 							))}
 						</div>
 						<div className="flex gap-0.5">
 							{THEME_SWATCHES_ROW2.map((swatch) => (
-								<Swatch
+								<ThemeSwatch
 									key={swatch.name}
 									label={swatch.name}
+									cssVar={swatch.cssVar}
 									color={themeColors?.[swatch.cssVar]}
+									paletteColors={allPaletteColors}
+									onApplyFromPalette={onUpdateColor}
 								/>
 							))}
 						</div>
 						<div className="flex gap-0.5">
 							{THEME_SWATCHES_ROW3.map((swatch) => (
-								<Swatch
+								<ThemeSwatch
 									key={swatch.name}
 									label={swatch.name}
+									cssVar={swatch.cssVar}
 									color={themeColors?.[swatch.cssVar]}
+									paletteColors={allPaletteColors}
+									onApplyFromPalette={onUpdateColor}
 								/>
 							))}
 						</div>
