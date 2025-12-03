@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Database, FileCode, Palette, Type } from "lucide-react";
+import { Check, Copy, FileCode, Palette, Type } from "lucide-react";
 import { useCallback, useState } from "react";
 
 type AssetType = "pattern" | "font" | "theme";
@@ -11,71 +11,39 @@ const ASSET_SCHEMAS: Record<
 		icon: typeof Palette;
 		label: string;
 		description: string;
+		contentInfo: string;
 		example: Record<string, string>;
 		fields: Array<{
 			name: string;
 			type: string;
-			badge?: "context" | "subcontext";
+			required?: boolean;
 			options?: string[];
 			description: string;
 		}>;
 	}
 > = {
-	pattern: {
-		icon: Palette,
-		label: "Patterns",
-		description: "Tileable SVG backgrounds and textures",
+	theme: {
+		icon: FileCode,
+		label: "Themes",
+		description: "Complete color schemes in ThemeToken JSON format",
+		contentInfo:
+			"Theme JSON already contains name, author, colors, and mode - no additional metadata needed beyond app/type for indexer discovery.",
 		example: {
 			app: "theme-token",
-			type: "pattern",
-			context: "name",
-			name: "Dot Grid",
-			subcontext: "render",
-			render: "tile",
-			tile: "50,50",
-			colorMode: "currentColor",
-			prompt: "evenly spaced dots",
-			contentType: "image/svg+xml",
+			type: "theme",
 		},
 		fields: [
 			{
-				name: "context",
+				name: "app",
 				type: "string",
-				badge: "context",
-				description: 'Always "name" - points to the name field',
+				required: true,
+				description: 'Always "theme-token" - enables indexer filtering',
 			},
 			{
-				name: "name",
+				name: "type",
 				type: "string",
-				description: "Human-readable pattern name (indexed)",
-			},
-			{
-				name: "subcontext",
-				type: "string",
-				badge: "subcontext",
-				description: 'Always "render" - points to render mode',
-			},
-			{
-				name: "render",
-				type: "enum",
-				options: ["tile", "cover", "contain"],
-				description: "How the SVG fills the container",
-			},
-			{
-				name: "tile",
-				type: "string",
-				description: 'Tile dimensions "width,height" if render=tile',
-			},
-			{
-				name: "colorMode",
-				type: "enum",
-				options: ["currentColor", "theme", "grayscale"],
-				description: "How colors are applied",
-			},
-			{
-				name: "prompt",
-				type: "string",
-				description: "AI generation prompt (if AI-generated)",
+				required: true,
+				description: 'Always "theme" - asset type identifier',
 			},
 		],
 	},
@@ -83,37 +51,36 @@ const ASSET_SCHEMAS: Record<
 		icon: Type,
 		label: "Fonts",
 		description: "Web fonts in WOFF2, WOFF, or TTF format",
+		contentInfo:
+			"Font binary files don't expose metadata easily. We include name, weight, style, author, license, and aiGenerated flag in MAP data.",
 		example: {
 			app: "theme-token",
 			type: "font",
-			context: "name",
 			name: "MyFont",
-			subcontext: "weight",
 			weight: "400",
 			style: "normal",
-			role: "body",
 			author: "John Doe",
 			license: "OFL",
-			glyphCount: "95",
-			contentType: "font/woff2",
+			aiGenerated: "true",
 		},
 		fields: [
 			{
-				name: "context",
+				name: "app",
 				type: "string",
-				badge: "context",
-				description: 'Always "name" - points to the name field',
+				required: true,
+				description: 'Always "theme-token"',
+			},
+			{
+				name: "type",
+				type: "string",
+				required: true,
+				description: 'Always "font"',
 			},
 			{
 				name: "name",
 				type: "string",
-				description: "Font family name (indexed)",
-			},
-			{
-				name: "subcontext",
-				type: "string",
-				badge: "subcontext",
-				description: 'Always "weight" - points to font weight',
+				required: true,
+				description: "Font family name",
 			},
 			{
 				name: "weight",
@@ -125,13 +92,7 @@ const ASSET_SCHEMAS: Record<
 				name: "style",
 				type: "enum",
 				options: ["normal", "italic", "oblique"],
-				description: "CSS font-style value",
-			},
-			{
-				name: "role",
-				type: "enum",
-				options: ["heading", "body", "mono", "display", "accent"],
-				description: "Typographic purpose hint",
+				description: 'CSS font-style (omit if "normal")',
 			},
 			{
 				name: "author",
@@ -141,93 +102,57 @@ const ASSET_SCHEMAS: Record<
 			{
 				name: "license",
 				type: "string",
-				description: "License identifier (OFL, MIT, etc.)",
+				description: "License identifier (OFL, MIT, CC0, etc.)",
 			},
 			{
-				name: "glyphCount",
-				type: "number",
-				description: "Number of glyphs in the font",
+				name: "aiGenerated",
+				type: "boolean",
+				description: '"true" if AI-generated',
 			},
 		],
 	},
-	theme: {
-		icon: FileCode,
-		label: "Themes",
-		description: "Complete color schemes in ThemeToken JSON format",
+	pattern: {
+		icon: Palette,
+		label: "Patterns",
+		description: "Tileable SVG backgrounds and textures",
+		contentInfo:
+			"SVG content is self-describing, but colorMode and AI prompt cannot be derived from the SVG itself.",
 		example: {
 			app: "theme-token",
-			type: "theme",
-			context: "name",
-			name: "Midnight",
-			subcontext: "mode",
-			mode: "dark",
-			colorCount: "12",
-			contentType: "application/json",
+			type: "pattern",
+			colorMode: "currentColor",
+			prompt: "evenly spaced dots",
 		},
 		fields: [
 			{
-				name: "context",
+				name: "app",
 				type: "string",
-				badge: "context",
-				description: 'Always "name" - points to the name field',
+				required: true,
+				description: 'Always "theme-token"',
 			},
 			{
-				name: "name",
+				name: "type",
 				type: "string",
-				description: "Theme name (indexed)",
+				required: true,
+				description: 'Always "pattern"',
 			},
 			{
-				name: "subcontext",
-				type: "string",
-				badge: "subcontext",
-				description: 'Always "mode" - points to color mode',
-			},
-			{
-				name: "mode",
+				name: "colorMode",
 				type: "enum",
-				options: ["light", "dark", "auto"],
-				description: "Color scheme preference",
+				options: ["currentColor", "theme", "grayscale"],
+				description: "How the pattern should be rendered/colored",
 			},
 			{
-				name: "colorCount",
-				type: "number",
-				description: "Number of unique colors in theme",
-			},
-			{
-				name: "author",
+				name: "prompt",
 				type: "string",
-				description: "Theme creator",
-			},
-			{
-				name: "description",
-				type: "string",
-				description: "Theme description",
+				description: "AI generation prompt (provenance)",
 			},
 		],
 	},
 };
 
-const INDEXER_CODE = `// How indexers efficiently query assets
-function queryAssets(inscriptions, filters) {
-  return inscriptions.filter(i => {
-    // 1. Filter by app and type
-    if (i.app !== "theme-token") return false;
-    if (filters.type && i.type !== filters.type) return false;
-
-    // 2. Read context to find the ID field name
-    const idField = i.context;        // e.g., "name"
-    const variantField = i.subcontext; // e.g., "render"
-
-    // 3. O(1) lookup - no guessing field names
-    if (filters.name && i[idField] !== filters.name) return false;
-    if (filters.variant && i[variantField] !== filters.variant) return false;
-
-    return true;
-  });
-}`;
-
 export function OnChainProtocol() {
-	const [activeTab, setActiveTab] = useState<AssetType>("pattern");
+	const [activeTab, setActiveTab] = useState<AssetType>("theme");
 	const [copied, setCopied] = useState<string | null>(null);
 	const [hoveredField, setHoveredField] = useState<string | null>(null);
 
@@ -240,136 +165,15 @@ export function OnChainProtocol() {
 	const schema = ASSET_SCHEMAS[activeTab];
 
 	return (
-		<div className="space-y-12">
-			{/* Context Mapping Visualizer */}
-			<div className="rounded-xl border border-border bg-card p-6">
-				<h3 className="mb-4 font-mono text-sm text-muted-foreground">
-					CONTEXT_MAPPING
-				</h3>
-
-				<div className="relative">
-					{/* Visual explanation */}
-					<div className="mb-6 grid gap-4 md:grid-cols-2">
-						{/* Pointer Side */}
-						<div className="space-y-3">
-							<p className="text-xs font-medium text-muted-foreground">
-								Pointer Fields
-							</p>
-							<div
-								className="group flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 transition-colors hover:border-primary/50"
-								onMouseEnter={() => setHoveredField("context")}
-								onMouseLeave={() => setHoveredField(null)}
-							>
-								<div className="h-3 w-3 rounded-full bg-primary" />
-								<code className="font-mono text-sm">
-									<span className="text-muted-foreground">context:</span>{" "}
-									<span className="text-primary">"name"</span>
-								</code>
-								<svg
-									className="ml-auto h-4 w-4 text-primary opacity-50 group-hover:opacity-100"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-								>
-									<path d="M5 12h14M12 5l7 7-7 7" />
-								</svg>
-							</div>
-							<div
-								className="group flex items-center gap-3 rounded-lg border border-accent-foreground/30 bg-accent/30 p-3 transition-colors hover:border-accent-foreground/50"
-								onMouseEnter={() => setHoveredField("subcontext")}
-								onMouseLeave={() => setHoveredField(null)}
-							>
-								<div className="h-3 w-3 rounded-full bg-accent-foreground" />
-								<code className="font-mono text-sm">
-									<span className="text-muted-foreground">subcontext:</span>{" "}
-									<span className="text-accent-foreground">
-										"
-										{activeTab === "pattern"
-											? "render"
-											: activeTab === "font"
-												? "weight"
-												: "mode"}
-										"
-									</span>
-								</code>
-								<svg
-									className="ml-auto h-4 w-4 text-accent-foreground opacity-50 group-hover:opacity-100"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-								>
-									<path d="M5 12h14M12 5l7 7-7 7" />
-								</svg>
-							</div>
-						</div>
-
-						{/* Target Side */}
-						<div className="space-y-3">
-							<p className="text-xs font-medium text-muted-foreground">
-								Target Fields (Indexed)
-							</p>
-							<div
-								className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
-									hoveredField === "context"
-										? "border-primary bg-primary/10"
-										: "border-border bg-muted/30"
-								}`}
-							>
-								<code className="font-mono text-sm">
-									<span className="text-muted-foreground">name:</span>{" "}
-									<span className="text-foreground">
-										"{schema.example.name}"
-									</span>
-								</code>
-								{hoveredField === "context" && (
-									<span className="ml-auto rounded bg-primary/20 px-2 py-0.5 text-xs text-primary">
-										Primary ID
-									</span>
-								)}
-							</div>
-							<div
-								className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
-									hoveredField === "subcontext"
-										? "border-accent-foreground bg-accent/30"
-										: "border-border bg-muted/30"
-								}`}
-							>
-								<code className="font-mono text-sm">
-									<span className="text-muted-foreground">
-										{activeTab === "pattern"
-											? "render"
-											: activeTab === "font"
-												? "weight"
-												: "mode"}
-										:
-									</span>{" "}
-									<span className="text-foreground">
-										"
-										{activeTab === "pattern"
-											? schema.example.render
-											: activeTab === "font"
-												? schema.example.weight
-												: schema.example.mode}
-										"
-									</span>
-								</code>
-								{hoveredField === "subcontext" && (
-									<span className="ml-auto rounded bg-accent/50 px-2 py-0.5 text-xs text-accent-foreground">
-										Variant
-									</span>
-								)}
-							</div>
-						</div>
-					</div>
-
-					<p className="text-center text-xs text-muted-foreground">
-						<Database className="mr-1 inline h-3 w-3" />
-						Indexers read <code className="text-primary">context</code> to know
-						which field contains the ID - no guessing required
-					</p>
-				</div>
+		<div className="space-y-8">
+			{/* Principle Banner */}
+			<div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+				<p className="text-sm text-muted-foreground">
+					<strong className="text-foreground">Metadata Principle:</strong>{" "}
+					Only include information that cannot be derived from the inscribed
+					content itself. Theme JSON contains name/author/colors. Font binaries
+					don't expose this easily. SVG patterns need colorMode hints.
+				</p>
 			</div>
 
 			{/* Schema Explorer with Tabs */}
@@ -399,13 +203,16 @@ export function OnChainProtocol() {
 
 				{/* Content */}
 				<div className="p-6">
-					<p className="mb-6 text-sm text-muted-foreground">
+					<p className="mb-2 text-sm text-muted-foreground">
 						{schema.description}
+					</p>
+					<p className="mb-6 rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground">
+						{schema.contentInfo}
 					</p>
 
 					<div className="grid gap-6 lg:grid-cols-2">
 						{/* JSON Preview */}
-						<div>
+						<div className="flex flex-col">
 							<div className="mb-2 flex items-center justify-between">
 								<h4 className="font-mono text-xs text-muted-foreground">
 									MAP_DATA
@@ -433,17 +240,11 @@ export function OnChainProtocol() {
 									)}
 								</button>
 							</div>
-							<div className="rounded-lg border border-border bg-muted/30 p-4 font-mono text-xs">
-								<pre className="overflow-x-auto">
+							<div className="flex-1 overflow-auto rounded-lg border border-border bg-muted/30 p-4 font-mono text-xs">
+								<pre>
 									{Object.entries(schema.example).map(([key, value], i) => {
 										const field = schema.fields.find((f) => f.name === key);
-										const isContext = field?.badge === "context";
-										const isSubcontext = field?.badge === "subcontext";
-										const isContextTarget = key === "name";
-										const isSubcontextTarget =
-											(activeTab === "pattern" && key === "render") ||
-											(activeTab === "font" && key === "weight") ||
-											(activeTab === "theme" && key === "mode");
+										const isRequired = field?.required;
 
 										return (
 											<div
@@ -460,15 +261,9 @@ export function OnChainProtocol() {
 												{"  "}
 												<span
 													className={
-														isContext
+														isRequired
 															? "text-primary"
-															: isSubcontext
-																? "text-accent-foreground"
-																: isContextTarget
-																	? "text-primary/70"
-																	: isSubcontextTarget
-																		? "text-accent-foreground/70"
-																		: "text-muted-foreground"
+															: "text-muted-foreground"
 													}
 												>
 													"{key}"
@@ -486,11 +281,11 @@ export function OnChainProtocol() {
 						</div>
 
 						{/* Field Specs */}
-						<div>
+						<div className="flex flex-col">
 							<h4 className="mb-2 font-mono text-xs text-muted-foreground">
 								FIELD_REFERENCE
 							</h4>
-							<div className="space-y-2">
+							<div className="flex-1 space-y-2 overflow-auto">
 								{schema.fields.map((field) => (
 									<div
 										key={field.name}
@@ -505,24 +300,14 @@ export function OnChainProtocol() {
 										<div className="mb-1 flex items-center gap-2">
 											<code
 												className={`font-mono text-sm font-semibold ${
-													field.badge === "context"
-														? "text-primary"
-														: field.badge === "subcontext"
-															? "text-accent-foreground"
-															: "text-foreground"
+													field.required ? "text-primary" : "text-foreground"
 												}`}
 											>
 												{field.name}
 											</code>
-											{field.badge && (
-												<span
-													className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-														field.badge === "context"
-															? "bg-primary/20 text-primary"
-															: "bg-accent/50 text-accent-foreground"
-													}`}
-												>
-													{field.badge}
+											{field.required && (
+												<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
+													required
 												</span>
 											)}
 											<span className="text-xs text-muted-foreground">
@@ -550,77 +335,6 @@ export function OnChainProtocol() {
 						</div>
 					</div>
 				</div>
-			</div>
-
-			{/* Indexer Logic Terminal */}
-			<div className="rounded-xl border border-border bg-card p-6">
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="font-mono text-sm text-muted-foreground">
-						INDEXER_LOGIC
-					</h3>
-					<button
-						type="button"
-						onClick={() => copyToClipboard(INDEXER_CODE, "indexer")}
-						className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-					>
-						{copied === "indexer" ? (
-							<>
-								<Check className="h-3 w-3 text-primary" />
-								Copied
-							</>
-						) : (
-							<>
-								<Copy className="h-3 w-3" />
-								Copy
-							</>
-						)}
-					</button>
-				</div>
-
-				<div className="rounded-lg border border-border bg-muted/30 p-4">
-					<pre className="overflow-x-auto font-mono text-xs">
-						<code>
-							{INDEXER_CODE.split("\n").map((line, i) => {
-								// Simple syntax highlighting using theme colors
-								let highlighted = line
-									.replace(
-										/(\/\/.*)/g,
-										'<span class="text-muted-foreground">$1</span>',
-									)
-									.replace(
-										/\b(function|return|if|const)\b/g,
-										'<span class="text-primary">$1</span>',
-									)
-									.replace(
-										/(".*?")/g,
-										'<span class="text-foreground">$1</span>',
-									)
-									.replace(
-										/\b(context|subcontext)\b/g,
-										'<span class="text-primary font-semibold">$1</span>',
-									);
-
-								return (
-									<div key={i}>
-										<span className="select-none text-muted-foreground/50">
-											{String(i + 1).padStart(2, " ")}
-										</span>
-										{"  "}
-										<span
-											// biome-ignore lint: this is fine for syntax highlighting
-											dangerouslySetInnerHTML={{ __html: highlighted }}
-										/>
-									</div>
-								);
-							})}
-						</code>
-					</pre>
-				</div>
-
-				<p className="mt-4 text-center text-xs text-muted-foreground">
-					The context/subcontext pattern enables O(1) field lookups without
-					hardcoding field names
-				</p>
 			</div>
 		</div>
 	);

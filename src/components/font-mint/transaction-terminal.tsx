@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
 	buildFontMetadata,
-	inferFontRoleFromWeight,
 	type FontWeight,
 	type FontStyle,
 } from "@/lib/asset-metadata";
@@ -86,13 +85,9 @@ export function TransactionTerminal({
 					name: metadata.name,
 					weight: "400" as FontWeight,
 					style: "normal",
-					role: inferFontRoleFromWeight("400"),
 					author: metadata.author || undefined,
 					license: metadata.license,
-					website: metadata.website || undefined,
 					aiGenerated: true,
-					glyphCount: compiledFont.glyphCount,
-					contentType: "font/woff2",
 				});
 
 				inscriptions.push({
@@ -120,11 +115,8 @@ export function TransactionTerminal({
 						name: metadata.name,
 						weight,
 						style: (fontFile.style || "normal") as FontStyle,
-						role: inferFontRoleFromWeight(weight),
 						author: metadata.author || undefined,
 						license: metadata.license,
-						website: metadata.website || undefined,
-						contentType: mimeType,
 					});
 
 					inscriptions.push({

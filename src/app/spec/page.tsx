@@ -136,7 +136,7 @@ export default function SpecPage() {
 						</motion.p>
 					</motion.div>
 
-					<div className="grid gap-8 lg:grid-cols-2">
+					<div className="grid gap-8 lg:grid-cols-2 lg:items-start">
 						{/* Color Variables */}
 						<motion.div
 							initial={{ opacity: 0, x: -20 }}
@@ -293,8 +293,10 @@ export default function SpecPage() {
 						<motion.div
 							initial={{ opacity: 0, x: 20 }}
 							animate={{ opacity: 1, x: 0 }}
+							className="flex flex-col"
 						>
 							<h3 className="mb-4 font-semibold">Full Schema Structure</h3>
+							<div className="max-h-[500px] overflow-auto rounded-lg border border-border">
 							<JsonSyntax
 								json={{
 									$schema: "https://themetoken.dev/v1/schema.json",
@@ -353,6 +355,7 @@ export default function SpecPage() {
 								}}
 								className="text-xs"
 							/>
+							</div>
 							<p className="mt-3 text-xs text-muted-foreground">
 								Our{" "}
 								<code className="rounded bg-muted px-1">
@@ -414,23 +417,20 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							{"// On-Chain Metadata Protocol"}
+							{"// On-Chain Metadata"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							MAP Context/Subcontext Pattern
+							MAP Metadata Protocol
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							All theme-token assets use the MAP (Magic Attribute Protocol)
-							context/subcontext pattern for indexer-friendly discovery. The{" "}
-							<code className="rounded bg-muted px-1">context</code> field
-							points to the primary identifier field, enabling efficient O(1)
-							lookups.
+							Assets use the MAP (Magic Attribute Protocol) for on-chain metadata.
+							Only information that cannot be derived from the inscribed content is stored.
 						</motion.p>
 					</motion.div>
 

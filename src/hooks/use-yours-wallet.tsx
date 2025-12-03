@@ -15,8 +15,6 @@ import {
 	buildPatternMetadata,
 	buildThemeMetadata,
 	type ColorMode,
-	countThemeColors,
-	inferThemeMode,
 } from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import {
@@ -397,16 +395,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				const jsonString = JSON.stringify(theme);
 				const base64Data = btoa(jsonString);
 
-				// Infer mode from background color and count colors
-				const bgColor = theme.styles?.light?.background || theme.styles?.dark?.background || "#000000";
-				const mode = inferThemeMode(bgColor);
-				const colorCount = countThemeColors(theme as Record<string, unknown>);
-
-				const mapData = buildThemeMetadata({
-					name: theme.name,
-					mode,
-					colorCount,
-				});
+				// Theme metadata is minimal - all info is in the JSON content
+				const mapData = buildThemeMetadata();
 
 				const response = await wallet.inscribe([
 					{
@@ -455,13 +445,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				// SVG is text, encode to base64
 				const base64Data = btoa(svg);
 
-				// Build metadata using the new schema
+				// Build metadata - only include non-derivable data
 				const mapData = buildPatternMetadata({
-					name: name || "Untitled Pattern",
 					prompt: metadata?.prompt,
 					colorMode: metadata?.colorMode,
-					tileWidth: metadata?.tileWidth,
-					tileHeight: metadata?.tileHeight,
 				});
 
 				const response = await wallet.inscribe([
