@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Select the AI model
+		// Select the AI model (IDs from Vercel AI Gateway)
 		const modelId = model === "claude-opus-4.5"
-			? "anthropic/claude-opus-4-5-20251101"
+			? "anthropic/claude-opus-4.5"
 			: "google/gemini-3-pro-preview";
 
 		const systemPrompt = `You are a master typographer and font designer. Your task is to generate SVG path data for font glyphs based on a style description.
