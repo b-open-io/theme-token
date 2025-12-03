@@ -1,44 +1,115 @@
+import { from } from "better-color-tools";
 import { ImageResponse } from "next/og";
-import { fetchThemeByOrigin } from "@theme-token/sdk";
+import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
 
 export const runtime = "edge";
+
+// Space Grotesk font URL - TTF format for satori compatibility
+const FONT_URL =
+	"https://fonts.gstatic.com/s/spacegrotesk/v22/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj4PVksj.ttf";
+
+// Convert any color format to hex for ImageResponse compatibility
+function toHex(color: string | undefined, fallback: string): string {
+	if (!color) return fallback;
+	try {
+		return from(color).hex;
+	} catch {
+		return fallback;
+	}
+}
+
+// Extract colors from dark mode for stripes
+function extractColors(theme: ThemeToken): string[] {
+	const colorKeys = [
+		"primary",
+		"secondary",
+		"accent",
+		"muted",
+		"chart-1",
+		"chart-2",
+		"chart-3",
+		"chart-4",
+		"chart-5",
+	];
+
+	const colors: string[] = [];
+	const styles = theme.styles.dark;
+	for (const key of colorKeys) {
+		const color = styles[key as keyof typeof styles];
+		if (color && typeof color === "string") {
+			colors.push(toHex(color, "#666666"));
+		}
+	}
+	return [...new Set(colors)];
+}
+
+// Seeded random for deterministic stripe layout
+function seededRandom(seed: number, i: number) {
+	const x = Math.sin(seed + i) * 10000;
+	return x - Math.floor(x);
+}
 
 export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ origin: string }> },
 ) {
-	const { origin } = await params;
-	// Strip .png extension if present
+	const [fontData, { origin }] = await Promise.all([
+		fetch(FONT_URL).then((res) => res.arrayBuffer()),
+		params,
+	]);
 	const cleanOrigin = origin.replace(/\.png$/, "");
 
-	let themeName = "Theme Token";
-	let author: string | undefined;
-	let colors = {
-		primary: "#6366f1",
-		secondary: "#a855f7",
-		accent: "#ec4899",
-		background: "#09090b",
-		foreground: "#fafafa",
-		muted: "#27272a",
-	};
+	// Default colors
+	const defaultColors = ["#6366f1", "#a855f7", "#ec4899", "#52525b", "#3b82f6"];
+	let stripeColors = defaultColors;
+	let foregroundColor = "#fafafa";
 
 	try {
 		const published = await fetchThemeByOrigin(cleanOrigin);
 		if (published) {
-			themeName = published.theme.name;
-			author = published.theme.author;
-			const styles = published.theme.styles.dark;
-			colors = {
-				primary: styles.primary || colors.primary,
-				secondary: styles.secondary || colors.secondary,
-				accent: styles.accent || colors.accent,
-				background: styles.background || colors.background,
-				foreground: styles.foreground || colors.foreground,
-				muted: styles.muted || colors.muted,
-			};
+			const extracted = extractColors(published.theme);
+			if (extracted.length > 0) {
+				stripeColors = extracted;
+			}
+			foregroundColor = toHex(
+				published.theme.styles.dark.foreground,
+				"#fafafa",
+			);
 		}
 	} catch {
 		// Use defaults
+	}
+
+	// Generate seed from origin for deterministic layout
+	const seed = cleanOrigin
+		.split("")
+		.reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+	// Shuffle colors deterministically
+	const shuffled = stripeColors
+		.map((c, i) => ({ c, r: seededRandom(seed, i) }))
+		.sort((a, b) => a.r - b.r)
+		.map(({ c }) => c);
+
+	// Ensure enough colors for stripes
+	const finalColors =
+		shuffled.length >= 8
+			? shuffled
+			: [...shuffled, ...shuffled, ...shuffled].slice(0, 12);
+
+	// Generate stripe widths
+	const stripes: { x: number; width: number; color: string }[] = [];
+	let totalWidth = 0;
+	let widthSeed = 0;
+	while (totalWidth < 1600) {
+		const width = 40 + seededRandom(seed, 100 + widthSeed) * 80;
+		stripes.push({
+			x: totalWidth,
+			width,
+			color: finalColors[widthSeed % finalColors.length],
+		});
+		totalWidth += width;
+		widthSeed++;
 	}
 
 	return new ImageResponse(
@@ -48,119 +119,88 @@ export async function GET(
 					width: "100%",
 					height: "100%",
 					display: "flex",
-					flexDirection: "column",
-					backgroundColor: colors.background,
-					color: colors.foreground,
-					padding: 60,
+					alignItems: "center",
+					justifyContent: "center",
+					backgroundColor: "#0f172a",
+					position: "relative",
+					overflow: "hidden",
 				}}
 			>
-				{/* Color bar at top */}
+				{/* Diagonal stripes */}
 				<div
 					style={{
+						position: "absolute",
+						top: "-50%",
+						left: "-25%",
+						width: "150%",
+						height: "200%",
 						display: "flex",
-						width: "100%",
-						height: 12,
-						borderRadius: 6,
-						overflow: "hidden",
-						marginBottom: 50,
+						transform: "rotate(-35deg)",
 					}}
 				>
-					<div style={{ flex: 1, backgroundColor: colors.primary }} />
-					<div style={{ flex: 1, backgroundColor: colors.secondary }} />
-					<div style={{ flex: 1, backgroundColor: colors.accent }} />
+					{stripes.map((stripe, i) => (
+						<div
+							key={i}
+							style={{
+								width: stripe.width,
+								height: "100%",
+								backgroundColor: stripe.color,
+								flexShrink: 0,
+							}}
+						/>
+					))}
 				</div>
-
-				{/* Main content */}
+				{/* Text overlay */}
 				<div
 					style={{
+						position: "relative",
 						display: "flex",
 						flexDirection: "column",
-						flex: 1,
+						alignItems: "center",
 						justifyContent: "center",
+						textAlign: "center",
 					}}
 				>
 					<div
 						style={{
-							fontSize: 24,
-							color: colors.primary,
-							marginBottom: 16,
-							fontWeight: 600,
+							display: "flex",
+							fontSize: 96,
+							fontWeight: 700,
+							fontFamily: "Space Grotesk",
+							color: foregroundColor,
+							textShadow: "0 4px 20px rgba(0,0,0,0.5)",
+							letterSpacing: "-0.02em",
 						}}
 					>
 						Theme Token
 					</div>
 					<div
 						style={{
-							fontSize: 72,
+							display: "flex",
+							fontSize: 36,
 							fontWeight: 700,
-							lineHeight: 1.1,
-							marginBottom: 24,
+							fontFamily: "Space Grotesk",
+							color: foregroundColor,
+							textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+							marginTop: 8,
 						}}
 					>
-						{themeName}
+						themetoken.dev
 					</div>
-					{author && (
-						<div
-							style={{
-								fontSize: 28,
-								color: colors.muted,
-							}}
-						>
-							by {author}
-						</div>
-					)}
-				</div>
-
-				{/* Color swatches at bottom */}
-				<div
-					style={{
-						display: "flex",
-						gap: 16,
-						marginTop: "auto",
-					}}
-				>
-					{[
-						{ name: "Primary", color: colors.primary },
-						{ name: "Secondary", color: colors.secondary },
-						{ name: "Accent", color: colors.accent },
-					].map((swatch) => (
-						<div
-							key={swatch.name}
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: 12,
-							}}
-						>
-							<div
-								style={{
-									width: 48,
-									height: 48,
-									borderRadius: 8,
-									backgroundColor: swatch.color,
-								}}
-							/>
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-								}}
-							>
-								<span style={{ fontSize: 16, fontWeight: 500 }}>
-									{swatch.name}
-								</span>
-								<span style={{ fontSize: 14, color: colors.muted }}>
-									{swatch.color}
-								</span>
-							</div>
-						</div>
-					))}
 				</div>
 			</div>
 		),
 		{
 			width: 1200,
 			height: 630,
+			fonts: [
+				{
+					name: "Space Grotesk",
+					data: fontData,
+					weight: 700,
+					style: "normal",
+				},
+			],
 		},
 	);
 }
