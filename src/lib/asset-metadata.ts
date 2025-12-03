@@ -1,19 +1,41 @@
+/**
+ * Context values define CSS rendering physics
+ */
+export type AssetContext = "tile" | "wallpaper" | "sprite" | "avatar";
+
+/**
+ * Role values define semantic intent/slot
+ */
+export type AssetRole = "banner" | "card" | "story" | "square" | "icon" | "default";
+
+/**
+ * Color mode for SVG patterns
+ */
+export type ColorMode = "currentColor" | "theme" | "grayscale";
+
 export function buildPatternMetadata(params: {
 	name?: string;
 	author?: string;
 	license?: string;
 	prompt?: string;
+	ctx?: AssetContext;
+	role?: AssetRole;
+	meta?: [number, number];
+	colorMode?: ColorMode;
 }): Record<string, string> {
 	const result: Record<string, string> = {
 		app: "theme-token",
-		type: "pattern",
+		ctx: params.ctx || "tile", // Default to tile for patterns
 	};
 
+	if (params.role) result.role = params.role;
+	if (params.meta) result.meta = params.meta.join(",");
 	if (params.name) result.name = params.name;
 	if (params.author) result.author = params.author;
 	// Default to CC0 (public domain) if no license specified
 	result.license = params.license || "CC0";
 	if (params.prompt) result.prompt = params.prompt;
+	if (params.colorMode) result.colorMode = params.colorMode;
 
 	return result;
 }
