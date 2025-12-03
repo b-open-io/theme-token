@@ -408,22 +408,27 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		): Promise<SendBsvResult | null> => {
 			const wallet = walletRef.current;
 			if (!wallet) {
+				console.error("[sendPayment] Wallet not connected");
 				setError("Wallet not connected");
 				return null;
 			}
 
+			console.log("[sendPayment] Starting payment:", { recipientAddress, amountSatoshis });
 			setIsSending(true);
 			setError(null);
 
 			try {
 				const result = await sendBsv(wallet, recipientAddress, amountSatoshis);
+				console.log("[sendPayment] Success:", result);
 
 				// Refresh wallet info after payment
 				await fetchWalletInfo();
 
 				return result;
 			} catch (err) {
-				setError(err instanceof Error ? err.message : "Payment failed");
+				console.error("[sendPayment] Error:", err);
+				const errorMessage = err instanceof Error ? err.message : "Payment failed";
+				setError(errorMessage);
 				return null;
 			} finally {
 				setIsSending(false);

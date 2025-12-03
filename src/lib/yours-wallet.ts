@@ -351,6 +351,11 @@ export async function sendBsv(
 	recipientAddress: string,
 	amountSatoshis: number,
 ): Promise<SendBsvResult> {
+	console.log("[sendBsv] Calling wallet.sendBsv with:", {
+		address: recipientAddress,
+		satoshis: amountSatoshis,
+	});
+
 	// Use wallet's built-in sendBsv method
 	// Change is automatically returned to sender's wallet
 	const result = await wallet.sendBsv([
@@ -359,6 +364,8 @@ export async function sendBsv(
 			address: recipientAddress,
 		},
 	]);
+
+	console.log("[sendBsv] Wallet returned:", result);
 
 	return {
 		txid: result.txid,
