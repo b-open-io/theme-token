@@ -4,6 +4,7 @@ import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import type { ThemeWithChange } from "@/hooks/use-market-history";
 import { formatBSV } from "./theme-stripes";
 
@@ -28,6 +29,8 @@ function TrendingCard({
 	const styles = item.theme.styles[mode];
 	const hasChange = item.priceChange24h !== null;
 	const isPositive = (item.priceChange24h ?? 0) >= 0;
+	const { formatUsd } = useBsvRateContext();
+	const usdPrice = formatUsd(item.price);
 
 	return (
 		<motion.div
@@ -93,9 +96,16 @@ function TrendingCard({
 				{/* Bottom: price */}
 				<div className="flex items-end justify-between">
 					<span className="text-[10px] text-muted-foreground">Price</span>
-					<span className="font-mono text-sm font-bold">
-						{formatBSV(item.price)} BSV
-					</span>
+					<div className="text-right">
+						<span className="font-mono text-sm font-bold">
+							{usdPrice || `${formatBSV(item.price)} BSV`}
+						</span>
+						{usdPrice && (
+							<span className="ml-1 font-mono text-[10px] text-muted-foreground">
+								{formatBSV(item.price)}
+							</span>
+						)}
+					</div>
 				</div>
 			</Link>
 		</motion.div>

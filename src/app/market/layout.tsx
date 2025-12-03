@@ -10,6 +10,7 @@ import { ShoppingCart, Tag, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
 
 const tabs = [
@@ -26,7 +27,7 @@ function formatBSV(sats: number): string {
 	return bsv.toFixed(2);
 }
 
-export default function MarketLayout({
+function MarketLayoutInner({
 	children,
 }: {
 	children: React.ReactNode;
@@ -34,6 +35,7 @@ export default function MarketLayout({
 	const pathname = usePathname();
 	const barRef = useRef<HTMLDivElement>(null);
 	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
+	const { formatUsd } = useBsvRateContext();
 
 	// Mouse tracking for spotlight effect
 	const mouseX = useMotionValue(0);
@@ -129,8 +131,8 @@ export default function MarketLayout({
 								</div>
 								<div className="flex items-center gap-1.5">
 									<span className="text-muted-foreground/60">floor</span>
-									<span className="tabular-nums text-foreground">{formatBSV(floorPrice)}</span>
-									<span className="text-muted-foreground/60">BSV</span>
+									<span className="tabular-nums text-foreground">{formatUsd(floorPrice) || formatBSV(floorPrice)}</span>
+									{!formatUsd(floorPrice) && <span className="text-muted-foreground/60">BSV</span>}
 								</div>
 							</div>
 						)}
@@ -177,5 +179,17 @@ export default function MarketLayout({
 				{children}
 			</div>
 		</div>
+	);
+}
+
+export default function MarketLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	return (
+		<BsvRateProvider>
+			<MarketLayoutInner>{children}</MarketLayoutInner>
+		</BsvRateProvider>
 	);
 }

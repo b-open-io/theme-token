@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { formatBSV } from "./theme-stripes";
 
 interface ThemeCardProps {
@@ -41,6 +42,8 @@ export function ThemeCard({
 	const styles = theme.styles[mode];
 	const hasChange = priceChange !== null && priceChange !== undefined;
 	const isPositive = (priceChange ?? 0) >= 0;
+	const { formatUsd } = useBsvRateContext();
+	const usdPrice = formatUsd(price);
 
 	// Build CSS custom properties from theme
 	const themeVars = {
@@ -197,8 +200,13 @@ export function ThemeCard({
 				</div>
 				<div className="text-right">
 					<p className="font-mono text-sm font-semibold">
-						{formatBSV(price)} BSV
+						{usdPrice || `${formatBSV(price)} BSV`}
 					</p>
+					{usdPrice && (
+						<span className="font-mono text-[10px] text-muted-foreground">
+							{formatBSV(price)} BSV
+						</span>
+					)}
 					{hasChange && (
 						<span
 							className={`inline-flex items-center gap-0.5 font-mono text-[10px] font-medium ${
