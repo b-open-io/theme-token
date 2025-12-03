@@ -87,14 +87,14 @@ export default function Home() {
 						</Badge>
 
 						<h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-							<span className="block">On-Chain Themes</span>
-							<span className="block text-primary">For ShadCN UI</span>
+							<span className="block">ShadCN UI,</span>
+							<span className="block text-primary">on Bitcoin</span>
 						</h1>
 
 						<p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-							Install themes directly from blockchain using the{" "}
-							<span className="font-semibold text-foreground">ShadCN CLI</span>.
-							Own, trade, and apply themes across any compatible application.
+							Themes on-chain. Install via{" "}
+							<span className="font-semibold text-foreground">CLI</span>.
+							No servers. No downtime.
 						</p>
 
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -213,20 +213,20 @@ export default function Home() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// Why On-Chain Themes?
+							// Why store themes on-chain?
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							A New Paradigm for Design Assets
+							A Registry That Cannot Be Deleted
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mx-auto mb-16 max-w-2xl text-muted-foreground"
 						>
-							Theme tokens bring the benefits of blockchain to design systems—
-							provenance, ownership, and permissionless distribution.
+							Design tokens as immutable assets. Once published, your theme is
+							globally accessible via CLI, forever.
 						</motion.p>
 					</motion.div>
 
@@ -244,7 +244,7 @@ export default function Home() {
 							</div>
 							<h3 className="mb-2 text-xl font-semibold">For Designers</h3>
 							<p className="mb-4 text-sm text-muted-foreground">
-								True ownership & monetization
+								Immutable attribution & royalties
 							</p>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-start gap-2">
@@ -275,7 +275,7 @@ export default function Home() {
 							</div>
 							<h3 className="mb-2 text-xl font-semibold">For Developers</h3>
 							<p className="mb-4 text-sm text-muted-foreground">
-								ShadCN Registry Format
+								Native CLI integration
 							</p>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-start gap-2">
@@ -306,7 +306,7 @@ export default function Home() {
 							</div>
 							<h3 className="mb-2 text-xl font-semibold">For Users</h3>
 							<p className="mb-4 text-sm text-muted-foreground">
-								Portability & collection
+								Cross-app theme persistence
 							</p>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-start gap-2">
@@ -339,7 +339,7 @@ export default function Home() {
 							</Badge>
 						</div>
 						<p className="text-sm text-muted-foreground">
-							An open standard. Use freely.
+							Open source. Built on Bitcoin.
 						</p>
 						<div className="flex gap-4">
 							<a

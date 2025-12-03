@@ -9,7 +9,7 @@ import { WalletConnect } from "@/components/wallet-connect";
 // Width configurations per page type - must match content widths on each page
 const WIDTH_CONFIG = {
 	spec: "max-w-6xl", // matches spec/page.tsx content width
-	studio: "max-w-[95%]", // studio is full-width editor
+	studio: "max-w-full", // studio is full-width edge-to-edge
 	market: "max-w-[1400px]", // matches market/layout.tsx content width
 	default: "max-w-6xl", // matches home page content width
 } as const;

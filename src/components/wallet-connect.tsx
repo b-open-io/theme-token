@@ -154,24 +154,21 @@ export function WalletConnect() {
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: -10 }}
 							transition={{ duration: 0.15 }}
-							className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-border bg-card p-2 shadow-lg"
+							className="absolute right-0 top-full z-50 mt-2 min-w-[200px] max-w-[240px] rounded-lg border border-border bg-card p-2 shadow-lg"
 						>
 							{/* Theme List */}
 							{themeTokens.length === 0 ? (
-								<div className="px-3 py-4 text-center text-sm text-muted-foreground">
+								<div className="px-2 py-3 text-center text-sm text-muted-foreground">
 									{isLoading ? (
 										<div className="flex items-center justify-center gap-2">
 											<Loader2 className="h-4 w-4 animate-spin" />
-											Loading themes...
+											Loading...
 										</div>
 									) : (
 										<>
-											<div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded border border-dashed border-muted-foreground opacity-50">
-												<span className="text-xs">?</span>
-											</div>
-											<p>No Theme Tokens found</p>
-											<p className="mt-1 text-xs">
-												Inscribe a Theme Token to see it here
+											<p className="text-xs">No Theme Tokens found</p>
+											<p className="mt-1 text-xs opacity-60">
+												Inscribe one to see it here
 											</p>
 										</>
 									)}
