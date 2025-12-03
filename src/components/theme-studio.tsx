@@ -538,8 +538,8 @@ export function ThemeStudio() {
 			{/* Main content area */}
 			<div className="flex min-h-0 flex-1 overflow-hidden">
 				{/* Left Panel: Controls (fixed width, scrollable) */}
-				<div className="flex w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
-					<div className="flex-1 overflow-y-auto p-4">
+				<div className="flex min-h-0 w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
+					<div className="min-h-0 flex-1 overflow-y-auto p-4">
 						{/* Tab switcher */}
 						<div className="mb-4 flex gap-1 rounded-lg bg-muted p-1">
 							<button

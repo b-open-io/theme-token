@@ -6,10 +6,10 @@ import { ThemeStudio } from "@/components/theme-studio";
 
 export default function StudioPage() {
 	return (
-		<div className="h-screen bg-background">
+		<div className="flex h-full flex-col bg-background">
 			<Suspense
 				fallback={
-					<div className="flex h-screen items-center justify-center">
+					<div className="flex h-full items-center justify-center">
 						<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 					</div>
 				}
