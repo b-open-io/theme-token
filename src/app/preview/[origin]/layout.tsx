@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 			description: `Preview and install the ${themeName} theme for ShadCN UI`,
 			images: [
 				{
-					url: `/og/${origin}.png`,
+					url: `/og/${origin}`,
 					width: 1200,
 					height: 630,
 					alt: `${themeName} - Theme Token`,
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 			card: "summary_large_image",
 			title: `${themeName} | Theme Token`,
 			description: `Preview and install the ${themeName} theme`,
-			images: [`/og/${origin}.png`],
+			images: [`/og/${origin}`],
 		},
 	};
 }
