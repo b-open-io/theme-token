@@ -26,6 +26,9 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 		(a, b) => a - b,
 	);
 
+	// Derive status from files length for initial state
+	const derivedStatus: LoadStatus = files.length === 0 ? "IDLE" : status;
+
 	// Load fonts when files change
 	useEffect(() => {
 		// Cleanup previous font URLs
@@ -33,7 +36,6 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 		fontUrlsRef.current = [];
 
 		if (files.length === 0) {
-			setStatus("IDLE");
 			return;
 		}
 
@@ -90,14 +92,14 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 				</span>
 				<span
 					className={`font-mono text-xs ${
-						status === "READY"
+						derivedStatus === "READY"
 							? "text-primary"
-							: status === "ERROR"
+							: derivedStatus === "ERROR"
 								? "text-destructive"
 								: "text-muted-foreground"
 					}`}
 				>
-					STATUS: {status}
+					STATUS: {derivedStatus}
 				</span>
 			</div>
 
@@ -178,11 +180,11 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 					<div className="flex h-full items-center justify-center font-mono text-sm text-muted-foreground">
 						AWAITING_FONT_UPLOAD...
 					</div>
-				) : status === "LOADING" ? (
+				) : derivedStatus === "LOADING" ? (
 					<div className="flex h-full items-center justify-center font-mono text-sm text-muted-foreground">
 						LOADING_FONT_BINARY...
 					</div>
-				) : status === "ERROR" ? (
+				) : derivedStatus === "ERROR" ? (
 					<div className="flex h-full items-center justify-center font-mono text-sm text-destructive">
 						ERROR_PARSING_FONT
 					</div>

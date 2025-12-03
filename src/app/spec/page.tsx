@@ -47,7 +47,7 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// ShadCN Registry Format
+							{"// ShadCN Registry Format"}
 						</motion.p>
 						<motion.h1
 							variants={fadeIn}
@@ -117,7 +117,7 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// The Schema
+							{"// The Schema"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}
@@ -404,7 +404,7 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// Blockchain Implementations
+							{"// Blockchain Implementations"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}
@@ -444,7 +444,7 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// TypeScript SDK
+							{"// TypeScript SDK"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}
@@ -575,7 +575,7 @@ export default function SpecPage() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// For AI Assistants
+							{"// For AI Assistants"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}

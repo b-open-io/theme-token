@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import {
 	Check,
 	Code2,
@@ -100,16 +101,16 @@ export default function Home() {
 
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
 							<Button size="lg" className="gap-2" asChild>
-								<a href="/market">
+								<Link href="/market">
 									<LayoutGrid className="h-5 w-5" />
 									Browse Themes
-								</a>
+								</Link>
 							</Button>
 							<Button size="lg" variant="outline" className="gap-2" asChild>
-								<a href="/studio">
+								<Link href="/studio">
 									<Wand2 className="h-5 w-5" />
 									Create Theme
-								</a>
+								</Link>
 							</Button>
 						</div>
 					</motion.div>
@@ -187,9 +188,9 @@ export default function Home() {
 									[origin]
 								</code>{" "}
 								with any theme&apos;s blockchain ID.{" "}
-								<a href="/market" className="text-primary hover:underline">
+								<Link href="/market" className="text-primary hover:underline">
 									Browse themes
-								</a>{" "}
+								</Link>{" "}
 								to find one.
 							</p>
 						</motion.div>
@@ -214,7 +215,7 @@ export default function Home() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							// Why store themes on-chain?
+							{"// Why store themes on-chain?"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}

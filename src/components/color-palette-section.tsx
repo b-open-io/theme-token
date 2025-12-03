@@ -300,22 +300,41 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 
 	// Auto-generate on mount and when primaryColor changes
 	useEffect(() => {
+		const generate = async (inputColor: string) => {
+			const hex = inputColor.replace(/^#/, "");
+			if (hex.length !== 6) return;
+
+			setIsLoading(true);
+
+			const primary = await fetchTintsPalette("primary", hex);
+			const complementaryHex = getComplementaryColor(inputColor);
+			const complementary = await fetchTintsPalette("complementary", complementaryHex.replace("#", ""));
+			const triadicHex = getTriadicColor(inputColor);
+			const triadic = await fetchTintsPalette("triadic", triadicHex.replace("#", ""));
+
+			if (primary) setPrimaryPalette(primary);
+			if (complementary) setComplementaryPalette(complementary);
+			if (triadic) setTriadicPalette(triadic);
+
+			setIsLoading(false);
+		};
+
 		const rawColor = primaryColor || "#3B82F6";
 		const hexColor = toHex(rawColor);
 		setColor(hexColor);
-		generatePalettes(hexColor);
+		generate(hexColor);
 	}, [primaryColor]);
 
-	const generatePalettes = async (inputColor: string) => {
-		const hex = inputColor.replace(/^#/, "");
+	const handleGenerate = async () => {
+		const hex = color.replace(/^#/, "");
 		if (hex.length !== 6) return;
 
 		setIsLoading(true);
 
 		const primary = await fetchTintsPalette("primary", hex);
-		const complementaryHex = getComplementaryColor(inputColor);
+		const complementaryHex = getComplementaryColor(color);
 		const complementary = await fetchTintsPalette("complementary", complementaryHex.replace("#", ""));
-		const triadicHex = getTriadicColor(inputColor);
+		const triadicHex = getTriadicColor(color);
 		const triadic = await fetchTintsPalette("triadic", triadicHex.replace("#", ""));
 
 		if (primary) setPrimaryPalette(primary);
@@ -324,8 +343,6 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 
 		setIsLoading(false);
 	};
-
-	const handleGenerate = () => generatePalettes(color);
 
 	const primaryArray = primaryPalette ? paletteToArray(primaryPalette) : [];
 	const complementaryArray = complementaryPalette ? paletteToArray(complementaryPalette) : [];

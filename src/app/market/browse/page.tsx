@@ -64,7 +64,7 @@ export default function BrowsePage() {
 	const isConnected = status === "connected";
 
 	// Market history for stats and trending
-	const { stats, trending, getPriceChange } = useMarketHistory({
+	const { stats: _stats, trending, getPriceChange } = useMarketHistory({
 		listings: listings.map((l) => ({ origin: l.origin, price: l.price })),
 	});
 

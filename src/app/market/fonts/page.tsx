@@ -1,6 +1,9 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { Upload, Wand2 } from "lucide-react";
 import { useState } from "react";
+import { AIGenerateTab } from "@/components/font-mint/ai-generate-tab";
 import { DropZoneCLI } from "@/components/font-mint/drop-zone-cli";
 import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
 import { MetadataForm, type FontMetadata } from "@/components/font-mint/metadata-form";
@@ -17,8 +20,11 @@ export interface FontFile {
 	style?: "normal" | "italic";
 }
 
+type InputMode = "upload" | "ai";
+
 export default function FontMintPage() {
 	const { status, connect } = useYoursWallet();
+	const [inputMode, setInputMode] = useState<InputMode>("upload");
 	const [fontFiles, setFontFiles] = useState<FontFile[]>([]);
 	const [metadata, setMetadata] = useState<FontMetadata>({
 		name: "",
@@ -123,11 +129,53 @@ export default function FontMintPage() {
 				</h1>
 			</div>
 
+			{/* Mode Tabs */}
+			<div className="mb-6 flex gap-1 rounded border border-border bg-muted/30 p-1">
+				{[
+					{ id: "upload" as const, label: "UPLOAD_FILE", icon: Upload },
+					{ id: "ai" as const, label: "GENERATE_AI", icon: Wand2 },
+				].map((tab) => {
+					const Icon = tab.icon;
+					const isActive = inputMode === tab.id;
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							onClick={() => setInputMode(tab.id)}
+							className={`relative flex flex-1 items-center justify-center gap-2 rounded px-4 py-2 font-mono text-xs transition-colors ${
+								isActive
+									? "text-foreground"
+									: "text-muted-foreground hover:text-foreground/80"
+							}`}
+						>
+							{isActive && (
+								<motion.div
+									layoutId="font-input-mode"
+									className="absolute inset-0 rounded bg-background shadow-sm"
+									transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+								/>
+							)}
+							<Icon className="relative z-10 h-4 w-4" />
+							<span className="relative z-10">{tab.label}</span>
+						</button>
+					);
+				})}
+			</div>
+
 			{/* Main Grid */}
 			<div className="grid gap-6 lg:grid-cols-2">
 				{/* Left Column: Input Console */}
 				<div className="space-y-6">
-					<DropZoneCLI files={fontFiles} onFilesChange={setFontFiles} />
+					{inputMode === "upload" ? (
+						<DropZoneCLI files={fontFiles} onFilesChange={setFontFiles} />
+					) : (
+						<AIGenerateTab
+							onFontGenerated={(file) => {
+								setFontFiles((prev) => [...prev, file]);
+								setInputMode("upload"); // Switch to upload to show the file
+							}}
+						/>
+					)}
 					<MetadataForm value={metadata} onChange={setMetadata} />
 					<CostMatrix
 						totalBytes={totalBytes}
