@@ -317,7 +317,6 @@ export function ThemeStudio() {
 		const themeToMint: ThemeToken = {
 			...selectedTheme,
 			name: customName.trim() || selectedTheme.name,
-			// Add author from profile if available
 			...(profile?.displayName && { author: profile.displayName }),
 		};
 

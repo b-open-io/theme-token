@@ -269,11 +269,19 @@ export function useYoursWallet(): UseYoursWalletReturn {
 			const [addrs, bal, prof] = await Promise.all([
 				wallet.getAddresses(),
 				wallet.getBalance(),
-				wallet.getSocialProfile().catch(() => null),
+				wallet.getSocialProfile().catch((err) => {
+					console.warn("[Wallet] getSocialProfile error:", err);
+					return null;
+				}),
 			]);
+			console.log("[Wallet] fetchWalletInfo result:", { addrs, bal, prof });
 			setAddresses(addrs);
 			setBalance(bal);
-			if (prof) setProfile(prof);
+			// Set profile even if displayName is empty string (wallet returns empty when not set)
+			if (prof) {
+				console.log("[Wallet] Setting profile:", prof);
+				setProfile(prof);
+			}
 		} catch (err) {
 			console.error("Failed to fetch wallet info:", err);
 		}
