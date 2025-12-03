@@ -65,8 +65,10 @@ export default function RootLayout({
 				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} flex h-full flex-col font-sans antialiased`}
 			>
 				<Providers>
-					<Header />
-					<main className="flex-1 overflow-hidden">{children}</main>
+					<div className="flex h-full flex-col">
+						<Header />
+						<main className="min-h-0 flex-1">{children}</main>
+					</div>
 				</Providers>
 			</body>
 		</html>
