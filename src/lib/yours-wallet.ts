@@ -334,8 +334,8 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 // Fee address for AI generation payments
 export const FEE_ADDRESS = "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z";
 
-// AI generation cost: 0.00001 BSV = 1,000 satoshis (testing price)
-export const AI_GENERATION_COST_SATS = 1_000;
+// AI generation cost: 0.01 BSV = 1,000,000 satoshis
+export const AI_GENERATION_COST_SATS = 1_000_000;
 
 export interface SendBsvResult {
 	txid: string;

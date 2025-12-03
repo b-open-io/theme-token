@@ -45,6 +45,7 @@ interface WalletContextValue {
 	disconnect: () => Promise<void>;
 	themeTokens: ThemeToken[];
 	ownedThemes: OwnedTheme[];
+	pendingThemes: OwnedTheme[];
 	isLoading: boolean;
 	refresh: () => Promise<void>;
 	addresses: Addresses | null;
@@ -62,6 +63,7 @@ interface WalletContextValue {
 		amountSatoshis: number,
 	) => Promise<SendBsvResult | null>;
 	isSending: boolean;
+	addPendingTheme: (theme: ThemeToken, txid: string) => void;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -78,8 +80,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const [isInscribing, setIsInscribing] = useState(false);
 	const [isListing, setIsListing] = useState(false);
 	const [isSending, setIsSending] = useState(false);
+	const [pendingThemes, setPendingThemes] = useState<OwnedTheme[]>([]);
 	const walletRef = useRef<YoursWallet | null>(null);
-	const { setAvailableThemes, resetTheme } = useTheme();
+	const { availableThemes, setAvailableThemes, resetTheme } = useTheme();
 
 	// Fetch theme tokens from wallet
 	const fetchThemeTokens = useCallback(async () => {
@@ -395,6 +398,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		[fetchWalletInfo],
 	);
 
+	// Add a theme to pending state (optimistic ownership before wallet confirms)
+	const addPendingTheme = useCallback(
+		(theme: ThemeToken, txid: string) => {
+			const origin = `${txid}_0`;
+			const pendingTheme: OwnedTheme = {
+				theme,
+				outpoint: origin,
+				origin,
+			};
+			setPendingThemes((prev) => [...prev, pendingTheme]);
+			// Also add to available themes for immediate dropdown selection
+			setAvailableThemes([...availableThemes, theme]);
+		},
+		[availableThemes, setAvailableThemes],
+	);
+
 	return (
 		<WalletContext.Provider
 			value={{
@@ -404,6 +423,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				disconnect,
 				themeTokens,
 				ownedThemes,
+				pendingThemes,
 				isLoading,
 				refresh,
 				addresses,
@@ -415,6 +435,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				isListing,
 				sendPayment,
 				isSending,
+				addPendingTheme,
 			}}
 		>
 			{children}

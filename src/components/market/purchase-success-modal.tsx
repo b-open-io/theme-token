@@ -2,19 +2,17 @@
 
 import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
-import { Check, Copy, ExternalLink, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, ExternalLink, ShoppingBag } from "lucide-react";
+import { useEffect } from "react";
 import useSound from "use-sound";
 import { Button } from "@/components/ui/button";
 import { ConfettiExplosion } from "@/components/ui/confetti";
-import {
-	Dialog,
-	DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-interface InscribedSuccessModalProps {
+interface PurchaseSuccessModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	onApplyNow: () => void;
 	txid: string;
 	theme: ThemeToken;
 }
@@ -35,7 +33,7 @@ function CardSheen() {
 	);
 }
 
-// Mini preview showing light/dark split
+// Mini preview showing light/dark split with sheen
 function ThemePreviewCard({ theme }: { theme: ThemeToken }) {
 	const light = theme.styles.light;
 	const dark = theme.styles.dark;
@@ -108,22 +106,15 @@ function ThemePreviewCard({ theme }: { theme: ThemeToken }) {
 	);
 }
 
-// X/Twitter icon
-function XIcon({ className }: { className?: string }) {
-	return (
-		<svg viewBox="0 0 24 24" className={className} fill="currentColor">
-			<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-		</svg>
-	);
-}
-
-export function InscribedSuccessModal({
+export function PurchaseSuccessModal({
 	isOpen,
 	onClose,
+	onApplyNow,
 	txid,
 	theme,
-}: InscribedSuccessModalProps) {
-	const [copied, setCopied] = useState(false);
+}: PurchaseSuccessModalProps) {
+	const primaryColor = theme.styles.light.primary;
+	const whatsOnChainUrl = `https://whatsonchain.com/tx/${txid}`;
 
 	// Success chime sound
 	const [playSuccess] = useSound("/sounds/success.mp3", { volume: 0.5 });
@@ -135,27 +126,10 @@ export function InscribedSuccessModal({
 		}
 	}, [isOpen, playSuccess]);
 
-	const origin = `${txid}_0`;
-	const installUrl = `https://themetoken.dev/r/themes/${origin}.json`;
-	const installCommand = `bunx shadcn@latest add ${installUrl}`;
-	const marketUrl = `https://1sat.market/outpoint/${origin}`;
-	const themePageUrl = `https://themetoken.dev/preview/${origin}`;
-
-	const handleCopy = () => {
-		navigator.clipboard.writeText(installCommand);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
+	const handleApplyNow = () => {
+		onApplyNow();
+		onClose();
 	};
-
-	const handleShare = () => {
-		const text = `I just inscribed "${theme.name}" as a Theme Token on BSV! Install it in your project:\n\n${installCommand}\n\n`;
-		window.open(
-			`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(themePageUrl)}`,
-			"_blank",
-		);
-	};
-
-	const primaryColor = theme.styles.light.primary;
 
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -183,7 +157,7 @@ export function InscribedSuccessModal({
 							animate={{ scale: 1 }}
 							transition={{ delay: 0.2 }}
 						>
-							<Sparkles className="h-8 w-8" style={{ color: primaryColor }} />
+							<ShoppingBag className="h-8 w-8" style={{ color: primaryColor }} />
 						</motion.div>
 					</motion.div>
 
@@ -194,11 +168,11 @@ export function InscribedSuccessModal({
 						transition={{ delay: 0.1 }}
 					>
 						<h2 className="text-2xl font-bold tracking-tight">
-							Theme Inscribed!
+							Theme Purchased!
 						</h2>
 						<p className="mt-2 text-sm text-muted-foreground">
 							<span className="font-semibold text-foreground">{theme.name}</span>{" "}
-							is now permanently on the blockchain.
+							is now in your collection.
 						</p>
 					</motion.div>
 
@@ -212,43 +186,23 @@ export function InscribedSuccessModal({
 						<ThemePreviewCard theme={theme} />
 					</motion.div>
 
-					{/* Install command */}
+					{/* Transaction link */}
 					<motion.div
 						className="w-full"
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: 0.3 }}
 					>
-						<label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-							Install via CLI
-						</label>
-						<div className="group relative flex items-center gap-2 rounded-lg border bg-muted/50 p-3 pr-12 font-mono text-xs">
-							<code className="flex-1 overflow-x-auto text-left">{installCommand}</code>
-							<button
-								type="button"
-								onClick={handleCopy}
-								className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-background"
-								title="Copy"
-							>
-								{copied ? (
-									<Check className="h-4 w-4 text-green-500" />
-								) : (
-									<Copy className="h-4 w-4 text-muted-foreground" />
-								)}
-							</button>
-						</div>
-					</motion.div>
-
-					{/* Origin ID (smaller) */}
-					<motion.div
-						className="mt-4 w-full"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						transition={{ delay: 0.35 }}
-					>
-						<p className="text-[10px] text-muted-foreground">
-							Origin: <span className="font-mono">{origin}</span>
-						</p>
+						<a
+							href={whatsOnChainUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+						>
+							<Check className="h-3 w-3 text-green-500" />
+							Transaction confirmed
+							<ExternalLink className="h-3 w-3" />
+						</a>
 					</motion.div>
 
 					{/* Action buttons */}
@@ -259,34 +213,18 @@ export function InscribedSuccessModal({
 						transition={{ delay: 0.4 }}
 					>
 						<Button
-							onClick={handleShare}
+							onClick={handleApplyNow}
 							variant="default"
 							className="flex-1 gap-2"
 						>
-							<XIcon className="h-4 w-4" />
-							Share
+							Apply Now
 						</Button>
-						<Button asChild variant="outline" className="flex-1 gap-2">
-							<a href={marketUrl} target="_blank" rel="noopener noreferrer">
-								View on Market
-								<ExternalLink className="h-3 w-3" />
-							</a>
-						</Button>
-					</motion.div>
-
-					{/* Create another button */}
-					<motion.div
-						className="mt-4 w-full"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						transition={{ delay: 0.5 }}
-					>
 						<Button
 							onClick={onClose}
-							variant="ghost"
-							className="w-full text-muted-foreground"
+							variant="outline"
+							className="flex-1"
 						>
-							Create Another Theme
+							Browse More
 						</Button>
 					</motion.div>
 				</div>

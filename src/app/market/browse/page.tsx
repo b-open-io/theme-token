@@ -1,5 +1,6 @@
 "use client";
 
+import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -34,6 +35,7 @@ import {
 	type FilterState,
 } from "@/components/market/filter-sidebar";
 import { GenerateCard } from "@/components/market/generate-card";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { ThemeCard } from "@/components/market/theme-card";
 import { TrendingRail } from "@/components/market/trending-rail";
 
@@ -44,14 +46,20 @@ const DEFAULT_FILTERS: FilterState = {
 	priceRange: [0, 10],
 };
 
+interface PurchaseSuccess {
+	txid: string;
+	theme: ThemeToken;
+}
+
 export default function BrowsePage() {
-	const { status, connect } = useYoursWallet();
+	const { status, connect, addPendingTheme } = useYoursWallet();
 	const { mode, applyThemeAnimated } = useTheme();
 	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [purchasing, setPurchasing] = useState<string | null>(null);
 	const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+	const [purchaseSuccess, setPurchaseSuccess] = useState<PurchaseSuccess | null>(null);
 
 	const isConnected = status === "connected";
 
@@ -111,13 +119,30 @@ export default function BrowsePage() {
 				marketplaceAddress: "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z",
 			});
 
-			console.log("Purchase successful:", txid);
-			await loadListings();
+			// Add to pending themes for immediate ownership (before wallet confirms UTXO)
+			addPendingTheme(listing.theme, txid);
+
+			// Show success modal
+			setPurchaseSuccess({ txid, theme: listing.theme });
+
+			// Refresh listings in background
+			loadListings();
 		} catch (err) {
 			console.error("Purchase failed:", err);
 			setError(err instanceof Error ? err.message : "Purchase failed");
 		} finally {
 			setPurchasing(null);
+		}
+	};
+
+	const handleApplyPurchasedTheme = () => {
+		if (purchaseSuccess) {
+			// Create a synthetic mouse event for the animation
+			const syntheticEvent = new MouseEvent("click", {
+				clientX: window.innerWidth / 2,
+				clientY: window.innerHeight / 2,
+			}) as unknown as React.MouseEvent;
+			applyThemeAnimated(purchaseSuccess.theme, syntheticEvent);
 		}
 	};
 
@@ -342,6 +367,17 @@ export default function BrowsePage() {
 					)}
 				</main>
 			</div>
+
+			{/* Purchase Success Modal */}
+			{purchaseSuccess && (
+				<PurchaseSuccessModal
+					isOpen={true}
+					onClose={() => setPurchaseSuccess(null)}
+					onApplyNow={handleApplyPurchasedTheme}
+					txid={purchaseSuccess.txid}
+					theme={purchaseSuccess.theme}
+				/>
+			)}
 		</>
 	);
 }

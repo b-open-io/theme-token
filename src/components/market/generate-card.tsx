@@ -71,8 +71,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			return;
 		}
 
-		// TODO: REMOVE THIS - temporary bypass for testing
-		const DEV_BYPASS_PAYMENT = true;
+		const DEV_BYPASS_PAYMENT = false;
 
 		if (!DEV_BYPASS_PAYMENT && !hasEnoughBalance) {
 			toast.error("Insufficient Balance", {
