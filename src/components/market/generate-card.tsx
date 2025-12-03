@@ -67,7 +67,10 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			return;
 		}
 
-		if (!hasEnoughBalance) {
+		// TODO: REMOVE THIS - temporary bypass for testing
+		const DEV_BYPASS_PAYMENT = true;
+
+		if (!DEV_BYPASS_PAYMENT && !hasEnoughBalance) {
 			setError(`Insufficient balance. Need ${formatBsv(AI_GENERATION_COST_SATS)} BSV`);
 			return;
 		}
@@ -76,12 +79,17 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 		const finalPrompt = stylePrompt || prompt || "Generate a modern, professional theme";
 
 		try {
-			// Step 1: Process payment
-			setState("paying");
-			const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
+			let paymentTxid = "dev-test-bypass";
 
-			if (!paymentResult) {
-				throw new Error("Payment failed or was cancelled");
+			if (!DEV_BYPASS_PAYMENT) {
+				// Step 1: Process payment
+				setState("paying");
+				const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
+
+				if (!paymentResult) {
+					throw new Error("Payment failed or was cancelled");
+				}
+				paymentTxid = paymentResult.txid;
 			}
 
 			// Step 2: Generate theme
@@ -95,7 +103,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 						? `oklch(${filters.primaryColor.l.toFixed(3)} ${filters.primaryColor.c.toFixed(3)} ${filters.primaryColor.h.toFixed(1)})`
 						: undefined,
 					radius: filters.radius,
-					paymentTxid: paymentResult.txid,
+					paymentTxid,
 				}),
 			});
 
@@ -110,7 +118,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			// Store the theme with AI generation metadata and navigate to studio
 			storeRemixTheme(theme, {
 				source: "ai-generate",
-				txid: paymentResult.txid,
+				txid: paymentTxid,
 			});
 			router.push("/studio");
 		} catch (err) {
