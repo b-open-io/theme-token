@@ -152,7 +152,7 @@ export default function PatternGeneratorPage() {
 	}, [pattern, patternName, inscribePattern]);
 
 	return (
-		<div className="relative">
+		<div className="relative px-4 py-6 md:px-8 lg:px-12">
 			{/* Header */}
 			<div className="mb-6">
 				<h1 className="font-mono text-sm text-muted-foreground">

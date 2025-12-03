@@ -10,7 +10,8 @@ import { WalletConnect } from "@/components/wallet-connect";
 // Width configurations per page type - must match content widths on each page
 const WIDTH_CONFIG = {
 	spec: "max-w-6xl", // matches spec/page.tsx content width
-	studio: "max-w-full", // studio is full-width edge-to-edge
+	"studio-landing": "max-w-5xl", // matches studio landing page content width
+	"studio-sub": "max-w-full", // studio sub-pages are full-width edge-to-edge
 	market: "max-w-[1400px]", // matches market/layout.tsx content width
 	default: "max-w-6xl", // matches home page content width
 } as const;
@@ -36,7 +37,8 @@ function useGitHubStars() {
 
 function getWidthVariant(pathname: string | null): keyof typeof WIDTH_CONFIG {
 	if (pathname?.startsWith("/spec")) return "spec";
-	if (pathname?.startsWith("/studio")) return "studio";
+	if (pathname === "/studio") return "studio-landing";
+	if (pathname?.startsWith("/studio/")) return "studio-sub";
 	if (pathname?.startsWith("/market")) return "market";
 	return "default";
 }
