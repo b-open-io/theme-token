@@ -35,20 +35,16 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
   const [activeTab, setActiveTab] = useState<"presets" | "css" | "json">("presets");
   const [parseMetadata, setParseMetadata] = useState<ParseMetadata | null>(null);
 
-  const applyThemeToPreview = useCallback((styles: ThemeStyleProps) => {
+  useEffect(() => {
     const previewEl = document.getElementById("theme-preview-container");
     if (!previewEl) return;
 
+    const styles = selectedTheme.styles[mode];
     for (const [key, value] of Object.entries(styles)) {
-      if (value !== undefined) {
-        previewEl.style.setProperty(`--${key}`, value);
-      }
+      if (typeof value !== "string") continue;
+      previewEl.style.setProperty(`--${key}`, value);
     }
-  }, []);
-
-  useEffect(() => {
-    applyThemeToPreview(selectedTheme.styles[mode]);
-  }, [selectedTheme, mode, applyThemeToPreview]);
+  }, [selectedTheme, mode]);
 
   const handleCustomJsonChange = (value: string) => {
     setCustomJson(value);
