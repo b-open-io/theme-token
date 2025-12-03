@@ -113,7 +113,7 @@ export function MarketHero({
 			<motion.div
 				className="h-1 w-full"
 				style={{
-					background: `linear-gradient(90deg, ${gradientColors.join(", ")})`,
+					backgroundImage: `linear-gradient(90deg, ${gradientColors.join(", ")})`,
 					backgroundSize: "200% 100%",
 				}}
 				animate={{
