@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { PaletteExplorer } from "@/components/palette-explorer";
+import { ColorPaletteSection } from "@/components/color-palette-section";
 import {
 	Activity,
 	AlertCircle,
 	ArrowDownRight,
 	ArrowUpRight,
 	Bell,
-	Check,
 	ChevronRight,
 	CreditCard,
 	DollarSign,
@@ -833,109 +832,17 @@ function TabsDemo() {
 	);
 }
 
-// Clickable color swatch with copy functionality
-function ColorSwatch({
-	name,
-	bgClass,
-	textClass,
-	cssVar,
-}: {
-	name: string;
-	bgClass: string;
-	textClass: string;
-	cssVar: string;
-}) {
-	const [copied, setCopied] = useState(false);
-
-	const handleCopy = async () => {
-		// Get computed color value
-		const el = document.createElement("div");
-		el.className = bgClass;
-		document.body.appendChild(el);
-		const computedColor = getComputedStyle(el).backgroundColor;
-		document.body.removeChild(el);
-
-		await navigator.clipboard.writeText(`var(--${cssVar})`);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 1000);
-	};
-
-	return (
-		<button
-			onClick={handleCopy}
-			className={`${bgClass} ${textClass} group relative flex h-10 flex-1 items-center justify-center rounded border border-border/50 text-[10px] font-medium transition-all hover:scale-105 hover:shadow-md`}
-			title={`Copy var(--${cssVar})`}
-		>
-			{copied ? <Check className="h-3 w-3" /> : name}
-		</button>
-	);
-}
-
-// Combined Color Section - Theme colors + Palette Explorer side by side
-function ColorSection() {
-	const themeColorsRow1 = [
-		{ name: "BG", bgClass: "bg-background", textClass: "text-foreground", cssVar: "background" },
-		{ name: "Card", bgClass: "bg-card", textClass: "text-card-foreground", cssVar: "card" },
-		{ name: "Primary", bgClass: "bg-primary", textClass: "text-primary-foreground", cssVar: "primary" },
-		{ name: "Secondary", bgClass: "bg-secondary", textClass: "text-secondary-foreground", cssVar: "secondary" },
-		{ name: "Muted", bgClass: "bg-muted", textClass: "text-muted-foreground", cssVar: "muted" },
-		{ name: "Accent", bgClass: "bg-accent", textClass: "text-accent-foreground", cssVar: "accent" },
-		{ name: "Destructive", bgClass: "bg-destructive", textClass: "text-destructive-foreground", cssVar: "destructive" },
-	];
-
-	const themeColorsRow2 = [
-		{ name: "Popover", bgClass: "bg-popover", textClass: "text-popover-foreground", cssVar: "popover" },
-		{ name: "Border", bgClass: "bg-border", textClass: "text-foreground", cssVar: "border" },
-		{ name: "Input", bgClass: "bg-input", textClass: "text-foreground", cssVar: "input" },
-		{ name: "Ring", bgClass: "bg-ring", textClass: "text-primary-foreground", cssVar: "ring" },
-		{ name: "Chart 1", bgClass: "bg-chart-1", textClass: "text-primary-foreground", cssVar: "chart-1" },
-		{ name: "Chart 2", bgClass: "bg-chart-2", textClass: "text-primary-foreground", cssVar: "chart-2" },
-		{ name: "Chart 3", bgClass: "bg-chart-3", textClass: "text-primary-foreground", cssVar: "chart-3" },
-	];
-
-	return (
-		<div className="grid gap-4 @2xl:grid-cols-3">
-			{/* Current Theme Colors - 2/3 */}
-			<Card className="@2xl:col-span-2">
-				<CardHeader className="pb-2">
-					<CardTitle className="text-sm">Theme Colors</CardTitle>
-				</CardHeader>
-				<CardContent className="pb-3">
-					<div className="flex flex-col gap-1">
-						<div className="flex gap-1">
-							{themeColorsRow1.map((color) => (
-								<ColorSwatch key={color.name} {...color} />
-							))}
-						</div>
-						<div className="flex gap-1">
-							{themeColorsRow2.map((color) => (
-								<ColorSwatch key={color.name} {...color} />
-							))}
-						</div>
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* Palette Explorer - 1/3 */}
-			<Card>
-				<CardHeader className="pb-2">
-					<CardTitle className="text-sm">Palette Generator</CardTitle>
-				</CardHeader>
-				<CardContent className="pb-3">
-					<PaletteExplorer />
-				</CardContent>
-			</Card>
-		</div>
-	);
+interface ThemePreviewPanelProps {
+	onUpdateColor?: (key: string, value: string) => void;
 }
 
 // Main Preview Panel
-export function ThemePreviewPanel() {
+export function ThemePreviewPanel({ onUpdateColor }: ThemePreviewPanelProps) {
 	return (
 		<div className="@container min-h-full w-full p-2 md:p-4 **:data-[slot=card]:shadow-none">
 			<div className="flex flex-col gap-4">
-				{/* Color Section - Theme colors + Palette Explorer side by side */}
-				<ColorSection />
+				{/* Color Section - Palette Generator + Theme Colors side by side */}
+				<ColorPaletteSection onUpdateColor={onUpdateColor} />
 
 				{/* Stats */}
 				<StatsCards />

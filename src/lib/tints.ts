@@ -116,3 +116,69 @@ export function rgbToHex(r: number, g: number, b: number): string {
 			.join("")
 	);
 }
+
+/**
+ * Get complementary color by rotating hue 180 degrees
+ */
+export function getComplementaryColor(hex: string): string {
+	// Remove # if present
+	const cleanHex = hex.replace(/^#/, "");
+
+	// Parse RGB (0-1 scale)
+	let r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+	let g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+	let b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+
+	// RGB to HSL
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+	let h = 0;
+	let s = 0;
+	const l = (max + min) / 2;
+
+	if (max !== min) {
+		const d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		switch (max) {
+			case r:
+				h = (g - b) / d + (g < b ? 6 : 0);
+				break;
+			case g:
+				h = (b - r) / d + 2;
+				break;
+			case b:
+				h = (r - g) / d + 4;
+				break;
+		}
+		h /= 6;
+	}
+
+	// Rotate 180 degrees (0.5 in 0-1 scale)
+	h = (h + 0.5) % 1;
+
+	// HSL back to RGB
+	const hue2rgb = (p: number, q: number, t: number) => {
+		let tt = t;
+		if (tt < 0) tt += 1;
+		if (tt > 1) tt -= 1;
+		if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+		if (tt < 1 / 2) return q;
+		if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+		return p;
+	};
+
+	const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+	const p = 2 * l - q;
+
+	r = hue2rgb(p, q, h + 1 / 3);
+	g = hue2rgb(p, q, h);
+	b = hue2rgb(p, q, h - 1 / 3);
+
+	// RGB to Hex
+	const toHex = (x: number) => {
+		const hx = Math.round(x * 255).toString(16);
+		return hx.length === 1 ? "0" + hx : hx;
+	};
+
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
