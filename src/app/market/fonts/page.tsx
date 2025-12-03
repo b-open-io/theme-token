@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Upload, Wand2 } from "lucide-react";
 import { useState } from "react";
 import { AIGenerateTab, type GeneratedFont } from "@/components/font-mint/ai-generate-tab";
-import { DropZoneCLI } from "@/components/font-mint/drop-zone-cli";
+import { DropZoneCLI, type FontFileWithValidation } from "@/components/font-mint/drop-zone-cli";
 import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
 import { GeneratedFontPreview } from "@/components/font-mint/generated-font-preview";
 import {
@@ -27,12 +27,15 @@ export interface FontFile {
 	style?: "normal" | "italic";
 }
 
+// Re-export for backwards compatibility
+export type { FontFileWithValidation };
+
 type InputMode = "upload" | "ai";
 
 export default function FontMintPage() {
 	const { status, connect } = useYoursWallet();
 	const [inputMode, setInputMode] = useState<InputMode>("upload");
-	const [fontFiles, setFontFiles] = useState<FontFile[]>([]);
+	const [fontFiles, setFontFiles] = useState<FontFileWithValidation[]>([]);
 	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(null);
 	const [metadata, setMetadata] = useState<FontMetadata>({
 		name: "",
@@ -56,7 +59,20 @@ export default function FontMintPage() {
 
 	const isAIGenerated = generatedFont !== null;
 	const attestationsComplete = areAttestationsComplete(attestations, metadata.license, isAIGenerated);
-	const isValid = (fontFiles.length > 0 || generatedFont !== null) && metadata.name.trim() !== "" && attestationsComplete;
+
+	// Check if any uploaded fonts have validation errors
+	const hasValidationErrors = fontFiles.some(
+		(f) => f.validation?.errors?.length || f.validationError,
+	);
+	const isStillValidating = fontFiles.some((f) => f.isValidating);
+	const allFilesValidated = fontFiles.length > 0 && fontFiles.every((f) => f.validation && !f.isValidating);
+
+	const isValid =
+		(fontFiles.length > 0 || generatedFont !== null) &&
+		metadata.name.trim() !== "" &&
+		attestationsComplete &&
+		!hasValidationErrors &&
+		!isStillValidating;
 
 	const handleMint = async () => {
 		if (!isValid || !isConnected) return;
