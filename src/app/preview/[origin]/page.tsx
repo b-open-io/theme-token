@@ -360,7 +360,7 @@ export default function PreviewPage({ params }: Props) {
 			{/* Preview Container - Scoped Theme */}
 			<div
 				ref={containerRef}
-				className={`min-h-screen ${previewMode === "dark" ? "dark" : ""}`}
+				className={`relative z-0 min-h-screen ${previewMode === "dark" ? "dark" : ""}`}
 				style={{
 					backgroundColor: "var(--background)",
 					color: "var(--foreground)",
