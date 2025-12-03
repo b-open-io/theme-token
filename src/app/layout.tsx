@@ -62,7 +62,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" className="h-full scroll-smooth" suppressHydrationWarning>
 			<body
-				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} flex h-full flex-col font-sans antialiased`}
+				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full font-sans antialiased`}
 			>
 				<Providers>
 					<div className="flex h-full flex-col">
