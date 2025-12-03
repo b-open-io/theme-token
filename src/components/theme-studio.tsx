@@ -30,6 +30,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ExportModal } from "@/components/export-modal";
 import { ImportModal } from "@/components/import-modal";
+import { InscribedSuccessModal } from "@/components/inscribed-success-modal";
 import {
 	getAndClearRemixTheme,
 	REMIX_THEME_EVENT,
@@ -342,68 +343,16 @@ export function ThemeStudio() {
 		}));
 	};
 
-	// Success state
-	if (txid) {
-		const origin = `${txid}_0`;
-		const installUrl = `https://themetoken.dev/r/themes/${origin}.json`;
-		const installCommand = `bunx shadcn@latest add ${installUrl}`;
-
-		return (
-			<motion.div
-				initial={{ opacity: 0, scale: 0.95 }}
-				animate={{ opacity: 1, scale: 1 }}
-				className="rounded-xl border border-green-500/50 bg-green-500/10 p-8 text-center"
-			>
-				<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
-					<Check className="h-8 w-8 text-green-500" />
-				</div>
-				<h3 className="mb-2 text-xl font-bold">Theme Token Inscribed!</h3>
-				<p className="mb-4 text-muted-foreground">
-					Your theme has been permanently inscribed on the BSV blockchain.
-				</p>
-
-				{/* Install Command */}
-				<div className="mb-6 rounded-lg border border-primary/30 bg-card p-4 text-left">
-					<p className="mb-2 text-xs font-medium text-primary">
-						Install via CLI
-					</p>
-					<div className="flex items-center gap-2 rounded-md bg-muted p-2 font-mono text-xs">
-						<code className="flex-1 overflow-x-auto">{installCommand}</code>
-						<button
-							type="button"
-							onClick={() => {
-								navigator.clipboard.writeText(installCommand);
-							}}
-							className="flex-shrink-0 rounded p-1 hover:bg-background"
-							title="Copy"
-						>
-							<Copy className="h-3 w-3" />
-						</button>
-					</div>
-				</div>
-
-				<div className="mb-4 rounded-lg bg-muted/50 p-4">
-					<p className="mb-1 text-xs text-muted-foreground">Origin ID</p>
-					<p className="break-all font-mono text-sm">{origin}</p>
-				</div>
-				<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-					<Button asChild variant="outline">
-						<a
-							href={`https://1sat.market/outpoint/${origin}`}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							View on Market
-							<ExternalLink className="ml-2 h-4 w-4" />
-						</a>
-					</Button>
-					<Button onClick={() => setTxid(null)}>Create Another</Button>
-				</div>
-			</motion.div>
-		);
-	}
-
 	return (
+		<>
+			{/* Inscribed Success Modal */}
+			<InscribedSuccessModal
+				isOpen={txid !== null}
+				onClose={() => setTxid(null)}
+				txid={txid || ""}
+				theme={selectedTheme}
+			/>
+
 		<div className="flex min-h-0 flex-1 flex-col">
 			{/* AI Generation Success Dialog */}
 			<Dialog
@@ -1391,5 +1340,6 @@ export function ThemeStudio() {
 				</Button>
 			</div>
 		</div>
+		</>
 	);
 }
