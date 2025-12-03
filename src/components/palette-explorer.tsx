@@ -2,6 +2,7 @@
 
 import { useState, type MouseEvent } from "react";
 import { Pipette, Loader2, Check } from "lucide-react";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
 	fetchTintsPalette,
 	paletteToArray,
@@ -49,14 +50,7 @@ export function PaletteExplorer({
 		<div className="space-y-2">
 			{/* Compact Color Input */}
 			<div className="flex items-center gap-1.5">
-				<div className="relative shrink-0">
-					<input
-						type="color"
-						value={color}
-						onChange={(e) => setColor(e.target.value)}
-						className="h-7 w-7 cursor-pointer rounded border border-border bg-transparent"
-					/>
-				</div>
+				<ColorPicker value={color} onChange={setColor} className="h-7 w-7" />
 				<input
 					type="text"
 					value={color}

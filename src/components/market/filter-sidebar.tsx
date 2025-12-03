@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Slider } from "@/components/ui/slider";
 import {
 	colorPresets,
@@ -129,12 +130,10 @@ export function FilterSidebar({
 
 				{/* Custom Color Picker */}
 				<div className="flex items-center gap-2 pt-1">
-					<input
-						type="color"
+					<ColorPicker
 						value={filters.primaryColor ? oklchToHex(filters.primaryColor) : "#3b82f6"}
-						onChange={handleCustomColor}
-						className="h-8 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
-						title="Pick custom color"
+						onChange={(hex) => handleCustomColor({ target: { value: hex } } as React.ChangeEvent<HTMLInputElement>)}
+						className="h-8 w-8"
 					/>
 					<span className="text-xs text-muted-foreground">
 						{filters.primaryColor ? "Color filter active" : "Pick any color"}

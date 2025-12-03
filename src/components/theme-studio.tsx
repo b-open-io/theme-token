@@ -6,7 +6,6 @@ import {
 	type PublishedTheme,
 	parseCss,
 	type ThemeToken,
-	validateThemeToken,
 } from "@theme-token/sdk";
 import { motion } from "framer-motion";
 import {
@@ -16,7 +15,6 @@ import {
 	ChevronUp,
 	Copy,
 	ExternalLink,
-	FolderOpen,
 	Loader2,
 	Moon,
 	Pipette,
@@ -24,16 +22,16 @@ import {
 	Settings2,
 	Sparkles,
 	Sun,
-	Trash2,
 	Type,
+	Upload,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ExportModal } from "@/components/export-modal";
+import { ImportModal } from "@/components/import-modal";
 import {
 	getAndClearRemixTheme,
 	REMIX_THEME_EVENT,
-	type StoredRemixTheme,
 } from "@/components/theme-gallery";
 import {
 	Dialog,
@@ -156,16 +154,10 @@ export function ThemeStudio() {
 	const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
 		activeTheme || exampleThemes[0],
 	);
-	const [customInput, setCustomInput] = useState("");
-	const [validationError, setValidationError] = useState<string | null>(null);
-	const [activeTab, setActiveTab] = useState<"presets" | "paste" | "drafts">(
-		"presets",
-	);
 	const [txid, setTxid] = useState<string | null>(null);
 	const [customName, setCustomName] = useState("");
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
-	const [importSource, setImportSource] = useState<string | null>(null);
 	const [onChainThemes, setOnChainThemes] = useState<PublishedTheme[]>([]);
 	const [loadingThemes, setLoadingThemes] = useState(true);
 	const [editorSubTab, setEditorSubTab] = useState<
@@ -202,7 +194,6 @@ export function ThemeStudio() {
 		const importParam = searchParams.get("import") || searchParams.get("css");
 		const remixParam = searchParams.get("remix");
 		const nameParam = searchParams.get("name");
-		const sourceParam = searchParams.get("source");
 
 		// Handle remix by origin - fetch theme from blockchain
 		if (remixParam) {
@@ -218,11 +209,10 @@ export function ThemeStudio() {
 						};
 						setSelectedTheme(theme);
 						setCustomName(`${theme.name} (remix)`);
-						setImportSource("blockchain");
 					}
 				})
-				.catch(() => {
-					setValidationError("Failed to fetch theme from blockchain");
+				.catch((err) => {
+					console.error("Failed to fetch theme from blockchain:", err);
 				});
 			return;
 		}
@@ -238,18 +228,12 @@ export function ThemeStudio() {
 
 				if (cssResult.valid) {
 					setSelectedTheme(cssResult.theme);
-					setCustomInput(decodedCss);
 					setCustomName(themeName);
-					setActiveTab("paste");
-					setImportSource(sourceParam || null);
-					setValidationError(null);
 				} else {
-					setValidationError(cssResult.error);
-					setActiveTab("paste");
+					console.error("Failed to parse imported CSS:", cssResult.error);
 				}
-			} catch {
-				setValidationError("Invalid import data - could not decode");
-				setActiveTab("paste");
+			} catch (err) {
+				console.error("Invalid import data - could not decode:", err);
 			}
 		}
 	}, [searchParams]);
@@ -298,22 +282,8 @@ export function ThemeStudio() {
 		setTimeout(() => setSavedNotice(false), 2000);
 	};
 
-	const handleLoadDraft = (draft: ThemeDraft, e?: React.MouseEvent) => {
-		setSelectedTheme(draft.theme);
-		setCustomName(draft.theme.name);
-		setActiveTab("presets");
-		// Apply theme with animation
-		applyThemeAnimated(draft.theme, e);
-	};
-
-	const handleDeleteDraft = (id: string) => {
-		const updated = drafts.filter((d) => d.id !== id);
-		setDrafts(updated);
-		saveDrafts(updated);
-	};
-
 	const isConnected = status === "connected";
-	const canMint = isConnected && !isInscribing && !validationError;
+	const canMint = isConnected && !isInscribing;
 
 	// Apply theme to DOM directly for preview (skip during animated transitions)
 	useEffect(() => {
@@ -342,35 +312,6 @@ export function ThemeStudio() {
 			}));
 		}
 	}, [customName]);
-
-	const handleInputChange = (value: string) => {
-		setCustomInput(value);
-		setValidationError(null);
-		setImportSource(null); // Clear import source when user edits
-
-		if (!value.trim()) return;
-
-		// Try parsing as JSON first
-		try {
-			const parsed = JSON.parse(value);
-			const result = validateThemeToken(parsed);
-			if (result.valid) {
-				setSelectedTheme(result.theme);
-				return;
-			}
-		} catch {
-			// Not JSON, try CSS
-		}
-
-		// Try parsing as CSS
-		const cssResult = parseCss(value, customName || "Custom Theme");
-		if (cssResult.valid) {
-			setSelectedTheme(cssResult.theme);
-			setValidationError(null);
-		} else {
-			setValidationError(cssResult.error);
-		}
-	};
 
 	const handleMint = async () => {
 		const themeToMint: ThemeToken = {
@@ -531,42 +472,7 @@ export function ThemeStudio() {
 				{/* Left Panel: Controls (fixed width, scrollable) */}
 				<div className="flex min-h-0 w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
 					<div className="min-h-0 flex-1 overflow-y-auto p-4">
-						{/* Tab switcher */}
-						<div className="mb-4 flex gap-1 rounded-lg bg-muted p-1">
-							<button
-								onClick={() => setActiveTab("presets")}
-								className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-									activeTab === "presets"
-										? "bg-background text-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground"
-								}`}
-							>
-								Editor
-							</button>
-							<button
-								onClick={() => setActiveTab("paste")}
-								className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-									activeTab === "paste"
-										? "bg-background text-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground"
-								}`}
-							>
-								Paste
-							</button>
-							<button
-								onClick={() => setActiveTab("drafts")}
-								className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-									activeTab === "drafts"
-										? "bg-background text-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground"
-								}`}
-							>
-								Drafts{drafts.length > 0 && ` (${drafts.length})`}
-							</button>
-						</div>
-
-						{/* Editor Tab (was Presets) */}
-						{activeTab === "presets" && (
+						{/* Editor Content */}
 							<div className="space-y-4">
 								{/* Preset selector - Dropdown */}
 								<div>
@@ -576,17 +482,20 @@ export function ThemeStudio() {
 									<Select
 										value={selectedTheme.name}
 										onValueChange={async (value) => {
-											// Find theme from all sources
+											// Find theme from all sources (including drafts)
 											const onChain = onChainThemes.find(
 												(t) => t.theme.name === value,
 											);
 											const wallet = availableThemes.find(
 												(t) => t.name === value,
 											);
+											const draft = drafts.find(
+												(d) => d.theme.name === value,
+											);
 											const example = exampleThemes.find(
 												(t) => t.name === value,
 											);
-											const theme = onChain?.theme || wallet || example;
+											const theme = onChain?.theme || wallet || draft?.theme || example;
 											if (theme) {
 												isAnimatingRef.current = true;
 												setSelectedTheme(theme);
@@ -677,6 +586,37 @@ export function ThemeStudio() {
 																	))}
 																</div>
 																<span>{theme.name}</span>
+															</div>
+														</SelectItem>
+													))}
+												</SelectGroup>
+											)}
+											{/* Drafts */}
+											{drafts.length > 0 && (
+												<SelectGroup>
+													<SelectLabel className="text-xs text-muted-foreground">
+														Drafts
+													</SelectLabel>
+													{drafts.map((draft) => (
+														<SelectItem
+															key={draft.id}
+															value={draft.theme.name}
+														>
+															<div className="flex items-center gap-2">
+																<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+																	{[
+																		draft.theme.styles[mode].primary,
+																		draft.theme.styles[mode].secondary,
+																		draft.theme.styles[mode].accent,
+																	].map((color, i) => (
+																		<div
+																			key={i}
+																			className="flex-1"
+																			style={{ backgroundColor: color }}
+																		/>
+																	))}
+																</div>
+																<span>{draft.theme.name}</span>
 															</div>
 														</SelectItem>
 													))}
@@ -1270,127 +1210,6 @@ export function ThemeStudio() {
 									</div>
 								)}
 							</div>
-						)}
-
-						{/* Paste Tab */}
-						{activeTab === "paste" && (
-							<div className="space-y-3">
-								<p className="text-xs text-muted-foreground">
-									Paste ShadCN theme CSS from{" "}
-									<a
-										href="https://tweakcn.com/editor/theme"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-primary hover:underline"
-									>
-										tweakcn.com
-									</a>{" "}
-									or any ShadCN-compatible JSON.
-								</p>
-								<textarea
-									value={customInput}
-									onChange={(e) => handleInputChange(e.target.value)}
-									placeholder={`:root {\n  --primary: oklch(0.6 0.15 145);\n  /* ... */\n}`}
-									className="h-40 w-full rounded-lg border border-border bg-background p-3 font-mono text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-								/>
-								{validationError && (
-									<div className="flex items-center gap-2 text-xs text-destructive">
-										<AlertCircle className="h-3 w-3" />
-										{validationError}
-									</div>
-								)}
-								{customInput && !validationError && (
-									<div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
-										<div className="flex items-center gap-2 text-xs font-medium text-green-600">
-											<Check className="h-3 w-3" />
-											Theme imported successfully
-											{importSource && (
-												<span className="text-muted-foreground">
-													from {importSource}
-												</span>
-											)}
-										</div>
-										<div className="mt-2 flex items-center gap-2">
-											<div className="flex h-5 overflow-hidden rounded-md border border-green-500/30">
-												{[
-													selectedTheme.styles[mode].primary,
-													selectedTheme.styles[mode].secondary,
-													selectedTheme.styles[mode].accent,
-													selectedTheme.styles[mode].muted,
-													selectedTheme.styles[mode].background,
-												].map((color, i) => (
-													<div
-														key={i}
-														className="w-5"
-														style={{ backgroundColor: color }}
-													/>
-												))}
-											</div>
-											<span className="text-xs text-muted-foreground">
-												{Object.keys(selectedTheme.styles[mode]).length}{" "}
-												properties
-											</span>
-										</div>
-									</div>
-								)}
-							</div>
-						)}
-
-						{/* Drafts Tab */}
-						{activeTab === "drafts" && (
-							<div className="space-y-2">
-								{drafts.length === 0 ? (
-									<div className="py-8 text-center text-sm text-muted-foreground">
-										<FolderOpen className="mx-auto mb-2 h-8 w-8 opacity-50" />
-										<p>No saved drafts</p>
-										<p className="mt-1 text-xs">
-											Save a theme to work on it later
-										</p>
-									</div>
-								) : (
-									drafts.map((draft) => (
-										<div
-											key={draft.id}
-											className="flex items-center gap-2 rounded-lg border border-border p-3"
-										>
-											<button
-												onClick={(e) => handleLoadDraft(draft, e)}
-												className="flex flex-1 items-center gap-2 text-left hover:text-primary"
-											>
-												<div className="flex h-4 w-8 overflow-hidden rounded">
-													{[
-														draft.theme.styles[mode].primary,
-														draft.theme.styles[mode].secondary,
-													].map((color, i) => (
-														<div
-															key={i}
-															className="flex-1"
-															style={{ backgroundColor: color }}
-														/>
-													))}
-												</div>
-												<div className="flex-1 min-w-0">
-													<p className="truncate text-sm font-medium">
-														{draft.theme.name}
-													</p>
-													<p className="text-xs text-muted-foreground">
-														{new Date(draft.savedAt).toLocaleDateString()}
-													</p>
-												</div>
-											</button>
-											<button
-												onClick={() => handleDeleteDraft(draft.id)}
-												className="p-1 text-muted-foreground hover:text-destructive"
-												title="Delete draft"
-											>
-												<Trash2 className="h-4 w-4" />
-											</button>
-										</div>
-									))
-								)}
-							</div>
-						)}
-
 					</div>
 					{/* Close scrollable area */}
 				</div>
@@ -1420,19 +1239,40 @@ export function ThemeStudio() {
 								)}
 							</button>
 						</div>
-						{/* Export Button */}
-						<ExportModal
-							theme={selectedTheme}
-							trigger={
-								<button
-									type="button"
-									className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
-								>
-									<Copy className="h-3 w-3" />
-									Export
-								</button>
-							}
-						/>
+						<div className="flex items-center gap-1">
+							{/* Import Button */}
+							<ImportModal
+								onImport={async (theme) => {
+									isAnimatingRef.current = true;
+									setSelectedTheme(theme);
+									setCustomName(theme.name);
+									await applyThemeAnimated(theme);
+									isAnimatingRef.current = false;
+								}}
+								trigger={
+									<button
+										type="button"
+										className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+									>
+										<Upload className="h-3 w-3" />
+										Import
+									</button>
+								}
+							/>
+							{/* Export Button */}
+							<ExportModal
+								theme={selectedTheme}
+								trigger={
+									<button
+										type="button"
+										className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+									>
+										<Copy className="h-3 w-3" />
+										Export
+									</button>
+								}
+							/>
+						</div>
 					</div>
 					{/* Scrollable Preview Area */}
 					<div className="flex-1 overflow-y-auto bg-background">
