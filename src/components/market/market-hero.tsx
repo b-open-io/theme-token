@@ -130,7 +130,7 @@ export function MarketHero({
 					>
 						{/* Gradient glow background from theme colors */}
 						<div
-							className="absolute inset-0 opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-30"
+							className="pointer-events-none absolute inset-0 opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-30"
 							style={{
 								background: `linear-gradient(135deg, ${featuredStyles.primary}, ${featuredStyles.secondary || featuredStyles.accent})`,
 							}}
@@ -230,7 +230,7 @@ export function MarketHero({
 								</div>
 
 								{/* Hover overlay */}
-								<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 opacity-0 transition-all group-hover:bg-black/10 group-hover:opacity-100">
+								<div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 opacity-0 transition-all group-hover:bg-black/10 group-hover:opacity-100">
 									<span className="flex items-center gap-2 rounded-full bg-background/90 px-4 py-2 text-sm font-medium">
 										<Sparkles className="h-4 w-4" />
 										Apply Theme
@@ -239,7 +239,7 @@ export function MarketHero({
 							</button>
 
 							{/* CTA Section */}
-							<div className="flex-shrink-0 md:w-56">
+							<div className="relative z-10 flex-shrink-0 md:w-56">
 								<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
 									<Sparkles className="h-3 w-3" />
 									Featured
