@@ -132,14 +132,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		if (!wallet) return;
 
 		try {
-			const [addrs, bal, prof] = await Promise.all([
+			// Get addresses and balance first
+			const [addrs, bal] = await Promise.all([
 				wallet.getAddresses(),
 				wallet.getBalance(),
-				wallet.getSocialProfile().catch(() => null),
 			]);
 			setAddresses(addrs);
 			setBalance(bal);
-			if (prof) setProfile(prof);
+
+			// Only fetch profile after addresses are available
+			if (addrs) {
+				const prof = await wallet.getSocialProfile().catch(() => null);
+				if (prof) setProfile(prof);
+			}
 		} catch (err) {
 			console.error("[Wallet] Failed to fetch wallet info:", err);
 		}
