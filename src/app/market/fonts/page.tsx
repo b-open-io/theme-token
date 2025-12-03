@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import { Upload, Wand2 } from "lucide-react";
 import { useState } from "react";
-import { AIGenerateTab } from "@/components/font-mint/ai-generate-tab";
+import { AIGenerateTab, type GeneratedFont } from "@/components/font-mint/ai-generate-tab";
 import { DropZoneCLI } from "@/components/font-mint/drop-zone-cli";
 import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
+import { GeneratedFontPreview } from "@/components/font-mint/generated-font-preview";
 import { MetadataForm, type FontMetadata } from "@/components/font-mint/metadata-form";
 import { CostMatrix } from "@/components/font-mint/cost-matrix";
 import { TransactionTerminal } from "@/components/font-mint/transaction-terminal";
@@ -26,6 +27,7 @@ export default function FontMintPage() {
 	const { status, connect } = useYoursWallet();
 	const [inputMode, setInputMode] = useState<InputMode>("upload");
 	const [fontFiles, setFontFiles] = useState<FontFile[]>([]);
+	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(null);
 	const [metadata, setMetadata] = useState<FontMetadata>({
 		name: "",
 		author: "",
@@ -39,8 +41,13 @@ export default function FontMintPage() {
 	} | null>(null);
 
 	const isConnected = status === "connected";
-	const totalBytes = fontFiles.reduce((acc, f) => acc + f.size, 0);
-	const isValid = fontFiles.length > 0 && metadata.name.trim() !== "";
+
+	// Calculate bytes - for uploaded files or generated SVG data
+	const totalBytes = generatedFont
+		? JSON.stringify(generatedFont).length
+		: fontFiles.reduce((acc, f) => acc + f.size, 0);
+
+	const isValid = (fontFiles.length > 0 || generatedFont !== null) && metadata.name.trim() !== "";
 
 	const handleMint = async () => {
 		if (!isValid || !isConnected) return;
@@ -60,8 +67,19 @@ export default function FontMintPage() {
 
 	const handleReset = () => {
 		setFontFiles([]);
+		setGeneratedFont(null);
 		setMetadata({ name: "", author: "", license: "SIL_OFL_1.1", website: "" });
 		setMintResult(null);
+	};
+
+	const handleAIFontGenerated = (font: GeneratedFont) => {
+		setGeneratedFont(font);
+		// Auto-fill metadata from the generated font
+		setMetadata((prev) => ({
+			...prev,
+			name: font.name,
+			author: `AI Generated (${font.generatedBy})`,
+		}));
 	};
 
 	if (mintResult) {
@@ -169,12 +187,7 @@ export default function FontMintPage() {
 					{inputMode === "upload" ? (
 						<DropZoneCLI files={fontFiles} onFilesChange={setFontFiles} />
 					) : (
-						<AIGenerateTab
-							onFontGenerated={(file) => {
-								setFontFiles((prev) => [...prev, file]);
-								setInputMode("upload"); // Switch to upload to show the file
-							}}
-						/>
+						<AIGenerateTab onFontGenerated={handleAIFontGenerated} />
 					)}
 					<MetadataForm value={metadata} onChange={setMetadata} />
 					<CostMatrix

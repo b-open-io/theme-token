@@ -292,13 +292,23 @@ function ThemeSwatch({
 }
 
 export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }: ColorPaletteSectionProps) {
-	const [color, setColor] = useState(primaryColor || "#3B82F6");
+	// Derive initial color from prop
+	const initialColor = primaryColor ? toHex(primaryColor) : "#3B82F6";
+	const [color, setColor] = useState(initialColor);
 	const [primaryPalette, setPrimaryPalette] = useState<TintsPalette | null>(null);
 	const [complementaryPalette, setComplementaryPalette] = useState<TintsPalette | null>(null);
 	const [triadicPalette, setTriadicPalette] = useState<TintsPalette | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
-	// Auto-generate on mount and when primaryColor changes
+	// Track prop changes to sync color
+	const [lastPrimaryColor, setLastPrimaryColor] = useState(primaryColor);
+	if (primaryColor !== lastPrimaryColor) {
+		setLastPrimaryColor(primaryColor);
+		const hexColor = primaryColor ? toHex(primaryColor) : "#3B82F6";
+		setColor(hexColor);
+	}
+
+	// Auto-generate on mount only
 	useEffect(() => {
 		const generate = async (inputColor: string) => {
 			const hex = inputColor.replace(/^#/, "");
@@ -319,11 +329,9 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 			setIsLoading(false);
 		};
 
-		const rawColor = primaryColor || "#3B82F6";
-		const hexColor = toHex(rawColor);
-		setColor(hexColor);
-		generate(hexColor);
-	}, [primaryColor]);
+		generate(color);
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once on mount with initial color
+	}, []);
 
 	const handleGenerate = async () => {
 		const hex = color.replace(/^#/, "");

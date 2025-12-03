@@ -1,32 +1,37 @@
+import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 /**
  * AI Font Generation API
  *
- * This endpoint orchestrates AI-powered font generation using a multi-step pipeline:
- *
- * 1. PROMPT ANALYSIS: Parse the style description into typography attributes
- *    - Weight (thin/regular/bold)
- *    - Width (condensed/normal/extended)
- *    - Contrast (low/high)
- *    - Style features (serifs, terminals, x-height, etc.)
- *
- * 2. GLYPH GENERATION: Use AI to generate SVG paths for each character
- *    - Basic Latin (A-Z, a-z, 0-9)
- *    - Punctuation and symbols
- *    - Extended Latin for accented characters
- *
- * 3. FONT COMPILATION: Convert SVG glyphs to font format
- *    - Uses fontforge or similar tool via subprocess
- *    - Computes kerning pairs
- *    - Generates font tables (cmap, glyf, kern, etc.)
- *    - Compiles to WOFF2 for web use
- *
- * Required external dependencies (not yet implemented):
- * - fontforge or opentype.js for font compilation
- * - Python scripts for glyph processing
- * - AI model API calls (Gemini 3 Pro or Claude Opus 4.5)
+ * Uses AI to generate SVG glyph paths for each character in a font.
+ * The client receives SVG data that can be previewed and eventually
+ * compiled into a proper font file.
  */
+
+// Schema for a single glyph
+const glyphSchema = z.object({
+	char: z.string().describe("The character this glyph represents"),
+	unicode: z.number().describe("Unicode code point"),
+	width: z.number().describe("Advance width in font units (typically 1000 units per em)"),
+	path: z.string().describe("SVG path data (d attribute) for the glyph outline. Use M, L, C, Q, Z commands. Coordinate space is 0-1000 units, with baseline at y=200 and cap height at y=800."),
+});
+
+// Schema for the complete font
+const fontSchema = z.object({
+	name: z.string().describe("Font family name based on the style"),
+	style: z.string().describe("Style description (e.g., 'Bold Sans-Serif')"),
+	unitsPerEm: z.literal(1000).describe("Units per em (always 1000)"),
+	ascender: z.number().describe("Ascender height (typically 800-900)"),
+	descender: z.number().describe("Descender depth as negative (typically -200 to -300)"),
+	capHeight: z.number().describe("Capital letter height (typically 700-750)"),
+	xHeight: z.number().describe("Lowercase x height (typically 450-550)"),
+	glyphs: z.array(glyphSchema).describe("Array of glyph definitions"),
+});
+
+// Characters to generate - basic Latin set
+const CHARS_TO_GENERATE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?-'\"()";
 
 export async function POST(request: NextRequest) {
 	try {
@@ -39,50 +44,68 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Validate model selection
-		const validModels = ["gemini-3-pro", "claude-opus-4.5"];
-		if (model && !validModels.includes(model)) {
-			return NextResponse.json(
-				{ error: `Invalid model. Must be one of: ${validModels.join(", ")}` },
-				{ status: 400 },
-			);
-		}
+		// Select the AI model
+		const modelId = model === "claude-opus-4.5"
+			? "anthropic/claude-opus-4-5-20251101"
+			: "google/gemini-3-pro-preview";
 
-		// TODO: Implement actual font generation pipeline
-		//
-		// The implementation would require:
-		//
-		// 1. Call AI model to generate SVG paths for each glyph:
-		//    const glyphs = await generateGlyphs(prompt, model);
-		//
-		// 2. Process glyphs and compute metrics:
-		//    const metrics = computeFontMetrics(glyphs);
-		//
-		// 3. Build OpenType tables:
-		//    const tables = buildOpenTypeTables(glyphs, metrics);
-		//
-		// 4. Compile to WOFF2:
-		//    const woff2Buffer = compileToWoff2(tables);
-		//
-		// For now, return a placeholder error indicating this is not yet implemented
+		const systemPrompt = `You are a master typographer and font designer. Your task is to generate SVG path data for font glyphs based on a style description.
 
-		return NextResponse.json(
-			{
-				error: "AI font generation is not yet available. This feature requires additional infrastructure for glyph generation and font compilation. Check back soon!",
-				details: {
-					prompt,
-					model: model || "gemini-3-pro",
-					status: "not_implemented",
-				},
+## Font Metrics
+- Units per Em: 1000
+- Baseline: y = 200 (descenders go below this)
+- x-Height: around y = 550 (top of lowercase letters like 'x')
+- Cap Height: around y = 800 (top of uppercase letters)
+- Ascender: around y = 850 (top of tall lowercase like 'h', 'l')
+- Descender: around y = 0-100 (bottom of 'g', 'y', 'p')
+
+## SVG Path Guidelines
+- Use absolute coordinates (M, L, C, Q, Z commands)
+- Paths should be clockwise for outer contours
+- Coordinate space: x from 0 to glyph width, y from 0 to ~1000
+- Higher y values are UP (opposite of screen coordinates)
+- Create smooth, professional letterforms
+- Maintain consistent stroke weight across all glyphs
+- Ensure proper spacing (advance width should include side bearings)
+
+## Style Interpretation
+Interpret the user's style description and create cohesive glyphs that embody that aesthetic. Consider:
+- Stroke contrast (thick/thin variation)
+- Terminal style (rounded, flat, angled)
+- x-height proportion
+- Letter spacing feel
+- Overall personality (friendly, formal, technical, etc.)
+
+Generate glyphs for these characters: ${CHARS_TO_GENERATE}`;
+
+		const { object: font } = await generateObject({
+			model: modelId as Parameters<typeof generateObject>[0]["model"],
+			schema: fontSchema,
+			system: systemPrompt,
+			prompt: `Design a font with this style: ${prompt}
+
+Generate complete SVG path data for all basic Latin characters. Each glyph should have:
+1. Proper width based on the character (e.g., 'M' is wider than 'i')
+2. Professional-quality bezier curves for smooth outlines
+3. Consistent design language matching the requested style
+
+Characters to generate: ${CHARS_TO_GENERATE}`,
+		});
+
+		// Return the font data as JSON - client will handle preview/compilation
+		return NextResponse.json({
+			success: true,
+			font: {
+				...font,
+				generatedBy: model || "gemini-3-pro",
+				generatedAt: new Date().toISOString(),
 			},
-			{ status: 501 },
-		);
+		});
 	} catch (error) {
 		console.error("[generate-font] Error:", error);
 		return NextResponse.json(
 			{
-				error:
-					error instanceof Error ? error.message : "Failed to generate font",
+				error: error instanceof Error ? error.message : "Failed to generate font",
 			},
 			{ status: 500 },
 		);

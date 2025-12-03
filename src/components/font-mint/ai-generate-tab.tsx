@@ -3,10 +3,29 @@
 import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { FontFile } from "@/app/market/fonts/page";
+
+interface Glyph {
+	char: string;
+	unicode: number;
+	width: number;
+	path: string;
+}
+
+interface GeneratedFont {
+	name: string;
+	style: string;
+	unitsPerEm: number;
+	ascender: number;
+	descender: number;
+	capHeight: number;
+	xHeight: number;
+	glyphs: Glyph[];
+	generatedBy: string;
+	generatedAt: string;
+}
 
 interface AIGenerateTabProps {
-	onFontGenerated: (file: FontFile) => void;
+	onFontGenerated: (font: GeneratedFont) => void;
 }
 
 type AIModel = "gemini-3-pro" | "claude-opus-4.5";
@@ -41,6 +60,7 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 	const [progress, setProgress] = useState(0);
 	const [progressStage, setProgressStage] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(null);
 
 	const handlePresetClick = (preset: typeof STYLE_PRESETS[0]) => {
 		setSelectedPreset(preset.id);
@@ -52,21 +72,19 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 
 		setIsGenerating(true);
 		setError(null);
+		setGeneratedFont(null);
 		setProgress(0);
 		setProgressStage("INITIALIZING...");
 
 		try {
-			// Simulated progress stages for font generation pipeline
+			// Progress animation
 			const stages = [
 				{ progress: 10, stage: "ANALYZING_PROMPT..." },
-				{ progress: 25, stage: "GENERATING_GLYPH_DESIGNS..." },
-				{ progress: 45, stage: "VECTORIZING_LETTERFORMS..." },
-				{ progress: 60, stage: "COMPUTING_KERNING_PAIRS..." },
-				{ progress: 75, stage: "BUILDING_FONT_TABLES..." },
-				{ progress: 90, stage: "COMPILING_WOFF2..." },
+				{ progress: 30, stage: "GENERATING_GLYPH_DESIGNS..." },
+				{ progress: 60, stage: "CREATING_SVG_PATHS..." },
+				{ progress: 80, stage: "COMPUTING_METRICS..." },
 			];
 
-			// Start progress animation
 			let currentStageIndex = 0;
 			const progressInterval = setInterval(() => {
 				if (currentStageIndex < stages.length) {
@@ -74,7 +92,7 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 					setProgressStage(stages[currentStageIndex].stage);
 					currentStageIndex++;
 				}
-			}, 800);
+			}, 2000);
 
 			// Call the AI font generation API
 			const response = await fetch("/api/generate-font", {
@@ -88,42 +106,130 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 
 			clearInterval(progressInterval);
 
+			const data = await response.json();
+
 			if (!response.ok) {
-				const data = await response.json();
 				throw new Error(data.error || "Failed to generate font");
 			}
-
-			setProgress(95);
-			setProgressStage("FINALIZING...");
-
-			// Get the font file from response
-			const blob = await response.blob();
-			const fontName = `ai-${selectedModel.split("-")[0]}-${Date.now()}.woff2`;
-			const file = new File([blob], fontName, {
-				type: "application/font-woff2",
-			});
 
 			setProgress(100);
 			setProgressStage("COMPLETE");
 
-			// Add to files
-			onFontGenerated({
-				file,
-				name: fontName,
-				size: file.size,
-				weight: 400,
-				style: "normal",
-			});
+			// Store the generated font data
+			setGeneratedFont(data.font);
 
 		} catch (err) {
 			console.error("[AIGenerateTab] Error:", err);
 			setError(err instanceof Error ? err.message : "Generation failed");
 		} finally {
 			setIsGenerating(false);
-			setProgress(0);
-			setProgressStage("");
 		}
 	};
+
+	const handleUseFont = () => {
+		if (generatedFont) {
+			onFontGenerated(generatedFont);
+		}
+	};
+
+	const handleReset = () => {
+		setGeneratedFont(null);
+		setProgress(0);
+		setProgressStage("");
+	};
+
+	// If we have a generated font, show preview
+	if (generatedFont) {
+		return (
+			<div className="rounded border border-border bg-background">
+				<div className="border-b border-border px-3 py-2">
+					<div className="flex items-center justify-between">
+						<span className="font-mono text-xs text-primary">
+							// FONT_GENERATED: {generatedFont.name}
+						</span>
+						<span className="font-mono text-[10px] text-muted-foreground">
+							{generatedFont.glyphs.length} glyphs
+						</span>
+					</div>
+				</div>
+
+				<div className="p-4 space-y-4">
+					{/* Glyph Preview Grid */}
+					<div>
+						<div className="mb-2 font-mono text-xs text-muted-foreground">
+							GLYPH_PREVIEW:
+						</div>
+						<div className="grid grid-cols-8 gap-1 rounded border border-border bg-black p-2">
+							{generatedFont.glyphs.slice(0, 32).map((glyph, i) => (
+								<div
+									key={i}
+									className="aspect-square flex items-center justify-center"
+									title={`${glyph.char} (U+${glyph.unicode.toString(16).toUpperCase()})`}
+								>
+									<svg
+										viewBox={`0 0 ${glyph.width} 1000`}
+										className="h-6 w-6"
+										style={{ transform: "scaleY(-1)" }}
+									>
+										<path
+											d={glyph.path}
+											fill="white"
+										/>
+									</svg>
+								</div>
+							))}
+						</div>
+						{generatedFont.glyphs.length > 32 && (
+							<div className="mt-1 font-mono text-[10px] text-muted-foreground text-center">
+								+{generatedFont.glyphs.length - 32} more glyphs
+							</div>
+						)}
+					</div>
+
+					{/* Sample Text Preview */}
+					<div>
+						<div className="mb-2 font-mono text-xs text-muted-foreground">
+							SAMPLE_TEXT:
+						</div>
+						<div className="rounded border border-border bg-black p-4 overflow-x-auto">
+							<svg viewBox="0 0 800 100" className="w-full h-16">
+								{renderTextAsSvg(generatedFont, "Hello World", 50, 70)}
+							</svg>
+						</div>
+					</div>
+
+					{/* Font Metrics */}
+					<div className="grid grid-cols-2 gap-2 font-mono text-xs">
+						<div className="text-muted-foreground">Style:</div>
+						<div>{generatedFont.style}</div>
+						<div className="text-muted-foreground">Cap Height:</div>
+						<div>{generatedFont.capHeight}</div>
+						<div className="text-muted-foreground">x-Height:</div>
+						<div>{generatedFont.xHeight}</div>
+						<div className="text-muted-foreground">Generated by:</div>
+						<div>{generatedFont.generatedBy}</div>
+					</div>
+
+					{/* Actions */}
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							onClick={handleReset}
+							className="flex-1 font-mono text-xs"
+						>
+							[ REGENERATE ]
+						</Button>
+						<Button
+							onClick={handleUseFont}
+							className="flex-1 font-mono text-xs"
+						>
+							[ USE_THIS_FONT ]
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="rounded border border-border bg-background">
@@ -252,9 +358,9 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 					<p className="mb-1 font-medium text-muted-foreground">How it works:</p>
 					<ol className="list-inside list-decimal space-y-0.5">
 						<li>AI analyzes your style description</li>
-						<li>Generates SVG glyphs for each character</li>
-						<li>Computes optimal kerning pairs</li>
-						<li>Compiles into WOFF2 format</li>
+						<li>Generates SVG path data for each glyph</li>
+						<li>You preview and approve the design</li>
+						<li>Font is compiled and ready to inscribe</li>
 					</ol>
 					<p className="mt-2">Generation typically takes 30-90 seconds.</p>
 				</div>
@@ -262,3 +368,36 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 		</div>
 	);
 }
+
+// Helper to render text as SVG using glyph paths
+function renderTextAsSvg(font: GeneratedFont, text: string, x: number, y: number) {
+	const glyphMap = new Map(font.glyphs.map(g => [g.char, g]));
+	const elements: React.ReactNode[] = [];
+	let currentX = x;
+
+	for (let i = 0; i < text.length; i++) {
+		const char = text[i];
+		const glyph = glyphMap.get(char);
+
+		if (glyph) {
+			// Scale down from 1000 units to display size
+			const scale = 0.08;
+			elements.push(
+				<g
+					key={i}
+					transform={`translate(${currentX}, ${y}) scale(${scale}, -${scale})`}
+				>
+					<path d={glyph.path} fill="white" />
+				</g>
+			);
+			currentX += glyph.width * scale;
+		} else {
+			// Space or unknown character
+			currentX += 30;
+		}
+	}
+
+	return elements;
+}
+
+export type { GeneratedFont };
