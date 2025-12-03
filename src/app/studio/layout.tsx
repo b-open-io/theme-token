@@ -113,16 +113,17 @@ export default function StudioLayout({
 						<div className="hidden font-mono text-xs text-muted-foreground sm:block">
 							{pathname === "/studio/font" && (
 								<>
-									<span className="text-primary">root</span>/mint/
+									<span className="text-primary">root</span>/studio/
 									<span className="text-foreground">font</span>{" "}
 									<span className="animate-pulse">_</span>
 								</>
 							)}
 							{pathname === "/studio/patterns" && (
 								<>
+									<span className="text-muted-foreground/60">AI SVG patterns —</span>{" "}
 									<span className="text-primary">root</span>/studio/
 									<span className="text-foreground">patterns</span>{" "}
-									<span className="text-muted-foreground/60">— AI SVG patterns</span>
+									<span className="animate-pulse">_</span>
 								</>
 							)}
 							{pathname === "/studio/theme" && (

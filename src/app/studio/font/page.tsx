@@ -5,6 +5,7 @@ import { Upload, Wand2 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { AIGenerateTab, type GeneratedFont, type CompiledFont } from "@/components/font-mint/ai-generate-tab";
 import { DropZoneCLI, type FontFileWithValidation } from "@/components/font-mint/drop-zone-cli";
+import type { ZipFontMetadata } from "@/lib/zip-font-loader";
 import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
 import { GeneratedFontPreview } from "@/components/font-mint/generated-font-preview";
 import {
@@ -119,26 +120,46 @@ export default function FontMintPage() {
 		setFontFiles(files);
 	}, []);
 
-	// Handle license detected from zip file
-	const handleZipLicenseDetected = useCallback((license: string | null, _source: string | null) => {
-		if (license) {
-			// Map common license names to our dropdown values
-			const licenseMap: Record<string, FontMetadata["license"]> = {
-				OFL: "SIL_OFL_1.1",
-				"Apache-2.0": "APACHE_2.0",
-				MIT: "MIT",
-				CC0: "CC0_1.0",
-				"Public Domain": "CC0_1.0",
-				CC: "CC_BY_4.0",
-			};
-			const mappedLicense = licenseMap[license];
-			if (mappedLicense) {
-				setMetadata((prev) => ({
-					...prev,
-					license: mappedLicense,
-				}));
+	// Handle metadata detected from zip file
+	const handleZipMetadataDetected = useCallback((zipMeta: ZipFontMetadata) => {
+		// Map common license names to our dropdown values
+		const licenseMap: Record<string, FontMetadata["license"]> = {
+			OFL: "SIL_OFL_1.1",
+			"Apache-2.0": "APACHE_2.0",
+			MIT: "MIT",
+			CC0: "CC0_1.0",
+			"Public Domain": "CC0_1.0",
+			CC: "CC_BY_4.0",
+		};
+
+		setMetadata((prev) => {
+			const updates: Partial<FontMetadata> = {};
+
+			// Set name if detected
+			if (zipMeta.name) {
+				updates.name = zipMeta.name;
 			}
-		}
+
+			// Set author(s) if detected
+			if (zipMeta.authors && zipMeta.authors.length > 0) {
+				updates.author = zipMeta.authors.join(", ");
+			}
+
+			// Set license if detected and mappable
+			if (zipMeta.license) {
+				const mappedLicense = licenseMap[zipMeta.license];
+				if (mappedLicense) {
+					updates.license = mappedLicense;
+				}
+			}
+
+			// Set website if detected
+			if (zipMeta.website) {
+				updates.website = zipMeta.website;
+			}
+
+			return { ...prev, ...updates };
+		});
 	}, []);
 
 	if (mintResult) {
@@ -238,7 +259,7 @@ export default function FontMintPage() {
 						<DropZoneCLI
 							files={fontFiles}
 							onFilesChange={handleFilesChange}
-							onZipLicenseDetected={handleZipLicenseDetected}
+							onZipMetadataDetected={handleZipMetadataDetected}
 						/>
 					) : (
 						<AIGenerateTab onFontGenerated={handleAIFontGenerated} />

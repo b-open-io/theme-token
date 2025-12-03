@@ -7,10 +7,17 @@ export interface ExtractedFontFile {
 	path: string;
 }
 
+export interface ZipFontMetadata {
+	name: string | null;
+	authors: string[] | null;
+	license: string | null;
+	licenseSource: string | null;
+	website: string | null;
+}
+
 export interface ZipFontPackage {
 	fonts: ExtractedFontFile[];
-	detectedLicense: string | null;
-	licenseSource: string | null;
+	metadata: ZipFontMetadata;
 	readme: string | null;
 }
 
@@ -74,20 +81,128 @@ function extractLicenseFromText(text: string): string | null {
 }
 
 /**
- * Extract license from FONTINFO.json if present
+ * Parsed metadata from FONTINFO.json
  */
-function extractLicenseFromFontInfo(jsonStr: string): string | null {
+interface FontInfoData {
+	license: string | null;
+	name: string | null;
+	authors: string[] | null;
+	website: string | null;
+}
+
+/**
+ * Extract metadata from FONTINFO.json if present
+ */
+function extractFromFontInfo(jsonStr: string): FontInfoData {
+	const result: FontInfoData = {
+		license: null,
+		name: null,
+		authors: null,
+		website: null,
+	};
+
 	try {
-		const info = JSON.parse(jsonStr);
-		// Check common fields
+		// Handle JSON with comments by stripping them
+		const cleanJson = jsonStr.replace(/\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1");
+		const info = JSON.parse(cleanJson);
+
+		// Handle nested typeface structure (like Avara's FONTINFO.json)
+		const typeface = info.typeface || info;
+
+		// Extract license
 		const licenseField =
-			info.license || info.License || info.licence || info.Licence;
+			typeface.license || typeface.License || typeface.licence || typeface.Licence;
 		if (licenseField) {
-			return extractLicenseFromText(licenseField);
+			result.license = extractLicenseFromText(String(licenseField));
 		}
+
+		// Extract name
+		result.name = typeface.name || typeface.Name || info.name || null;
+
+		// Extract authors
+		const authors = typeface.authors || typeface.author || typeface.Authors || typeface.Author;
+		if (Array.isArray(authors)) {
+			result.authors = authors.map(String);
+		} else if (typeof authors === "string") {
+			result.authors = [authors];
+		}
+
+		// Extract website
+		result.website =
+			typeface["project-URL"] ||
+			typeface.projectUrl ||
+			typeface.website ||
+			typeface.url ||
+			typeface["repository-URL"] ||
+			null;
 	} catch {
 		// Not valid JSON, ignore
 	}
+
+	return result;
+}
+
+/**
+ * Extract author from README content using common patterns
+ */
+function extractAuthorFromReadme(readme: string): string[] | null {
+	// Look for "Contributors" or "Authors" or "Created by" sections
+	const patterns = [
+		/##?\s*(?:Contributors|Authors|Credits|Created by|Designed by)\s*\n([\s\S]*?)(?=\n##|\n\n\n|$)/i,
+		/(?:Author|Designer|Created by|Designed by)[:\s]+([^\n]+)/i,
+	];
+
+	for (const pattern of patterns) {
+		const match = readme.match(pattern);
+		if (match) {
+			const section = match[1];
+			// Extract names from markdown list items or inline
+			const names: string[] = [];
+
+			// Match markdown links: [Name](url) or plain list items: - Name
+			const listMatches = section.matchAll(/[-*]\s*\[([^\]]+)\]|[-*]\s*([^\n\[]+)/g);
+			for (const m of listMatches) {
+				const name = (m[1] || m[2])?.trim();
+				if (name && name.length > 1 && name.length < 50) {
+					names.push(name);
+				}
+			}
+
+			// If no list items, try to get the whole match as a single author
+			if (names.length === 0 && match[1]) {
+				const cleaned = match[1].trim().replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+				if (cleaned.length > 1 && cleaned.length < 100) {
+					names.push(cleaned);
+				}
+			}
+
+			if (names.length > 0) {
+				return names;
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Extract website from README content
+ */
+function extractWebsiteFromReadme(readme: string): string | null {
+	// Look for specimen/project links
+	const patterns = [
+		/(?:Visit|View|See).*?(?:specimen|project|website)[^\n]*\((https?:\/\/[^)]+)\)/i,
+		/(?:Website|Homepage|Project)[:\s]+(https?:\/\/[^\s\n]+)/i,
+		/\[.*?(?:specimen|website|demo).*?\]\((https?:\/\/[^)]+)\)/i,
+	];
+
+	for (const pattern of patterns) {
+		const match = readme.match(pattern);
+		if (match?.[1]) {
+			return match[1];
+		}
+	}
+
 	return null;
 }
 
@@ -97,8 +212,13 @@ function extractLicenseFromFontInfo(jsonStr: string): string | null {
 export async function loadFontZip(zipFile: File): Promise<ZipFontPackage> {
 	const zip = await JSZip.loadAsync(zipFile);
 	const fonts: ExtractedFontFile[] = [];
-	let detectedLicense: string | null = null;
-	let licenseSource: string | null = null;
+	const metadata: ZipFontMetadata = {
+		name: null,
+		authors: null,
+		license: null,
+		licenseSource: null,
+		website: null,
+	};
 	let readme: string | null = null;
 
 	// First pass: collect all files and look for license info
@@ -138,34 +258,60 @@ export async function loadFontZip(zipFile: File): Promise<ZipFontPackage> {
 		}
 	}
 
-	// Second pass: extract license from files in priority order
-	for (const licenseName of LICENSE_FILE_NAMES) {
-		for (const [path, content] of textFiles) {
-			const fileName = path.split("/").pop() || path;
-			if (fileName.toUpperCase() === licenseName.toUpperCase()) {
-				// Try to extract license
-				let license: string | null = null;
+	// Second pass: extract metadata from FONTINFO.json first (most structured)
+	for (const [path, content] of textFiles) {
+		const fileName = path.split("/").pop() || path;
+		if (fileName.toUpperCase() === "FONTINFO.JSON") {
+			const fontInfo = extractFromFontInfo(content);
+			if (fontInfo.name) metadata.name = fontInfo.name;
+			if (fontInfo.authors) metadata.authors = fontInfo.authors;
+			if (fontInfo.license) {
+				metadata.license = fontInfo.license;
+				metadata.licenseSource = fileName;
+			}
+			if (fontInfo.website) metadata.website = fontInfo.website;
+			break;
+		}
+	}
 
-				if (fileName.toUpperCase() === "FONTINFO.JSON") {
-					license = extractLicenseFromFontInfo(content);
-				} else {
-					license = extractLicenseFromText(content);
-				}
-
-				if (license) {
-					detectedLicense = license;
-					licenseSource = fileName;
-					break;
+	// Third pass: extract license from other files if not found
+	if (!metadata.license) {
+		for (const licenseName of LICENSE_FILE_NAMES) {
+			for (const [path, content] of textFiles) {
+				const fileName = path.split("/").pop() || path;
+				if (fileName.toUpperCase() === licenseName.toUpperCase()) {
+					const license = extractLicenseFromText(content);
+					if (license) {
+						metadata.license = license;
+						metadata.licenseSource = fileName;
+						break;
+					}
 				}
 			}
+			if (metadata.license) break;
 		}
-		if (detectedLicense) break;
+	}
+
+	// Fourth pass: extract missing metadata from README
+	if (readme) {
+		if (!metadata.authors) {
+			metadata.authors = extractAuthorFromReadme(readme);
+		}
+		if (!metadata.website) {
+			metadata.website = extractWebsiteFromReadme(readme);
+		}
+		// Try to get name from README heading if not found
+		if (!metadata.name) {
+			const headingMatch = readme.match(/^#\s+([^\n]+)/);
+			if (headingMatch) {
+				metadata.name = headingMatch[1].trim();
+			}
+		}
 	}
 
 	return {
 		fonts,
-		detectedLicense,
-		licenseSource,
+		metadata,
 		readme,
 	};
 }

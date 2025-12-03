@@ -10,20 +10,20 @@ import {
 	extractedFontToFile,
 	type ZipFontPackage,
 	type ExtractedFontFile,
+	type ZipFontMetadata,
 } from "@/lib/zip-font-loader";
 
 export interface FontFileWithValidation extends FontFile {
 	validation?: FontValidationResult;
 	isValidating?: boolean;
 	validationError?: string;
-	zipLicense?: string | null;
-	zipLicenseSource?: string | null;
+	zipMetadata?: ZipFontMetadata;
 }
 
 interface DropZoneCLIProps {
 	files: FontFileWithValidation[];
 	onFilesChange: (files: FontFileWithValidation[]) => void;
-	onZipLicenseDetected?: (license: string | null, source: string | null) => void;
+	onZipMetadataDetected?: (metadata: ZipFontMetadata) => void;
 }
 
 // Parse font weight from filename (e.g., "Inter-Bold.woff2" -> 700)
@@ -52,7 +52,7 @@ function formatSize(bytes: number): string {
 	return `${(bytes / 1024).toFixed(1)}kb`;
 }
 
-export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: DropZoneCLIProps) {
+export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: DropZoneCLIProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isLoadingZip, setIsLoadingZip] = useState(false);
 	const [zipPackage, setZipPackage] = useState<ZipFontPackage | null>(null);
@@ -129,13 +129,12 @@ export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: Drop
 				weight: parseWeightFromName(font.name),
 				style: parseStyleFromName(font.name),
 				isValidating: true,
-				zipLicense: zipPackage?.detectedLicense,
-				zipLicenseSource: zipPackage?.licenseSource,
+				zipMetadata: zipPackage?.metadata,
 			};
 
-			// Notify parent about detected license
-			if (onZipLicenseDetected && zipPackage?.detectedLicense) {
-				onZipLicenseDetected(zipPackage.detectedLicense, zipPackage.licenseSource);
+			// Notify parent about detected metadata
+			if (onZipMetadataDetected && zipPackage?.metadata) {
+				onZipMetadataDetected(zipPackage.metadata);
 			}
 
 			const currentFiles = filesRef.current;
@@ -148,7 +147,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: Drop
 			// Clear zip picker
 			setZipPackage(null);
 		},
-		[onFilesChange, validateFont, zipPackage, onZipLicenseDetected],
+		[onFilesChange, validateFont, zipPackage, onZipMetadataDetected],
 	);
 
 	const handleFiles = useCallback(
@@ -252,6 +251,9 @@ export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: Drop
 
 	// Zip picker modal
 	if (zipPackage) {
+		const { metadata } = zipPackage;
+		const hasMetadata = metadata.name || metadata.authors || metadata.license || metadata.website;
+
 		return (
 			<div className="rounded border border-border bg-background">
 				{/* Header */}
@@ -269,17 +271,34 @@ export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: Drop
 					</button>
 				</div>
 
-				{/* License detected banner */}
-				{zipPackage.detectedLicense && (
-					<div className="border-b border-border bg-green-500/10 px-3 py-2">
-						<span className="font-mono text-xs text-green-600 dark:text-green-400">
-							LICENSE_DETECTED: {zipPackage.detectedLicense}
-							{zipPackage.licenseSource && (
-								<span className="text-muted-foreground">
-									{" "}(from {zipPackage.licenseSource})
-								</span>
-							)}
-						</span>
+				{/* Detected metadata banner */}
+				{hasMetadata && (
+					<div className="space-y-1 border-b border-border bg-green-500/10 px-3 py-2 font-mono text-xs">
+						{metadata.name && (
+							<div className="text-green-600 dark:text-green-400">
+								NAME: {metadata.name}
+							</div>
+						)}
+						{metadata.authors && metadata.authors.length > 0 && (
+							<div className="text-green-600 dark:text-green-400">
+								AUTHOR: {metadata.authors.join(", ")}
+							</div>
+						)}
+						{metadata.license && (
+							<div className="text-green-600 dark:text-green-400">
+								LICENSE: {metadata.license}
+								{metadata.licenseSource && (
+									<span className="text-muted-foreground">
+										{" "}(from {metadata.licenseSource})
+									</span>
+								)}
+							</div>
+						)}
+						{metadata.website && (
+							<div className="text-green-600 dark:text-green-400">
+								WEBSITE: <span className="text-muted-foreground">{metadata.website}</span>
+							</div>
+						)}
 					</div>
 				)}
 
@@ -450,13 +469,13 @@ export function DropZoneCLI({ files, onFilesChange, onZipLicenseDetected }: Drop
 										</div>
 									)}
 
-									{/* Zip-detected license */}
-									{f.zipLicense && !f.validation?.checks?.isGoogleFont && (
+									{/* Zip-detected metadata */}
+									{f.zipMetadata?.license && !f.validation?.checks?.isGoogleFont && (
 										<div className="mb-2 ml-6 rounded border border-green-500/50 bg-green-500/10 px-2 py-1.5 text-[10px] text-green-600 dark:text-green-400">
-											License: {f.zipLicense}
-											{f.zipLicenseSource && (
+											License: {f.zipMetadata.license}
+											{f.zipMetadata.licenseSource && (
 												<span className="text-muted-foreground">
-													{" "}(from {f.zipLicenseSource})
+													{" "}(from {f.zipMetadata.licenseSource})
 												</span>
 											)}
 										</div>
