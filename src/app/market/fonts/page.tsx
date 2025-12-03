@@ -7,7 +7,13 @@ import { AIGenerateTab, type GeneratedFont } from "@/components/font-mint/ai-gen
 import { DropZoneCLI } from "@/components/font-mint/drop-zone-cli";
 import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
 import { GeneratedFontPreview } from "@/components/font-mint/generated-font-preview";
-import { MetadataForm, type FontMetadata } from "@/components/font-mint/metadata-form";
+import {
+	MetadataForm,
+	type FontMetadata,
+	type FontAttestations,
+	areAttestationsComplete,
+	getDefaultAttestations,
+} from "@/components/font-mint/metadata-form";
 import { CostMatrix } from "@/components/font-mint/cost-matrix";
 import { TransactionTerminal } from "@/components/font-mint/transaction-terminal";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -31,9 +37,10 @@ export default function FontMintPage() {
 	const [metadata, setMetadata] = useState<FontMetadata>({
 		name: "",
 		author: "",
-		license: "SIL_OFL_1.1",
+		license: "CC0_1.0",
 		website: "",
 	});
+	const [attestations, setAttestations] = useState<FontAttestations>(getDefaultAttestations());
 	const [isMinting, setIsMinting] = useState(false);
 	const [mintResult, setMintResult] = useState<{
 		txid: string;
@@ -47,7 +54,9 @@ export default function FontMintPage() {
 		? JSON.stringify(generatedFont).length
 		: fontFiles.reduce((acc, f) => acc + f.size, 0);
 
-	const isValid = (fontFiles.length > 0 || generatedFont !== null) && metadata.name.trim() !== "";
+	const isAIGenerated = generatedFont !== null;
+	const attestationsComplete = areAttestationsComplete(attestations, metadata.license, isAIGenerated);
+	const isValid = (fontFiles.length > 0 || generatedFont !== null) && metadata.name.trim() !== "" && attestationsComplete;
 
 	const handleMint = async () => {
 		if (!isValid || !isConnected) return;
@@ -68,7 +77,8 @@ export default function FontMintPage() {
 	const handleReset = () => {
 		setFontFiles([]);
 		setGeneratedFont(null);
-		setMetadata({ name: "", author: "", license: "SIL_OFL_1.1", website: "" });
+		setMetadata({ name: "", author: "", license: "CC0_1.0", website: "" });
+		setAttestations(getDefaultAttestations());
 		setMintResult(null);
 	};
 
@@ -79,6 +89,7 @@ export default function FontMintPage() {
 			...prev,
 			name: font.name,
 			author: `AI Generated (${font.generatedBy})`,
+			isAIGenerated: true,
 		}));
 	};
 
@@ -189,7 +200,13 @@ export default function FontMintPage() {
 					) : (
 						<AIGenerateTab onFontGenerated={handleAIFontGenerated} />
 					)}
-					<MetadataForm value={metadata} onChange={setMetadata} />
+					<MetadataForm
+						value={metadata}
+						onChange={setMetadata}
+						attestations={attestations}
+						onAttestationsChange={setAttestations}
+						isAIGenerated={isAIGenerated}
+					/>
 					<CostMatrix
 						totalBytes={totalBytes}
 						metadataBytes={JSON.stringify(metadata).length}
