@@ -1,17 +1,20 @@
 "use client";
 
+import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import {
-	THEME_TOKEN_SCHEMA_URL,
-	type ThemeToken,
-	validateThemeToken,
-} from "@theme-token/sdk";
-import { useCallback, useEffect, useRef, useState } from "react";
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 import { useTheme } from "@/components/theme-provider";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import {
 	type Addresses,
 	type Balance,
-	fetchOrdinalContent,
 	getYoursWallet,
 	type InscribeResponse,
 	isYoursWalletInstalled,
@@ -29,14 +32,13 @@ export type WalletStatus =
 	| "connected"
 	| "error";
 
-// Theme token with ordinal metadata for listing
 export interface OwnedTheme {
 	theme: ThemeToken;
 	outpoint: string;
 	origin: string;
 }
 
-interface UseYoursWalletReturn {
+interface WalletContextValue {
 	status: WalletStatus;
 	error: string | null;
 	connect: () => Promise<void>;
@@ -62,7 +64,9 @@ interface UseYoursWalletReturn {
 	isSending: boolean;
 }
 
-export function useYoursWallet(): UseYoursWalletReturn {
+const WalletContext = createContext<WalletContextValue | null>(null);
+
+export function WalletProvider({ children }: { children: ReactNode }) {
 	const [status, setStatus] = useState<WalletStatus>("disconnected");
 	const [error, setError] = useState<string | null>(null);
 	const [themeTokens, setThemeTokens] = useState<ThemeToken[]>([]);
@@ -77,22 +81,6 @@ export function useYoursWallet(): UseYoursWalletReturn {
 	const walletRef = useRef<YoursWallet | null>(null);
 	const { setAvailableThemes, resetTheme } = useTheme();
 
-	// Event handlers
-	const handleSwitchAccount = useCallback(() => {
-		// Re-fetch ordinals when account switches
-		fetchThemeTokens();
-	}, []);
-
-	const handleSignedOut = useCallback(() => {
-		// Reset state when user signs out
-		setStatus("disconnected");
-		setThemeTokens([]);
-		setOwnedThemes([]);
-		setAvailableThemes([]);
-		resetTheme();
-		walletRef.current?.disconnect().catch(console.error);
-	}, [setAvailableThemes, resetTheme]);
-
 	// Fetch theme tokens from wallet
 	const fetchThemeTokens = useCallback(async () => {
 		const wallet = walletRef.current;
@@ -102,37 +90,19 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		setError(null);
 
 		try {
-			// Get JSON ordinals - try without mimeType filter first, then filter client-side
-			const response = await wallet.getOrdinals({
-				limit: 100,
-			});
-
-			console.log("[ThemeToken] getOrdinals response:", response);
-
+			const response = await wallet.getOrdinals({ limit: 100 });
 			const tokens: ThemeToken[] = [];
 			const owned: OwnedTheme[] = [];
-			// Response can be array directly or { ordinals: [] }
 			const ordinals = Array.isArray(response)
 				? response
 				: (response?.ordinals ?? []);
 
-			// Fetch and validate each ordinal
 			for (const ordinal of ordinals) {
 				try {
-					// JSON is in origin.data.insc.file.json (persists across transfers)
 					const content = ordinal?.origin?.data?.insc?.file?.json;
-					console.log(
-						"[ThemeToken] Ordinal:",
-						ordinal.outpoint,
-						"json:",
-						content,
-					);
-
 					if (content && typeof content === "object") {
 						const result = validateThemeToken(content);
-						console.log("[ThemeToken] Validation:", ordinal.outpoint, result);
 						if (result.valid) {
-							console.log("[ThemeToken] Valid theme:", result.theme.name);
 							tokens.push(result.theme);
 							owned.push({
 								theme: result.theme,
@@ -141,31 +111,66 @@ export function useYoursWallet(): UseYoursWalletReturn {
 							});
 						}
 					}
-				} catch (err) {
-					console.error("[ThemeToken] Error:", err);
+				} catch {
+					// Skip invalid ordinals
 				}
 			}
-			console.log("[ThemeToken] Found themes:", tokens.length);
 			setThemeTokens(tokens);
 			setOwnedThemes(owned);
 			setAvailableThemes(tokens);
 		} catch (err) {
-			console.error("[ThemeToken] Error fetching ordinals:", err);
+			console.error("[Wallet] Error fetching ordinals:", err);
 			setError(err instanceof Error ? err.message : "Failed to fetch ordinals");
 		} finally {
 			setIsLoading(false);
 		}
 	}, [setAvailableThemes]);
 
-	// Initialize and check connection status with retry for slow injection
+	// Fetch wallet info (addresses, balance, profile)
+	const fetchWalletInfo = useCallback(async () => {
+		const wallet = walletRef.current;
+		if (!wallet) return;
+
+		try {
+			const [addrs, bal, prof] = await Promise.all([
+				wallet.getAddresses(),
+				wallet.getBalance(),
+				wallet.getSocialProfile().catch(() => null),
+			]);
+			setAddresses(addrs);
+			setBalance(bal);
+			if (prof) setProfile(prof);
+		} catch (err) {
+			console.error("[Wallet] Failed to fetch wallet info:", err);
+		}
+	}, []);
+
+	// Event handlers
+	const handleSwitchAccount = useCallback(() => {
+		fetchThemeTokens();
+		fetchWalletInfo();
+	}, [fetchThemeTokens, fetchWalletInfo]);
+
+	const handleSignedOut = useCallback(() => {
+		setStatus("disconnected");
+		setThemeTokens([]);
+		setOwnedThemes([]);
+		setAddresses(null);
+		setBalance(null);
+		setProfile(null);
+		setAvailableThemes([]);
+		resetTheme();
+		walletRef.current?.disconnect().catch(console.error);
+	}, [setAvailableThemes, resetTheme]);
+
+	// Initialize wallet on mount
 	useEffect(() => {
 		let retryCount = 0;
 		const maxRetries = 5;
-		const retryDelay = 500; // ms
+		const retryDelay = 500;
 
 		const initWallet = () => {
 			if (!isYoursWalletInstalled()) {
-				// Retry a few times in case wallet injects slowly
 				if (retryCount < maxRetries) {
 					retryCount++;
 					setTimeout(initWallet, retryDelay);
@@ -182,33 +187,28 @@ export function useYoursWallet(): UseYoursWalletReturn {
 			}
 
 			walletRef.current = wallet;
-
-			// Set up event listeners
 			wallet.on("switchAccount", handleSwitchAccount);
 			wallet.on("signedOut", handleSignedOut);
 
-			// Check if already connected
 			wallet
 				.isConnected()
 				.then((connected) => {
 					if (connected) {
 						setStatus("connected");
 						fetchThemeTokens();
+						fetchWalletInfo();
 					} else {
 						setStatus("disconnected");
 					}
 				})
 				.catch((err) => {
-					setError(
-						err instanceof Error ? err.message : "Connection check failed",
-					);
+					setError(err instanceof Error ? err.message : "Connection check failed");
 					setStatus("error");
 				});
 		};
 
 		initWallet();
 
-		// Cleanup
 		return () => {
 			const wallet = walletRef.current;
 			if (wallet) {
@@ -216,7 +216,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
 				wallet.removeListener("signedOut", handleSignedOut);
 			}
 		};
-	}, [handleSwitchAccount, handleSignedOut, fetchThemeTokens]);
+	}, [handleSwitchAccount, handleSignedOut, fetchThemeTokens, fetchWalletInfo]);
 
 	const connect = useCallback(async () => {
 		const wallet = walletRef.current;
@@ -232,11 +232,12 @@ export function useYoursWallet(): UseYoursWalletReturn {
 			await wallet.connect();
 			setStatus("connected");
 			await fetchThemeTokens();
+			await fetchWalletInfo();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Connection failed");
 			setStatus("error");
 		}
-	}, [fetchThemeTokens]);
+	}, [fetchThemeTokens, fetchWalletInfo]);
 
 	const disconnect = useCallback(async () => {
 		const wallet = walletRef.current;
@@ -247,6 +248,9 @@ export function useYoursWallet(): UseYoursWalletReturn {
 			setStatus("disconnected");
 			setThemeTokens([]);
 			setOwnedThemes([]);
+			setAddresses(null);
+			setBalance(null);
+			setProfile(null);
 			setAvailableThemes([]);
 			resetTheme();
 		} catch (err) {
@@ -257,37 +261,10 @@ export function useYoursWallet(): UseYoursWalletReturn {
 	const refresh = useCallback(async () => {
 		if (status === "connected") {
 			await fetchThemeTokens();
+			await fetchWalletInfo();
 		}
-	}, [status, fetchThemeTokens]);
+	}, [status, fetchThemeTokens, fetchWalletInfo]);
 
-	// Fetch wallet info (addresses, balance, profile)
-	const fetchWalletInfo = useCallback(async () => {
-		const wallet = walletRef.current;
-		if (!wallet) return;
-
-		try {
-			const [addrs, bal, prof] = await Promise.all([
-				wallet.getAddresses(),
-				wallet.getBalance(),
-				wallet.getSocialProfile().catch((err) => {
-					console.warn("[Wallet] getSocialProfile error:", err);
-					return null;
-				}),
-			]);
-			console.log("[Wallet] fetchWalletInfo result:", { addrs, bal, prof });
-			setAddresses(addrs);
-			setBalance(bal);
-			// Set profile even if displayName is empty string (wallet returns empty when not set)
-			if (prof) {
-				console.log("[Wallet] Setting profile:", prof);
-				setProfile(prof);
-			}
-		} catch (err) {
-			console.error("Failed to fetch wallet info:", err);
-		}
-	}, []);
-
-	// Inscribe a theme token
 	const inscribeTheme = useCallback(
 		async (theme: ThemeToken): Promise<InscribeResponse | null> => {
 			const wallet = walletRef.current;
@@ -300,7 +277,6 @@ export function useYoursWallet(): UseYoursWalletReturn {
 			setError(null);
 
 			try {
-				// Theme already has $schema (required field)
 				const jsonString = JSON.stringify(theme);
 				const base64Data = btoa(jsonString);
 
@@ -318,10 +294,8 @@ export function useYoursWallet(): UseYoursWalletReturn {
 					},
 				]);
 
-				// Refresh theme tokens after inscription
 				await fetchThemeTokens();
 				await fetchWalletInfo();
-
 				return response;
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Inscription failed");
@@ -333,31 +307,19 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		[addresses, fetchThemeTokens, fetchWalletInfo],
 	);
 
-	// List a theme on the marketplace
 	const listTheme = useCallback(
 		async (
 			outpoint: string,
 			priceSatoshis: number,
 		): Promise<ListOrdinalResult | null> => {
-			console.log(
-				"[listTheme] Starting, outpoint:",
-				outpoint,
-				"price:",
-				priceSatoshis,
-			);
-
 			const wallet = walletRef.current;
 			if (!wallet) {
-				console.error("[listTheme] Wallet not connected");
 				setError("Wallet not connected");
 				return null;
 			}
 
-			// Find the ordinal by outpoint
-			console.log("[listTheme] ownedThemes:", ownedThemes);
 			const ownedTheme = ownedThemes.find((t) => t.outpoint === outpoint);
 			if (!ownedTheme) {
-				console.error("[listTheme] Theme not found in wallet");
 				setError("Theme not found in wallet");
 				return null;
 			}
@@ -366,10 +328,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
 			setError(null);
 
 			try {
-				// Get the ordinal details from the wallet
-				console.log("[listTheme] Getting ordinals from wallet...");
 				const response = await wallet.getOrdinals({ limit: 100 });
-				console.log("[listTheme] Ordinals response:", response);
 				const ordinals = Array.isArray(response)
 					? response
 					: (response?.ordinals ?? []);
@@ -377,28 +336,13 @@ export function useYoursWallet(): UseYoursWalletReturn {
 					| Ordinal
 					| undefined;
 
-				if (!ordinal) {
-					console.error("[listTheme] Ordinal not found in response");
-					throw new Error("Ordinal not found");
-				}
+				if (!ordinal) throw new Error("Ordinal not found");
 
-				console.log("[listTheme] Found ordinal:", ordinal);
-				console.log("[listTheme] Calling listOrdinal...");
-
-				const result = await listOrdinal(wallet, {
-					ordinal,
-					priceSatoshis,
-				});
-
-				console.log("[listTheme] listOrdinal result:", result);
-
-				// Refresh after listing
+				const result = await listOrdinal(wallet, { ordinal, priceSatoshis });
 				await fetchThemeTokens();
 				await fetchWalletInfo();
-
 				return result;
 			} catch (err) {
-				console.error("[listTheme] Error:", err);
 				setError(err instanceof Error ? err.message : "Listing failed");
 				return null;
 			} finally {
@@ -408,7 +352,6 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		[ownedThemes, fetchThemeTokens, fetchWalletInfo],
 	);
 
-	// Send BSV payment
 	const sendPayment = useCallback(
 		async (
 			recipientAddress: string,
@@ -416,27 +359,19 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		): Promise<SendBsvResult | null> => {
 			const wallet = walletRef.current;
 			if (!wallet) {
-				console.error("[sendPayment] Wallet not connected");
 				setError("Wallet not connected");
 				return null;
 			}
 
-			console.log("[sendPayment] Starting payment:", { recipientAddress, amountSatoshis });
 			setIsSending(true);
 			setError(null);
 
 			try {
 				const result = await sendBsv(wallet, recipientAddress, amountSatoshis);
-				console.log("[sendPayment] Success:", result);
-
-				// Refresh wallet info after payment
 				await fetchWalletInfo();
-
 				return result;
 			} catch (err) {
-				console.error("[sendPayment] Error:", err);
-				const errorMessage = err instanceof Error ? err.message : "Payment failed";
-				setError(errorMessage);
+				setError(err instanceof Error ? err.message : "Payment failed");
 				return null;
 			} finally {
 				setIsSending(false);
@@ -445,34 +380,37 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		[fetchWalletInfo],
 	);
 
-	// Fetch wallet info when connected
-	useEffect(() => {
-		if (status === "connected") {
-			fetchWalletInfo();
-		} else {
-			setAddresses(null);
-			setBalance(null);
-			setProfile(null);
-		}
-	}, [status, fetchWalletInfo]);
+	return (
+		<WalletContext.Provider
+			value={{
+				status,
+				error,
+				connect,
+				disconnect,
+				themeTokens,
+				ownedThemes,
+				isLoading,
+				refresh,
+				addresses,
+				balance,
+				profile,
+				inscribeTheme,
+				isInscribing,
+				listTheme,
+				isListing,
+				sendPayment,
+				isSending,
+			}}
+		>
+			{children}
+		</WalletContext.Provider>
+	);
+}
 
-	return {
-		status,
-		error,
-		connect,
-		disconnect,
-		themeTokens,
-		ownedThemes,
-		isLoading,
-		refresh,
-		addresses,
-		balance,
-		profile,
-		inscribeTheme,
-		isInscribing,
-		listTheme,
-		isListing,
-		sendPayment,
-		isSending,
-	};
+export function useYoursWallet(): WalletContextValue {
+	const context = useContext(WalletContext);
+	if (!context) {
+		throw new Error("useYoursWallet must be used within a WalletProvider");
+	}
+	return context;
 }
