@@ -38,13 +38,14 @@ function toRegistryVars(props: ThemeStyleProps): Record<string, string> {
   const vars: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(props)) {
-    if (value === undefined) continue;
+    if (value === undefined || value === null) continue;
+    const strValue = value as string;
 
     // Map internal letter-spacing to CSS tracking-normal
     if (key === "letter-spacing") {
-      vars["tracking-normal"] = value;
+      vars["tracking-normal"] = strValue;
     } else {
-      vars[key] = value;
+      vars[key] = strValue;
     }
   }
 
