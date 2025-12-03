@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Wand2 } from "lucide-react";
+import { Sparkles, Wand2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ThemeToken } from "@theme-token/sdk";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ai-elements/loader";
 import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import { storeRemixTheme } from "@/components/theme-gallery";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { AI_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import type { FilterState } from "./filter-sidebar";
 
 interface GenerateCardProps {
@@ -23,24 +25,61 @@ const STYLE_SUGGESTIONS = [
 	{ id: "nature", label: "Nature Inspired" },
 ];
 
+// Format satoshis as BSV
+const formatBsv = (sats: number) => (sats / 100_000_000).toFixed(1);
+
+type GenerationState = "idle" | "paying" | "generating";
+
 export function GenerateCard({ filters }: GenerateCardProps) {
 	const router = useRouter();
-	const [isGenerating, setIsGenerating] = useState(false);
+	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
+	const [state, setState] = useState<GenerationState>("idle");
 	const [prompt, setPrompt] = useState("");
 	const [error, setError] = useState<string | null>(null);
+
+	const isConnected = status === "connected";
+	const hasEnoughBalance = (balance?.satoshis ?? 0) >= AI_GENERATION_COST_SATS;
+	const isProcessing = state !== "idle" || isSending;
 
 	const hasFilters =
 		filters.primaryColor !== null ||
 		filters.radius !== null ||
 		filters.fontTypes.length > 0;
 
-	const handleGenerate = async (stylePrompt?: string) => {
-		setIsGenerating(true);
+	const handleConnect = async () => {
 		setError(null);
+		try {
+			await connect();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to connect wallet");
+		}
+	};
 
+	const handleGenerate = async (stylePrompt?: string) => {
+		if (!isConnected) {
+			await handleConnect();
+			return;
+		}
+
+		if (!hasEnoughBalance) {
+			setError(`Insufficient balance. Need ${formatBsv(AI_GENERATION_COST_SATS)} BSV`);
+			return;
+		}
+
+		setError(null);
 		const finalPrompt = stylePrompt || prompt || "Generate a modern, professional theme";
 
 		try {
+			// Step 1: Process payment
+			setState("paying");
+			const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
+
+			if (!paymentResult) {
+				throw new Error("Payment failed or was cancelled");
+			}
+
+			// Step 2: Generate theme
+			setState("generating");
 			const response = await fetch("/api/generate-theme", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -50,6 +89,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 						? `oklch(${filters.primaryColor.l.toFixed(3)} ${filters.primaryColor.c.toFixed(3)} ${filters.primaryColor.h.toFixed(1)})`
 						: undefined,
 					radius: filters.radius,
+					paymentTxid: paymentResult.txid,
 				}),
 			});
 
@@ -68,12 +108,66 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			console.error("Generation failed:", err);
 			setError(err instanceof Error ? err.message : "Generation failed");
 		} finally {
-			setIsGenerating(false);
+			setState("idle");
 		}
 	};
 
 	const handleSuggestionClick = (suggestion: string) => {
 		handleGenerate(`Generate a ${suggestion.toLowerCase()} style theme`);
+	};
+
+	const getButtonContent = () => {
+		if (status === "not-installed") {
+			return (
+				<>
+					<Wallet className="h-4 w-4" />
+					Install Yours Wallet
+				</>
+			);
+		}
+
+		if (!isConnected) {
+			return (
+				<>
+					<Wallet className="h-4 w-4" />
+					Connect Wallet
+				</>
+			);
+		}
+
+		if (!hasEnoughBalance) {
+			return (
+				<>
+					<Wallet className="h-4 w-4" />
+					Insufficient Balance
+				</>
+			);
+		}
+
+		if (state === "paying" || isSending) {
+			return (
+				<>
+					<Loader size={16} />
+					Processing Payment...
+				</>
+			);
+		}
+
+		if (state === "generating") {
+			return (
+				<>
+					<Loader size={16} />
+					Generating Theme...
+				</>
+			);
+		}
+
+		return (
+			<>
+				<Sparkles className="h-4 w-4" />
+				Generate ({formatBsv(AI_GENERATION_COST_SATS)} BSV)
+			</>
+		);
 	};
 
 	return (
@@ -128,7 +222,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 							key={style.id}
 							suggestion={style.label}
 							onClick={handleSuggestionClick}
-							disabled={isGenerating}
+							disabled={isProcessing || !isConnected || !hasEnoughBalance}
 							className="text-xs"
 						/>
 					))}
@@ -141,7 +235,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 					value={prompt}
 					onChange={(e) => setPrompt(e.target.value)}
 					placeholder="Or describe your ideal theme..."
-					disabled={isGenerating}
+					disabled={isProcessing}
 					className="h-16 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
 				/>
 			</div>
@@ -153,28 +247,25 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				</div>
 			)}
 
+			{/* Balance info when connected */}
+			{isConnected && balance && (
+				<div className="mb-3 text-center text-xs text-muted-foreground">
+					Balance: {formatBsv(balance.satoshis)} BSV
+				</div>
+			)}
+
 			{/* Generate button */}
 			<div className="mt-auto">
 				<Button
 					onClick={() => handleGenerate()}
-					disabled={isGenerating}
+					disabled={isProcessing || (isConnected && !hasEnoughBalance)}
 					className="w-full gap-2"
 					size="sm"
 				>
-					{isGenerating ? (
-						<>
-							<Loader size={16} />
-							Generating...
-						</>
-					) : (
-						<>
-							<Sparkles className="h-4 w-4" />
-							Generate Theme
-						</>
-					)}
+					{getButtonContent()}
 				</Button>
 				<p className="mt-2 text-center text-[10px] text-muted-foreground">
-					Free during beta
+					{formatBsv(AI_GENERATION_COST_SATS)} BSV per generation
 				</p>
 			</div>
 		</div>

@@ -315,3 +315,233 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 		return null;
 	}
 }
+
+// Fee address for AI generation payments
+export const FEE_ADDRESS = "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z";
+
+// AI generation cost: 0.1 BSV = 10,000,000 satoshis
+export const AI_GENERATION_COST_SATS = 10_000_000;
+
+const SATS_PER_KB = 100;
+
+export interface SendBsvResult {
+	txid: string;
+	rawtx: string;
+}
+
+/**
+ * Send BSV to an address using Yours Wallet
+ * Follows the same pattern as list-ordinal.ts for transaction building
+ */
+export async function sendBsv(
+	wallet: YoursWallet,
+	recipientAddress: string,
+	amountSatoshis: number,
+): Promise<SendBsvResult> {
+	// Dynamic imports to avoid issues with SSR
+	const { P2PKH, Script, Transaction, UnlockingScript, Utils } = await import(
+		"@bsv/sdk"
+	);
+
+	// Get wallet addresses
+	const addresses = await wallet.getAddresses();
+	const { bsvAddress } = addresses;
+
+	// Get payment UTXOs
+	const paymentUtxos = await wallet.getPaymentUtxos();
+
+	if (!paymentUtxos || paymentUtxos.length === 0) {
+		throw new Error("No payment UTXOs available");
+	}
+
+	// Simple UTXO selection - gather enough to cover amount + fee
+	// For a simple P2PKH tx: ~10 (overhead) + 148 (input) + 34*2 (outputs) = ~226 bytes
+	const estimatedSize = 226;
+	const fee = Math.ceil((estimatedSize * SATS_PER_KB) / 1000);
+	const totalNeeded = amountSatoshis + fee;
+
+	let totalInput = 0;
+	const selectedUtxos: Utxo[] = [];
+
+	for (const utxo of paymentUtxos) {
+		selectedUtxos.push(utxo);
+		totalInput += utxo.satoshis;
+		if (totalInput >= totalNeeded) break;
+	}
+
+	if (totalInput < totalNeeded) {
+		throw new Error(
+			`Insufficient funds. Have ${totalInput} sats, need ${totalNeeded} sats`,
+		);
+	}
+
+	const change = totalInput - amountSatoshis - fee;
+
+	// Create the transaction
+	const tx = new Transaction();
+
+	// Add inputs
+	for (const utxo of selectedUtxos) {
+		const lockingScript = Script.fromBinary(Utils.toArray(utxo.script, "hex"));
+
+		const sourceOutputs: { lockingScript: typeof lockingScript; satoshis: number }[] = [];
+		sourceOutputs[utxo.vout] = {
+			lockingScript,
+			satoshis: utxo.satoshis,
+		};
+
+		tx.addInput({
+			sourceTXID: utxo.txid,
+			sourceOutputIndex: utxo.vout,
+			sequence: 0xffffffff,
+			unlockingScript: new Script(),
+			sourceTransaction: { outputs: sourceOutputs } as unknown as typeof tx,
+		});
+	}
+
+	// Output 0: Payment to recipient
+	tx.addOutput({
+		lockingScript: new P2PKH().lock(recipientAddress),
+		satoshis: amountSatoshis,
+	});
+
+	// Output 1: Change back to sender (if any)
+	if (change > 0) {
+		tx.addOutput({
+			lockingScript: new P2PKH().lock(bsvAddress),
+			satoshis: change,
+		});
+	}
+
+	// Build signature requests
+	const SIGHASH_ALL_FORKID = 0x41;
+	const sigRequests: SignatureRequest[] = selectedUtxos.map((utxo, index) => ({
+		prevTxid: utxo.txid,
+		outputIndex: utxo.vout,
+		inputIndex: index,
+		satoshis: utxo.satoshis,
+		address: utxo.owner || bsvAddress,
+		script: utxo.script,
+		sigHashType: SIGHASH_ALL_FORKID,
+	}));
+
+	// Get signatures from wallet
+	const rawtx = tx.toHex();
+	const signatures = await wallet.getSignatures({
+		rawtx,
+		sigRequests,
+	});
+
+	// Build unlocking scripts from signatures
+	const unlockingScripts: InstanceType<typeof UnlockingScript>[] = [];
+	for (const sig of signatures) {
+		const sigBytes = Utils.toArray(sig.sig, "hex");
+		const pubKeyBytes = Utils.toArray(sig.pubKey, "hex");
+		const unlockScript = new UnlockingScript([
+			{ op: sigBytes.length, data: sigBytes },
+			{ op: pubKeyBytes.length, data: pubKeyBytes },
+		]);
+		unlockingScripts[sig.inputIndex] = unlockScript;
+	}
+
+	// Verify we have signatures for all inputs
+	for (let i = 0; i < tx.inputs.length; i++) {
+		if (!unlockingScripts[i]) {
+			throw new Error(`Missing signature for input ${i}`);
+		}
+	}
+
+	// Manually build the signed transaction (same pattern as list-ordinal.ts)
+	const txBytes: number[] = [];
+
+	// Version (4 bytes, little-endian)
+	txBytes.push(tx.version & 0xff);
+	txBytes.push((tx.version >> 8) & 0xff);
+	txBytes.push((tx.version >> 16) & 0xff);
+	txBytes.push((tx.version >> 24) & 0xff);
+
+	// Input count (varint)
+	txBytes.push(tx.inputs.length);
+
+	// Inputs
+	for (let i = 0; i < tx.inputs.length; i++) {
+		const input = tx.inputs[i];
+		const unlockScript = unlockingScripts[i];
+
+		// Previous txid (32 bytes, reversed)
+		const txidBytes = Utils.toArray(input.sourceTXID!, "hex").reverse();
+		txBytes.push(...txidBytes);
+
+		// Previous output index (4 bytes, little-endian)
+		const vout = input.sourceOutputIndex!;
+		txBytes.push(vout & 0xff);
+		txBytes.push((vout >> 8) & 0xff);
+		txBytes.push((vout >> 16) & 0xff);
+		txBytes.push((vout >> 24) & 0xff);
+
+		// Unlocking script length (varint) + script
+		const scriptBytes = unlockScript.toBinary();
+		if (scriptBytes.length < 0xfd) {
+			txBytes.push(scriptBytes.length);
+		} else {
+			txBytes.push(0xfd);
+			txBytes.push(scriptBytes.length & 0xff);
+			txBytes.push((scriptBytes.length >> 8) & 0xff);
+		}
+		txBytes.push(...scriptBytes);
+
+		// Sequence (4 bytes, little-endian)
+		const seq = input.sequence!;
+		txBytes.push(seq & 0xff);
+		txBytes.push((seq >> 8) & 0xff);
+		txBytes.push((seq >> 16) & 0xff);
+		txBytes.push((seq >> 24) & 0xff);
+	}
+
+	// Output count (varint)
+	txBytes.push(tx.outputs.length);
+
+	// Outputs
+	for (const output of tx.outputs) {
+		// Value (8 bytes, little-endian)
+		const sats = output.satoshis!;
+		txBytes.push(sats & 0xff);
+		txBytes.push((sats >> 8) & 0xff);
+		txBytes.push((sats >> 16) & 0xff);
+		txBytes.push((sats >> 24) & 0xff);
+		txBytes.push(0, 0, 0, 0); // High 4 bytes
+
+		// Locking script length (varint) + script
+		const lockScriptBytes = output.lockingScript!.toBinary();
+		if (lockScriptBytes.length < 0xfd) {
+			txBytes.push(lockScriptBytes.length);
+		} else if (lockScriptBytes.length < 0x10000) {
+			txBytes.push(0xfd);
+			txBytes.push(lockScriptBytes.length & 0xff);
+			txBytes.push((lockScriptBytes.length >> 8) & 0xff);
+		} else {
+			txBytes.push(0xfe);
+			txBytes.push(lockScriptBytes.length & 0xff);
+			txBytes.push((lockScriptBytes.length >> 8) & 0xff);
+			txBytes.push((lockScriptBytes.length >> 16) & 0xff);
+			txBytes.push((lockScriptBytes.length >> 24) & 0xff);
+		}
+		txBytes.push(...lockScriptBytes);
+	}
+
+	// Locktime (4 bytes, little-endian)
+	txBytes.push(tx.lockTime & 0xff);
+	txBytes.push((tx.lockTime >> 8) & 0xff);
+	txBytes.push((tx.lockTime >> 16) & 0xff);
+	txBytes.push((tx.lockTime >> 24) & 0xff);
+
+	const signedRawtx = Utils.toHex(txBytes);
+
+	// Broadcast through wallet
+	const txid = await wallet.broadcast({ rawtx: signedRawtx });
+
+	return {
+		txid,
+		rawtx: signedRawtx,
+	};
+}

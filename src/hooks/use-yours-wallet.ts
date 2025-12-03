@@ -16,6 +16,8 @@ import {
 	type InscribeResponse,
 	isYoursWalletInstalled,
 	type Ordinal,
+	sendBsv,
+	type SendBsvResult,
 	type SocialProfile,
 	type YoursWallet,
 } from "@/lib/yours-wallet";
@@ -53,6 +55,11 @@ interface UseYoursWalletReturn {
 		priceSatoshis: number,
 	) => Promise<ListOrdinalResult | null>;
 	isListing: boolean;
+	sendPayment: (
+		recipientAddress: string,
+		amountSatoshis: number,
+	) => Promise<SendBsvResult | null>;
+	isSending: boolean;
 }
 
 export function useYoursWallet(): UseYoursWalletReturn {
@@ -66,6 +73,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
 	const [profile, setProfile] = useState<SocialProfile | null>(null);
 	const [isInscribing, setIsInscribing] = useState(false);
 	const [isListing, setIsListing] = useState(false);
+	const [isSending, setIsSending] = useState(false);
 	const walletRef = useRef<YoursWallet | null>(null);
 	const { setAvailableThemes, resetTheme } = useTheme();
 
@@ -392,6 +400,38 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		[ownedThemes, fetchThemeTokens, fetchWalletInfo],
 	);
 
+	// Send BSV payment
+	const sendPayment = useCallback(
+		async (
+			recipientAddress: string,
+			amountSatoshis: number,
+		): Promise<SendBsvResult | null> => {
+			const wallet = walletRef.current;
+			if (!wallet) {
+				setError("Wallet not connected");
+				return null;
+			}
+
+			setIsSending(true);
+			setError(null);
+
+			try {
+				const result = await sendBsv(wallet, recipientAddress, amountSatoshis);
+
+				// Refresh wallet info after payment
+				await fetchWalletInfo();
+
+				return result;
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Payment failed");
+				return null;
+			} finally {
+				setIsSending(false);
+			}
+		},
+		[fetchWalletInfo],
+	);
+
 	// Fetch wallet info when connected
 	useEffect(() => {
 		if (status === "connected") {
@@ -419,5 +459,7 @@ export function useYoursWallet(): UseYoursWalletReturn {
 		isInscribing,
 		listTheme,
 		isListing,
+		sendPayment,
+		isSending,
 	};
 }
