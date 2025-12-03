@@ -101,8 +101,11 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			const data = await response.json();
 			const theme = data.theme as ThemeToken;
 
-			// Store the theme and navigate to studio
-			storeRemixTheme(theme);
+			// Store the theme with AI generation metadata and navigate to studio
+			storeRemixTheme(theme, {
+				source: "ai-generate",
+				txid: paymentResult.txid,
+			});
 			router.push("/studio");
 		} catch (err) {
 			console.error("Generation failed:", err);

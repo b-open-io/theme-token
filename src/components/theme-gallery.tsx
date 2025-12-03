@@ -18,20 +18,39 @@ export const REMIX_THEME_EVENT = "remix-theme";
 // LocalStorage key for cross-page theme loading
 const REMIX_STORAGE_KEY = "theme-token-remix";
 
+export interface StoredRemixTheme {
+	theme: ThemeToken;
+	source?: "ai-generate" | "remix";
+	txid?: string;
+}
+
 export function dispatchRemixTheme(theme: ThemeToken) {
 	window.dispatchEvent(new CustomEvent(REMIX_THEME_EVENT, { detail: theme }));
 }
 
-export function storeRemixTheme(theme: ThemeToken) {
-	localStorage.setItem(REMIX_STORAGE_KEY, JSON.stringify(theme));
+export function storeRemixTheme(
+	theme: ThemeToken,
+	metadata?: { source?: "ai-generate" | "remix"; txid?: string },
+) {
+	const data: StoredRemixTheme = {
+		theme,
+		source: metadata?.source,
+		txid: metadata?.txid,
+	};
+	localStorage.setItem(REMIX_STORAGE_KEY, JSON.stringify(data));
 }
 
-export function getAndClearRemixTheme(): ThemeToken | null {
+export function getAndClearRemixTheme(): StoredRemixTheme | null {
 	const stored = localStorage.getItem(REMIX_STORAGE_KEY);
 	if (stored) {
 		localStorage.removeItem(REMIX_STORAGE_KEY);
 		try {
-			return JSON.parse(stored);
+			const data = JSON.parse(stored);
+			// Handle legacy format (just ThemeToken)
+			if (data.styles) {
+				return { theme: data };
+			}
+			return data as StoredRemixTheme;
 		} catch {
 			return null;
 		}

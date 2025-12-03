@@ -33,7 +33,15 @@ import { ExportModal } from "@/components/export-modal";
 import {
 	getAndClearRemixTheme,
 	REMIX_THEME_EVENT,
+	type StoredRemixTheme,
 } from "@/components/theme-gallery";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { ThemePreviewPanel } from "@/components/theme-preview-panel";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
@@ -173,6 +181,10 @@ export function ThemeStudio() {
 		"colors" | "typography" | "other"
 	>("colors");
 	const isAnimatingRef = useRef(false);
+	const [aiGenerationInfo, setAiGenerationInfo] = useState<{
+		txid: string;
+		themeName: string;
+	} | null>(null);
 
 	// Load drafts on mount
 	useEffect(() => {
@@ -251,12 +263,31 @@ export function ThemeStudio() {
 		}
 	}, [searchParams]);
 
-	// Check for remix theme from gallery navigation
+	// Check for remix theme from gallery navigation or AI generation
 	useEffect(() => {
-		const remixTheme = getAndClearRemixTheme();
-		if (remixTheme) {
-			setSelectedTheme(remixTheme);
-			setCustomName(remixTheme.name);
+		const remixData = getAndClearRemixTheme();
+		if (remixData) {
+			setSelectedTheme(remixData.theme);
+			setCustomName(remixData.theme.name);
+
+			// If from AI generation, show success dialog and auto-save draft
+			if (remixData.source === "ai-generate" && remixData.txid) {
+				setAiGenerationInfo({
+					txid: remixData.txid,
+					themeName: remixData.theme.name,
+				});
+
+				// Auto-save as draft
+				const draft: ThemeDraft = {
+					id: Date.now().toString(),
+					theme: remixData.theme,
+					savedAt: Date.now(),
+				};
+				const currentDrafts = loadDrafts();
+				const updated = [draft, ...currentDrafts];
+				setDrafts(updated);
+				saveDrafts(updated);
+			}
 		}
 	}, []);
 
@@ -440,6 +471,70 @@ export function ThemeStudio() {
 
 	return (
 		<div className="flex h-screen flex-col">
+			{/* AI Generation Success Dialog */}
+			<Dialog
+				open={aiGenerationInfo !== null}
+				onOpenChange={(open) => !open && setAiGenerationInfo(null)}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<Sparkles className="h-5 w-5 text-primary" />
+							Theme Generated!
+						</DialogTitle>
+						<DialogDescription>
+							Your AI-generated theme "{aiGenerationInfo?.themeName}" is ready.
+							It has been saved as a draft.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4">
+						{/* Transaction Link */}
+						<div className="rounded-lg border border-border bg-muted/50 p-3">
+							<p className="mb-1 text-xs font-medium text-muted-foreground">
+								Payment Transaction
+							</p>
+							<a
+								href={`https://whatsonchain.com/tx/${aiGenerationInfo?.txid}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-2 text-sm text-primary hover:underline"
+							>
+								<span className="truncate font-mono">
+									{aiGenerationInfo?.txid?.slice(0, 20)}...
+								</span>
+								<ExternalLink className="h-3 w-3 shrink-0" />
+							</a>
+						</div>
+
+						{/* Action Buttons */}
+						<div className="flex gap-3">
+							<Button
+								variant="outline"
+								className="flex-1"
+								onClick={() => setAiGenerationInfo(null)}
+							>
+								Edit First
+							</Button>
+							<Button
+								className="flex-1"
+								onClick={() => {
+									setAiGenerationInfo(null);
+									// Trigger inscription flow
+									if (status === "connected") {
+										handleMint();
+									} else {
+										connect();
+									}
+								}}
+							>
+								Publish Now
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
+
 			{/* Main content area */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* Left Panel: Controls (fixed width, scrollable) */}
