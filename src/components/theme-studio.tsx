@@ -318,7 +318,7 @@ export function ThemeStudio() {
   // Update theme name when customName changes
   useEffect(() => {
     if (customName.trim()) {
-      setSelectedTheme((prev) => ({ ...prev, name: customName.trim() }));
+      setSelectedTheme((prev: ThemeToken) => ({ ...prev, name: customName.trim() }));
     }
   }, [customName]);
 
