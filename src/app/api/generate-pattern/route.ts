@@ -27,40 +27,90 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Expert prompt for generating seamless SVG patterns
-		const systemPrompt = `You are an expert SVG pattern designer. Generate a seamless, tileable SVG pattern based on the user's description.
+		const systemPrompt = `You are an SVG pattern generator creating seamless, tileable patterns.
 
-## Technical Requirements
-1. Use SVG <pattern> element inside <defs> for true seamless tiling
-2. Use viewBox="0 0 100 100" for the root SVG
-3. Pattern dimensions should be 10-30 units for good tile density
-4. Keep patterns simple and minimal - aim for under 2KB total
-5. Use patternUnits="userSpaceOnUse" for predictable scaling
+## OUTPUT REQUIREMENTS
+- Output ONLY valid SVG markup, no explanation or markdown
+- Use viewBox="0 0 100 100" for consistent coordinates
+- Use patternUnits="userSpaceOnUse" for the pattern element
 
-## Color Requirement
-${colorInstruction}
-
-## Pattern Guidelines
-- Dot patterns: Use small circles (r="1" to r="3")
-- Grid patterns: Use thin strokes (0.5px to 2px)
-- Line patterns: Ensure lines connect at edges for seamless tiling
-- Geometric patterns: Use clean, precise shapes
-- Keep stroke-width between 0.5 and 2 for subtle textures
-
-## Output Format
-Return ONLY valid SVG code, no explanation. The SVG must:
-- Start with <svg and end with </svg>
-- Include xmlns="http://www.w3.org/2000/svg"
-- Have width="100" height="100" viewBox="0 0 100 100"
-- Use <defs><pattern>...</pattern></defs><rect width="100%" height="100%" fill="url(#pattern)"/>
-
-## Example Structure
+## SVG STRUCTURE (always follow this exactly)
 <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
   <defs>
-    <pattern id="pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-      <!-- Pattern elements here -->
+    <pattern id="p" width="[tile-width]" height="[tile-height]" patternUnits="userSpaceOnUse">
+      <!-- pattern shapes here -->
     </pattern>
   </defs>
-  <rect width="100%" height="100%" fill="url(#pattern)"/>
+  <rect width="100%" height="100%" fill="url(#p)"/>
+</svg>
+
+## SEAMLESS TILING RULES (Critical!)
+- Any shape touching LEFT edge (x=0) must be duplicated at RIGHT edge (x=tile-width)
+- Any shape touching TOP edge (y=0) must be duplicated at BOTTOM edge (y=tile-height)
+- Corner shapes must appear at all 4 corners
+
+## COLOR MODE
+${colorInstruction}
+
+## EXAMPLES
+
+Polka Dot Grid (offset pattern):
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="p" width="50" height="50" patternUnits="userSpaceOnUse">
+      <circle cx="25" cy="25" r="8" fill="currentColor"/>
+      <circle cx="0" cy="0" r="8" fill="currentColor"/>
+      <circle cx="50" cy="0" r="8" fill="currentColor"/>
+      <circle cx="0" cy="50" r="8" fill="currentColor"/>
+      <circle cx="50" cy="50" r="8" fill="currentColor"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)"/>
+</svg>
+
+Diagonal Lines:
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="p" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M-5,5 l10,-10 M0,20 l20,-20 M15,25 l10,-10" stroke="currentColor" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)"/>
+</svg>
+
+Hexagon Grid:
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="p" width="28" height="49" patternUnits="userSpaceOnUse">
+      <path d="M14 0 L28 8 L28 24 L14 32 L0 24 L0 8 Z M14 32 L28 40 L28 56 L14 64 L0 56 L0 40 Z M0 24 L14 16 L28 24 M0 56 L14 48 L28 56" fill="none" stroke="currentColor" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)"/>
+</svg>
+
+Waves:
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="p" width="100" height="20" patternUnits="userSpaceOnUse">
+      <path d="M0 10 C25 0, 75 20, 100 10" fill="none" stroke="currentColor" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)"/>
+</svg>
+
+Circuit Board:
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="p" width="50" height="50" patternUnits="userSpaceOnUse">
+      <circle cx="25" cy="25" r="3" fill="currentColor"/>
+      <circle cx="0" cy="0" r="2" fill="currentColor"/>
+      <circle cx="50" cy="0" r="2" fill="currentColor"/>
+      <circle cx="0" cy="50" r="2" fill="currentColor"/>
+      <circle cx="50" cy="50" r="2" fill="currentColor"/>
+      <path d="M25 25 L25 0 M25 25 L50 25 M0 0 L0 25 L25 25" fill="none" stroke="currentColor" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#p)"/>
 </svg>`;
 
 		const userPrompt = `Create a seamless tileable SVG pattern: ${prompt}

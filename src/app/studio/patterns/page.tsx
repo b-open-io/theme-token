@@ -117,10 +117,10 @@ export default function PatternGeneratorPage() {
 		if (!pattern?.svg) return "";
 		const encoded = encodeURIComponent(pattern.svg);
 		return `.pattern-bg {
-  background-color: hsl(var(--primary) / ${(opacity / 100) * 0.1});
-  mask-image: url("data:image/svg+xml,${encoded}");
-  mask-repeat: repeat;
-  mask-size: ${scale}px;
+  background-image: url("data:image/svg+xml,${encoded}");
+  background-repeat: repeat;
+  background-size: ${scale}px ${scale}px;
+  opacity: ${opacity / 100};
 }`;
 	}, [pattern?.svg, scale, opacity]);
 
@@ -511,22 +511,14 @@ export default function PatternGeneratorPage() {
 						<div className="relative aspect-square">
 							{pattern?.svg ? (
 								<>
-									{/* Background layer - shows through the mask */}
-									<div
-										className="absolute inset-0 bg-primary/10"
-										style={{ opacity: opacity / 100 }}
-									/>
-									{/* Mask layer - pattern defines where color shows */}
+									{/* Pattern background - uses background-image for proper <pattern> element support */}
 									<div
 										className="absolute inset-0"
 										style={{
-											backgroundColor: `hsl(var(--primary) / ${(opacity / 100) * 0.3})`,
-											maskImage: `url("${svgDataUrl}")`,
-											WebkitMaskImage: `url("${svgDataUrl}")`,
-											maskRepeat: "repeat",
-											WebkitMaskRepeat: "repeat",
-											maskSize: `${scale}px`,
-											WebkitMaskSize: `${scale}px`,
+											backgroundImage: `url("${svgDataUrl}")`,
+											backgroundRepeat: "repeat",
+											backgroundSize: `${scale}px ${scale}px`,
+											opacity: opacity / 100,
 										}}
 									/>
 									{/* Center badge */}
