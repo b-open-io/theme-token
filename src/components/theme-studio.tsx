@@ -30,6 +30,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ExportModal } from "@/components/export-modal";
 import { ImportModal } from "@/components/import-modal";
+import { InscribeDialog } from "@/components/inscribe-dialog";
 import { InscribedSuccessModal } from "@/components/inscribed-success-modal";
 import {
 	getAndClearRemixTheme,
@@ -171,6 +172,7 @@ export function ThemeStudio() {
 		txid: string;
 		themeName: string;
 	} | null>(null);
+	const [showInscribeDialog, setShowInscribeDialog] = useState(false);
 
 	// Load drafts on mount
 	useEffect(() => {
@@ -316,16 +318,17 @@ export function ThemeStudio() {
 		}
 	}, [customName]);
 
-	const handleMint = async () => {
+	const handleConfirmInscribe = async (data: { name: string; author: string }) => {
 		const themeToMint: ThemeToken = {
 			...selectedTheme,
-			name: customName.trim() || selectedTheme.name,
-			...(profile?.displayName && { author: profile.displayName }),
+			name: data.name,
+			author: data.author,
 		};
 
 		const result = await inscribeTheme(themeToMint);
 		if (result) {
 			setTxid(result.txid);
+			setShowInscribeDialog(false);
 		}
 	};
 
@@ -403,9 +406,9 @@ export function ThemeStudio() {
 								className="flex-1"
 								onClick={() => {
 									setAiGenerationInfo(null);
-									// Trigger inscription flow
+									// Trigger inscription flow via dialog
 									if (status === "connected") {
-										handleMint();
+										setShowInscribeDialog(true);
 									} else {
 										connect();
 									}
@@ -1313,15 +1316,10 @@ export function ThemeStudio() {
 				<Button
 					size="lg"
 					disabled={!canMint}
-					onClick={isConnected ? handleMint : connect}
+					onClick={isConnected ? () => setShowInscribeDialog(true) : connect}
 					className="gap-2"
 				>
-					{isInscribing ? (
-						<>
-							<Loader2 className="h-5 w-5 animate-spin" />
-							Inscribing...
-						</>
-					) : isConnected ? (
+					{isConnected ? (
 						<>
 							<PenLine className="h-5 w-5" />
 							Inscribe Theme
@@ -1339,6 +1337,18 @@ export function ThemeStudio() {
 					)}
 				</Button>
 			</div>
+
+			{/* Inscribe Confirmation Dialog */}
+			<InscribeDialog
+				isOpen={showInscribeDialog}
+				onClose={() => setShowInscribeDialog(false)}
+				theme={selectedTheme}
+				themeName={customName}
+				profileDisplayName={profile?.displayName || null}
+				onConfirm={handleConfirmInscribe}
+				isInscribing={isInscribing}
+				mode={mode}
+			/>
 		</div>
 		</>
 	);
