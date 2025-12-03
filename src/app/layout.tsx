@@ -67,7 +67,7 @@ export default function RootLayout({
 				<Providers>
 					<div className="flex h-full flex-col">
 						<Header />
-						<main className="min-h-0 flex-1">{children}</main>
+						<main className="flex min-h-0 flex-1 flex-col">{children}</main>
 					</div>
 				</Providers>
 			</body>
