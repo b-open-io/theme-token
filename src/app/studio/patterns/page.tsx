@@ -27,8 +27,10 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { extractTileDimensions } from "@/lib/asset-metadata";
 
-import { type ColorMode, extractTileDimensions } from "@/lib/asset-metadata";
+// Color mode for pattern generation - affects how AI generates the SVG
+type ColorMode = "currentColor" | "theme";
 
 interface PatternState {
 	svg: string;
@@ -140,20 +142,14 @@ export default function PatternGeneratorPage() {
 	const handleInscribe = useCallback(async () => {
 		if (!pattern?.svg) return;
 
-		const name = patternName.trim() || `Pattern ${Date.now()}`;
-		const tileDimensions = extractTileDimensions(pattern.svg);
-
-		const response = await inscribePattern(pattern.svg, name, {
+		const response = await inscribePattern(pattern.svg, {
 			prompt: pattern.prompt,
-			colorMode: pattern.colorMode,
-			tileWidth: tileDimensions?.width,
-			tileHeight: tileDimensions?.height,
 		});
 
 		if (response?.txid) {
 			setInscribedOrigin(`${response.txid}_0`);
 		}
-	}, [pattern, patternName, inscribePattern]);
+	}, [pattern, inscribePattern]);
 
 	return (
 		<div className="relative px-4 py-6 md:px-8 lg:px-12">

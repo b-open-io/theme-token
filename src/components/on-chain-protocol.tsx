@@ -116,11 +116,10 @@ const ASSET_SCHEMAS: Record<
 		label: "Patterns",
 		description: "Tileable SVG backgrounds and textures",
 		contentInfo:
-			"SVG content is self-describing, but colorMode and AI prompt cannot be derived from the SVG itself.",
+			"SVG content is self-describing. Only the AI prompt (if AI-generated) is stored as provenance.",
 		example: {
 			app: "theme-token",
 			type: "pattern",
-			colorMode: "currentColor",
 			prompt: "evenly spaced dots",
 		},
 		fields: [
@@ -137,15 +136,9 @@ const ASSET_SCHEMAS: Record<
 				description: 'Always "pattern"',
 			},
 			{
-				name: "colorMode",
-				type: "enum",
-				options: ["currentColor", "theme", "grayscale"],
-				description: "How the pattern should be rendered/colored",
-			},
-			{
 				name: "prompt",
 				type: "string",
-				description: "AI generation prompt (provenance)",
+				description: "AI generation prompt (provenance, if AI-generated)",
 			},
 		],
 	},
@@ -166,16 +159,6 @@ export function OnChainProtocol() {
 
 	return (
 		<div className="space-y-8">
-			{/* Principle Banner */}
-			<div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-				<p className="text-sm text-muted-foreground">
-					<strong className="text-foreground">Metadata Principle:</strong>{" "}
-					Only include information that cannot be derived from the inscribed
-					content itself. Theme JSON contains name/author/colors. Font binaries
-					don't expose this easily. SVG patterns need colorMode hints.
-				</p>
-			</div>
-
 			{/* Schema Explorer with Tabs */}
 			<div className="rounded-xl border border-border bg-card">
 				{/* Tab Navigation */}

@@ -8,13 +8,8 @@
  * For example:
  * - Theme JSON already contains name, author, colors → no metadata needed
  * - Font WOFF2 doesn't expose license/name easily → metadata needed
- * - SVG pattern colorMode indicates intended rendering → metadata needed
+ * - SVG pattern prompt is provenance info → metadata needed
  */
-
-/**
- * Color mode for SVG patterns - indicates how the pattern should be rendered
- */
-export type ColorMode = "currentColor" | "theme" | "grayscale";
 
 /**
  * Font weight classification
@@ -39,15 +34,12 @@ export type FontStyle = "normal" | "italic" | "oblique";
  * Build MAP metadata for pattern inscription
  *
  * Only includes metadata that cannot be derived from the SVG content:
- * - colorMode: How the pattern should be rendered (currentColor/theme/grayscale)
  * - prompt: The AI prompt used to generate the pattern (provenance)
  *
  * NOT included (derivable from SVG):
- * - name: Optional, user can name it but not required
- * - tile dimensions: Can be extracted from <pattern> element or viewBox
+ * - name, tile dimensions, color mode - all in the SVG itself
  */
 export function buildPatternMetadata(params: {
-	colorMode?: ColorMode;
 	prompt?: string;
 }): Record<string, string> {
 	const result: Record<string, string> = {
@@ -55,7 +47,6 @@ export function buildPatternMetadata(params: {
 		type: "pattern",
 	};
 
-	if (params.colorMode) result.colorMode = params.colorMode;
 	if (params.prompt) result.prompt = params.prompt;
 
 	return result;

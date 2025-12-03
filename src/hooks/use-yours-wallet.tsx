@@ -11,11 +11,7 @@ import {
 	type ReactNode,
 } from "react";
 import { useTheme } from "@/components/theme-provider";
-import {
-	buildPatternMetadata,
-	buildThemeMetadata,
-	type ColorMode,
-} from "@/lib/asset-metadata";
+import { buildPatternMetadata, buildThemeMetadata } from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import {
 	type Addresses,
@@ -85,12 +81,8 @@ interface WalletContextValue {
 	inscribeTheme: (theme: ThemeToken) => Promise<InscribeResponse | null>;
 	inscribePattern: (
 		svg: string,
-		name: string,
 		metadata?: {
 			prompt?: string;
-			colorMode?: ColorMode;
-			tileWidth?: number;
-			tileHeight?: number;
 		},
 	) => Promise<InscribeResponse | null>;
 	isInscribing: boolean;
@@ -424,12 +416,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const inscribePattern = useCallback(
 		async (
 			svg: string,
-			name: string,
 			metadata?: {
 				prompt?: string;
-				colorMode?: ColorMode;
-				tileWidth?: number;
-				tileHeight?: number;
 			},
 		): Promise<InscribeResponse | null> => {
 			const wallet = walletRef.current;
@@ -445,10 +433,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				// SVG is text, encode to base64
 				const base64Data = btoa(svg);
 
-				// Build metadata - only include non-derivable data
+				// Build metadata - only include non-derivable data (prompt for provenance)
 				const mapData = buildPatternMetadata({
 					prompt: metadata?.prompt,
-					colorMode: metadata?.colorMode,
 				});
 
 				const response = await wallet.inscribe([
