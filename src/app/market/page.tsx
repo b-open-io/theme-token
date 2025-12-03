@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function MarketPage() {
-  redirect("/market/browse");
+	redirect("/market/browse");
 }

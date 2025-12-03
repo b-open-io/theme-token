@@ -1,38 +1,41 @@
+import { toShadcnRegistry, validateThemeToken } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
-import { validateThemeToken, toShadcnRegistry } from "@theme-token/sdk";
 
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ origin: string }> }
+	_request: Request,
+	{ params }: { params: Promise<{ origin: string }> },
 ) {
-  try {
-    const { origin } = await params;
-    const cleanOrigin = origin.replace(/\.json$/, "");
+	try {
+		const { origin } = await params;
+		const cleanOrigin = origin.replace(/\.json$/, "");
 
-    const response = await fetch(`https://ordfs.network/${cleanOrigin}`);
-    if (!response.ok) {
-      return NextResponse.json({ error: "Theme not found" }, { status: 404 });
-    }
+		const response = await fetch(`https://ordfs.network/${cleanOrigin}`);
+		if (!response.ok) {
+			return NextResponse.json({ error: "Theme not found" }, { status: 404 });
+		}
 
-    const json = await response.json();
-    const result = validateThemeToken(json);
-    if (!result.valid) {
-      return NextResponse.json(
-        { error: "Invalid theme format", details: result.error },
-        { status: 400 }
-      );
-    }
+		const json = await response.json();
+		const result = validateThemeToken(json);
+		if (!result.valid) {
+			return NextResponse.json(
+				{ error: "Invalid theme format", details: result.error },
+				{ status: 400 },
+			);
+		}
 
-    const registryItem = toShadcnRegistry(result.theme);
+		const registryItem = toShadcnRegistry(result.theme);
 
-    return NextResponse.json(registryItem, {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
-  } catch (error) {
-    console.error("[Registry API] Error:", error);
-    return NextResponse.json({ error: "Failed to fetch theme" }, { status: 500 });
-  }
+		return NextResponse.json(registryItem, {
+			headers: {
+				"Content-Type": "application/json",
+				"Cache-Control": "public, max-age=3600",
+			},
+		});
+	} catch (error) {
+		console.error("[Registry API] Error:", error);
+		return NextResponse.json(
+			{ error: "Failed to fetch theme" },
+			{ status: 500 },
+		);
+	}
 }
