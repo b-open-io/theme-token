@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -69,6 +70,7 @@ export default function RootLayout({
 						<Header />
 						<main className="flex min-h-0 flex-1 flex-col">{children}</main>
 					</div>
+					<Toaster position="bottom-right" richColors closeButton />
 				</Providers>
 			</body>
 		</html>

@@ -3,6 +3,7 @@
 import { Sparkles, Wand2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { ThemeToken } from "@theme-token/sdk";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ai-elements/loader";
@@ -11,6 +12,8 @@ import { storeRemixTheme } from "@/components/theme-gallery";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { AI_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import type { FilterState } from "./filter-sidebar";
+
+const GENERATION_TIMEOUT_MS = 30_000; // 30 second timeout
 
 interface GenerateCardProps {
 	filters: FilterState;
@@ -57,7 +60,8 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 		try {
 			await connect();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to connect wallet");
+			const message = err instanceof Error ? err.message : "Failed to connect wallet";
+			toast.error("Connection Failed", { description: message });
 		}
 	};
 
@@ -71,12 +75,18 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 		const DEV_BYPASS_PAYMENT = true;
 
 		if (!DEV_BYPASS_PAYMENT && !hasEnoughBalance) {
-			setError(`Insufficient balance. Need ${formatBsv(AI_GENERATION_COST_SATS)} BSV`);
+			toast.error("Insufficient Balance", {
+				description: `You need at least ${formatBsv(AI_GENERATION_COST_SATS)} BSV to generate a theme.`,
+			});
 			return;
 		}
 
 		setError(null);
 		const finalPrompt = stylePrompt || prompt || "Generate a modern, professional theme";
+
+		// Create abort controller for timeout
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
 
 		try {
 			let paymentTxid = "dev-test-bypass";
@@ -84,6 +94,8 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			if (!DEV_BYPASS_PAYMENT) {
 				// Step 1: Process payment
 				setState("paying");
+				toast.loading("Processing payment...", { id: "generation" });
+
 				const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
 
 				if (!paymentResult) {
@@ -94,6 +106,8 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 			// Step 2: Generate theme
 			setState("generating");
+			toast.loading("Generating your theme...", { id: "generation" });
+
 			const response = await fetch("/api/generate-theme", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -105,6 +119,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 					radius: filters.radius,
 					paymentTxid,
 				}),
+				signal: controller.signal,
 			});
 
 			if (!response.ok) {
@@ -120,11 +135,32 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				source: "ai-generate",
 				txid: paymentTxid,
 			});
+
+			toast.success("Theme Generated!", {
+				id: "generation",
+				description: "Opening in studio for customization...",
+			});
+
 			router.push("/studio");
 		} catch (err) {
 			console.error("Generation failed:", err);
-			setError(err instanceof Error ? err.message : "Generation failed");
+
+			let message = "Generation failed. Please try again.";
+			if (err instanceof Error) {
+				if (err.name === "AbortError") {
+					message = "Request timed out. The AI service may be busy - please try again.";
+				} else {
+					message = err.message;
+				}
+			}
+
+			toast.error("Generation Failed", {
+				id: "generation",
+				description: message,
+			});
+			setError(message);
 		} finally {
+			clearTimeout(timeoutId);
 			setState("idle");
 		}
 	};
