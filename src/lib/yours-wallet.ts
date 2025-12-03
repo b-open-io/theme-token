@@ -533,6 +533,97 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 	}
 }
 
+export interface ImageMetadata {
+	name?: string;
+	contentType: string;
+	size?: number;
+}
+
+export interface ImageMarketListing extends MarketListing {
+	metadata: ImageMetadata;
+	previewUrl: string;
+}
+
+/**
+ * Fetch image ordinals from the marketplace
+ * Queries the GorillaPool market API for image inscriptions (png, jpeg, gif, webp, svg)
+ */
+export async function fetchImageMarketListings(): Promise<ImageMarketListing[]> {
+	try {
+		// Query the market API for image types
+		const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
+		const allListings: ImageMarketListing[] = [];
+
+		for (const imageType of imageTypes) {
+			const response = await fetch(
+				`${ORDINALS_API}/market?limit=50&dir=DESC&type=${encodeURIComponent(imageType)}`,
+			);
+
+			if (!response.ok) {
+				console.error("[Image Market] API error for", imageType, ":", response.status);
+				continue;
+			}
+
+			const results = await response.json();
+
+			// Map to ImageMarketListing
+			const imageListings = results.map(
+				(item: {
+					txid: string;
+					vout: number;
+					outpoint: string;
+					owner: string;
+					origin?: {
+						outpoint: string;
+						data?: {
+							insc?: { file?: { type?: string; size?: number } };
+							map?: Record<string, string>;
+						};
+					};
+					data?: {
+						list?: { price: number };
+						insc?: { file?: { type?: string; size?: number } };
+						map?: Record<string, string>;
+					};
+				}) => {
+					const mapData = item.origin?.data?.map || item.data?.map || {};
+					const inscData = item.origin?.data?.insc || item.data?.insc;
+					const origin = item.origin?.outpoint || item.outpoint;
+					return {
+						outpoint: item.outpoint,
+						origin,
+						price: item.data?.list?.price || 0,
+						owner: item.owner,
+						data: {
+							insc: inscData,
+							map: mapData,
+						},
+						metadata: {
+							name: mapData.name || `Image ${origin.slice(0, 8)}`,
+							contentType: inscData?.file?.type || imageType,
+							size: inscData?.file?.size,
+						},
+						previewUrl: `https://ordfs.network/content/${origin}`,
+					};
+				},
+			);
+
+			allListings.push(...imageListings);
+		}
+
+		// Dedupe by origin
+		const seen = new Set<string>();
+		return allListings.filter((listing) => {
+			if (seen.has(listing.origin)) return false;
+			seen.add(listing.origin);
+			return true;
+		});
+	} catch (err) {
+		console.error("[Image Market] Failed to fetch listings:", err);
+		return [];
+	}
+}
+
 // Fee address for AI generation payments
 export const FEE_ADDRESS = "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z";
 

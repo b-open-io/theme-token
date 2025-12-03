@@ -17,6 +17,12 @@ export const featureFlags = {
 	 * Pattern Generator - AI SVG pattern generation and inscription
 	 */
 	patterns: process.env.NEXT_PUBLIC_FEATURE_PATTERNS === "true",
+
+	/**
+	 * Images Market - Browse and use existing 1sat ordinal images
+	 * Always enabled - leverages existing ecosystem
+	 */
+	images: true,
 } as const;
 
 /**

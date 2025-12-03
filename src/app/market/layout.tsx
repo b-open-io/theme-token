@@ -6,19 +6,21 @@ import {
 	useSpring,
 	useTransform,
 } from "framer-motion";
-import { ShoppingCart, Tag, Type, Wallet } from "lucide-react";
+import { Image, ShoppingCart, Tag, Type, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { fetchThemeMarketListings, fetchFontMarketListings, type ThemeMarketListing, type FontMarketListing } from "@/lib/yours-wallet";
+import { featureFlags } from "@/lib/feature-flags";
 
-const tabs = [
-	{ href: "/market/browse", label: "Themes", icon: ShoppingCart },
-	{ href: "/market/fonts", label: "Fonts", icon: Type },
-	{ href: "/market/my-themes", label: "My Themes", icon: Wallet },
-	{ href: "/market/my-fonts", label: "My Fonts", icon: Type },
-	{ href: "/market/sell", label: "Sell", icon: Tag },
+const allTabs = [
+	{ href: "/market/browse", label: "Themes", icon: ShoppingCart, feature: null },
+	{ href: "/market/fonts", label: "Fonts", icon: Type, feature: "fonts" as const },
+	{ href: "/market/images", label: "Images", icon: Image, feature: "images" as const },
+	{ href: "/market/my-themes", label: "My Themes", icon: Wallet, feature: null },
+	{ href: "/market/my-fonts", label: "My Fonts", icon: Type, feature: "fonts" as const },
+	{ href: "/market/sell", label: "Sell", icon: Tag, feature: null },
 ];
 
 // Format satoshis as BSV
@@ -40,6 +42,15 @@ function MarketLayoutInner({
 	const [fontListings, setFontListings] = useState<FontMarketListing[]>([]);
 	const { formatUsd } = useBsvRateContext();
 	const isFontsPage = pathname?.includes("/fonts");
+
+	// Filter tabs based on feature flags
+	const tabs = useMemo(
+		() =>
+			allTabs.filter(
+				(tab) => tab.feature === null || featureFlags[tab.feature],
+			),
+		[],
+	);
 
 	// Mouse tracking for spotlight effect
 	const mouseX = useMotionValue(0);

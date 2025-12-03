@@ -208,10 +208,61 @@ export default function PatternGeneratorPage() {
 									<SelectTrigger className="font-mono text-xs">
 										<SelectValue />
 									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="currentColor">currentColor (Theme Reactive)</SelectItem>
-										<SelectItem value="theme">Theme Colors (Hardcoded)</SelectItem>
-										<SelectItem value="grayscale">Grayscale</SelectItem>
+									<SelectContent className="w-[320px]">
+										<SelectItem value="currentColor" className="py-3">
+											<div className="flex items-start gap-3">
+												<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
+													<svg viewBox="0 0 24 24" className="h-6 w-6 text-primary">
+														<circle cx="8" cy="8" r="2" fill="currentColor" />
+														<circle cx="16" cy="8" r="2" fill="currentColor" />
+														<circle cx="8" cy="16" r="2" fill="currentColor" />
+														<circle cx="16" cy="16" r="2" fill="currentColor" />
+													</svg>
+												</div>
+												<div className="flex flex-col gap-0.5">
+													<span className="font-medium">currentColor</span>
+													<span className="text-[10px] text-muted-foreground">
+														Inherits color from CSS. Updates with theme/dark mode
+													</span>
+												</div>
+											</div>
+										</SelectItem>
+										<SelectItem value="theme" className="py-3">
+											<div className="flex items-start gap-3">
+												<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
+													<svg viewBox="0 0 24 24" className="h-6 w-6">
+														<circle cx="8" cy="8" r="2" className="fill-primary" />
+														<circle cx="16" cy="8" r="2" className="fill-accent" />
+														<circle cx="8" cy="16" r="2" className="fill-secondary" />
+														<circle cx="16" cy="16" r="2" className="fill-primary" />
+													</svg>
+												</div>
+												<div className="flex flex-col gap-0.5">
+													<span className="font-medium">Theme Colors</span>
+													<span className="text-[10px] text-muted-foreground">
+														Bakes current colors into SVG. Fixed appearance
+													</span>
+												</div>
+											</div>
+										</SelectItem>
+										<SelectItem value="grayscale" className="py-3">
+											<div className="flex items-start gap-3">
+												<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
+													<svg viewBox="0 0 24 24" className="h-6 w-6">
+														<circle cx="8" cy="8" r="2" fill="#666" />
+														<circle cx="16" cy="8" r="2" fill="#888" />
+														<circle cx="8" cy="16" r="2" fill="#aaa" />
+														<circle cx="16" cy="16" r="2" fill="#666" />
+													</svg>
+												</div>
+												<div className="flex flex-col gap-0.5">
+													<span className="font-medium">Grayscale</span>
+													<span className="text-[10px] text-muted-foreground">
+														Neutral grays only. Works with any theme
+													</span>
+												</div>
+											</div>
+										</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
