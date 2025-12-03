@@ -22,7 +22,7 @@ const glyphSchema = z.object({
 const fontSchema = z.object({
 	name: z.string().describe("Font family name based on the style"),
 	style: z.string().describe("Style description (e.g., 'Bold Sans-Serif')"),
-	unitsPerEm: z.literal(1000).describe("Units per em (always 1000)"),
+	unitsPerEm: z.number().describe("Units per em (always use 1000)"),
 	ascender: z.number().describe("Ascender height (typically 800-900)"),
 	descender: z.number().describe("Descender depth as negative (typically -200 to -300)"),
 	capHeight: z.number().describe("Capital letter height (typically 700-750)"),
