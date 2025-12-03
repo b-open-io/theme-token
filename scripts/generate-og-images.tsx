@@ -64,7 +64,7 @@ function seededRandom(seed: number, i: number) {
 async function generateOgImage(theme: ThemeToken, outputPath: string) {
   const themeColors = extractDarkModeColors(theme);
   const foregroundColor = getForegroundColor(theme);
-  const seed = theme.name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const seed = theme.name.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
 
   // Shuffle colors
   const shuffled = themeColors

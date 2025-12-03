@@ -83,7 +83,7 @@ export default function Home() {
           >
             <Badge className="mb-6" variant="outline">
               <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
-              ShadCN Registry Format
+              bun i @theme-token/sdk
             </Badge>
 
             <h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">

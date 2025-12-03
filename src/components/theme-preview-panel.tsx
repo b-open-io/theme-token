@@ -37,6 +37,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
   Bell,
   Check,
   CreditCard,
@@ -56,7 +73,249 @@ import {
   MoreHorizontal,
   Search,
   ChevronRight,
+  Minus,
+  TrendingUp,
 } from "lucide-react";
+
+// Chart data
+const revenueData = [
+  { month: "Jan", revenue: 4000, expenses: 2400 },
+  { month: "Feb", revenue: 3000, expenses: 1398 },
+  { month: "Mar", revenue: 9800, expenses: 2000 },
+  { month: "Apr", revenue: 3908, expenses: 2780 },
+  { month: "May", revenue: 4800, expenses: 1890 },
+  { month: "Jun", revenue: 3800, expenses: 2390 },
+];
+
+const activityData = [
+  { day: "Mon", desktop: 186, mobile: 80 },
+  { day: "Tue", desktop: 305, mobile: 200 },
+  { day: "Wed", desktop: 237, mobile: 120 },
+  { day: "Thu", desktop: 73, mobile: 190 },
+  { day: "Fri", desktop: 209, mobile: 130 },
+  { day: "Sat", desktop: 214, mobile: 140 },
+  { day: "Sun", desktop: 186, mobile: 80 },
+];
+
+const exerciseData = [
+  { day: "Mon", minutes: 30 },
+  { day: "Tue", minutes: 45 },
+  { day: "Wed", minutes: 60 },
+  { day: "Thu", minutes: 35 },
+  { day: "Fri", minutes: 50 },
+  { day: "Sat", minutes: 75 },
+  { day: "Sun", minutes: 40 },
+];
+
+const revenueConfig = {
+  revenue: {
+    label: "Revenue",
+    color: "var(--chart-1)",
+  },
+  expenses: {
+    label: "Expenses",
+    color: "var(--chart-2)",
+  },
+} satisfies ChartConfig;
+
+const activityConfig = {
+  desktop: {
+    label: "Desktop",
+    color: "var(--chart-1)",
+  },
+  mobile: {
+    label: "Mobile",
+    color: "var(--chart-3)",
+  },
+} satisfies ChartConfig;
+
+const exerciseConfig = {
+  minutes: {
+    label: "Minutes",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig;
+
+// Revenue Line Chart
+function RevenueChart() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Total Revenue</CardTitle>
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold">$15,231.89</span>
+          <span className="text-sm text-muted-foreground">+20.1% from last month</span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={revenueConfig} className="h-[200px] w-full">
+          <LineChart data={revenueData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line
+              type="monotone"
+              dataKey="revenue"
+              stroke="var(--color-revenue)"
+              strokeWidth={2}
+              dot={{ fill: "var(--color-revenue)", strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Activity Bar Chart
+function ActivityChart() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Weekly Activity</CardTitle>
+        <CardDescription>Desktop vs Mobile visitors</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={activityConfig} className="h-[200px] w-full">
+          <BarChart data={activityData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+            <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="mobile" fill="var(--color-mobile)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Exercise Area Chart
+function ExerciseChart() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Exercise Minutes</CardTitle>
+        <CardDescription>Your exercise minutes are ahead of where you normally are.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={exerciseConfig} className="h-[200px] w-full">
+          <AreaChart data={exerciseData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+            <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <defs>
+              <linearGradient id="fillMinutes" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-minutes)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--color-minutes)" stopOpacity={0.1} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey="minutes"
+              stroke="var(--color-minutes)"
+              fill="url(#fillMinutes)"
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Calendar Card (like tweakcn)
+function CalendarCard() {
+  const today = new Date();
+  const currentMonth = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  // Generate calendar days
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const calendarDays: (number | null)[] = [];
+
+  for (let i = 0; i < firstDay; i++) calendarDays.push(null);
+  for (let i = 1; i <= daysInMonth; i++) calendarDays.push(i);
+
+  const highlightedDays = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+  const todayDate = today.getDate();
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">{currentMonth}</CardTitle>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <ChevronRight className="h-4 w-4 rotate-180" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-7 gap-1 text-center text-xs">
+          {days.map(day => (
+            <div key={day} className="p-2 text-muted-foreground font-medium">{day}</div>
+          ))}
+          {calendarDays.map((day, i) => (
+            <div
+              key={i}
+              className={`p-2 rounded-md text-sm ${
+                day === null ? '' :
+                day === todayDate ? 'bg-primary text-primary-foreground font-bold' :
+                highlightedDays.includes(day) ? 'bg-primary/20 text-primary font-medium' :
+                'hover:bg-muted cursor-pointer'
+              }`}
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Move Goal Card (like tweakcn)
+function MoveGoalCard() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Move Goal</CardTitle>
+        <CardDescription>Set your daily activity goal.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+            <Minus className="h-4 w-4" />
+          </Button>
+          <div className="text-center">
+            <div className="text-5xl font-bold">350</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Calories/day</div>
+          </div>
+          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex gap-1 w-full">
+          {[40, 60, 80, 100, 70, 90, 50].map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded bg-primary"
+              style={{ height: `${h}px` }}
+            />
+          ))}
+        </div>
+        <Button variant="secondary" className="w-full">Set Goal</Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Stats Card Block
 function StatsCards() {
@@ -517,6 +776,19 @@ export function ThemePreviewPanel() {
 
         {/* Stats */}
         <StatsCards />
+
+        {/* Charts Row - like tweakcn */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <RevenueChart />
+          <CalendarCard />
+          <MoveGoalCard />
+        </div>
+
+        {/* More Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ActivityChart />
+          <ExerciseChart />
+        </div>
 
         {/* Two Column Layout */}
         <div className="grid gap-6 lg:grid-cols-2">
