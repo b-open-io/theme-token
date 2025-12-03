@@ -873,7 +873,7 @@ function ColorSwatch({
 
 // Combined Color Section - Theme colors + Palette Explorer side by side
 function ColorSection() {
-	const themeColors = [
+	const themeColorsRow1 = [
 		{ name: "BG", bgClass: "bg-background", textClass: "text-foreground", cssVar: "background" },
 		{ name: "Card", bgClass: "bg-card", textClass: "text-card-foreground", cssVar: "card" },
 		{ name: "Primary", bgClass: "bg-primary", textClass: "text-primary-foreground", cssVar: "primary" },
@@ -881,6 +881,16 @@ function ColorSection() {
 		{ name: "Muted", bgClass: "bg-muted", textClass: "text-muted-foreground", cssVar: "muted" },
 		{ name: "Accent", bgClass: "bg-accent", textClass: "text-accent-foreground", cssVar: "accent" },
 		{ name: "Destructive", bgClass: "bg-destructive", textClass: "text-destructive-foreground", cssVar: "destructive" },
+	];
+
+	const themeColorsRow2 = [
+		{ name: "Popover", bgClass: "bg-popover", textClass: "text-popover-foreground", cssVar: "popover" },
+		{ name: "Border", bgClass: "bg-border", textClass: "text-foreground", cssVar: "border" },
+		{ name: "Input", bgClass: "bg-input", textClass: "text-foreground", cssVar: "input" },
+		{ name: "Ring", bgClass: "bg-ring", textClass: "text-primary-foreground", cssVar: "ring" },
+		{ name: "Chart 1", bgClass: "bg-chart-1", textClass: "text-primary-foreground", cssVar: "chart-1" },
+		{ name: "Chart 2", bgClass: "bg-chart-2", textClass: "text-primary-foreground", cssVar: "chart-2" },
+		{ name: "Chart 3", bgClass: "bg-chart-3", textClass: "text-primary-foreground", cssVar: "chart-3" },
 	];
 
 	return (
@@ -891,10 +901,17 @@ function ColorSection() {
 					<CardTitle className="text-sm">Theme Colors</CardTitle>
 				</CardHeader>
 				<CardContent className="pb-3">
-					<div className="flex gap-1">
-						{themeColors.map((color) => (
-							<ColorSwatch key={color.name} {...color} />
-						))}
+					<div className="flex flex-col gap-1">
+						<div className="flex gap-1">
+							{themeColorsRow1.map((color) => (
+								<ColorSwatch key={color.name} {...color} />
+							))}
+						</div>
+						<div className="flex gap-1">
+							{themeColorsRow2.map((color) => (
+								<ColorSwatch key={color.name} {...color} />
+							))}
+						</div>
 					</div>
 				</CardContent>
 			</Card>

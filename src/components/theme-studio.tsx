@@ -45,6 +45,7 @@ import {
 import { ThemePreviewPanel } from "@/components/theme-preview-panel";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -91,17 +92,7 @@ interface ColorControlProps {
 function ColorControl({ label, value, onChange }: ColorControlProps) {
 	return (
 		<div className="flex items-center gap-2">
-			<div
-				className="h-6 w-6 shrink-0 cursor-pointer rounded border border-border"
-				style={{ backgroundColor: value }}
-			>
-				<input
-					type="color"
-					value={value.startsWith("#") ? value : "#808080"}
-					onChange={(e) => onChange(e.target.value)}
-					className="h-full w-full cursor-pointer opacity-0"
-				/>
-			</div>
+			<ColorPicker value={value} onChange={onChange} />
 			<input
 				type="text"
 				value={value}
