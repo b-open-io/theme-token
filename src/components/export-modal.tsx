@@ -79,7 +79,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 					</Button>
 				)}
 			</DialogTrigger>
-			<DialogContent className="max-w-2xl">
+			<DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden">
 				<DialogHeader>
 					<DialogTitle>Export Theme: {theme.name}</DialogTitle>
 					<DialogDescription>
@@ -115,7 +115,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 										{getDescription(format)}
 									</p>
 									<div className="relative">
-										<pre className="max-h-80 overflow-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs">
+										<pre className="max-h-[50vh] overflow-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs">
 											{getContent(format)}
 										</pre>
 										<Button
