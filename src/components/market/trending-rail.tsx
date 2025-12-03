@@ -4,7 +4,7 @@ import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import type { ThemeWithChange } from "@/lib/market-history";
+import type { ThemeWithChange } from "@/hooks/use-market-history";
 import { formatBSV } from "./theme-stripes";
 
 interface TrendingItem extends ThemeWithChange {

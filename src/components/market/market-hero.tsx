@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Loader2, ShoppingCart, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import type { MarketStats, ThemeWithChange } from "@/lib/market-history";
+import type { MarketStats, ThemeWithChange } from "@/hooks/use-market-history";
 import { formatBSV } from "./theme-stripes";
 
 interface MarketHeroProps {
