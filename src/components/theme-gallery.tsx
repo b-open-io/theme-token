@@ -130,8 +130,8 @@ export function ThemeGallery() {
 	const handleRemix = (theme: ThemeToken) => {
 		// Store theme for the studio page to pick up
 		storeRemixTheme(theme);
-		// Navigate to studio
-		router.push("/studio");
+		// Navigate to theme studio
+		router.push("/studio/theme");
 	};
 
 	return (

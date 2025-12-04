@@ -120,7 +120,9 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 		if (!value) return "Select font...";
 		if (currentOwnedFont) return currentOwnedFont.metadata.name;
 		if (isOnChainFont(value)) return `On-chain: ${currentOrigin?.slice(0, 8)}...`;
-		return value;
+		// Extract primary font name from font stack (e.g., '"Space Grotesk", "Inter", ...' -> 'Space Grotesk')
+		const match = value.match(/^["']?([^"',]+)["']?/);
+		return match?.[1] || value;
 	};
 
 	return (
@@ -164,8 +166,8 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 							className="w-full justify-between font-normal"
 							style={{ fontFamily: !isOnChainFont(value) ? value : undefined }}
 						>
-							{getDisplayLabel()}
-							<ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+							<span className="truncate">{getDisplayLabel()}</span>
+							<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
@@ -212,8 +214,8 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 									className="w-full justify-between font-normal"
 									style={{ fontFamily: loadedFontFamily || undefined }}
 								>
-									{getDisplayLabel()}
-									<ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+									<span className="truncate">{getDisplayLabel()}</span>
+									<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent className="w-64 max-h-64 overflow-y-auto">

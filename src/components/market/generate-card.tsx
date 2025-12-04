@@ -190,7 +190,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				source: "ai-generate",
 				txid: paymentTxid,
 			});
-			router.push("/studio");
+			router.push("/studio/theme");
 		} catch (err) {
 			console.error("Generation failed:", err);
 

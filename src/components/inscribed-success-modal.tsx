@@ -159,7 +159,7 @@ export function InscribedSuccessModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="max-w-md overflow-hidden border-0 p-0 shadow-2xl sm:rounded-2xl">
+			<DialogContent className="max-w-[min(28rem,calc(100vw-2rem))] overflow-hidden border-0 p-0 shadow-2xl sm:rounded-2xl">
 				{/* Magical glow background using theme's primary color */}
 				<div
 					className="absolute inset-0 opacity-20 blur-3xl"
@@ -222,12 +222,12 @@ export function InscribedSuccessModal({
 						<label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
 							Install via CLI
 						</label>
-						<div className="group relative flex items-center gap-2 rounded-lg border bg-muted/50 p-3 pr-12 font-mono text-xs">
-							<code className="flex-1 overflow-x-auto text-left">{installCommand}</code>
+						<div className="group relative rounded-lg border bg-muted/50 p-3 pr-12 font-mono text-xs">
+							<code className="block overflow-x-auto whitespace-nowrap text-left scrollbar-thin">{installCommand}</code>
 							<button
 								type="button"
 								onClick={handleCopy}
-								className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-background"
+								className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md transition-colors hover:bg-background"
 								title="Copy"
 							>
 								{copied ? (
@@ -241,19 +241,19 @@ export function InscribedSuccessModal({
 
 					{/* Origin ID (smaller) */}
 					<motion.div
-						className="mt-4 w-full"
+						className="mt-4 w-full overflow-hidden"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						transition={{ delay: 0.35 }}
 					>
-						<p className="text-[10px] text-muted-foreground">
+						<p className="truncate text-[10px] text-muted-foreground">
 							Origin: <span className="font-mono">{origin}</span>
 						</p>
 					</motion.div>
 
 					{/* Action buttons */}
 					<motion.div
-						className="mt-6 flex w-full gap-3"
+						className="mt-6 flex w-full gap-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						transition={{ delay: 0.4 }}
@@ -261,15 +261,15 @@ export function InscribedSuccessModal({
 						<Button
 							onClick={handleShare}
 							variant="default"
-							className="flex-1 gap-2"
+							className="flex-1 gap-2 px-3"
 						>
-							<XIcon className="h-4 w-4" />
-							Share
+							<XIcon className="h-4 w-4 shrink-0" />
+							<span className="truncate">Share</span>
 						</Button>
-						<Button asChild variant="outline" className="flex-1 gap-2">
+						<Button asChild variant="outline" className="flex-1 gap-2 px-3">
 							<a href={marketUrl} target="_blank" rel="noopener noreferrer">
-								View on Market
-								<ExternalLink className="h-3 w-3" />
+								<span className="truncate">Market</span>
+								<ExternalLink className="h-3 w-3 shrink-0" />
 							</a>
 						</Button>
 					</motion.div>
