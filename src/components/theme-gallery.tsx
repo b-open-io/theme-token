@@ -1,16 +1,13 @@
 "use client";
 
-import {
-	fetchPublishedThemes,
-	type PublishedTheme,
-	type ThemeToken,
-} from "@theme-token/sdk";
+import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
 
 // Custom event for theme remixing (works on same page)
 export const REMIX_THEME_EVENT = "remix-theme";
@@ -118,11 +115,11 @@ function ThemeCard({
 
 export function ThemeGallery() {
 	const router = useRouter();
-	const [publishedThemes, setPublishedThemes] = useState<PublishedTheme[]>([]);
+	const [publishedThemes, setPublishedThemes] = useState<CachedTheme[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
-		fetchPublishedThemes()
+		fetchCachedThemes()
 			.then(setPublishedThemes)
 			.finally(() => setIsLoading(false));
 	}, []);

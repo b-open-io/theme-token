@@ -399,6 +399,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					},
 				]);
 
+				// Add to themes cache immediately so it shows up on homepage
+				try {
+					await fetch("/api/themes/cache", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							txid: response.txid,
+							theme,
+							owner: addresses.ordAddress,
+						}),
+					});
+				} catch (cacheErr) {
+					// Non-fatal - theme will appear once indexed
+					console.warn("[Wallet] Failed to update themes cache:", cacheErr);
+				}
+
 				await fetchThemeTokens();
 				await fetchWalletInfo();
 				return response;

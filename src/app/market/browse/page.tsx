@@ -204,17 +204,6 @@ export default function BrowsePage() {
 		);
 	}, [listings]);
 
-	const FilterContent = useCallback(
-		() => (
-			<FilterSidebar
-				filters={filters}
-				onFiltersChange={setFilters}
-				maxPrice={maxPrice}
-			/>
-		),
-		[filters, maxPrice],
-	);
-
 	return (
 		<>
 			{/* Trending Rail */}
@@ -229,7 +218,11 @@ export default function BrowsePage() {
 				{/* Sidebar - Desktop */}
 				<aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
 					<div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
-						<FilterContent />
+						<FilterSidebar
+							filters={filters}
+							onFiltersChange={setFilters}
+							maxPrice={maxPrice}
+						/>
 					</div>
 				</aside>
 
@@ -259,7 +252,11 @@ export default function BrowsePage() {
 										<SheetTitle>Filters</SheetTitle>
 									</SheetHeader>
 									<div className="mt-6">
-										<FilterContent />
+										<FilterSidebar
+											filters={filters}
+											onFiltersChange={setFilters}
+											maxPrice={maxPrice}
+										/>
 									</div>
 								</SheetContent>
 							</Sheet>

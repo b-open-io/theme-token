@@ -99,31 +99,62 @@ export function FilterSidebar({
 
 			{/* Color Strategy */}
 			<div className="space-y-3">
-				<h3 className="font-medium text-foreground">Primary Color</h3>
+				<div className="flex items-center justify-between">
+					<h3 className="font-medium text-foreground">Primary Color</h3>
+					{filters.primaryColor && (
+						<button
+							type="button"
+							onClick={() => updateFilter("primaryColor", null)}
+							className="text-[10px] text-muted-foreground hover:text-foreground"
+						>
+							Clear
+						</button>
+					)}
+				</div>
 				{/* Quick Presets */}
 				<div className="grid grid-cols-5 gap-2">
-					{colorPresets.slice(0, 5).map((preset) => (
-						<button
-							key={preset.name}
-							type="button"
-							onClick={() => handleColorPreset(preset.hex)}
-							className="h-7 w-7 rounded-full transition-all hover:scale-110 hover:ring-2 ring-offset-2 ring-offset-background ring-primary"
-							style={{ backgroundColor: preset.hex }}
-							title={preset.name}
-						/>
-					))}
+					{colorPresets.slice(0, 5).map((preset) => {
+						const presetOklch = hexToOklch(preset.hex);
+						const isSelected = filters.primaryColor &&
+							Math.abs(filters.primaryColor.h - presetOklch.h) < 10 &&
+							Math.abs(filters.primaryColor.c - presetOklch.c) < 0.05;
+						return (
+							<button
+								key={preset.name}
+								type="button"
+								onClick={() => handleColorPreset(preset.hex)}
+								className={`h-7 w-7 rounded-full transition-all hover:scale-110 ${
+									isSelected
+										? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+										: "hover:ring-2 hover:ring-primary/50 hover:ring-offset-2 hover:ring-offset-background"
+								}`}
+								style={{ backgroundColor: preset.hex }}
+								title={preset.name}
+							/>
+						);
+					})}
 				</div>
 				<div className="grid grid-cols-4 gap-2">
-					{colorPresets.slice(5).map((preset) => (
-						<button
-							key={preset.name}
-							type="button"
-							onClick={() => handleColorPreset(preset.hex)}
-							className="h-7 w-full rounded-md transition-all hover:scale-105 hover:ring-2 ring-offset-2 ring-offset-background ring-primary"
-							style={{ backgroundColor: preset.hex }}
-							title={preset.name}
-						/>
-					))}
+					{colorPresets.slice(5).map((preset) => {
+						const presetOklch = hexToOklch(preset.hex);
+						const isSelected = filters.primaryColor &&
+							Math.abs(filters.primaryColor.h - presetOklch.h) < 10 &&
+							Math.abs(filters.primaryColor.c - presetOklch.c) < 0.05;
+						return (
+							<button
+								key={preset.name}
+								type="button"
+								onClick={() => handleColorPreset(preset.hex)}
+								className={`h-7 w-full rounded-md transition-all hover:scale-105 ${
+									isSelected
+										? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105"
+										: "hover:ring-2 hover:ring-primary/50 hover:ring-offset-2 hover:ring-offset-background"
+								}`}
+								style={{ backgroundColor: preset.hex }}
+								title={preset.name}
+							/>
+						);
+					})}
 				</div>
 
 				{/* Custom Color Picker */}
@@ -134,7 +165,7 @@ export function FilterSidebar({
 						className="h-8 w-8"
 					/>
 					<span className="text-xs text-muted-foreground">
-						{filters.primaryColor ? "Color filter active" : "Pick any color"}
+						{filters.primaryColor ? "Filtering by color" : "Pick any color"}
 					</span>
 				</div>
 			</div>

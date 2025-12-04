@@ -40,48 +40,47 @@ function TrendingCard({
 		>
 			<Link
 				href={`/preview/${item.origin}`}
-				className="group flex flex-col rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/50"
+				className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/50"
 			>
 				{/* Top row: swatch + name + change */}
-				<div className="mb-3 flex items-start justify-between gap-2">
-					<div className="flex items-center gap-2">
-						{/* Color swatch */}
-						<div
-							className="h-8 w-8 rounded-md shadow-sm"
-							style={{
-								background: `linear-gradient(135deg, ${styles.primary} 0%, ${styles.secondary || styles.accent} 100%)`,
-							}}
-						/>
-						<div className="min-w-0">
-							<p className="truncate text-sm font-medium">{item.theme.name}</p>
-							<p className="font-mono text-[10px] text-muted-foreground">
-								{item.origin.slice(0, 8)}
-							</p>
-						</div>
-					</div>
-
-					{/* Change badge */}
-					{hasChange && (
-						<span
-							className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 font-mono text-xs font-medium ${
-								isPositive
-									? "bg-emerald-500/10 text-emerald-500"
-									: "bg-rose-500/10 text-rose-500"
-							}`}
-						>
-							{isPositive ? (
-								<TrendingUp className="h-3 w-3" />
-							) : (
-								<TrendingDown className="h-3 w-3" />
+				<div className="mb-2 flex items-start gap-2">
+					{/* Color swatch */}
+					<div
+						className="h-8 w-8 shrink-0 rounded-md shadow-sm"
+						style={{
+							background: `linear-gradient(135deg, ${styles.primary} 0%, ${styles.secondary || styles.accent} 100%)`,
+						}}
+					/>
+					<div className="min-w-0 flex-1">
+						<div className="flex items-start justify-between gap-1">
+							<p className="truncate text-sm font-medium leading-tight">{item.theme.name}</p>
+							{/* Change badge */}
+							{hasChange && (
+								<span
+									className={`flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 font-mono text-[10px] font-medium ${
+										isPositive
+											? "bg-emerald-500/10 text-emerald-500"
+											: "bg-rose-500/10 text-rose-500"
+									}`}
+								>
+									{isPositive ? (
+										<TrendingUp className="h-2.5 w-2.5" />
+									) : (
+										<TrendingDown className="h-2.5 w-2.5" />
+									)}
+									{isPositive ? "+" : ""}
+									{item.priceChange24h?.toFixed(1)}%
+								</span>
 							)}
-							{isPositive ? "+" : ""}
-							{item.priceChange24h?.toFixed(1)}%
-						</span>
-					)}
+						</div>
+						<p className="font-mono text-[10px] text-muted-foreground">
+							{item.origin.slice(0, 8)}
+						</p>
+					</div>
 				</div>
 
 				{/* Color spectrum mini-bar */}
-				<div className="mb-3 flex h-1.5 gap-0.5 overflow-hidden rounded-full opacity-70 transition-opacity group-hover:opacity-100">
+				<div className="mb-2 flex h-1.5 gap-0.5 overflow-hidden rounded-full opacity-70 transition-opacity group-hover:opacity-100">
 					{["primary", "secondary", "accent", "muted"].map((color) => (
 						<div
 							key={color}
@@ -94,10 +93,10 @@ function TrendingCard({
 				</div>
 
 				{/* Bottom: price */}
-				<div className="flex items-end justify-between">
-					<span className="text-[10px] text-muted-foreground">Price</span>
-					<div className="text-right">
-						<span className="font-mono text-sm font-bold">
+				<div className="mt-auto flex items-end justify-between gap-2">
+					<span className="shrink-0 text-[10px] text-muted-foreground">Price</span>
+					<div className="min-w-0 text-right">
+						<span className="truncate font-mono text-sm font-bold">
 							{usdPrice || `${formatBSV(item.price)} BSV`}
 						</span>
 						{usdPrice && (

@@ -2,11 +2,10 @@
 
 import {
 	applyTheme as applyThemeToDOM,
-	fetchPublishedThemes,
-	type PublishedTheme,
 	parseCss,
 	type ThemeToken,
 } from "@theme-token/sdk";
+import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -172,7 +171,7 @@ export function ThemeStudio() {
 	const isDirty = JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles);
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
-	const [onChainThemes, setOnChainThemes] = useState<PublishedTheme[]>([]);
+	const [onChainThemes, setOnChainThemes] = useState<CachedTheme[]>([]);
 	const [loadingThemes, setLoadingThemes] = useState(true);
 	const [editorSubTab, setEditorSubTab] = useState<
 		"colors" | "typography" | "other"
@@ -191,7 +190,7 @@ export function ThemeStudio() {
 
 	// Fetch on-chain themes
 	useEffect(() => {
-		fetchPublishedThemes()
+		fetchCachedThemes()
 			.then(setOnChainThemes)
 			.finally(() => setLoadingThemes(false));
 	}, []);
