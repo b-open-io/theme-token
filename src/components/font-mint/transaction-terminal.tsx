@@ -8,7 +8,7 @@ import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { buildFontMetadata } from "@/lib/asset-metadata";
-import { getYoursWallet } from "@/lib/yours-wallet";
+import { getYoursWallet, submitToIndexer } from "@/lib/yours-wallet";
 
 interface TransactionTerminalProps {
 	files: FontFile[];
@@ -145,6 +145,9 @@ export function TransactionTerminal({
 			}
 
 			const response = await wallet.inscribe(inscriptions);
+
+			// Submit to indexer immediately
+			submitToIndexer(response.txid).catch(() => {});
 
 			addLog("[USER_SIGNATURE_RECEIVED]", "success");
 			await new Promise((r) => setTimeout(r, 300));

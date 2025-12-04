@@ -19,6 +19,12 @@ export const featureFlags = {
 	 * Controls: /studio/patterns (tile generation), /market/images (browse wallpapers/icons/tiles)
 	 */
 	images: process.env.NEXT_PUBLIC_FEATURE_IMAGES === "true",
+
+	/**
+	 * AI Studio - Chat-based theme generation
+	 * Controls: /studio/ai
+	 */
+	ai: process.env.NEXT_PUBLIC_FEATURE_AI === "true",
 } as const;
 
 /**

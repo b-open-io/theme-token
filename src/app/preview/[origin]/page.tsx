@@ -5,17 +5,26 @@ import {
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertCircle,
 	ArrowLeft,
+	AudioWaveform,
+	Bot,
 	Check,
 	Copy,
+	CreditCard,
 	ExternalLink,
-	Layers,
+	Grid3X3,
+	LayoutDashboard,
 	Loader2,
 	Moon,
+	MousePointerClick,
+	Music,
 	Palette,
+	Play,
+	SkipBack,
+	SkipForward,
 	Sparkles,
 	Sun,
 	Type,
@@ -23,11 +32,23 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import { ThemeDemo } from "@/components/theme-demo";
+import { AiDemo } from "@/components/preview/ai-demo";
+import { AnimatedThemeStripes } from "@/components/preview/animated-theme-stripes";
+import { AudioDemo } from "@/components/preview/audio-demo";
+import { ButtonsDemo } from "@/components/preview/buttons-demo";
+import { CardsDemo } from "@/components/preview/cards-demo";
+import { ColorsDemo } from "@/components/preview/colors-demo";
+import { FormsDemo } from "@/components/preview/forms-demo";
+import { TypographyDemo } from "@/components/preview/typography-demo";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isOnChainFont, loadThemeFonts } from "@/lib/font-loader";
 import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
 
@@ -216,6 +237,19 @@ async function startViewTransition(
 	}
 }
 
+const tabs = [
+	{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+	{ id: "audio", label: "Audio", icon: AudioWaveform },
+	{ id: "forms", label: "Inputs", icon: Grid3X3 },
+	{ id: "buttons", label: "Buttons", icon: MousePointerClick },
+	{ id: "cards", label: "Cards", icon: CreditCard },
+	{ id: "typography", label: "Type", icon: Type },
+	{ id: "colors", label: "Colors", icon: Palette },
+	{ id: "ai", label: "AI", icon: Bot },
+] as const;
+
+type TabId = (typeof tabs)[number]["id"];
+
 export default function PreviewPage({ params }: Props) {
 	const { origin } = use(params);
 	const router = useRouter();
@@ -225,7 +259,9 @@ export default function PreviewPage({ params }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 	const [copied, setCopied] = useState(false);
+	const [copiedOrigin, setCopiedOrigin] = useState(false);
 	const [showRemixDialog, setShowRemixDialog] = useState(false);
+	const [activeTab, setActiveTab] = useState<TabId>("dashboard");
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}`;
@@ -235,6 +271,12 @@ export default function PreviewPage({ params }: Props) {
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}, [installCommand]);
+
+	const copyOrigin = useCallback(() => {
+		navigator.clipboard.writeText(origin);
+		setCopiedOrigin(true);
+		setTimeout(() => setCopiedOrigin(false), 2000);
+	}, [origin]);
 
 	// Sync preview mode with global mode initially
 	useEffect(() => {
@@ -343,18 +385,6 @@ export default function PreviewPage({ params }: Props) {
 		);
 	}
 
-	// All semantic color keys for the spectrum bar
-	const colorKeys = [
-		"background",
-		"card",
-		"popover",
-		"muted",
-		"accent",
-		"secondary",
-		"primary",
-		"destructive",
-	];
-
 	return (
 		<div className="min-h-screen">
 			{/* Preview Container - Scoped Theme */}
@@ -455,23 +485,18 @@ export default function PreviewPage({ params }: Props) {
 					</div>
 				</header>
 
-				<div className="mx-auto max-w-7xl px-6 py-8">
-					{/* Hero Section - Title + CLI + Color Spectrum */}
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						className="mb-8"
-					>
-						{/* Title Row with CLI */}
-						<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+				<div className="mx-auto max-w-7xl px-6 py-6">
+					{/* Header Section */}
+					<div className="mb-4">
+						<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 							<div>
 								<div className="flex items-center gap-3 mb-1">
-									<h1 className="text-4xl font-bold tracking-tight">
+									<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
 										{theme.name}
 									</h1>
 									<Badge
 										variant="outline"
-										className="font-mono text-xs uppercase tracking-widest"
+										className="font-mono text-[10px] uppercase tracking-widest"
 										style={{
 											borderColor: "color-mix(in oklch, var(--primary) 30%, transparent)",
 											color: "var(--primary)",
@@ -482,29 +507,34 @@ export default function PreviewPage({ params }: Props) {
 									</Badge>
 								</div>
 								{theme.author && (
-									<p style={{ color: "var(--muted-foreground)" }}>
+									<p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
 										by{" "}
 										<span style={{ color: "var(--foreground)" }}>
 											{theme.author}
 										</span>
-										<span
-											className="mx-2"
-											style={{ color: "var(--border)" }}
+										<span className="mx-2" style={{ color: "var(--border)" }}>/</span>
+										<button
+											type="button"
+											onClick={copyOrigin}
+											className="inline-flex items-center gap-1 font-mono text-xs hover:text-foreground transition-colors group"
+											title="Copy full origin TXID"
 										>
-											/
-										</span>
-										<span className="font-mono text-xs">
-											{origin.slice(0, 8)}...
-										</span>
+											<span>{origin.slice(0, 8)}...</span>
+											{copiedOrigin ? (
+												<Check className="h-3 w-3 text-green-500" />
+											) : (
+												<Copy className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+											)}
+										</button>
 									</p>
 								)}
 							</div>
 
-							{/* Compact CLI */}
+							{/* CLI Command */}
 							<button
 								type="button"
 								onClick={copyCommand}
-								className="group flex items-center gap-2 rounded-lg px-4 py-2 font-mono text-sm transition-colors"
+								className="group flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-xs transition-colors"
 								style={{
 									backgroundColor: "color-mix(in oklch, var(--muted) 50%, transparent)",
 									borderWidth: "1px",
@@ -512,503 +542,477 @@ export default function PreviewPage({ params }: Props) {
 								}}
 							>
 								<span style={{ color: "var(--primary)" }}>$</span>
-								<span
-									className="hidden sm:inline"
-									style={{ color: "var(--muted-foreground)" }}
-								>
-									bunx shadcn@latest add .../{origin.slice(0, 8)}
+								<span className="hidden sm:inline" style={{ color: "var(--muted-foreground)" }}>
+									bunx shadcn add .../{origin.slice(0, 8)}
 								</span>
-								<span
-									className="sm:hidden"
-									style={{ color: "var(--muted-foreground)" }}
-								>
-									Copy install command
+								<span className="sm:hidden" style={{ color: "var(--muted-foreground)" }}>
+									Copy install
 								</span>
 								{copied ? (
-									<Check className="ml-2 h-3 w-3 text-green-500" />
+									<Check className="ml-1 h-3 w-3 text-green-500" />
 								) : (
-									<Copy
-										className="ml-2 h-3 w-3 opacity-50 group-hover:opacity-100"
-										style={{ color: "var(--muted-foreground)" }}
-									/>
+									<Copy className="ml-1 h-3 w-3 opacity-50 group-hover:opacity-100" style={{ color: "var(--muted-foreground)" }} />
 								)}
 							</button>
 						</div>
+					</div>
 
-						{/* Color Spectrum Bar - Full Width */}
-						<div
-							className="w-full h-14 flex rounded-xl overflow-hidden"
-							style={{
-								borderWidth: "1px",
-								borderColor: "var(--border)",
-							}}
-						>
-							{colorKeys.map((color) => (
-								<div
-									key={color}
-									className="flex-1 flex items-end justify-center pb-2 hover:flex-[2] transition-all duration-300 cursor-pointer group relative"
-									style={{
-										backgroundColor: `var(--${color})`,
-										color: `var(--${color}-foreground, var(--foreground))`,
-									}}
-								>
-									<span className="text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap px-1">
-										{color}
-									</span>
-								</div>
-							))}
-						</div>
-					</motion.div>
-
-					{/* Bento Grid: Semantic Colors + Mock UI */}
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: 0.1 }}
-						className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8"
-					>
-						{/* Left Column: Semantic Color Pairs */}
-						<div className="lg:col-span-4 grid grid-cols-2 gap-3">
-							{["primary", "secondary", "accent", "destructive"].map(
-								(color) => (
-									<div
-										key={color}
-										className="p-4 flex flex-col justify-between h-28"
-										style={{
-											backgroundColor: `var(--${color})`,
-											color: `var(--${color}-foreground)`,
-											borderRadius: "var(--radius, 0.5rem)",
-										}}
+					{/* Custom Tab Navigation - Compact & Scrolling */}
+					<div className="mb-6 flex overflow-x-auto pb-1 scrollbar-none">
+						<div className="flex gap-1">
+							{tabs.map((tab) => {
+								const Icon = tab.icon;
+								const isActive = activeTab === tab.id;
+								return (
+									<button
+										key={tab.id}
+										onClick={() => setActiveTab(tab.id)}
+										className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+											isActive
+												? "text-foreground"
+												: "text-muted-foreground hover:text-foreground/80"
+										}`}
 									>
-										<span className="text-xs font-medium opacity-80 capitalize">
-											{color}
-										</span>
-										<span className="font-bold text-2xl">Aa</span>
-									</div>
-								),
-							)}
-							{/* Muted and Card */}
-							<div
-								className="p-4 flex flex-col justify-between h-28"
-								style={{
-									backgroundColor: "var(--muted)",
-									color: "var(--muted-foreground)",
-									borderRadius: "var(--radius, 0.5rem)",
-								}}
-							>
-								<span className="text-xs font-medium opacity-80">Muted</span>
-								<span className="font-bold text-2xl">Aa</span>
-							</div>
-							<div
-								className="p-4 flex flex-col justify-between h-28"
-								style={{
-									backgroundColor: "var(--card)",
-									color: "var(--card-foreground)",
-									borderRadius: "var(--radius, 0.5rem)",
-									borderWidth: "1px",
-									borderColor: "var(--border)",
-								}}
-							>
-								<span className="text-xs font-medium opacity-80">Card</span>
-								<span className="font-bold text-2xl">Aa</span>
-							</div>
-						</div>
-
-						{/* Right Column: Mock Dashboard UI */}
-						<div
-							className="lg:col-span-8 overflow-hidden flex flex-col shadow-xl"
-							style={{
-								backgroundColor: "var(--background)",
-								borderWidth: "1px",
-								borderColor: "var(--border)",
-								borderRadius: "var(--radius, 0.5rem)",
-							}}
-						>
-							{/* Mock Browser Chrome */}
-							<div
-								className="h-10 flex items-center px-4 gap-2"
-								style={{
-									backgroundColor: "color-mix(in oklch, var(--muted) 30%, transparent)",
-									borderBottomWidth: "1px",
-									borderColor: "var(--border)",
-								}}
-							>
-								<div className="flex gap-1.5">
-									<div
-										className="w-3 h-3 rounded-full"
-										style={{ backgroundColor: "var(--destructive)", opacity: 0.6 }}
-									/>
-									<div
-										className="w-3 h-3 rounded-full"
-										style={{ backgroundColor: "var(--accent)", opacity: 0.6 }}
-									/>
-									<div
-										className="w-3 h-3 rounded-full"
-										style={{ backgroundColor: "var(--primary)", opacity: 0.6 }}
-									/>
-								</div>
-								<div
-									className="ml-4 px-3 py-1 text-xs w-48 flex items-center"
-									style={{
-										backgroundColor: "var(--background)",
-										borderRadius: "var(--radius, 0.5rem)",
-										borderWidth: "1px",
-										borderColor: "color-mix(in oklch, var(--border) 50%, transparent)",
-										color: "var(--muted-foreground)",
-									}}
-								>
-									<span className="opacity-50 truncate">app.yourproject.com</span>
-								</div>
-							</div>
-
-							{/* Mock Dashboard Content */}
-							<div
-								className="flex-1 p-4 flex gap-4"
-								style={{
-									backgroundColor: "color-mix(in oklch, var(--muted) 10%, transparent)",
-								}}
-							>
-								{/* Mini Sidebar */}
-								<div className="w-32 hidden md:flex flex-col gap-2">
-									<div
-										className="h-6 w-16 mb-4"
-										style={{
-											backgroundColor: "color-mix(in oklch, var(--primary) 20%, transparent)",
-											borderRadius: "var(--radius, 0.5rem)",
-										}}
-									/>
-									{[1, 2, 3].map((i) => (
-										<div
-											key={i}
-											className="h-7 w-full flex items-center px-2 text-xs"
-											style={{
-												backgroundColor:
-													i === 1 ? "var(--accent)" : "transparent",
-												color:
-													i === 1
-														? "var(--accent-foreground)"
-														: "var(--muted-foreground)",
-												borderRadius: "var(--radius, 0.5rem)",
-											}}
-										>
-											<div
-												className="w-3 h-3 mr-2"
-												style={{
-													backgroundColor: "currentColor",
-													opacity: 0.3,
-													borderRadius: "2px",
-												}}
+										{isActive && (
+											<motion.div
+												layoutId="preview-active-tab"
+												className="absolute inset-0 rounded-full"
+												style={{ backgroundColor: "var(--muted)" }}
+												transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
 											/>
-											<span>Menu {i}</span>
-										</div>
-									))}
-								</div>
+										)}
+										<span className="relative z-10 flex items-center gap-1.5">
+											<Icon className="h-3.5 w-3.5" />
+											{tab.label}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
 
-								{/* Main Content */}
-								<div className="flex-1 space-y-3">
-									{/* Stats Row */}
-									<div className="grid grid-cols-2 gap-3">
-										<div
-											className="p-3"
-											style={{
-												backgroundColor: "var(--card)",
-												borderWidth: "1px",
-												borderColor: "var(--border)",
-												borderRadius: "var(--radius, 0.5rem)",
-											}}
-										>
-											<div
-												className="text-xs mb-1"
-												style={{ color: "var(--muted-foreground)" }}
-											>
-												Revenue
-											</div>
-											<div className="text-xl font-bold">$12,345</div>
-											<div
-												className="text-xs mt-1"
-												style={{ color: "var(--primary)" }}
-											>
-												+12.5%
-											</div>
-										</div>
-										<div
-											className="p-3"
-											style={{
-												backgroundColor: "var(--popover)",
-												borderWidth: "1px",
-												borderColor: "var(--border)",
-												borderRadius: "var(--radius, 0.5rem)",
-											}}
-										>
-											<div
-												className="text-xs mb-1"
-												style={{ color: "var(--muted-foreground)" }}
-											>
-												Users
-											</div>
-											<div className="text-xl font-bold">+2,350</div>
-											<div
-												className="text-xs mt-1"
-												style={{ color: "var(--muted-foreground)" }}
-											>
-												This week
-											</div>
-										</div>
-									</div>
-
-									{/* Mini Table */}
-									<div
-										className="p-3 space-y-2"
-										style={{
-											backgroundColor: "var(--card)",
-											borderWidth: "1px",
-											borderColor: "var(--border)",
-											borderRadius: "var(--radius, 0.5rem)",
-										}}
-									>
-										<div
-											className="flex justify-between items-center pb-2 text-sm font-medium"
-											style={{
-												borderBottomWidth: "1px",
-												borderColor: "var(--border)",
-											}}
-										>
-											<span>Recent Activity</span>
-											<Button
-												size="sm"
-												variant="outline"
-												className="h-6 text-xs px-2"
-											>
-												View
-											</Button>
-										</div>
-										{[1, 2].map((i) => (
-											<div
-												key={i}
-												className="flex items-center justify-between py-1.5 text-sm"
-											>
-												<div className="flex items-center gap-2">
-													<div
-														className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono"
-														style={{
-															backgroundColor: "var(--muted)",
-															color: "var(--muted-foreground)",
-														}}
-													>
-														TX
+					{/* Tab Content */}
+					<div className="min-h-[500px]">
+						{activeTab === "dashboard" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<div className="space-y-6">
+									<AnimatedThemeStripes />
+									
+									<div className="space-y-6">
+										{/* Desktop Mockup - Full Width */}
+										<div className="overflow-hidden flex flex-col shadow-2xl rounded-xl border bg-background">
+											{/* Mock Browser Chrome */}
+											<div className="h-10 flex items-center px-4 gap-3 select-none border-b bg-muted/40">
+												<div className="flex gap-1.5">
+													<div className="w-3 h-3 rounded-full bg-destructive/60" />
+													<div className="w-3 h-3 rounded-full bg-primary/60" />
+													<div className="w-3 h-3 rounded-full bg-accent/60" />
+												</div>
+												<div className="ml-2 flex-1 max-w-sm px-3 py-1 text-xs flex items-center gap-2 rounded-md bg-background border text-muted-foreground">
+													<div className="w-3 h-3 rounded-full bg-primary/20 flex items-center justify-center">
+														<div className="w-1.5 h-1.5 rounded-full bg-primary" />
 													</div>
-													<div className="flex flex-col">
-														<span className="text-xs font-medium">
-															Payment #{i}
-														</span>
-														<span
-															className="text-[10px]"
-															style={{ color: "var(--muted-foreground)" }}
-														>
-															Just now
-														</span>
+													<span className="opacity-70">app.yourproject.com</span>
+												</div>
+											</div>
+
+											{/* Dashboard Content */}
+											<div className="flex min-h-[450px]">
+												{/* Sidebar */}
+												<div className="w-52 hidden lg:flex flex-col border-r bg-card/50 p-4 gap-4">
+													<div className="flex items-center gap-2 px-2">
+														<div className="h-6 w-6 rounded-md bg-primary" />
+														<span className="font-bold text-sm">Acme Inc</span>
+													</div>
+													<div className="space-y-1">
+														<Button variant="secondary" size="sm" className="w-full justify-start">
+															<LayoutDashboard className="mr-2 h-4 w-4" />
+															Dashboard
+														</Button>
+														<Button variant="ghost" size="sm" className="w-full justify-start">
+															<CreditCard className="mr-2 h-4 w-4" />
+															Transactions
+														</Button>
+														<Button variant="ghost" size="sm" className="w-full justify-start">
+															<Grid3X3 className="mr-2 h-4 w-4" />
+															Integrations
+														</Button>
+														<Button variant="ghost" size="sm" className="w-full justify-start">
+															<Palette className="mr-2 h-4 w-4" />
+															Appearance
+														</Button>
 													</div>
 												</div>
-												<span className="font-mono text-xs">-$99</span>
+
+												{/* Main Area */}
+												<div className="flex-1 flex flex-col bg-muted/10">
+													{/* Header */}
+													<div className="h-12 border-b bg-background px-4 flex items-center justify-between">
+														<h2 className="font-semibold text-sm">Dashboard</h2>
+														<div className="flex items-center gap-2">
+															<Button variant="outline" size="sm" className="h-7 text-xs">Feedback</Button>
+															<Avatar className="h-7 w-7">
+																<AvatarImage src="https://github.com/shadcn.png" />
+																<AvatarFallback>CN</AvatarFallback>
+															</Avatar>
+														</div>
+													</div>
+
+													<ScrollArea className="flex-1">
+														<div className="p-4 space-y-4">
+															{/* Stats */}
+															<div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+																<Card className="p-0">
+																	<CardHeader className="p-3 pb-1">
+																		<CardTitle className="text-xs font-medium text-muted-foreground">Total Revenue</CardTitle>
+																	</CardHeader>
+																	<CardContent className="p-3 pt-0">
+																		<div className="text-xl font-bold">$12,345</div>
+																		<p className="text-[10px] text-emerald-500 font-medium">+12.5% from last month</p>
+																	</CardContent>
+																</Card>
+																<Card className="p-0">
+																	<CardHeader className="p-3 pb-1">
+																		<CardTitle className="text-xs font-medium text-muted-foreground">Active Users</CardTitle>
+																	</CardHeader>
+																	<CardContent className="p-3 pt-0">
+																		<div className="text-xl font-bold">+2,350</div>
+																		<p className="text-[10px] text-emerald-500 font-medium">+18.2% from last week</p>
+																	</CardContent>
+																</Card>
+																<Card className="p-0 hidden lg:block">
+																	<CardHeader className="p-3 pb-1">
+																		<CardTitle className="text-xs font-medium text-muted-foreground">Sales</CardTitle>
+																	</CardHeader>
+																	<CardContent className="p-3 pt-0">
+																		<div className="text-xl font-bold">+1,203</div>
+																		<p className="text-[10px] text-emerald-500 font-medium">+4.5% from yesterday</p>
+																	</CardContent>
+																</Card>
+															</div>
+
+															{/* Chart + Recent */}
+															<div className="grid gap-3 lg:grid-cols-5">
+																<Card className="lg:col-span-3 p-0">
+																	<CardHeader className="p-3">
+																		<CardTitle className="text-sm">Overview</CardTitle>
+																	</CardHeader>
+																	<CardContent className="p-3 pt-0">
+																		<div className="h-[140px] w-full bg-muted/20 rounded-md flex items-end gap-1.5 p-3">
+																			{[40, 30, 50, 80, 60, 90, 70, 45, 65].map((h, i) => (
+																				<div key={i} className="flex-1 bg-primary/80 hover:bg-primary rounded-t-sm transition-all" style={{ height: `${h}%` }} />
+																			))}
+																		</div>
+																	</CardContent>
+																</Card>
+																<Card className="lg:col-span-2 p-0">
+																	<CardHeader className="p-3">
+																		<CardTitle className="text-sm">Recent Sales</CardTitle>
+																	</CardHeader>
+																	<CardContent className="p-3 pt-0">
+																		<div className="space-y-3">
+																			{[1, 2, 3].map((i) => (
+																				<div key={i} className="flex items-center gap-2">
+																					<Avatar className="h-7 w-7">
+																						<AvatarImage src={`https://avatar.vercel.sh/${i}.png`} />
+																						<AvatarFallback>OM</AvatarFallback>
+																					</Avatar>
+																					<div className="flex-1 min-w-0">
+																						<p className="text-xs font-medium truncate">Olivia Martin</p>
+																						<p className="text-[10px] text-muted-foreground truncate">olivia@email.com</p>
+																					</div>
+																					<div className="text-xs font-bold">+$1,999</div>
+																				</div>
+																			))}
+																		</div>
+																	</CardContent>
+																</Card>
+															</div>
+														</div>
+													</ScrollArea>
+												</div>
 											</div>
-										))}
-										<Button className="w-full h-8 text-xs mt-2">
-											New Transaction
-										</Button>
-									</div>
-								</div>
-							</div>
-						</div>
-					</motion.div>
+										</div>
 
-					{/* Demo Tabs */}
-					<Tabs defaultValue="components" className="w-full">
-						<TabsList
-							className="mb-8"
-							style={{
-								backgroundColor: "var(--muted)",
-							}}
-						>
-							<TabsTrigger value="components">
-								<Layers className="mr-2 h-4 w-4" />
-								Components
-							</TabsTrigger>
-							<TabsTrigger value="colors">
-								<Palette className="mr-2 h-4 w-4" />
-								Colors
-							</TabsTrigger>
-							<TabsTrigger value="typography">
-								<Type className="mr-2 h-4 w-4" />
-								Typography
-							</TabsTrigger>
-						</TabsList>
+										{/* Mobile + Widget Row */}
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+											{/* Phone Mockup */}
+											<div className="flex justify-center">
+												<div className="relative w-[260px] rounded-[2.5rem] border-[8px] border-foreground/80 bg-background shadow-xl overflow-hidden">
+													{/* Notch */}
+													<div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-foreground/80 rounded-b-2xl z-20" />
+													
+													{/* Screen Content */}
+													<div className="flex flex-col h-[500px] bg-background">
+														{/* Status Bar */}
+														<div className="h-10 flex items-center justify-between px-5 pt-2 select-none">
+															<span className="text-[10px] font-semibold">9:41</span>
+															<div className="flex gap-1">
+																<div className="h-2 w-2 rounded-full bg-foreground" />
+																<div className="h-2 w-2 rounded-full bg-foreground" />
+															</div>
+														</div>
 
-						<TabsContent value="components">
-							<ThemeDemo />
-						</TabsContent>
+														{/* App Header */}
+														<div className="px-4 py-2 flex items-center justify-between">
+															<div>
+																<span className="text-[10px] text-muted-foreground">Good morning,</span>
+																<div className="text-lg font-bold">Alex</div>
+															</div>
+															<Avatar className="h-8 w-8">
+																<AvatarImage src="https://github.com/shadcn.png" />
+																<AvatarFallback>AL</AvatarFallback>
+															</Avatar>
+														</div>
 
-						<TabsContent value="colors">
-							<div className="grid gap-2 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-								{Object.entries(theme.styles[previewMode]).map(
-									([key, value]) => {
-										if (typeof value !== "string") return null;
-										// Skip non-color values
-										if (
-											key.includes("radius") ||
-											key.includes("font") ||
-											key.includes("shadow") ||
-											key.includes("spacing") ||
-											key.includes("tracking")
-										)
-											return null;
+														{/* Body */}
+														<ScrollArea className="flex-1 px-4">
+															<div className="space-y-4 py-2">
+																{/* Balance Card */}
+																<div className="rounded-xl bg-primary p-4 text-primary-foreground shadow-lg relative overflow-hidden">
+																	<div className="absolute top-0 right-0 p-2 opacity-10">
+																		<CreditCard className="w-16 h-16" />
+																	</div>
+																	<div className="relative z-10">
+																		<div className="text-[10px] opacity-80 mb-0.5">Total Balance</div>
+																		<div className="text-2xl font-bold mb-2">$14,235</div>
+																		<Badge variant="secondary" className="bg-white/20 text-white border-0 text-[10px]">+2.5%</Badge>
+																	</div>
+																</div>
 
-										return (
-											<div
-												key={key}
-												className="group cursor-pointer"
-												style={{
-													borderRadius: "var(--radius, 0.5rem)",
-												}}
-											>
-												<div
-													className="aspect-square rounded-lg shadow-sm transition-transform group-hover:scale-105"
-													style={{
-														backgroundColor: value,
-														borderWidth: "1px",
-														borderColor: "var(--border)",
-													}}
-												/>
-												<p className="mt-1.5 text-xs font-medium truncate">
-													{key}
-												</p>
-												<p
-													className="font-mono text-[10px] truncate"
-													style={{ color: "var(--muted-foreground)" }}
-												>
-													{value}
-												</p>
+																{/* Quick Actions */}
+																<div className="flex justify-between gap-2">
+																	{["Send", "Receive", "More"].map((label, i) => (
+																		<div key={i} className="flex flex-col items-center gap-1">
+																			<Button variant="outline" size="icon" className="h-11 w-11 rounded-xl">
+																				<ArrowLeft className={`h-4 w-4 ${i === 1 ? "rotate-180" : i === 2 ? "hidden" : ""}`} />
+																				{i === 2 && <Grid3X3 className="h-4 w-4" />}
+																			</Button>
+																			<span className="text-[10px] font-medium">{label}</span>
+																		</div>
+																	))}
+																</div>
+
+																{/* List */}
+																<div className="space-y-2">
+																	<div className="flex items-center justify-between">
+																		<span className="font-semibold text-xs">Transactions</span>
+																		<Button variant="link" size="sm" className="h-auto p-0 text-[10px]">See All</Button>
+																	</div>
+																	{[1, 2].map(i => (
+																		<Card key={i} className="p-2 flex items-center gap-2">
+																			<div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+																				<div className="w-3 h-3 rounded-sm bg-muted-foreground/30" />
+																			</div>
+																			<div className="flex-1 min-w-0">
+																				<div className="text-xs font-medium truncate">Dribbble Pro</div>
+																				<div className="text-[10px] text-muted-foreground">Subscription</div>
+																			</div>
+																			<div className="text-xs font-bold">-$12</div>
+																		</Card>
+																	))}
+																</div>
+															</div>
+														</ScrollArea>
+														
+														{/* Bottom Nav */}
+														<div className="h-14 border-t bg-background flex items-center justify-around px-2">
+															<Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-primary bg-primary/10">
+																<LayoutDashboard className="h-4 w-4" />
+															</Button>
+															<Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-muted-foreground">
+																<CreditCard className="h-4 w-4" />
+															</Button>
+															<Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-muted-foreground">
+																<Bot className="h-4 w-4" />
+															</Button>
+															<Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-muted-foreground">
+																<Type className="h-4 w-4" />
+															</Button>
+														</div>
+													</div>
+												</div>
 											</div>
-										);
-									},
-								)}
-							</div>
-						</TabsContent>
 
-						<TabsContent value="typography">
-							<div
-								className="space-y-8 rounded-xl p-8"
-								style={{
-									backgroundColor: "var(--card)",
-									borderColor: "var(--border)",
-									borderWidth: "1px",
-								}}
-							>
-								<div>
-									<p
-										className="mb-2 text-sm font-medium"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Heading 1
-									</p>
-									<h1 className="text-5xl font-extrabold tracking-tight">
-										The quick brown fox jumps
-									</h1>
-								</div>
-								<div>
-									<p
-										className="mb-2 text-sm font-medium"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Heading 2
-									</p>
-									<h2 className="text-3xl font-semibold tracking-tight">
-										Over the lazy dog
-									</h2>
-								</div>
-								<div>
-									<p
-										className="mb-2 text-sm font-medium"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Heading 3
-									</p>
-									<h3 className="text-2xl font-semibold tracking-tight">
-										Pack my box with five dozen liquor jugs
-									</h3>
-								</div>
-								<div>
-									<p
-										className="mb-2 text-sm font-medium"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Body Text
-									</p>
-									<p className="max-w-2xl text-base leading-7">
-										Theme tokens bring the benefits of blockchain to design
-										systems. Create beautiful, consistent experiences across
-										your applications with tokenized themes that you truly own.
-										Trade them on any ordinal marketplace, use them across any
-										compatible app.
-									</p>
-								</div>
-								<div>
-									<p
-										className="mb-2 text-sm font-medium"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Muted Text
-									</p>
-									<p
-										className="max-w-2xl text-sm"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Secondary text provides additional context without drawing
-										attention away from the primary content. Use it for
-										descriptions, timestamps, and helper text.
-									</p>
-								</div>
-								<div>
-									<p
-										className="mb-2 text-sm font-medium"
-										style={{ color: "var(--muted-foreground)" }}
-									>
-										Code
-									</p>
-									<code
-										className="rounded px-2 py-1 font-mono text-sm"
-										style={{ backgroundColor: "var(--muted)" }}
-									>
-										const theme = await fetchTheme(origin);
-									</code>
-								</div>
+											{/* Widget Cards - Enhanced Layout */}
+											<div className="flex flex-col gap-6 h-full justify-center">
+												{/* Top Row: Watch + Status Grid */}
+												<div className="flex flex-wrap items-end justify-center gap-6">
+													{/* Watch Mockup */}
+													<div className="w-[140px] h-[170px] rounded-[2rem] border-[6px] border-foreground/80 bg-background shadow-xl overflow-hidden shrink-0">
+														<div className="w-full h-full flex flex-col items-center justify-center p-3 relative">
+															<div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent" />
+															<div className="text-3xl font-bold tracking-tighter relative z-10">10:09</div>
+															<div className="text-[10px] text-primary font-medium uppercase tracking-widest mt-1 relative z-10">Tue 12</div>
+															<div className="mt-3 flex gap-1.5 relative z-10">
+																<div className="w-6 h-6 rounded-full border-[3px] border-primary/30 border-t-primary" />
+																<div className="w-6 h-6 rounded-full border-[3px] border-accent/30 border-t-accent" />
+																<div className="w-6 h-6 rounded-full border-[3px] border-secondary/30 border-t-secondary" />
+															</div>
+														</div>
+													</div>
 
-								{/* Font Info */}
-								{(theme.styles[previewMode]["font-sans"] ||
-									theme.styles[previewMode]["font-serif"] ||
-									theme.styles[previewMode]["font-mono"]) && (
-									<div
-										className="rounded-lg p-4"
-										style={{
-											backgroundColor: "var(--muted)",
-										}}
-									>
-										<p className="mb-2 font-medium">Font Families</p>
-										<div className="space-y-1 font-mono text-sm">
-											{theme.styles[previewMode]["font-sans"] && (
-												<p>Sans: {theme.styles[previewMode]["font-sans"]}</p>
-											)}
-											{theme.styles[previewMode]["font-serif"] && (
-												<p>Serif: {theme.styles[previewMode]["font-serif"]}</p>
-											)}
-											{theme.styles[previewMode]["font-mono"] && (
-												<p>Mono: {theme.styles[previewMode]["font-mono"]}</p>
-											)}
+													{/* Vertical Status Stack */}
+													<div className="flex flex-col gap-3">
+														<Card className="w-32 p-3 flex flex-row items-center gap-3 shadow-md">
+															<div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+																<Check className="w-4 h-4" />
+															</div>
+															<div>
+																<div className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">System</div>
+																<div className="text-xs font-bold">Active</div>
+															</div>
+														</Card>
+														<Card className="w-32 p-3 flex flex-row items-center gap-3 shadow-md">
+															<div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground shrink-0">
+																<Bot className="w-4 h-4" />
+															</div>
+															<div>
+																<div className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">AI Model</div>
+																<div className="text-xs font-bold">Ready</div>
+															</div>
+														</Card>
+													</div>
+												</div>
+
+												{/* Bottom Area: Functional Widgets */}
+												<div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+													{/* Mini Music Player */}
+													<Card className="p-4 relative overflow-hidden shadow-md">
+														<div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
+															<AudioWaveform className="w-24 h-24" />
+														</div>
+														<div className="relative z-10 flex items-center gap-4">
+															<div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+																<Music className="h-6 w-6" />
+															</div>
+															<div className="flex-1 min-w-0">
+																<div className="text-sm font-semibold truncate">Theme Token Beat</div>
+																<div className="text-xs text-muted-foreground truncate">Lo-Fi Study Mix</div>
+															</div>
+															<div className="flex items-center gap-1">
+																<Button variant="ghost" size="icon" className="h-8 w-8">
+																	<SkipBack className="h-4 w-4" />
+																</Button>
+																<Button size="icon" className="h-8 w-8 rounded-full shadow-sm">
+																	<Play className="h-3.5 w-3.5 fill-current ml-0.5" />
+																</Button>
+																<Button variant="ghost" size="icon" className="h-8 w-8">
+																	<SkipForward className="h-4 w-4" />
+																</Button>
+															</div>
+														</div>
+														{/* Progress Bar */}
+														<div className="mt-3 h-1 w-full bg-muted rounded-full overflow-hidden">
+															<div className="h-full bg-primary w-1/3 rounded-full" />
+														</div>
+													</Card>
+
+													{/* Smart Controls Grid */}
+													<div className="grid grid-cols-2 gap-4">
+														<Card className="p-3 shadow-md">
+															<div className="flex items-center justify-between mb-2">
+																<div className="p-1.5 rounded-md bg-orange-500/10 text-orange-500">
+																	<Sun className="h-4 w-4" />
+																</div>
+																<Switch checked id="light-switch" />
+															</div>
+															<div className="font-medium text-xs">Lighting</div>
+															<div className="text-[10px] text-muted-foreground">75% Brightness</div>
+														</Card>
+														<Card className="p-3 shadow-md">
+															<div className="flex items-center justify-between mb-2">
+																<div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500">
+																	<Sparkles className="h-4 w-4" />
+																</div>
+																<Switch id="ambiance-switch" />
+															</div>
+															<div className="font-medium text-xs">Ambiance</div>
+															<div className="text-[10px] text-muted-foreground">Relax Mode</div>
+														</Card>
+													</div>
+												</div>
+											</div>
 										</div>
 									</div>
-								)}
-							</div>
-						</TabsContent>
-					</Tabs>
+								</div>
+							</motion.div>
+						)}
+
+						{activeTab === "colors" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<ColorsDemo theme={theme} mode={previewMode} />
+							</motion.div>
+						)}
+
+						{activeTab === "typography" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<TypographyDemo theme={theme} mode={previewMode} />
+							</motion.div>
+						)}
+
+						{activeTab === "buttons" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<ButtonsDemo />
+							</motion.div>
+						)}
+
+						{activeTab === "forms" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<FormsDemo />
+							</motion.div>
+						)}
+
+						{activeTab === "cards" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<CardsDemo />
+							</motion.div>
+						)}
+
+						{activeTab === "audio" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<AudioDemo />
+							</motion.div>
+						)}
+
+						{activeTab === "ai" && (
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<AiDemo />
+							</motion.div>
+						)}
+					</div>
 				</div>
 
 				{/* Remix Dialog */}

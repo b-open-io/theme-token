@@ -6,7 +6,7 @@ import {
 	useSpring,
 	useTransform,
 } from "framer-motion";
-import { Grid3X3, Palette, Type } from "lucide-react";
+import { Bot, Grid3X3, Palette, Type } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useMemo } from "react";
@@ -16,6 +16,7 @@ const allTabs = [
 	{ href: "/studio/theme", label: "Theme", icon: Palette, feature: null },
 	{ href: "/studio/font", label: "Font", icon: Type, feature: "fonts" as const },
 	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3, feature: "images" as const },
+	{ href: "/studio/ai", label: "AI", icon: Bot, feature: "ai" as const },
 ];
 
 export default function StudioLayout({

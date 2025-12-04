@@ -68,10 +68,10 @@ export async function GET(request: Request) {
 
 		// Filter for ThemeToken listings
 		const themeListings = results
-			.filter((item) => {
-				const mapData = item.origin?.data?.map || item.data?.map;
-				return mapData?.app === "ThemeToken";
-			})
+		.filter((item) => {
+			const mapData = item.origin?.data?.map || item.data?.map;
+			return mapData?.type === "theme";
+		})
 			.map((item) => ({
 				origin: item.origin?.outpoint || item.outpoint,
 				price: item.data?.list?.price || 0,

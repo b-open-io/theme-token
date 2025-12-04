@@ -23,6 +23,7 @@ import {
 	sendBsv,
 	type SendBsvResult,
 	type SocialProfile,
+	submitToIndexer,
 	type YoursWallet,
 } from "@/lib/yours-wallet";
 
@@ -399,6 +400,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					},
 				]);
 
+				// Submit to indexer so it gets indexed immediately
+				submitToIndexer(response.txid).catch(() => {});
+
 				// Add to themes cache immediately so it shows up on homepage
 				try {
 					await fetch("/api/themes/cache", {
@@ -472,6 +476,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 						satoshis: 1,
 					},
 				]);
+
+				// Submit to indexer
+				submitToIndexer(response.txid).catch(() => {});
 
 				await fetchThemeTokens();
 				await fetchWalletInfo();

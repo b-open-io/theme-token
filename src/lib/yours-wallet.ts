@@ -205,6 +205,21 @@ export const YOURS_WALLET_URL = "https://yours.org";
 // GorillaPool 1Sat Ordinals API
 const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 
+/**
+ * Submit a txid to GorillaPool indexer so it gets indexed immediately
+ */
+export async function submitToIndexer(txid: string): Promise<boolean> {
+	try {
+		const response = await fetch(`${ORDINALS_API}/submit/${txid}`, {
+			method: "POST",
+		});
+		return response.ok;
+	} catch (error) {
+		console.warn("[Indexer] Failed to submit txid:", error);
+		return false;
+	}
+}
+
 export interface MarketListing {
 	outpoint: string;
 	origin: string;
@@ -304,7 +319,7 @@ export async function fetchThemeMarketListings(): Promise<
 
 	// Filter for potential theme tokens first (by map metadata)
 	const potentialThemes = listings.filter(
-		(l) => l.data?.map?.app === "ThemeToken",
+		(l) => l.data?.map?.type === "theme",
 	);
 
 	const { validateThemeToken } = await import("@theme-token/sdk");

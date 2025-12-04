@@ -255,11 +255,17 @@ Maintain the core identity and color harmony but apply the user's modifications.
 			prompt: userPrompt,
 		});
 
+		// Extract provider from modelId (e.g., "anthropic/claude-opus-4.5" → "anthropic")
+		const provider = modelId.split("/")[0];
+
 		// Transform to ThemeToken format
 		const themeToken = {
 			$schema: "https://themetoken.dev/v1/schema.json",
 			name: theme.name,
 			author: "AI Generated",
+			prompt: userPrompt,
+			provider,
+			model: modelId,
 			styles: {
 				light: theme.light,
 				dark: theme.dark,

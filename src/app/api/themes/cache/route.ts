@@ -18,9 +18,23 @@ interface ThemesCache {
 }
 
 // GET - Fetch cached themes (with fallback to live API)
-export async function GET() {
+export async function GET(request: Request) {
 	try {
-		const cache: ThemesCache | null = await kv.get(THEMES_CACHE_KEY);
+		const url = new URL(request.url);
+		const forceRefresh = url.searchParams.get("refresh") === "true";
+
+		// Check if KV is configured
+		if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+			console.warn("[Themes Cache] KV not configured, fetching from chain directly");
+			const freshThemes = await fetchFromChain();
+			return NextResponse.json({
+				themes: freshThemes,
+				cached: false,
+				lastSynced: Date.now(),
+			});
+		}
+
+		const cache: ThemesCache | null = forceRefresh ? null : await kv.get(THEMES_CACHE_KEY);
 
 		// If cache exists and is fresh (< 5 min old), return it
 		if (cache && Date.now() - cache.lastSynced < 5 * 60 * 1000) {
@@ -56,10 +70,22 @@ export async function GET() {
 		});
 	} catch (error) {
 		console.error("[Themes Cache] GET error:", error);
-		return NextResponse.json(
-			{ error: "Failed to fetch themes" },
-			{ status: 500 }
-		);
+		// On KV failure, try to fetch directly from chain as fallback
+		try {
+			const freshThemes = await fetchFromChain();
+			return NextResponse.json({
+				themes: freshThemes,
+				cached: false,
+				lastSynced: Date.now(),
+				kvError: true,
+			});
+		} catch (chainError) {
+			console.error("[Themes Cache] Chain fallback also failed:", chainError);
+			return NextResponse.json(
+				{ error: "Failed to fetch themes" },
+				{ status: 500 }
+			);
+		}
 	}
 }
 
@@ -121,37 +147,53 @@ export async function POST(request: Request) {
 	}
 }
 
-// Fetch themes from GorillaPool API
+// Fetch themes from GorillaPool API - search by type: "theme"
 async function fetchFromChain(): Promise<CachedTheme[]> {
 	const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 
-	const response = await fetch(
-		`${ORDINALS_API}/inscriptions?limit=100&type=application/json`,
-		{ next: { revalidate: 60 } }
-	);
+	const response = await fetch(`${ORDINALS_API}/inscriptions/search`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ map: { type: "theme" } }),
+		next: { revalidate: 60 },
+	});
 
 	if (!response.ok) {
 		throw new Error(`GorillaPool API error: ${response.status}`);
 	}
 
 	const results = await response.json();
+	if (!Array.isArray(results)) {
+		throw new Error("Invalid API response");
+	}
+
 	const themes: CachedTheme[] = [];
+	const seenOrigins = new Set<string>();
 
 	for (const item of results) {
 		try {
-			const mapData = item.origin?.data?.map;
-			if (mapData?.app !== "ThemeToken") continue;
+			const originOutpoint = item.origin?.outpoint;
+			if (!originOutpoint || seenOrigins.has(originOutpoint)) continue;
+			seenOrigins.add(originOutpoint);
 
-			const content = item.origin?.data?.insc?.file?.json;
-			if (!content) continue;
-
+			const contentResponse = await fetch(
+				`https://ordfs.network/${originOutpoint}`,
+				{ next: { revalidate: 3600 } }
+			);
+			
+			if (!contentResponse.ok) continue;
+			
+			const content = await contentResponse.json();
+			// Skip inscriptions without $schema (test/invalid inscriptions)
+			if (!content.$schema) continue;
+			
 			const result = validateThemeToken(content);
 			if (!result.valid) continue;
 
 			themes.push({
-				origin: item.origin?.outpoint || item.outpoint,
+				origin: originOutpoint,
 				theme: result.theme,
-				inscribedAt: item.height ? item.height * 1000 : Date.now(), // Approximate
+				inscribedAt: item.height ? item.height * 1000 : Date.now(),
 				owner: item.owner,
 			});
 		} catch {
