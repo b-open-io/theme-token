@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Check, Copy, FileCode, Palette, Type } from "lucide-react";
 import { useCallback, useState } from "react";
 
-type AssetType = "theme" | "font" | "pattern";
+type AssetType = "theme" | "font" | "tile";
 
 // All possible fields across all asset types (union)
 const ALL_FIELDS = [
@@ -16,7 +16,7 @@ const ALL_FIELDS = [
 	{
 		key: "type",
 		type: "string",
-		description: "Asset type identifier (theme, font, pattern)",
+		description: "Asset type identifier (theme, font, tile, wallpaper, icon)",
 	},
 	{
 		key: "name",
@@ -38,20 +38,30 @@ const ALL_FIELDS = [
 		type: "string",
 		description: "AI generation prompt (provenance for AI-created assets)",
 	},
+	{
+		key: "provider",
+		type: "string",
+		description: "AI provider (google, anthropic) - Vercel AI SDK convention",
+	},
+	{
+		key: "model",
+		type: "string",
+		description: "AI model identifier (gemini-2.0-flash, claude-opus-4-5)",
+	},
 ];
 
 // Which fields are active for each asset type, and which are required
 const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 	theme: {
-		active: ["app", "type"],
+		active: ["app", "type", "prompt", "provider", "model"],
 		required: ["app", "type"],
 	},
 	font: {
-		active: ["app", "type", "author", "license", "prompt"],
+		active: ["app", "type", "author", "license", "prompt", "provider", "model"],
 		required: ["app", "type"],
 	},
-	pattern: {
-		active: ["app", "type", "name", "author", "license", "prompt"],
+	tile: {
+		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
 		required: ["app", "type", "license"],
 	},
 };
@@ -60,33 +70,40 @@ const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 const JSON_DATA: Record<AssetType, string> = {
 	theme: `{
   "app": "theme-token",
-  "type": "theme"
+  "type": "theme",
+  "prompt": "dark mode cyberpunk aesthetic",
+  "provider": "anthropic",
+  "model": "claude-opus-4-5"
 }`,
 	font: `{
   "app": "theme-token",
   "type": "font",
   "author": "John Doe",
   "license": "OFL",
-  "prompt": "elegant serif with tall ascenders"
+  "prompt": "elegant serif with tall ascenders",
+  "provider": "google",
+  "model": "gemini-2.5-pro"
 }`,
-	pattern: `{
+	tile: `{
   "app": "theme-token",
-  "type": "pattern",
+  "type": "tile",
   "name": "Dot Grid",
   "author": "Jane Doe",
   "license": "CC0",
-  "prompt": "evenly spaced dots"
+  "prompt": "evenly spaced dots",
+  "provider": "google",
+  "model": "gemini-2.0-flash"
 }`,
 };
 
 // Content info for each type
 const CONTENT_INFO: Record<AssetType, string> = {
 	theme:
-		"Theme JSON already contains name, author, colors, and mode - no additional metadata needed beyond app/type for indexer discovery.",
+		"Theme JSON is shadcn registry compatible with name, author, cssVars. MAP metadata tracks AI provenance.",
 	font:
-		"Font name, weight, and style are embedded in the binary. Only author, license, and AI prompt go in metadata.",
-	pattern:
-		"Patterns include name, author, and license metadata. License defaults to CC0 (public domain) if not specified.",
+		"Font name, weight, and style are embedded in the binary. MAP metadata includes author, license, and AI provenance.",
+	tile:
+		"Tiles are seamless SVG patterns rendered with background-repeat. License defaults to CC0 (public domain).",
 };
 
 const ASSET_INFO: Record<
@@ -96,17 +113,17 @@ const ASSET_INFO: Record<
 	theme: {
 		icon: FileCode,
 		label: "Theme",
-		description: "Complete color schemes in ThemeToken JSON format",
+		description: "shadcn-compatible color schemes in ThemeToken JSON format",
 	},
 	font: {
 		icon: Type,
 		label: "Font",
 		description: "Web fonts in WOFF2, WOFF, or TTF format",
 	},
-	pattern: {
+	tile: {
 		icon: Palette,
-		label: "Pattern",
-		description: "Tileable SVG backgrounds and textures",
+		label: "Tile",
+		description: "Seamless SVG patterns (background-repeat: repeat)",
 	},
 };
 
@@ -128,7 +145,7 @@ export function OnChainProtocol() {
 			{/* Segmented Control */}
 			<div className="flex justify-center">
 				<div className="inline-flex rounded-lg border border-border bg-muted/30 p-1">
-					{(["theme", "font", "pattern"] as AssetType[]).map((tab) => {
+					{(["theme", "font", "tile"] as AssetType[]).map((tab) => {
 						const info = ASSET_INFO[tab];
 						const Icon = info.icon;
 						return (
