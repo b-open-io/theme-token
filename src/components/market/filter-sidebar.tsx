@@ -86,17 +86,15 @@ export function FilterSidebar({
 					<Filter className="h-4 w-4" />
 					Filters
 				</div>
-				{hasActiveFilters && (
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-7 px-2 text-xs"
-						onClick={clearFilters}
-					>
-						<RotateCcw className="mr-1 h-3 w-3" />
-						Clear
-					</Button>
-				)}
+				<Button
+					variant="ghost"
+					size="sm"
+					className={`h-7 px-2 text-xs ${hasActiveFilters ? "opacity-100" : "pointer-events-none opacity-0"}`}
+					onClick={clearFilters}
+				>
+					<RotateCcw className="mr-1 h-3 w-3" />
+					Clear
+				</Button>
 			</div>
 
 			{/* Color Strategy */}
