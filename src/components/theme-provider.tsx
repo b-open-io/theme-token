@@ -2,6 +2,7 @@
 
 import {
 	applyTheme as applyThemeStyles,
+	clearTheme as clearThemeStyles,
 	type ThemeStyleProps,
 	type ThemeToken,
 	validateThemeToken,
@@ -179,44 +180,11 @@ interface StoredThemeSelection {
 	themeName?: string;
 }
 
-// CSS variables to reset when clearing a theme
-const CSS_VARS_TO_RESET = [
-	"--background",
-	"--foreground",
-	"--card",
-	"--card-foreground",
-	"--popover",
-	"--popover-foreground",
-	"--primary",
-	"--primary-foreground",
-	"--secondary",
-	"--secondary-foreground",
-	"--muted",
-	"--muted-foreground",
-	"--accent",
-	"--accent-foreground",
-	"--destructive",
-	"--destructive-foreground",
-	"--border",
-	"--input",
-	"--ring",
-	"--radius",
-	"--chart-1",
-	"--chart-2",
-	"--chart-3",
-	"--chart-4",
-	"--chart-5",
-];
-
 function applyThemeToDocument(styles: ThemeStyleProps | null): void {
-	const root = document.documentElement;
-
 	if (!styles) {
-		// Reset to CSS defaults by removing inline styles
-		CSS_VARS_TO_RESET.forEach((v) => root.style.removeProperty(v));
+		clearThemeStyles();
 		return;
 	}
-
 	applyThemeStyles(styles);
 }
 
