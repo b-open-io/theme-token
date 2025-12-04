@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
 	Check,
 	Copy,
@@ -9,7 +8,7 @@ import {
 	Grid3X3,
 	Loader2,
 	Palette,
-	Sparkles,
+	RotateCcw,
 	Wallet,
 	Wand2,
 } from "lucide-react";
@@ -26,10 +25,12 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { PATTERN_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 
 // Color mode for pattern generation - affects how AI generates the SVG
-type ColorMode = "currentColor" | "theme";
+type ColorMode = "currentColor" | "theme" | "grayscale";
 
 interface PatternState {
 	svg: string;
@@ -69,8 +70,11 @@ export default function PatternGeneratorPage() {
 	const [copiedType, setCopiedType] = useState<string | null>(null);
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
 
-	const { status, connect, inscribePattern, isInscribing, balance, addresses } = useYoursWallet();
+	const { status, connect, inscribePattern, isInscribing, balance, sendPayment, isSending } = useYoursWallet();
 	const isConnected = status === "connected";
+	const hasEnoughBalance = (balance?.satoshis ?? 0) >= PATTERN_GENERATION_COST_SATS;
+	const [isPaying, setIsPaying] = useState(false);
+	const [paymentError, setPaymentError] = useState<string | null>(null);
 
 	// Estimate cost (SVG size + base fee)
 	const estimatedCost = pattern?.svg ? pattern.svg.length + 500 : 0;
@@ -79,14 +83,44 @@ export default function PatternGeneratorPage() {
 	const generatePattern = useCallback(async () => {
 		if (!prompt.trim()) return;
 
+		// Check wallet connection
+		if (!isConnected) {
+			try {
+				await connect();
+			} catch {
+				setPaymentError("Please connect your wallet to generate patterns");
+				return;
+			}
+			return; // Let user click again after connecting
+		}
+
+		// Check balance
+		if (!hasEnoughBalance) {
+			setPaymentError(`Insufficient balance. You need at least ${(PATTERN_GENERATION_COST_SATS / 100_000_000).toFixed(2)} BSV.`);
+			return;
+		}
+
+		setPaymentError(null);
 		setIsGenerating(true);
+
 		try {
+			// Step 1: Process payment first
+			setIsPaying(true);
+			const paymentResult = await sendPayment(FEE_ADDRESS, PATTERN_GENERATION_COST_SATS);
+			setIsPaying(false);
+
+			if (!paymentResult) {
+				throw new Error("Payment failed or was cancelled");
+			}
+
+			// Step 2: Generate pattern with payment txid
 			const response = await fetch("/api/generate-pattern", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					prompt: prompt.trim(),
 					colorMode,
+					paymentTxid: paymentResult.txid,
 				}),
 			});
 
@@ -104,10 +138,12 @@ export default function PatternGeneratorPage() {
 			});
 		} catch (error) {
 			console.error("Error generating pattern:", error);
+			setPaymentError(error instanceof Error ? error.message : "Generation failed");
+			setIsPaying(false);
 		} finally {
 			setIsGenerating(false);
 		}
-	}, [prompt, colorMode]);
+	}, [prompt, colorMode, isConnected, connect, hasEnoughBalance, sendPayment]);
 
 	// Apply preset prompt
 	const applyPreset = useCallback((preset: typeof PATTERN_PRESETS[number]) => {
@@ -161,7 +197,6 @@ export default function PatternGeneratorPage() {
 			prompt: pattern.prompt,
 			provider: pattern.provider,
 			model: pattern.model,
-			// license defaults to CC0 in buildTileMetadata
 		});
 
 		if (response?.txid) {
@@ -169,19 +204,31 @@ export default function PatternGeneratorPage() {
 		}
 	}, [pattern, patternName, inscribePattern]);
 
+	// Reset everything
+	const handleReset = useCallback(() => {
+		setPrompt("");
+		setPatternName("");
+		setPattern(null);
+		setInscribedOrigin(null);
+		setPaymentError(null);
+	}, []);
+
 	// Check if ready to inscribe
 	const canInscribe = pattern?.svg && !inscribedOrigin;
+	const isProcessing = isPaying || isSending || isGenerating || isInscribing;
+	const hasContent = pattern !== null || prompt.trim() !== "";
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden bg-background">
-			{/* Scrollable Content */}
-			<div className="flex-1 overflow-y-auto">
-				<div className="p-4 md:p-6 lg:p-8">
-					<div className="grid gap-6 lg:grid-cols-2">
-						{/* Left Column: Generator Controls */}
+		<div className="flex min-h-0 flex-1 flex-col">
+			{/* Main content area - resizable two panel layout */}
+			<ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
+				{/* Left Panel: Controls (scrollable) */}
+				<ResizablePanel defaultSize={35} minSize={25} maxSize={50} className="flex min-h-0 flex-col bg-muted/5">
+					{/* Scrollable content */}
+					<div className="min-h-0 flex-1 overflow-y-auto p-4">
 						<div className="space-y-6">
 							{/* Pattern Presets */}
-							<div className="rounded border border-border bg-card p-4">
+							<div>
 								<Label className="mb-3 block font-mono text-xs text-muted-foreground">
 									QUICK_PRESETS
 								</Label>
@@ -200,7 +247,7 @@ export default function PatternGeneratorPage() {
 							</div>
 
 							{/* Prompt Input */}
-							<div className="rounded border border-border bg-card p-4">
+							<div>
 								<Label className="mb-3 block font-mono text-xs text-muted-foreground">
 									PATTERN_DESCRIPTION
 								</Label>
@@ -211,8 +258,8 @@ export default function PatternGeneratorPage() {
 									className="mb-4 min-h-[100px] font-mono text-sm"
 								/>
 
-								<div className="flex items-center gap-4">
-									<div className="flex-1">
+								<div className="space-y-4">
+									<div>
 										<Label className="mb-2 block font-mono text-xs text-muted-foreground">
 											COLOR_MODE
 										</Label>
@@ -281,10 +328,30 @@ export default function PatternGeneratorPage() {
 
 									<Button
 										onClick={generatePattern}
-										disabled={isGenerating || !prompt.trim()}
-										className="mt-6 gap-2 font-mono text-xs"
+										disabled={isProcessing || !prompt.trim() || (isConnected && !hasEnoughBalance)}
+										className="w-full gap-2 font-mono text-xs"
 									>
-										{isGenerating ? (
+										{status === "not-installed" ? (
+											<>
+												<Wallet className="h-4 w-4" />
+												Install Wallet
+											</>
+										) : !isConnected ? (
+											<>
+												<Wallet className="h-4 w-4" />
+												Connect to Generate
+											</>
+										) : !hasEnoughBalance ? (
+											<>
+												<Wallet className="h-4 w-4" />
+												Insufficient Balance
+											</>
+										) : isPaying || isSending ? (
+											<>
+												<Loader2 className="h-4 w-4 animate-spin" />
+												PAYING...
+											</>
+										) : isGenerating ? (
 											<>
 												<Loader2 className="h-4 w-4 animate-spin" />
 												GENERATING...
@@ -292,20 +359,30 @@ export default function PatternGeneratorPage() {
 										) : (
 											<>
 												<Wand2 className="h-4 w-4" />
-												GENERATE
+												GENERATE ({(PATTERN_GENERATION_COST_SATS / 100_000_000).toFixed(2)} BSV)
 											</>
 										)}
 									</Button>
 								</div>
+
+								{/* Error display */}
+								{paymentError && (
+									<div className="mt-3 rounded border border-destructive/50 bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive">
+										{paymentError}
+										<button
+											type="button"
+											onClick={() => setPaymentError(null)}
+											className="ml-2 underline hover:no-underline"
+										>
+											Dismiss
+										</button>
+									</div>
+								)}
 							</div>
 
-							{/* Pattern Controls */}
+							{/* Pattern Controls - Only show when pattern exists */}
 							{pattern && (
-								<motion.div
-									initial={{ opacity: 0, y: 10 }}
-									animate={{ opacity: 1, y: 0 }}
-									className="rounded border border-border bg-card p-4"
-								>
+								<div>
 									<Label className="mb-4 block font-mono text-xs text-muted-foreground">
 										PATTERN_CONTROLS
 									</Label>
@@ -339,17 +416,12 @@ export default function PatternGeneratorPage() {
 											/>
 										</div>
 									</div>
-								</motion.div>
+								</div>
 							)}
 
-							{/* Copy/Export Actions */}
+							{/* Export Actions - Only show when pattern exists */}
 							{pattern && (
-								<motion.div
-									initial={{ opacity: 0, y: 10 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: 0.1 }}
-									className="rounded border border-border bg-card p-4"
-								>
+								<div>
 									<Label className="mb-3 block font-mono text-xs text-muted-foreground">
 										EXPORT_OPTIONS
 									</Label>
@@ -453,157 +525,144 @@ export default function PatternGeneratorPage() {
 											</a>
 										</div>
 									)}
-								</motion.div>
+								</div>
+							)}
+						</div>
+					</div>
+				</ResizablePanel>
+
+				<ResizableHandle withHandle />
+
+				{/* Right Panel: Preview (fixed, no scroll) */}
+				<ResizablePanel defaultSize={65} className="hidden min-h-0 flex-col overflow-hidden lg:flex">
+					{/* Preview Area */}
+					<div className="flex h-full flex-col">
+						{/* Header */}
+						<div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2">
+							<Grid3X3 className="h-4 w-4 text-muted-foreground" />
+							<span className="font-mono text-xs text-muted-foreground">
+								TILED_PREVIEW
+							</span>
+							{pattern && (
+								<span className="ml-auto font-mono text-[10px] text-muted-foreground">
+									{scale}px tile · {opacity}% opacity
+								</span>
 							)}
 						</div>
 
-						{/* Right Column: Preview */}
-						<div className="lg:sticky lg:top-4">
-							<div className="overflow-hidden rounded border border-border bg-card">
-								<div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2">
-									<Grid3X3 className="h-4 w-4 text-muted-foreground" />
-									<span className="font-mono text-xs text-muted-foreground">
-										TILED_PREVIEW
-									</span>
+						{/* Pattern Display */}
+						<div className="relative flex-1">
+							{pattern?.svg ? (
+								<div
+									className="absolute inset-0"
+									style={{
+										backgroundImage: `url("${svgDataUrl}")`,
+										backgroundRepeat: "repeat",
+										backgroundSize: `${scale}px ${scale}px`,
+										opacity: opacity / 100,
+									}}
+								/>
+							) : (
+								<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+									<div className="rounded-full bg-muted/50 p-4">
+										<Palette className="h-8 w-8 text-muted-foreground/50" />
+									</div>
+									<div>
+										<p className="font-mono text-sm text-muted-foreground">
+											No pattern generated
+										</p>
+										<p className="font-mono text-xs text-muted-foreground/70">
+											Enter a description and click Generate
+										</p>
+									</div>
 								</div>
-
-								<div className="relative aspect-square">
-									{pattern?.svg ? (
-										<>
-											{/* Pattern background - uses background-image for proper <pattern> element support */}
-											<div
-												className="absolute inset-0"
-												style={{
-													backgroundImage: `url("${svgDataUrl}")`,
-													backgroundRepeat: "repeat",
-													backgroundSize: `${scale}px ${scale}px`,
-													opacity: opacity / 100,
-												}}
-											/>
-											{/* Center badge */}
-											<div className="absolute bottom-4 right-4 rounded bg-background/80 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur">
-												{scale}px tile
-											</div>
-										</>
-									) : (
-										<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-											<div className="rounded-full bg-muted/50 p-4">
-												<Palette className="h-8 w-8 text-muted-foreground/50" />
-											</div>
-											<div>
-												<p className="font-mono text-sm text-muted-foreground">
-													No pattern generated
-												</p>
-												<p className="font-mono text-xs text-muted-foreground/70">
-													Enter a description and click Generate
-												</p>
-											</div>
-										</div>
-									)}
-								</div>
-
-								{/* Raw SVG Preview Toggle */}
-								{pattern?.svg && (
-									<details className="border-t border-border">
-										<summary className="cursor-pointer bg-muted/30 px-4 py-2 font-mono text-xs text-muted-foreground hover:bg-muted/50">
-											VIEW_RAW_SVG
-										</summary>
-										<div className="max-h-48 overflow-auto bg-muted/10 p-4">
-											<pre className="font-mono text-[10px] text-muted-foreground">
-												{pattern.svg}
-											</pre>
-										</div>
-									</details>
-								)}
-							</div>
-
-							{/* Usage Guide */}
-							<div className="mt-4 rounded border border-border bg-card p-4">
-								<Label className="mb-2 block font-mono text-xs text-muted-foreground">
-									USAGE_GUIDE
-								</Label>
-								<div className="space-y-2 font-mono text-xs text-muted-foreground">
-									<p>
-										<span className="text-primary">1.</span> Choose a preset or describe your pattern
-									</p>
-									<p>
-										<span className="text-primary">2.</span> Select color mode (currentColor for theme-reactive)
-									</p>
-									<p>
-										<span className="text-primary">3.</span> Adjust scale and opacity
-									</p>
-									<p>
-										<span className="text-primary">4.</span> Inscribe on-chain or copy CSS to use locally
-									</p>
-								</div>
-							</div>
+							)}
 						</div>
+
+						{/* Raw SVG Preview Toggle */}
+						{pattern?.svg && (
+							<details className="border-t border-border">
+								<summary className="cursor-pointer bg-muted/30 px-4 py-2 font-mono text-xs text-muted-foreground hover:bg-muted/50">
+									VIEW_RAW_SVG
+								</summary>
+								<div className="max-h-48 overflow-auto bg-muted/10 p-4">
+									<pre className="font-mono text-[10px] text-muted-foreground">
+										{pattern.svg}
+									</pre>
+								</div>
+							</details>
+						)}
 					</div>
+				</ResizablePanel>
+			</ResizablePanelGroup>
+
+			{/* Full-width Footer */}
+			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
+				{/* Left: Pattern info */}
+				<div className="flex items-center gap-3 overflow-hidden">
+					<Input
+						value={patternName}
+						onChange={(e) => setPatternName(e.target.value)}
+						placeholder="Pattern name"
+						className="h-7 w-40 font-mono text-xs"
+						disabled={!pattern || !!inscribedOrigin}
+					/>
+					{estimatedCost > 0 && !inscribedOrigin && (
+						<span className="shrink-0 font-mono text-xs text-muted-foreground">
+							~{formatSats(estimatedCost)}
+						</span>
+					)}
+					{hasContent && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleReset}
+							className="h-7 gap-1.5 px-2 font-mono text-xs text-muted-foreground hover:text-foreground"
+						>
+							<RotateCcw className="h-3 w-3" />
+							Clear
+						</Button>
+					)}
+				</div>
+
+				{/* Right: Wallet + Action */}
+				<div className="flex shrink-0 items-center gap-3">
+					{isConnected && balance?.satoshis !== undefined && (
+						<span className="hidden font-mono text-xs text-muted-foreground sm:block">
+							{formatSats(balance.satoshis)}
+						</span>
+					)}
+					{inscribedOrigin ? (
+						<div className="flex items-center gap-2 rounded bg-green-500/10 px-3 py-1.5 text-green-600 dark:text-green-400">
+							<Check className="h-3 w-3" />
+							<span className="font-mono text-xs">Inscribed</span>
+						</div>
+					) : isConnected ? (
+						<Button
+							onClick={handleInscribe}
+							disabled={!canInscribe || isInscribing}
+							className="gap-2 font-mono text-xs"
+						>
+							{isInscribing ? (
+								<>
+									<Loader2 className="h-3 w-3 animate-spin" />
+									INSCRIBING...
+								</>
+							) : (
+								<>
+									<Wallet className="h-3 w-3" />
+									INSCRIBE
+								</>
+							)}
+						</Button>
+					) : (
+						<Button onClick={connect} className="gap-2 font-mono text-xs">
+							<Wallet className="h-3 w-3" />
+							Connect Wallet
+						</Button>
+					)}
 				</div>
 			</div>
-
-			{/* Fixed Footer */}
-			<footer className="shrink-0 border-t border-border bg-muted/30 px-4 py-3">
-				<div className="flex items-center justify-between gap-4">
-					{/* Left: Pattern name input */}
-					<div className="flex items-center gap-3">
-						<Input
-							value={patternName}
-							onChange={(e) => setPatternName(e.target.value)}
-							placeholder="Pattern name (optional)"
-							className="h-8 w-48 font-mono text-xs"
-							disabled={!pattern || !!inscribedOrigin}
-						/>
-						{estimatedCost > 0 && !inscribedOrigin && (
-							<span className="font-mono text-[10px] text-muted-foreground">
-								~{formatSats(estimatedCost)}
-							</span>
-						)}
-					</div>
-
-					{/* Right: Wallet + Action */}
-					<div className="flex items-center gap-3">
-						{isConnected && (
-							<div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground sm:flex">
-								<Wallet className="h-3 w-3" />
-								<span className="max-w-[100px] truncate">{addresses?.ordAddress}</span>
-								{balance?.satoshis !== undefined && (
-									<span className="text-foreground">{formatSats(balance.satoshis)}</span>
-								)}
-							</div>
-						)}
-						{inscribedOrigin ? (
-							<div className="flex items-center gap-2 rounded bg-green-500/10 px-3 py-1.5 text-green-600 dark:text-green-400">
-								<Check className="h-3 w-3" />
-								<span className="font-mono text-xs">Inscribed</span>
-							</div>
-						) : isConnected ? (
-							<Button
-								onClick={handleInscribe}
-								disabled={!canInscribe || isInscribing}
-								className="gap-2 font-mono text-xs"
-							>
-								{isInscribing ? (
-									<>
-										<Loader2 className="h-3 w-3 animate-spin" />
-										INSCRIBING...
-									</>
-								) : (
-									<>
-										<Sparkles className="h-3 w-3" />
-										[ INSCRIBE ]
-									</>
-								)}
-							</Button>
-						) : (
-							<Button onClick={connect} className="gap-2 font-mono text-xs">
-								<Wallet className="h-3 w-3" />
-								Connect Wallet
-							</Button>
-						)}
-					</div>
-				</div>
-			</footer>
 		</div>
 	);
 }

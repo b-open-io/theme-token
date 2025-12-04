@@ -1,10 +1,11 @@
 "use client";
 
-import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import { Loader2, RotateCcw, Sparkles, Wand2, Wallet } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
-import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { FONT_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 
 interface Glyph {
 	char: string;
@@ -38,6 +39,11 @@ interface CompiledFont {
 
 interface AIGenerateTabProps {
 	onFontGenerated: (font: GeneratedFont, compiled?: CompiledFont) => void;
+	/** If a font has already been generated, show compact "ready" state */
+	generatedFont?: GeneratedFont | null;
+	compiledFont?: CompiledFont | null;
+	/** Called when user wants to clear and regenerate */
+	onClear?: () => void;
 }
 
 type AIModel = "gemini-3-pro" | "claude-opus-4.5";
@@ -81,15 +87,25 @@ interface GenerationStatus {
 	age?: number;
 }
 
-export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
+// Format satoshis as BSV
+const formatBsv = (sats: number) => {
+	const bsv = sats / 100_000_000;
+	if (bsv < 0.01) return bsv.toFixed(5);
+	if (bsv < 0.1) return bsv.toFixed(3);
+	return bsv.toFixed(2);
+};
+
+export function AIGenerateTab({ onFontGenerated, generatedFont: externalFont, compiledFont: externalCompiled, onClear }: AIGenerateTabProps) {
+	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
 	const [selectedModel, setSelectedModel] = useState<AIModel>("gemini-3-pro");
 	const [prompt, setPrompt] = useState("");
 	const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
 	const [jobId, setJobId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(null);
-	const [compiledFont, setCompiledFont] = useState<CompiledFont | null>(null);
-	const [showRemixDialog, setShowRemixDialog] = useState(false);
+	const [isPaying, setIsPaying] = useState(false);
+
+	const isConnected = status === "connected";
+	const hasEnoughBalance = (balance?.satoshis ?? 0) >= FONT_GENERATION_COST_SATS;
 
 	// Poll for generation status when we have a jobId
 	const { data: statusData } = useSWR<GenerationStatus>(
@@ -129,34 +145,29 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 		}
 	}, []);
 
-	// Handle status updates from polling
+	// Handle status updates from polling - pass font up to parent
 	useEffect(() => {
 		if (!statusData) return;
 
 		// Treat both "complete" and "compiling with font data" as complete
-		// (compilation is optional - if it fails, we still have the font)
 		const hasFont = statusData.font !== undefined;
 		const isComplete = statusData.status === "complete";
 		const isCompilingWithFont = statusData.status === "compiling" && hasFont;
 
 		if ((isComplete || isCompilingWithFont) && statusData.font) {
-			setGeneratedFont(statusData.font);
-			if (statusData.compiled) {
-				setCompiledFont(statusData.compiled);
-			}
-			// Clear localStorage on completion
+			// Pass font to parent - parent handles all preview
+			onFontGenerated(statusData.font, statusData.compiled ?? undefined);
 			localStorage.removeItem(STORAGE_KEY);
-			setJobId(null); // Stop polling
+			setJobId(null);
 		} else if (statusData.status === "failed") {
 			setError(statusData.error || "Generation failed");
 			setJobId(null);
 			localStorage.removeItem(STORAGE_KEY);
 		} else if (statusData.status === "not_found") {
-			// Stale localStorage - clear it
 			setJobId(null);
 			localStorage.removeItem(STORAGE_KEY);
 		}
-	}, [statusData]);
+	}, [statusData, onFontGenerated]);
 
 	const handlePresetClick = (preset: typeof STYLE_PRESETS[0]) => {
 		setSelectedPreset(preset.id);
@@ -166,18 +177,45 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 	const handleGenerate = async () => {
 		if (!prompt.trim()) return;
 
+		// Check wallet connection
+		if (!isConnected) {
+			try {
+				await connect();
+			} catch {
+				setError("Please connect your wallet to generate fonts");
+				return;
+			}
+			return; // Let user click again after connecting
+		}
+
+		// Check balance
+		if (!hasEnoughBalance) {
+			setError(`Insufficient balance. You need at least ${formatBsv(FONT_GENERATION_COST_SATS)} BSV to generate a font.`);
+			return;
+		}
+
 		setError(null);
-		setGeneratedFont(null);
-		setCompiledFont(null);
+		// Clear parent's font state when starting new generation
+		onClear?.();
 
 		try {
-			// Start generation - server returns jobId immediately
+			// Step 1: Process payment first
+			setIsPaying(true);
+			const paymentResult = await sendPayment(FEE_ADDRESS, FONT_GENERATION_COST_SATS);
+			setIsPaying(false);
+
+			if (!paymentResult) {
+				throw new Error("Payment failed or was cancelled");
+			}
+
+			// Step 2: Start font generation with payment txid
 			const response = await fetch("/api/generate-font", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					prompt,
 					model: selectedModel,
+					paymentTxid: paymentResult.txid,
 				}),
 			});
 
@@ -187,168 +225,141 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 				throw new Error(data.error || "Failed to start generation");
 			}
 
-			// Store jobId in state and localStorage
 			setJobId(data.jobId);
 			localStorage.setItem(STORAGE_KEY, JSON.stringify({
 				jobId: data.jobId,
 				prompt,
 				model: selectedModel,
+				paymentTxid: paymentResult.txid,
 				startedAt: Date.now(),
 			}));
 
 		} catch (err) {
 			console.error("[AIGenerateTab] Error:", err);
 			setError(err instanceof Error ? err.message : "Generation failed");
-		}
-	};
-
-	const handleUseFont = () => {
-		if (generatedFont) {
-			onFontGenerated(generatedFont, compiledFont ?? undefined);
+			setIsPaying(false);
 		}
 	};
 
 	const handleReset = useCallback(() => {
-		setGeneratedFont(null);
-		setCompiledFont(null);
 		setJobId(null);
 		setError(null);
 		localStorage.removeItem(STORAGE_KEY);
-	}, []);
-
-	const handleRemixComplete = (newFont: GeneratedFont, newCompiled?: CompiledFont) => {
-		setGeneratedFont(newFont);
-		setCompiledFont(newCompiled ?? null);
-		setShowRemixDialog(false);
-	};
+		onClear?.();
+	}, [onClear]);
 
 	// Determine UI state
 	const isGenerating = jobId !== null && statusData?.status !== "complete" && statusData?.status !== "failed";
 	const progressStage = statusData?.status === "compiling" ? "COMPILING_FONT..." : "GENERATING_GLYPHS...";
+	const hasFontReady = externalFont !== null && externalFont !== undefined;
+	const isProcessing = isPaying || isSending || isGenerating;
 
-	// If we have a generated font, show preview
-	if (generatedFont) {
+	// When a font has been generated, show compact ready state with option to regenerate
+	if (hasFontReady && !isGenerating) {
 		return (
-			<div className="rounded border border-border bg-background">
-				<div className="border-b border-border px-3 py-2">
-					<div className="flex items-center justify-between">
+			<div className="rounded border border-primary/50 bg-primary/5">
+				<div className="flex items-center justify-between border-b border-primary/30 px-3 py-2">
+					<div className="flex items-center gap-2">
+						<Sparkles className="h-4 w-4 text-primary" />
 						<span className="font-mono text-xs text-primary">
-							// FONT_GENERATED: {generatedFont.name}
-						</span>
-						<span className="font-mono text-[10px] text-muted-foreground">
-							{generatedFont.glyphs.length} glyphs
+							FONT_READY: {externalFont.name}
 						</span>
 					</div>
+					<span className="font-mono text-[10px] text-muted-foreground">
+						{externalFont.glyphs.length} glyphs
+					</span>
 				</div>
-
-				<div className="p-4 space-y-4">
-					{/* Glyph Preview Grid */}
-					<div>
-						<div className="mb-2 font-mono text-xs text-muted-foreground">
-							GLYPH_PREVIEW:
-						</div>
-						<div className="grid grid-cols-8 gap-1 rounded border border-border bg-black p-2">
-							{generatedFont.glyphs.slice(0, 32).map((glyph, i) => (
-								<div
-									key={i}
-									className="aspect-square flex items-center justify-center"
-									title={`${glyph.char} (U+${glyph.unicode.toString(16).toUpperCase()})`}
-								>
-									<svg
-										viewBox={`0 0 ${glyph.width} 1000`}
-										className="h-6 w-6"
-										style={{ transform: "scaleY(-1)" }}
-									>
-										<path
-											d={glyph.path}
-											fill="white"
-										/>
-									</svg>
-								</div>
-							))}
-						</div>
-						{generatedFont.glyphs.length > 32 && (
-							<div className="mt-1 font-mono text-[10px] text-muted-foreground text-center">
-								+{generatedFont.glyphs.length - 32} more glyphs
-							</div>
-						)}
+				<div className="space-y-3 p-3">
+					{/* Compact stats */}
+					<div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-muted-foreground">
+						<span>Model: {externalFont.generatedBy}</span>
+						<span>Cap: {externalFont.capHeight}</span>
+						<span>x-Height: {externalFont.xHeight}</span>
 					</div>
 
-					{/* Sample Text Preview */}
-					<div>
-						<div className="mb-2 font-mono text-xs text-muted-foreground">
-							SAMPLE_TEXT:
-						</div>
-						<div className="rounded border border-border bg-black p-4 overflow-x-auto">
-							<svg viewBox="0 0 800 100" className="w-full h-16">
-								{renderTextAsSvg(generatedFont, "Hello World", 50, 70)}
-							</svg>
-						</div>
-					</div>
-
-					{/* Font Metrics */}
-					<div className="grid grid-cols-2 gap-2 font-mono text-xs">
-						<div className="text-muted-foreground">Style:</div>
-						<div>{generatedFont.style}</div>
-						<div className="text-muted-foreground">Cap Height:</div>
-						<div>{generatedFont.capHeight}</div>
-						<div className="text-muted-foreground">x-Height:</div>
-						<div>{generatedFont.xHeight}</div>
-						<div className="text-muted-foreground">Generated by:</div>
-						<div>{generatedFont.generatedBy}</div>
-						{compiledFont && (
-							<>
-								<div className="text-muted-foreground">WOFF2 Size:</div>
-								<div className="text-primary">{formatBytes(compiledFont.woff2Size)}</div>
-								<div className="text-muted-foreground">OTF Size:</div>
-								<div>{formatBytes(compiledFont.otfSize)}</div>
-							</>
-						)}
-					</div>
-
-					{/* Compilation Status */}
-					{compiledFont ? (
-						<div className="flex items-center gap-2 rounded border border-primary/50 bg-primary/10 px-3 py-2 font-mono text-xs text-primary">
-							<span className="h-2 w-2 rounded-full bg-primary" />
-							COMPILED: Real WOFF2 font ready for inscription
+					{/* Compilation status */}
+					{externalCompiled ? (
+						<div className="flex items-center gap-2 rounded bg-green-500/10 px-2 py-1.5 font-mono text-[10px] text-green-600 dark:text-green-400">
+							<span className="font-medium">WOFF2 COMPILED</span>
+							<span className="text-muted-foreground">
+								({(externalCompiled.woff2Size / 1024).toFixed(1)} KB)
+							</span>
 						</div>
 					) : (
-						<div className="flex items-center gap-2 rounded border border-yellow-500/50 bg-yellow-500/10 px-3 py-2 font-mono text-xs text-yellow-500">
-							<span className="h-2 w-2 rounded-full bg-yellow-500" />
-							SVG Preview Only - Compilation failed
+						<div className="flex items-center gap-2 rounded bg-yellow-500/10 px-2 py-1.5 font-mono text-[10px] text-yellow-600 dark:text-yellow-400">
+							<span>SVG paths only (no WOFF2)</span>
 						</div>
 					)}
 
-					{/* Actions */}
-					<div className="flex gap-2">
-						<Button
-							variant="outline"
-							onClick={() => setShowRemixDialog(true)}
-							className="flex-1 font-mono text-xs"
-						>
-							[ REMIX ]
-						</Button>
-						<Button
-							onClick={handleUseFont}
-							className="flex-1 font-mono text-xs"
-						>
-							[ USE_THIS_FONT ]
-						</Button>
-					</div>
+					{/* Regenerate option */}
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onClear}
+						className="w-full gap-2 font-mono text-xs"
+					>
+						<RotateCcw className="h-3 w-3" />
+						Generate New Font
+					</Button>
 				</div>
-
-				{/* Remix Dialog */}
-				<UnifiedRemixDialog
-					isOpen={showRemixDialog}
-					onClose={() => setShowRemixDialog(false)}
-					type="font"
-					previousFont={generatedFont}
-					compiledFont={compiledFont ?? undefined}
-					onFontRemixComplete={handleRemixComplete}
-				/>
 			</div>
 		);
 	}
+
+	// Button content based on state
+	const getButtonContent = () => {
+		if (status === "not-installed") {
+			return (
+				<>
+					<Wallet className="mr-2 h-4 w-4" />
+					Install Yours Wallet
+				</>
+			);
+		}
+
+		if (!isConnected) {
+			return (
+				<>
+					<Wallet className="mr-2 h-4 w-4" />
+					Connect Wallet
+				</>
+			);
+		}
+
+		if (!hasEnoughBalance) {
+			return (
+				<>
+					<Wallet className="mr-2 h-4 w-4" />
+					Insufficient Balance
+				</>
+			);
+		}
+
+		if (isPaying || isSending) {
+			return (
+				<>
+					<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					Processing Payment...
+				</>
+			);
+		}
+
+		if (isGenerating) {
+			return (
+				<>
+					<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					GENERATING...
+				</>
+			);
+		}
+
+		return (
+			<>
+				<Wand2 className="mr-2 h-4 w-4" />
+				[ GENERATE_FONT ] ({formatBsv(FONT_GENERATION_COST_SATS)} BSV)
+			</>
+		);
+	};
 
 	return (
 		<div className="rounded border border-border bg-background">
@@ -374,12 +385,12 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 								key={model.id}
 								type="button"
 								onClick={() => setSelectedModel(model.id)}
-								disabled={isGenerating}
+								disabled={isProcessing}
 								className={`rounded border p-3 text-left transition-colors ${
 									selectedModel === model.id
 										? "border-primary bg-primary/10"
 										: "border-border hover:border-primary/50"
-								} ${isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
+								} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								<div className="font-mono text-xs font-medium text-foreground">
 									{model.name}
@@ -403,12 +414,12 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 								key={preset.id}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								disabled={isGenerating}
+								disabled={isProcessing}
 								className={`rounded border px-3 py-2 text-left font-mono text-xs transition-colors ${
 									selectedPreset === preset.id
 										? "border-primary bg-primary/10 text-primary"
 										: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-								} ${isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
+								} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								{preset.label}
 							</button>
@@ -427,7 +438,7 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 							setPrompt(e.target.value);
 							setSelectedPreset(null);
 						}}
-						disabled={isGenerating}
+						disabled={isProcessing}
 						placeholder="Describe your font style in detail... e.g., 'Elegant serif with tall ascenders, delicate hairlines, and subtle contrast between thick and thin strokes. Inspired by 18th century French typography.'"
 						className="h-24 w-full resize-none rounded border border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none disabled:opacity-50"
 					/>
@@ -466,23 +477,25 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 					</div>
 				)}
 
+				{/* Balance info when connected */}
+				{isConnected && balance && (
+					<div className="rounded border border-border bg-muted/30 px-3 py-2 text-center font-mono text-xs text-muted-foreground">
+						Balance: {formatBsv(balance.satoshis)} BSV
+						{!hasEnoughBalance && (
+							<span className="ml-2 text-destructive">
+								(need {formatBsv(FONT_GENERATION_COST_SATS)} BSV)
+							</span>
+						)}
+					</div>
+				)}
+
 				{/* Generate Button */}
 				<Button
 					onClick={handleGenerate}
-					disabled={!prompt.trim() || isGenerating}
+					disabled={!prompt.trim() || isProcessing || (isConnected && !hasEnoughBalance)}
 					className="w-full font-mono"
 				>
-					{isGenerating ? (
-						<>
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							GENERATING...
-						</>
-					) : (
-						<>
-							<Wand2 className="mr-2 h-4 w-4" />
-							[ GENERATE_FONT ]
-						</>
-					)}
+					{getButtonContent()}
 				</Button>
 
 				{/* Info Note */}
@@ -499,44 +512,6 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 			</div>
 		</div>
 	);
-}
-
-// Helper to render text as SVG using glyph paths
-function renderTextAsSvg(font: GeneratedFont, text: string, x: number, y: number) {
-	const glyphMap = new Map(font.glyphs.map(g => [g.char, g]));
-	const elements: React.ReactNode[] = [];
-	let currentX = x;
-
-	for (let i = 0; i < text.length; i++) {
-		const char = text[i];
-		const glyph = glyphMap.get(char);
-
-		if (glyph) {
-			// Scale down from 1000 units to display size
-			const scale = 0.08;
-			elements.push(
-				<g
-					key={i}
-					transform={`translate(${currentX}, ${y}) scale(${scale}, -${scale})`}
-				>
-					<path d={glyph.path} fill="white" />
-				</g>
-			);
-			currentX += glyph.width * scale;
-		} else {
-			// Space or unknown character
-			currentX += 30;
-		}
-	}
-
-	return elements;
-}
-
-// Helper to format bytes as human-readable
-function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export type { GeneratedFont, CompiledFont };

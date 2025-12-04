@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Loader2, RotateCcw, Upload, Wallet, Wand2 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { AIGenerateTab, type GeneratedFont, type CompiledFont } from "@/components/font-mint/ai-generate-tab";
@@ -19,6 +18,8 @@ import { CostMatrix } from "@/components/font-mint/cost-matrix";
 import { TransactionTerminal } from "@/components/font-mint/transaction-terminal";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 export interface FontFile {
 	file: File;
@@ -124,6 +125,19 @@ export default function FontMintPage() {
 		}));
 	}, []);
 
+	// Clear generated font (called from AIGenerateTab when regenerating)
+	const handleClearGeneratedFont = useCallback(() => {
+		setGeneratedFont(null);
+		setCompiledFont(null);
+		setMetadata((prev) => ({
+			...prev,
+			name: "",
+			author: "",
+			isAIGenerated: false,
+			prompt: undefined,
+		}));
+	}, []);
+
 	// Memoized callback to prevent unnecessary re-renders in DropZoneCLI
 	const handleFilesChange = useCallback((files: FontFileWithValidation[]) => {
 		setFontFiles(files);
@@ -176,56 +190,55 @@ export default function FontMintPage() {
 
 	if (mintResult) {
 		return (
-			<div className="flex h-full flex-col overflow-hidden bg-background">
-				<div className="flex flex-1 items-center justify-center overflow-y-auto p-4">
-					<div className="text-center">
-						<pre className="mb-6 font-mono text-4xl text-primary">
-							{`
+			<div className="flex min-h-0 flex-1 items-center justify-center p-4">
+				<div className="text-center">
+					<pre className="mb-6 font-mono text-3xl text-primary sm:text-4xl">
+						{`
   ██████╗ ██╗  ██╗
  ██╔═══██╗██║ ██╔╝
  ██║   ██║█████╔╝
  ██║   ██║██╔═██╗
  ╚██████╔╝██║  ██╗
   ╚═════╝ ╚═╝  ╚═╝
-							`.trim()}
-						</pre>
-						<h2 className="mb-2 font-mono text-xl font-semibold text-foreground">
-							INSCRIPTION_COMPLETE
-						</h2>
-						<p className="mb-6 font-mono text-sm text-muted-foreground">
-							Your font has been permanently inscribed to the blockchain.
-						</p>
+						`.trim()}
+					</pre>
+					<h2 className="mb-2 font-mono text-lg font-semibold text-foreground sm:text-xl">
+						INSCRIPTION_COMPLETE
+					</h2>
+					<p className="mb-6 font-mono text-xs text-muted-foreground sm:text-sm">
+						Your font has been permanently inscribed to the blockchain.
+					</p>
 
-						<div className="mb-6 w-full max-w-lg rounded border border-border bg-muted/30 p-4 text-left font-mono text-xs">
-							<div className="mb-2">
-								<span className="text-muted-foreground">TXID: </span>
-								<span className="text-foreground">{mintResult.txid}</span>
-							</div>
-							<div>
-								<span className="text-muted-foreground">ORDFS: </span>
-								<a
-									href={mintResult.ordfsUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-primary hover:underline"
-								>
-									{mintResult.ordfsUrl}
-								</a>
-							</div>
+					<div className="mx-auto mb-6 max-w-lg rounded border border-border bg-muted/30 p-4 text-left font-mono text-xs">
+						<div className="mb-2">
+							<span className="text-muted-foreground">TXID: </span>
+							<span className="break-all text-foreground">{mintResult.txid}</span>
 						</div>
-
-						<div className="flex justify-center gap-3">
-							<Button
-								variant="outline"
-								onClick={() => navigator.clipboard.writeText(mintResult.ordfsUrl)}
-								className="font-mono"
+						<div>
+							<span className="text-muted-foreground">ORDFS: </span>
+							<a
+								href={mintResult.ordfsUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="break-all text-primary hover:underline"
 							>
-								[ CP_TO_CLIPBOARD ]
-							</Button>
-							<Button onClick={handleReset} className="font-mono">
-								[ MINT_ANOTHER ]
-							</Button>
+								{mintResult.ordfsUrl}
+							</a>
 						</div>
+					</div>
+
+					<div className="flex flex-wrap justify-center gap-3">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => navigator.clipboard.writeText(mintResult.ordfsUrl)}
+							className="font-mono text-xs"
+						>
+							[ COPY_URL ]
+						</Button>
+						<Button onClick={handleReset} size="sm" className="font-mono text-xs">
+							[ MINT_ANOTHER ]
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -233,47 +246,30 @@ export default function FontMintPage() {
 	}
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden bg-background">
-			{/* Scrollable Content */}
-			<div className="flex-1 overflow-y-auto">
-				<div className="p-4 md:p-6 lg:p-8">
+		<div className="flex min-h-0 flex-1 flex-col">
+			{/* Main content area - resizable two panel layout */}
+			<ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
+				{/* Left Panel: Controls (scrollable) */}
+				<ResizablePanel defaultSize={35} minSize={25} maxSize={50} className="flex min-h-0 flex-col bg-muted/5">
 					{/* Mode Tabs */}
-					<div className="mb-6 flex gap-1 rounded border border-border bg-muted/30 p-1">
-						{[
-							{ id: "upload" as const, label: "UPLOAD_FILE", icon: Upload },
-							{ id: "ai" as const, label: "GENERATE_AI", icon: Wand2 },
-						].map((tab) => {
-							const Icon = tab.icon;
-							const isActive = inputMode === tab.id;
-							return (
-								<button
-									key={tab.id}
-									type="button"
-									onClick={() => setInputMode(tab.id)}
-									className={`relative flex flex-1 items-center justify-center gap-2 rounded px-4 py-2 font-mono text-xs transition-colors ${
-										isActive
-											? "text-foreground"
-											: "text-muted-foreground hover:text-foreground/80"
-									}`}
-								>
-									{isActive && (
-										<motion.div
-											layoutId="font-input-mode"
-											className="absolute inset-0 rounded bg-background shadow-sm"
-											transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-										/>
-									)}
-									<Icon className="relative z-10 h-4 w-4" />
-									<span className="relative z-10">{tab.label}</span>
-								</button>
-							);
-						})}
+					<div className="flex items-center border-b border-border px-4 py-2">
+						<Tabs value={inputMode} onValueChange={(v) => setInputMode(v as InputMode)}>
+							<TabsList>
+								<TabsTrigger value="upload">
+									<Upload className="h-3.5 w-3.5" />
+									Upload
+								</TabsTrigger>
+								<TabsTrigger value="ai">
+									<Wand2 className="h-3.5 w-3.5" />
+									AI
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
 					</div>
 
-					{/* Main Grid */}
-					<div className="grid gap-6 lg:grid-cols-2">
-						{/* Left Column: Input Console */}
-						<div className="space-y-6">
+					{/* Scrollable content */}
+					<div className="min-h-0 flex-1 overflow-y-auto p-4">
+						<div className="space-y-4">
 							{inputMode === "upload" ? (
 								<DropZoneCLI
 									files={fontFiles}
@@ -281,7 +277,12 @@ export default function FontMintPage() {
 									onZipMetadataDetected={handleZipMetadataDetected}
 								/>
 							) : (
-								<AIGenerateTab onFontGenerated={handleAIFontGenerated} />
+								<AIGenerateTab
+									onFontGenerated={handleAIFontGenerated}
+									generatedFont={generatedFont}
+									compiledFont={compiledFont}
+									onClear={handleClearGeneratedFont}
+								/>
 							)}
 							<MetadataForm
 								value={metadata}
@@ -295,93 +296,92 @@ export default function FontMintPage() {
 								metadataBytes={JSON.stringify(metadata).length}
 							/>
 						</div>
-
-						{/* Right Column: Preview */}
-						<div className="min-h-[400px] lg:sticky lg:top-4">
-							{generatedFont ? (
-								<GeneratedFontPreview
-									font={generatedFont}
-									compiledFont={compiledFont ?? undefined}
-									onClear={() => {
-										setGeneratedFont(null);
-										setCompiledFont(null);
-									}}
-								/>
-							) : (
-								<LiveTypeCanvas files={fontFiles} fontName={metadata.name} />
-							)}
-						</div>
 					</div>
+				</ResizablePanel>
+
+				<ResizableHandle withHandle />
+
+				{/* Right Panel: Preview (fixed, no scroll) */}
+				<ResizablePanel defaultSize={65} className="hidden min-h-0 flex-col overflow-hidden lg:flex">
+					{generatedFont ? (
+						<GeneratedFontPreview
+							font={generatedFont}
+							compiledFont={compiledFont ?? undefined}
+							onClear={() => {
+								setGeneratedFont(null);
+								setCompiledFont(null);
+							}}
+						/>
+					) : (
+						<LiveTypeCanvas files={fontFiles} fontName={metadata.name} />
+					)}
+				</ResizablePanel>
+			</ResizablePanelGroup>
+
+			{/* Full-width Footer */}
+			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
+				{/* Left: Font info */}
+				<div className="flex items-center gap-3 overflow-hidden">
+					{metadata.name ? (
+						<span className="truncate font-mono text-sm text-foreground">
+							{metadata.name}
+						</span>
+					) : (
+						<span className="font-mono text-sm text-muted-foreground">
+							No font selected
+						</span>
+					)}
+					{totalBytes > 0 && (
+						<span className="shrink-0 font-mono text-xs text-muted-foreground">
+							~{formatSats(estimatedCost)}
+						</span>
+					)}
+					{hasContent && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleReset}
+							className="h-7 gap-1.5 px-2 font-mono text-xs text-muted-foreground hover:text-foreground"
+						>
+							<RotateCcw className="h-3 w-3" />
+							Clear
+						</Button>
+					)}
+				</div>
+
+				{/* Right: Wallet + Action */}
+				<div className="flex shrink-0 items-center gap-3">
+					{isConnected && balance?.satoshis !== undefined && (
+						<span className="hidden font-mono text-xs text-muted-foreground sm:block">
+							{formatSats(balance.satoshis)}
+						</span>
+					)}
+					{isConnected ? (
+						<Button
+							onClick={handleMint}
+							disabled={!isValid || isMinting}
+							className="gap-2 font-mono text-xs"
+						>
+							{isMinting ? (
+								<>
+									<Loader2 className="h-3 w-3 animate-spin" />
+									INSCRIBING...
+								</>
+							) : (
+								<>
+									<Wallet className="h-3 w-3" />
+									INSCRIBE
+								</>
+							)}
+						</Button>
+					) : (
+						<Button onClick={connect} className="gap-2 font-mono text-xs">
+							<Wallet className="h-3 w-3" />
+							Connect Wallet
+						</Button>
+					)}
 				</div>
 			</div>
-
-			{/* Fixed Footer */}
-			<footer className="shrink-0 border-t border-border bg-muted/30 px-4 py-3">
-				<div className="flex items-center justify-between gap-4">
-					{/* Left: Font info + Clear */}
-					<div className="flex items-center gap-3">
-						{metadata.name ? (
-							<span className="font-mono text-xs text-foreground">
-								{metadata.name}
-							</span>
-						) : (
-							<span className="font-mono text-xs text-muted-foreground">
-								No font selected
-							</span>
-						)}
-						{totalBytes > 0 && (
-							<span className="font-mono text-[10px] text-muted-foreground">
-								~{formatSats(estimatedCost)}
-							</span>
-						)}
-						{hasContent && (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleReset}
-								className="h-7 gap-1 px-2 font-mono text-xs text-muted-foreground hover:text-foreground"
-							>
-								<RotateCcw className="h-3 w-3" />
-								Clear
-							</Button>
-						)}
-					</div>
-
-					{/* Right: Wallet + Action */}
-					<div className="flex items-center gap-3">
-						{isConnected && (
-							<div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground sm:flex">
-								<Wallet className="h-3 w-3" />
-								<span className="max-w-[100px] truncate">{addresses?.ordAddress}</span>
-								{balance?.satoshis !== undefined && (
-									<span className="text-foreground">{formatSats(balance.satoshis)}</span>
-								)}
-							</div>
-						)}
-						{isConnected ? (
-							<Button
-								onClick={handleMint}
-								disabled={!isValid || isMinting}
-								className="gap-2 font-mono text-xs"
-							>
-								{isMinting ? (
-									<>
-										<Loader2 className="h-3 w-3 animate-spin" />
-										INSCRIBING...
-									</>
-								) : (
-									"[ INSCRIBE ]"
-								)}
-							</Button>
-						) : (
-							<Button onClick={connect} className="gap-2 font-mono text-xs">
-								<Wallet className="h-3 w-3" />
-								Connect Wallet
-							</Button>
-						)}
-					</div>
-				</div>
-			</footer>
 
 			{/* Transaction Modal */}
 			{isMinting && (
