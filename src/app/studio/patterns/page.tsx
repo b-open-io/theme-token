@@ -35,6 +35,8 @@ interface PatternState {
 	svg: string;
 	prompt: string;
 	colorMode: ColorMode;
+	provider: string;
+	model: string;
 }
 
 // Pattern type presets for quick prompts
@@ -86,6 +88,8 @@ export default function PatternGeneratorPage() {
 				svg: data.svg,
 				prompt: prompt.trim(),
 				colorMode,
+				provider: data.provider,
+				model: data.model,
 			});
 		} catch (error) {
 			console.error("Error generating pattern:", error);
@@ -144,6 +148,8 @@ export default function PatternGeneratorPage() {
 		const response = await inscribePattern(pattern.svg, {
 			name: patternName || undefined,
 			prompt: pattern.prompt,
+			provider: pattern.provider,
+			model: pattern.model,
 			// license defaults to CC0 in buildTileMetadata
 		});
 

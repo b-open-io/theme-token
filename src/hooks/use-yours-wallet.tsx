@@ -84,6 +84,8 @@ interface WalletContextValue {
 			author?: string;
 			license?: string;
 			prompt?: string;
+			provider?: string;
+			model?: string;
 		},
 	) => Promise<InscribeResponse | null>;
 	isInscribing: boolean;
@@ -418,6 +420,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				author?: string;
 				license?: string;
 				prompt?: string;
+				provider?: string;
+				model?: string;
 			},
 		): Promise<InscribeResponse | null> => {
 			const wallet = walletRef.current;
@@ -433,12 +437,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				// SVG is text, encode to base64
 				const base64Data = btoa(svg);
 
-				// Build metadata with name, author, license, and prompt
+				// Build metadata with name, author, license, prompt, provider, model
 				const mapData = buildTileMetadata({
 					name: metadata?.name,
 					author: metadata?.author,
 					license: metadata?.license,
 					prompt: metadata?.prompt,
+					provider: metadata?.provider,
+					model: metadata?.model,
 				});
 
 				const response = await wallet.inscribe([

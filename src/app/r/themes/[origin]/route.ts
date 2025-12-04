@@ -7,9 +7,8 @@ export async function GET(
 ) {
 	try {
 		const { origin } = await params;
-		const cleanOrigin = origin.replace(/\.json$/, "");
 
-		const response = await fetch(`https://ordfs.network/${cleanOrigin}`);
+		const response = await fetch(`https://ordfs.network/${origin}`);
 		if (!response.ok) {
 			return NextResponse.json({ error: "Theme not found" }, { status: 404 });
 		}

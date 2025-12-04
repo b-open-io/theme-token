@@ -3,6 +3,8 @@ export function buildTileMetadata(params: {
 	author?: string;
 	license?: string;
 	prompt?: string;
+	provider?: string;
+	model?: string;
 }): Record<string, string> {
 	const result: Record<string, string> = {
 		app: "theme-token",
@@ -14,31 +16,49 @@ export function buildTileMetadata(params: {
 	// Default to CC0 (public domain) if no license specified
 	result.license = params.license || "CC0";
 	if (params.prompt) result.prompt = params.prompt;
+	if (params.provider) result.provider = params.provider;
+	if (params.model) result.model = params.model;
 
 	return result;
 }
 
 export function buildFontMetadata(params: {
+	name?: string;
 	author?: string;
 	license?: string;
 	prompt?: string;
+	provider?: string;
+	model?: string;
 }): Record<string, string> {
 	const result: Record<string, string> = {
 		app: "theme-token",
 		type: "font",
 	};
 
+	if (params.name) result.name = params.name;
 	if (params.author) result.author = params.author;
 	if (params.license) result.license = params.license;
 	if (params.prompt) result.prompt = params.prompt;
+	if (params.provider) result.provider = params.provider;
+	if (params.model) result.model = params.model;
 
 	return result;
 }
 
-export function buildThemeMetadata(): Record<string, string> {
-	return {
+export function buildThemeMetadata(params?: {
+	prompt?: string;
+	provider?: string;
+	model?: string;
+}): Record<string, string> {
+	const result: Record<string, string> = {
 		app: "theme-token",
 		type: "theme",
 	};
+
+	if (params?.prompt) result.prompt = params.prompt;
+	if (params?.provider) result.provider = params.provider;
+	if (params?.model) result.model = params.model;
+
+	return result;
 }
 

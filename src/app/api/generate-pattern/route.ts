@@ -148,7 +148,11 @@ Remember:
 			);
 		}
 
-		return NextResponse.json({ svg });
+		return NextResponse.json({
+			svg,
+			provider: "google",
+			model: "gemini-2.0-flash",
+		});
 	} catch (error) {
 		console.error("Pattern generation error:", error);
 		return NextResponse.json(
