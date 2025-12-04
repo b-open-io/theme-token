@@ -142,15 +142,9 @@ export default function PatternGeneratorPage() {
 	const handleInscribe = useCallback(async () => {
 		if (!pattern?.svg) return;
 
-		// Extract tile dimensions from SVG <pattern> element
-		const dims = extractTileDimensions(pattern.svg);
-
 		const response = await inscribePattern(pattern.svg, {
 			name: patternName || undefined,
 			prompt: pattern.prompt,
-			ctx: "tile", // Patterns are always tileable
-			meta: dims ? [dims.width, dims.height] : undefined,
-			colorMode: pattern.colorMode,
 			// license defaults to CC0 in buildPatternMetadata
 		});
 

@@ -85,10 +85,6 @@ interface WalletContextValue {
 			author?: string;
 			license?: string;
 			prompt?: string;
-			ctx?: "tile" | "wallpaper" | "sprite" | "avatar";
-			role?: "banner" | "card" | "story" | "square" | "icon" | "default";
-			meta?: [number, number];
-			colorMode?: "currentColor" | "theme" | "grayscale";
 		},
 	) => Promise<InscribeResponse | null>;
 	isInscribing: boolean;
@@ -169,11 +165,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 						continue;
 					}
 
-					// Check if it's a theme-token tileable asset (pattern/texture)
-					// Uses ctx: "tile" per the agreed schema
+					// Check if it's a theme-token pattern (SVG)
 					if (
 						mapData?.app === "theme-token" &&
-						mapData?.ctx === "tile" &&
+						mapData?.type === "pattern" &&
 						fileType === "image/svg+xml"
 					) {
 						patterns.push({
@@ -425,10 +420,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				author?: string;
 				license?: string;
 				prompt?: string;
-				ctx?: "tile" | "wallpaper" | "sprite" | "avatar";
-				role?: "banner" | "card" | "story" | "square" | "icon" | "default";
-				meta?: [number, number];
-				colorMode?: "currentColor" | "theme" | "grayscale";
 			},
 		): Promise<InscribeResponse | null> => {
 			const wallet = walletRef.current;
@@ -444,16 +435,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				// SVG is text, encode to base64
 				const base64Data = btoa(svg);
 
-				// Build metadata using agreed schema (ctx, role, meta, colorMode)
+				// Build metadata with name, author, license, and prompt
 				const mapData = buildPatternMetadata({
 					name: metadata?.name,
 					author: metadata?.author,
 					license: metadata?.license,
 					prompt: metadata?.prompt,
-					ctx: metadata?.ctx,
-					role: metadata?.role,
-					meta: metadata?.meta,
-					colorMode: metadata?.colorMode,
 				});
 
 				const response = await wallet.inscribe([
