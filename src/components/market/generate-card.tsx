@@ -1,8 +1,8 @@
 "use client";
 
-import { Sparkles, Wand2, Wallet } from "lucide-react";
+import { Sparkles, Wand2, Wallet, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import type { ThemeToken } from "@theme-token/sdk";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { AI_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import type { FilterState } from "./filter-sidebar";
 
-const GENERATION_TIMEOUT_MS = 30_000; // 30 second timeout
+const GENERATION_TIMEOUT_MS = 90_000; // 90 second timeout (AI can be slow)
+const PENDING_PAYMENT_KEY = "theme:pendingPayment";
 
 interface GenerateCardProps {
 	filters: FilterState;
@@ -39,12 +40,56 @@ const formatBsv = (sats: number) => {
 
 type GenerationState = "idle" | "paying" | "generating";
 
+interface PendingPayment {
+	txid: string;
+	prompt: string;
+	filters: FilterState;
+	timestamp: number;
+}
+
+function loadPendingPayment(): PendingPayment | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const stored = localStorage.getItem(PENDING_PAYMENT_KEY);
+		if (!stored) return null;
+		const data = JSON.parse(stored) as PendingPayment;
+		// Expire after 1 hour
+		if (Date.now() - data.timestamp > 60 * 60 * 1000) {
+			localStorage.removeItem(PENDING_PAYMENT_KEY);
+			return null;
+		}
+		return data;
+	} catch {
+		return null;
+	}
+}
+
+function savePendingPayment(payment: PendingPayment) {
+	localStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify(payment));
+}
+
+function clearPendingPayment() {
+	localStorage.removeItem(PENDING_PAYMENT_KEY);
+}
+
 export function GenerateCard({ filters }: GenerateCardProps) {
 	const router = useRouter();
 	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
 	const [state, setState] = useState<GenerationState>("idle");
 	const [prompt, setPrompt] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
+	const [showRecovery, setShowRecovery] = useState(false);
+	const [recoveryTxid, setRecoveryTxid] = useState("");
+
+	// Check for pending payment on mount
+	useEffect(() => {
+		const pending = loadPendingPayment();
+		if (pending) {
+			setPendingPayment(pending);
+			setPrompt(pending.prompt);
+		}
+	}, []);
 
 	const isConnected = status === "connected";
 	const hasEnoughBalance = (balance?.satoshis ?? 0) >= AI_GENERATION_COST_SATS;
@@ -65,7 +110,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 		}
 	};
 
-	const handleGenerate = async (stylePrompt?: string) => {
+	const handleGenerate = async (stylePrompt?: string, existingTxid?: string) => {
 		if (!isConnected) {
 			await handleConnect();
 			return;
@@ -73,7 +118,8 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 		const DEV_BYPASS_PAYMENT = false;
 
-		if (!DEV_BYPASS_PAYMENT && !hasEnoughBalance) {
+		// Skip balance check if we have an existing payment to retry
+		if (!existingTxid && !DEV_BYPASS_PAYMENT && !hasEnoughBalance) {
 			toast.error("Insufficient Balance", {
 				description: `You need at least ${formatBsv(AI_GENERATION_COST_SATS)} BSV to generate a theme.`,
 			});
@@ -88,9 +134,9 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 		const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
 
 		try {
-			let paymentTxid = "dev-test-bypass";
+			let paymentTxid = existingTxid || "dev-test-bypass";
 
-			if (!DEV_BYPASS_PAYMENT) {
+			if (!existingTxid && !DEV_BYPASS_PAYMENT) {
 				// Step 1: Process payment
 				setState("paying");
 				const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
@@ -99,6 +145,15 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 					throw new Error("Payment failed or was cancelled");
 				}
 				paymentTxid = paymentResult.txid;
+
+				// Save payment info BEFORE calling API so we can recover on failure
+				savePendingPayment({
+					txid: paymentTxid,
+					prompt: finalPrompt,
+					filters,
+					timestamp: Date.now(),
+				});
+				setPendingPayment({ txid: paymentTxid, prompt: finalPrompt, filters, timestamp: Date.now() });
 			}
 
 			// Step 2: Generate theme
@@ -126,6 +181,10 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			const data = await response.json();
 			const theme = data.theme as ThemeToken;
 
+			// Success! Clear pending payment
+			clearPendingPayment();
+			setPendingPayment(null);
+
 			// Store the theme with AI generation metadata and navigate to studio
 			storeRemixTheme(theme, {
 				source: "ai-generate",
@@ -136,9 +195,16 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			console.error("Generation failed:", err);
 
 			let message = "Generation failed. Please try again.";
+			// Check localStorage directly since state might not be updated yet
+			const hasPending = loadPendingPayment() !== null;
+			
 			if (err instanceof Error) {
 				if (err.name === "AbortError") {
-					message = "Request timed out. The AI service may be busy - please try again.";
+					message = "Request timed out. The AI service may be busy.";
+					// Don't clear pending payment on timeout - user can retry
+					if (hasPending) {
+						message += " Your payment was saved - click 'Retry' to try again without paying.";
+					}
 				} else {
 					message = err.message;
 				}
@@ -146,10 +212,38 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 			toast.error("Generation Failed", { description: message });
 			setError(message);
+			
+			// Refresh pending payment state from localStorage
+			setPendingPayment(loadPendingPayment());
 		} finally {
 			clearTimeout(timeoutId);
 			setState("idle");
 		}
+	};
+
+	const handleRetry = () => {
+		if (pendingPayment) {
+			handleGenerate(pendingPayment.prompt, pendingPayment.txid);
+		}
+	};
+
+	const handleDismissPending = () => {
+		clearPendingPayment();
+		setPendingPayment(null);
+		setError(null);
+	};
+
+	const handleManualRecovery = () => {
+		const txid = recoveryTxid.trim();
+		if (!txid || txid.length < 60) {
+			toast.error("Invalid TXID", { description: "Please enter a valid transaction ID" });
+			return;
+		}
+		// Use the current prompt or a default
+		const recoveryPrompt = prompt || "Generate a modern, professional theme";
+		handleGenerate(recoveryPrompt, txid);
+		setShowRecovery(false);
+		setRecoveryTxid("");
 	};
 
 	const handleSuggestionClick = (suggestion: string) => {
@@ -280,8 +374,44 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				/>
 			</div>
 
+			{/* Pending payment recovery - subtle but actionable */}
+			{pendingPayment && (
+				<div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+					<div className="flex items-start justify-between gap-2">
+						<div className="flex-1">
+							<p className="text-xs font-medium">
+								Resume generation?
+							</p>
+							<p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+								{pendingPayment.txid.slice(0, 12)}...
+							</p>
+						</div>
+						<div className="flex items-center gap-1">
+							<Button
+								size="sm"
+								onClick={handleRetry}
+								disabled={isProcessing}
+								className="h-7 gap-1 px-2 text-xs"
+							>
+								<RotateCcw className="h-3 w-3" />
+								Resume
+							</Button>
+							<button
+								type="button"
+								onClick={handleDismissPending}
+								className="p-1 text-muted-foreground/50 hover:text-muted-foreground"
+								title="Dismiss"
+							>
+								<span className="sr-only">Dismiss</span>
+								×
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Error message */}
-			{error && (
+			{error && !pendingPayment && (
 				<div className="mb-3 rounded-lg border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
 					{error}
 				</div>
@@ -306,7 +436,56 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				</Button>
 				<p className="mt-2 text-center text-[10px] text-muted-foreground">
 					{formatBsv(AI_GENERATION_COST_SATS)} BSV per generation
+					{/* Subtle recovery link - only visible on hover/focus */}
+					{!pendingPayment && !showRecovery && (
+						<>
+							{" · "}
+							<button
+								type="button"
+								onClick={() => setShowRecovery(true)}
+								className="text-muted-foreground/60 underline-offset-2 transition-colors hover:text-muted-foreground hover:underline"
+							>
+								recover
+							</button>
+						</>
+					)}
 				</p>
+
+				{/* Manual recovery - clean slide-down */}
+				{showRecovery && !pendingPayment && (
+					<div className="mt-3 space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+						<div className="flex items-center justify-between">
+							<p className="text-[10px] font-medium text-muted-foreground">
+								Enter payment TX to retry
+							</p>
+							<button
+								type="button"
+								onClick={() => {
+									setShowRecovery(false);
+									setRecoveryTxid("");
+								}}
+								className="text-muted-foreground/50 hover:text-muted-foreground"
+							>
+								×
+							</button>
+						</div>
+						<input
+							type="text"
+							value={recoveryTxid}
+							onChange={(e) => setRecoveryTxid(e.target.value)}
+							placeholder="Transaction ID..."
+							className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-[10px] placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none"
+						/>
+						<Button
+							size="sm"
+							onClick={handleManualRecovery}
+							disabled={isProcessing || !recoveryTxid.trim()}
+							className="h-7 w-full text-xs"
+						>
+							Retry Generation
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
