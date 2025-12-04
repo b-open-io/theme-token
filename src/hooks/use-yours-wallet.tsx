@@ -11,7 +11,7 @@ import {
 	type ReactNode,
 } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { buildPatternMetadata, buildThemeMetadata } from "@/lib/asset-metadata";
+import { buildTileMetadata, buildThemeMetadata } from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import {
 	type Addresses,
@@ -58,7 +58,6 @@ export interface OwnedPattern {
 	metadata: {
 		name?: string;
 		prompt?: string;
-		colorMode?: string;
 	};
 }
 
@@ -165,10 +164,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 						continue;
 					}
 
-					// Check if it's a theme-token pattern (SVG)
+					// Check if it's a theme-token tile (SVG pattern/texture)
 					if (
 						mapData?.app === "theme-token" &&
-						mapData?.type === "pattern" &&
+						mapData?.type === "tile" &&
 						fileType === "image/svg+xml"
 					) {
 						patterns.push({
@@ -177,7 +176,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 							metadata: {
 								name: mapData.name,
 								prompt: mapData.prompt,
-								colorMode: mapData.colorMode,
 							},
 						});
 						continue;
@@ -436,7 +434,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				const base64Data = btoa(svg);
 
 				// Build metadata with name, author, license, and prompt
-				const mapData = buildPatternMetadata({
+				const mapData = buildTileMetadata({
 					name: metadata?.name,
 					author: metadata?.author,
 					license: metadata?.license,

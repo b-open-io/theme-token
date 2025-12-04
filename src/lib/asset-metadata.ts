@@ -1,4 +1,4 @@
-export function buildPatternMetadata(params: {
+export function buildTileMetadata(params: {
 	name?: string;
 	author?: string;
 	license?: string;
@@ -6,7 +6,7 @@ export function buildPatternMetadata(params: {
 }): Record<string, string> {
 	const result: Record<string, string> = {
 		app: "theme-token",
-		type: "pattern",
+		type: "tile",
 	};
 
 	if (params.name) result.name = params.name;
@@ -42,25 +42,3 @@ export function buildThemeMetadata(): Record<string, string> {
 	};
 }
 
-export function extractTileDimensions(svg: string): {
-	width: number;
-	height: number;
-} | null {
-	const patternMatch = svg.match(
-		/<pattern[^>]*width="(\d+)"[^>]*height="(\d+)"/,
-	);
-	if (patternMatch) {
-		return {
-			width: Number.parseInt(patternMatch[1], 10),
-			height: Number.parseInt(patternMatch[2], 10),
-		};
-	}
-	const altMatch = svg.match(/<pattern[^>]*height="(\d+)"[^>]*width="(\d+)"/);
-	if (altMatch) {
-		return {
-			width: Number.parseInt(altMatch[2], 10),
-			height: Number.parseInt(altMatch[1], 10),
-		};
-	}
-	return null;
-}

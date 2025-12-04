@@ -27,7 +27,6 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { extractTileDimensions } from "@/lib/asset-metadata";
 
 // Color mode for pattern generation - affects how AI generates the SVG
 type ColorMode = "currentColor" | "theme";
@@ -145,7 +144,7 @@ export default function PatternGeneratorPage() {
 		const response = await inscribePattern(pattern.svg, {
 			name: patternName || undefined,
 			prompt: pattern.prompt,
-			// license defaults to CC0 in buildPatternMetadata
+			// license defaults to CC0 in buildTileMetadata
 		});
 
 		if (response?.txid) {
