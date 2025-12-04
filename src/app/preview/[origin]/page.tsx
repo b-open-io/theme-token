@@ -228,7 +228,7 @@ export default function PreviewPage({ params }: Props) {
 	const [showRemixDialog, setShowRemixDialog] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}.json`;
+	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}`;
 
 	const copyCommand = useCallback(() => {
 		navigator.clipboard.writeText(installCommand);

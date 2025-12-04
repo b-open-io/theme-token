@@ -5,7 +5,7 @@
 Inscribe UI themes on Bitcoin. Install them with one command.
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
 ```
 
 ---

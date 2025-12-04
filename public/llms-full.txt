@@ -13,14 +13,14 @@ Theme Token allows developers to publish, discover, and install design themes as
 - Pattern Generator: https://themetoken.dev/studio/patterns
 - Market: https://themetoken.dev/market
 - Schema: https://themetoken.dev/v1/schema.json
-- Registry: https://themetoken.dev/r/themes/[origin].json
+- Registry: https://themetoken.dev/r/themes/[origin]
 
 ## Installation
 
 Install a theme into any ShadCN project:
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
 ```
 
 Replace `[origin]` with the ordinal origin ID (transaction ID + output index, e.g., `abc123_0`).

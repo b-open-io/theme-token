@@ -24,7 +24,7 @@ const stagger = {
 export default function SpecPage() {
 	const [copied, setCopied] = useState<string | null>(null);
 	const installCommand =
-		"bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json";
+		"bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]";
 	const sdkInstallCommand = "bun add @theme-token/sdk";
 
 	const copyToClipboard = useCallback((text: string, id: string) => {

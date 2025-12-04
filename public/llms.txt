@@ -18,7 +18,7 @@ Theme Token allows developers to publish, discover, and install design themes as
 Install a theme into any ShadCN project:
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
 ```
 
 Replace `[origin]` with the ordinal origin ID (transaction ID + output index, e.g., `abc123_0`).

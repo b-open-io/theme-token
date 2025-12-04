@@ -62,7 +62,7 @@ const exampleOrigin =
 
 export default function Home() {
 	const [copied, setCopied] = useState(false);
-	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}.json`;
+	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}`;
 
 	const copyCommand = useCallback(() => {
 		navigator.clipboard.writeText(installCommand);
