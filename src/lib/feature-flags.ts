@@ -20,9 +20,8 @@ export const featureFlags = {
 
 	/**
 	 * Images Market - Browse and use existing 1sat ordinal images
-	 * Always enabled - leverages existing ecosystem
 	 */
-	images: true,
+	images: process.env.NEXT_PUBLIC_FEATURE_IMAGES === "true",
 } as const;
 
 /**
