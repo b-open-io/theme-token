@@ -1,23 +1,27 @@
 import { generateObject } from "ai";
 import { kv } from "@vercel/kv";
+import { waitUntil } from "@vercel/functions";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 /**
- * AI Font Generation API
+ * AI Font Generation API (Async Job Pattern)
  *
- * Uses AI to generate SVG glyph paths for each character in a font.
- * The client receives SVG data that can be previewed and eventually
- * compiled into a proper font file.
+ * Uses waitUntil to run AI generation in background after returning job ID.
+ * This allows the generation to continue even if user navigates away.
  *
- * Supports:
- * - Fresh generation: Just prompt + model
- * - Seeded remix: prompt + model + previousFont (iterative refinement)
- * - Results stored in Vercel KV keyed by origin for recovery
+ * Flow:
+ * 1. Client POSTs prompt + model
+ * 2. Server generates jobId, stores initial state in KV, returns immediately
+ * 3. Background: AI generates font, updates KV with result
+ * 4. Client polls /api/font-generation/[id] for status
  */
 
-// Cache expiry: 7 days
-const CACHE_TTL_SECONDS = 86400 * 7;
+// Allow long-running background tasks (up to 5 minutes on Pro)
+export const maxDuration = 300;
+
+// Cache expiry: 24 hours (user should use font within a day)
+const CACHE_TTL_SECONDS = 86400;
 
 // Schema for a single glyph
 const glyphSchema = z.object({
@@ -51,12 +55,36 @@ interface PreviousFontData {
 	glyphs: Array<{ char: string; path: string; width: number }>;
 }
 
+// Type for stored generation state
+interface GenerationState {
+	status: "generating" | "compiling" | "complete" | "failed";
+	prompt: string;
+	model: string;
+	createdAt: number;
+	completedAt?: number;
+	isRemix: boolean;
+	font?: z.infer<typeof fontSchema> & {
+		generatedBy: string;
+		generatedAt: string;
+		isRemix: boolean;
+		prompt?: string;
+	};
+	compiled?: {
+		woff2Base64: string;
+		otfBase64: string;
+		woff2Size: number;
+		otfSize: number;
+		familyName: string;
+		glyphCount: number;
+	};
+	error?: string;
+}
+
 export async function POST(request: NextRequest) {
 	try {
-		const { prompt, model, paymentTxid, previousFont } = await request.json() as {
+		const { prompt, model, previousFont } = await request.json() as {
 			prompt: string;
 			model?: string;
-			paymentTxid?: string;
 			previousFont?: PreviousFontData;
 		};
 
@@ -67,11 +95,57 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Select the AI model (IDs from Vercel AI Gateway)
+		// Generate job ID server-side
+		const jobId = crypto.randomUUID();
 		const modelId = model === "claude-opus-4.5"
 			? "anthropic/claude-opus-4.5"
 			: "google/gemini-3-pro-preview";
+		const modelName = model || "gemini-3-pro";
 
+		// Store initial state immediately
+		const initialState: GenerationState = {
+			status: "generating",
+			prompt,
+			model: modelName,
+			createdAt: Date.now(),
+			isRemix: !!previousFont,
+		};
+
+		await kv.set(`font:${jobId}`, initialState, { ex: CACHE_TTL_SECONDS });
+
+		// Fire and forget - run AI generation after response is sent
+		waitUntil(
+			runFontGeneration(jobId, prompt, modelId, modelName, previousFont)
+		);
+
+		// Return job ID immediately
+		return NextResponse.json({
+			success: true,
+			jobId,
+			status: "generating",
+		});
+	} catch (error) {
+		console.error("[generate-font] Error:", error);
+		return NextResponse.json(
+			{
+				error: error instanceof Error ? error.message : "Failed to start generation",
+			},
+			{ status: 500 },
+		);
+	}
+}
+
+/**
+ * Background task: Generate font and compile it
+ */
+async function runFontGeneration(
+	jobId: string,
+	prompt: string,
+	modelId: string,
+	modelName: string,
+	previousFont?: PreviousFontData
+) {
+	try {
 		// Build seeded remix context if previous font provided
 		const seedContext = previousFont ? `
 ## Previous Font Reference (SEEDED REMIX)
@@ -137,6 +211,7 @@ M 280 650 C 280 680 260 700 220 700 C 180 700 150 680 150 550 C 150 420 180 400 
 
 Generate glyphs for: ${CHARS_TO_GENERATE}`;
 
+		// Generate font with AI
 		const { object: font } = await generateObject({
 			model: modelId as Parameters<typeof generateObject>[0]["model"],
 			schema: fontSchema,
@@ -164,47 +239,75 @@ Technical requirements:
 
 		const fontData = {
 			...font,
-			generatedBy: model || "gemini-3-pro",
+			generatedBy: modelName,
 			generatedAt: new Date().toISOString(),
 			isRemix: !!previousFont,
+			prompt,
 		};
 
-		// Store in KV if we have a payment txid (for recovery)
-		// Use paymentTxid as the origin for now - in production this would be the inscription origin
-		if (paymentTxid) {
-			try {
-				await kv.set(
-					`font:generation:${paymentTxid}`,
-					{
-						font: fontData,
-						prompt,
-						model: model || "gemini-3-pro",
-						createdAt: Date.now(),
-						isRemix: !!previousFont,
-					},
-					{ ex: CACHE_TTL_SECONDS }
-				);
-				console.log(`[generate-font] Stored generation for txid: ${paymentTxid}`);
-			} catch (kvError) {
-				// Don't fail the request if KV storage fails
-				console.error("[generate-font] KV storage error:", kvError);
+		// Update status to compiling
+		await kv.set(`font:${jobId}`, {
+			status: "compiling",
+			prompt,
+			model: modelName,
+			createdAt: Date.now(),
+			isRemix: !!previousFont,
+			font: fontData,
+		} satisfies GenerationState, { ex: CACHE_TTL_SECONDS });
+
+		// Compile font to WOFF2
+		let compiled: GenerationState["compiled"] = undefined;
+		try {
+			const compileResponse = await fetch(new URL("/api/compile-font", process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3033"), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(font),
+			});
+
+			if (compileResponse.ok) {
+				const compileData = await compileResponse.json();
+				compiled = {
+					woff2Base64: compileData.woff2.base64,
+					otfBase64: compileData.otf.base64,
+					woff2Size: compileData.woff2.size,
+					otfSize: compileData.otf.size,
+					familyName: compileData.metadata.familyName,
+					glyphCount: compileData.metadata.glyphCount,
+				};
 			}
+		} catch (compileError) {
+			console.warn("[generate-font] Compilation failed:", compileError);
+			// Continue without compiled font - user can still see SVG preview
 		}
 
-		// Return the font data as JSON - client will handle preview/compilation
-		return NextResponse.json({
-			success: true,
+		// Store completed result
+		const completedState: GenerationState = {
+			status: "complete",
+			prompt,
+			model: modelName,
+			createdAt: Date.now(),
+			completedAt: Date.now(),
+			isRemix: !!previousFont,
 			font: fontData,
-			cached: !!paymentTxid,
-			cacheKey: paymentTxid || null,
-		});
+			compiled,
+		};
+
+		await kv.set(`font:${jobId}`, completedState, { ex: CACHE_TTL_SECONDS });
+		console.log(`[generate-font] Completed job ${jobId}`);
+
 	} catch (error) {
-		console.error("[generate-font] Error:", error);
-		return NextResponse.json(
-			{
-				error: error instanceof Error ? error.message : "Failed to generate font",
-			},
-			{ status: 500 },
-		);
+		console.error(`[generate-font] Job ${jobId} failed:`, error);
+
+		// Store failed state
+		const failedState: GenerationState = {
+			status: "failed",
+			prompt,
+			model: modelName,
+			createdAt: Date.now(),
+			isRemix: !!previousFont,
+			error: error instanceof Error ? error.message : "Generation failed",
+		};
+
+		await kv.set(`font:${jobId}`, failedState, { ex: CACHE_TTL_SECONDS });
 	}
 }

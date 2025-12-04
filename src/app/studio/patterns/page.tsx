@@ -51,6 +51,13 @@ const PATTERN_PRESETS = [
 	{ id: "noise", label: "Grain", prompt: "subtle organic noise texture" },
 ];
 
+// Format satoshis for display
+function formatSats(sats: number): string {
+	if (sats < 1000) return `${sats} sats`;
+	if (sats < 100000) return `${(sats / 1000).toFixed(1)}k sats`;
+	return `${(sats / 100000000).toFixed(4)} BSV`;
+}
+
 export default function PatternGeneratorPage() {
 	const [prompt, setPrompt] = useState("");
 	const [patternName, setPatternName] = useState("");
@@ -62,7 +69,11 @@ export default function PatternGeneratorPage() {
 	const [copiedType, setCopiedType] = useState<string | null>(null);
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
 
-	const { status, connect, inscribePattern, isInscribing } = useYoursWallet();
+	const { status, connect, inscribePattern, isInscribing, balance, addresses } = useYoursWallet();
+	const isConnected = status === "connected";
+
+	// Estimate cost (SVG size + base fee)
+	const estimatedCost = pattern?.svg ? pattern.svg.length + 500 : 0;
 
 	// Generate SVG pattern using Gemini API
 	const generatePattern = useCallback(async () => {
@@ -158,423 +169,441 @@ export default function PatternGeneratorPage() {
 		}
 	}, [pattern, patternName, inscribePattern]);
 
+	// Check if ready to inscribe
+	const canInscribe = pattern?.svg && !inscribedOrigin;
+
 	return (
-		<div className="relative px-4 py-6 md:px-8 lg:px-12">
-			<div className="grid gap-6 lg:grid-cols-2">
-				{/* Left Column: Generator Controls */}
-				<div className="space-y-6">
-					{/* Pattern Presets */}
-					<div className="rounded border border-border bg-card p-4">
-						<Label className="mb-3 block font-mono text-xs text-muted-foreground">
-							QUICK_PRESETS
-						</Label>
-						<div className="flex flex-wrap gap-2">
-							{PATTERN_PRESETS.map((preset) => (
-								<button
-									key={preset.id}
-									type="button"
-									onClick={() => applyPreset(preset)}
-									className="rounded border border-border bg-muted/50 px-3 py-1.5 font-mono text-xs transition-colors hover:border-primary/50 hover:bg-primary/10"
-								>
-									{preset.label}
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Prompt Input */}
-					<div className="rounded border border-border bg-card p-4">
-						<Label className="mb-3 block font-mono text-xs text-muted-foreground">
-							PATTERN_DESCRIPTION
-						</Label>
-						<Textarea
-							value={prompt}
-							onChange={(e) => setPrompt(e.target.value)}
-							placeholder="Describe your pattern... e.g. 'subtle hexagonal grid with thin lines'"
-							className="mb-4 min-h-[100px] font-mono text-sm"
-						/>
-
-						<div className="flex items-center gap-4">
-							<div className="flex-1">
-								<Label className="mb-2 block font-mono text-xs text-muted-foreground">
-									COLOR_MODE
+		<div className="flex h-full flex-col overflow-hidden bg-background">
+			{/* Scrollable Content */}
+			<div className="flex-1 overflow-y-auto">
+				<div className="p-4 md:p-6 lg:p-8">
+					<div className="grid gap-6 lg:grid-cols-2">
+						{/* Left Column: Generator Controls */}
+						<div className="space-y-6">
+							{/* Pattern Presets */}
+							<div className="rounded border border-border bg-card p-4">
+								<Label className="mb-3 block font-mono text-xs text-muted-foreground">
+									QUICK_PRESETS
 								</Label>
-								<Select value={colorMode} onValueChange={(v) => setColorMode(v as ColorMode)}>
-									<SelectTrigger className="font-mono text-xs">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent className="w-[320px]">
-										<SelectItem value="currentColor" className="py-3">
-											<div className="flex items-start gap-3">
-												<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
-													<svg viewBox="0 0 24 24" className="h-6 w-6 text-primary">
-														<circle cx="8" cy="8" r="2" fill="currentColor" />
-														<circle cx="16" cy="8" r="2" fill="currentColor" />
-														<circle cx="8" cy="16" r="2" fill="currentColor" />
-														<circle cx="16" cy="16" r="2" fill="currentColor" />
-													</svg>
-												</div>
-												<div className="flex flex-col gap-0.5">
-													<span className="font-medium">currentColor</span>
-													<span className="text-[10px] text-muted-foreground">
-														Inherits color from CSS. Updates with theme/dark mode
-													</span>
-												</div>
-											</div>
-										</SelectItem>
-										<SelectItem value="theme" className="py-3">
-											<div className="flex items-start gap-3">
-												<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
-													<svg viewBox="0 0 24 24" className="h-6 w-6">
-														<circle cx="8" cy="8" r="2" className="fill-primary" />
-														<circle cx="16" cy="8" r="2" className="fill-accent" />
-														<circle cx="8" cy="16" r="2" className="fill-secondary" />
-														<circle cx="16" cy="16" r="2" className="fill-primary" />
-													</svg>
-												</div>
-												<div className="flex flex-col gap-0.5">
-													<span className="font-medium">Theme Colors</span>
-													<span className="text-[10px] text-muted-foreground">
-														Bakes current colors into SVG. Fixed appearance
-													</span>
-												</div>
-											</div>
-										</SelectItem>
-										<SelectItem value="grayscale" className="py-3">
-											<div className="flex items-start gap-3">
-												<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
-													<svg viewBox="0 0 24 24" className="h-6 w-6">
-														<circle cx="8" cy="8" r="2" fill="#666" />
-														<circle cx="16" cy="8" r="2" fill="#888" />
-														<circle cx="8" cy="16" r="2" fill="#aaa" />
-														<circle cx="16" cy="16" r="2" fill="#666" />
-													</svg>
-												</div>
-												<div className="flex flex-col gap-0.5">
-													<span className="font-medium">Grayscale</span>
-													<span className="text-[10px] text-muted-foreground">
-														Neutral grays only. Works with any theme
-													</span>
-												</div>
-											</div>
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-
-							<Button
-								onClick={generatePattern}
-								disabled={isGenerating || !prompt.trim()}
-								className="mt-6 gap-2 font-mono text-xs"
-							>
-								{isGenerating ? (
-									<>
-										<Loader2 className="h-4 w-4 animate-spin" />
-										GENERATING...
-									</>
-								) : (
-									<>
-										<Wand2 className="h-4 w-4" />
-										GENERATE
-									</>
-								)}
-							</Button>
-						</div>
-					</div>
-
-					{/* Pattern Controls */}
-					{pattern && (
-						<motion.div
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							className="rounded border border-border bg-card p-4"
-						>
-							<Label className="mb-4 block font-mono text-xs text-muted-foreground">
-								PATTERN_CONTROLS
-							</Label>
-
-							<div className="space-y-4">
-								<div>
-									<div className="mb-2 flex items-center justify-between">
-										<span className="font-mono text-xs text-muted-foreground">Scale</span>
-										<span className="font-mono text-xs">{scale}px</span>
-									</div>
-									<Slider
-										value={[scale]}
-										onValueChange={([v]) => setScale(v)}
-										min={8}
-										max={64}
-										step={4}
-									/>
-								</div>
-
-								<div>
-									<div className="mb-2 flex items-center justify-between">
-										<span className="font-mono text-xs text-muted-foreground">Opacity</span>
-										<span className="font-mono text-xs">{opacity}%</span>
-									</div>
-									<Slider
-										value={[opacity]}
-										onValueChange={([v]) => setOpacity(v)}
-										min={10}
-										max={100}
-										step={5}
-									/>
+								<div className="flex flex-wrap gap-2">
+									{PATTERN_PRESETS.map((preset) => (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => applyPreset(preset)}
+											className="rounded border border-border bg-muted/50 px-3 py-1.5 font-mono text-xs transition-colors hover:border-primary/50 hover:bg-primary/10"
+										>
+											{preset.label}
+										</button>
+									))}
 								</div>
 							</div>
-						</motion.div>
-					)}
 
-					{/* Copy/Export Actions */}
-					{pattern && (
-						<motion.div
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.1 }}
-							className="rounded border border-border bg-card p-4"
-						>
-							<Label className="mb-3 block font-mono text-xs text-muted-foreground">
-								EXPORT_OPTIONS
-							</Label>
+							{/* Prompt Input */}
+							<div className="rounded border border-border bg-card p-4">
+								<Label className="mb-3 block font-mono text-xs text-muted-foreground">
+									PATTERN_DESCRIPTION
+								</Label>
+								<Textarea
+									value={prompt}
+									onChange={(e) => setPrompt(e.target.value)}
+									placeholder="Describe your pattern... e.g. 'subtle hexagonal grid with thin lines'"
+									className="mb-4 min-h-[100px] font-mono text-sm"
+								/>
 
-							<div className="grid grid-cols-2 gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									className="gap-2 font-mono text-xs"
-									onClick={() => copyToClipboard(pattern.svg, "svg")}
-								>
-									{copiedType === "svg" ? (
-										<Check className="h-3 w-3 text-green-500" />
-									) : (
-										<Copy className="h-3 w-3" />
-									)}
-									Copy SVG
-								</Button>
+								<div className="flex items-center gap-4">
+									<div className="flex-1">
+										<Label className="mb-2 block font-mono text-xs text-muted-foreground">
+											COLOR_MODE
+										</Label>
+										<Select value={colorMode} onValueChange={(v) => setColorMode(v as ColorMode)}>
+											<SelectTrigger className="font-mono text-xs">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className="w-[320px]">
+												<SelectItem value="currentColor" className="py-3">
+													<div className="flex items-start gap-3">
+														<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
+															<svg viewBox="0 0 24 24" className="h-6 w-6 text-primary">
+																<circle cx="8" cy="8" r="2" fill="currentColor" />
+																<circle cx="16" cy="8" r="2" fill="currentColor" />
+																<circle cx="8" cy="16" r="2" fill="currentColor" />
+																<circle cx="16" cy="16" r="2" fill="currentColor" />
+															</svg>
+														</div>
+														<div className="flex flex-col gap-0.5">
+															<span className="font-medium">currentColor</span>
+															<span className="text-[10px] text-muted-foreground">
+																Inherits color from CSS. Updates with theme/dark mode
+															</span>
+														</div>
+													</div>
+												</SelectItem>
+												<SelectItem value="theme" className="py-3">
+													<div className="flex items-start gap-3">
+														<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
+															<svg viewBox="0 0 24 24" className="h-6 w-6">
+																<circle cx="8" cy="8" r="2" className="fill-primary" />
+																<circle cx="16" cy="8" r="2" className="fill-accent" />
+																<circle cx="8" cy="16" r="2" className="fill-secondary" />
+																<circle cx="16" cy="16" r="2" className="fill-primary" />
+															</svg>
+														</div>
+														<div className="flex flex-col gap-0.5">
+															<span className="font-medium">Theme Colors</span>
+															<span className="text-[10px] text-muted-foreground">
+																Bakes current colors into SVG. Fixed appearance
+															</span>
+														</div>
+													</div>
+												</SelectItem>
+												<SelectItem value="grayscale" className="py-3">
+													<div className="flex items-start gap-3">
+														<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-muted/30">
+															<svg viewBox="0 0 24 24" className="h-6 w-6">
+																<circle cx="8" cy="8" r="2" fill="#666" />
+																<circle cx="16" cy="8" r="2" fill="#888" />
+																<circle cx="8" cy="16" r="2" fill="#aaa" />
+																<circle cx="16" cy="16" r="2" fill="#666" />
+															</svg>
+														</div>
+														<div className="flex flex-col gap-0.5">
+															<span className="font-medium">Grayscale</span>
+															<span className="text-[10px] text-muted-foreground">
+																Neutral grays only. Works with any theme
+															</span>
+														</div>
+													</div>
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
 
-								<Button
-									variant="outline"
-									size="sm"
-									className="gap-2 font-mono text-xs"
-									onClick={() => copyToClipboard(svgDataUrl, "dataurl")}
-								>
-									{copiedType === "dataurl" ? (
-										<Check className="h-3 w-3 text-green-500" />
-									) : (
-										<Copy className="h-3 w-3" />
-									)}
-									Copy Data URL
-								</Button>
-
-								<Button
-									variant="outline"
-									size="sm"
-									className="gap-2 font-mono text-xs"
-									onClick={() => copyToClipboard(cssSnippet, "css")}
-								>
-									{copiedType === "css" ? (
-										<Check className="h-3 w-3 text-green-500" />
-									) : (
-										<Copy className="h-3 w-3" />
-									)}
-									Copy CSS
-								</Button>
-
-								<Button
-									variant="outline"
-									size="sm"
-									className="gap-2 font-mono text-xs"
-									onClick={downloadSvg}
-								>
-									<Download className="h-3 w-3" />
-									Download
-								</Button>
+									<Button
+										onClick={generatePattern}
+										disabled={isGenerating || !prompt.trim()}
+										className="mt-6 gap-2 font-mono text-xs"
+									>
+										{isGenerating ? (
+											<>
+												<Loader2 className="h-4 w-4 animate-spin" />
+												GENERATING...
+											</>
+										) : (
+											<>
+												<Wand2 className="h-4 w-4" />
+												GENERATE
+											</>
+										)}
+									</Button>
+								</div>
 							</div>
 
-							{/* Inscribe On-Chain */}
-							<div className="mt-4 border-t border-border pt-4">
-								{inscribedOrigin ? (
-									<div className="space-y-2">
-										<div className="flex items-center gap-2 rounded bg-green-500/10 px-3 py-2 text-green-600 dark:text-green-400">
-											<Check className="h-4 w-4" />
-											<span className="font-mono text-xs">Inscribed!</span>
-										</div>
-										<div className="space-y-1">
-											<Label className="font-mono text-[10px] text-muted-foreground">
-												ORIGIN_ID
-											</Label>
-											<div className="flex items-center gap-2">
-												<code className="flex-1 truncate rounded bg-muted px-2 py-1 font-mono text-[10px]">
-													{inscribedOrigin}
-												</code>
-												<Button
-													variant="ghost"
-													size="sm"
-													className="h-6 w-6 p-0"
-													onClick={() =>
-														copyToClipboard(`/content/${inscribedOrigin}`, "origin")
-													}
-												>
-													{copiedType === "origin" ? (
-														<Check className="h-3 w-3 text-green-500" />
-													) : (
-														<Copy className="h-3 w-3" />
-													)}
-												</Button>
+							{/* Pattern Controls */}
+							{pattern && (
+								<motion.div
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									className="rounded border border-border bg-card p-4"
+								>
+									<Label className="mb-4 block font-mono text-xs text-muted-foreground">
+										PATTERN_CONTROLS
+									</Label>
+
+									<div className="space-y-4">
+										<div>
+											<div className="mb-2 flex items-center justify-between">
+												<span className="font-mono text-xs text-muted-foreground">Scale</span>
+												<span className="font-mono text-xs">{scale}px</span>
 											</div>
-											<p className="font-mono text-[10px] text-muted-foreground">
-												Use <code className="text-primary">/content/{inscribedOrigin}</code> in
-												your theme&apos;s bg-image property
-											</p>
-										</div>
-										<a
-											href={`https://ordfs.network/content/${inscribedOrigin}`}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="flex items-center justify-center gap-1 text-primary hover:underline font-mono text-xs"
-										>
-											View on ORDFS <ExternalLink className="h-3 w-3" />
-										</a>
-									</div>
-								) : status !== "connected" ? (
-									<>
-										<Button
-											variant="secondary"
-											size="sm"
-											className="w-full gap-2 font-mono text-xs"
-											onClick={connect}
-										>
-											<Wallet className="h-3 w-3" />
-											Connect Wallet to Inscribe
-										</Button>
-										<p className="mt-2 text-center font-mono text-[10px] text-muted-foreground">
-											Connect Yours Wallet to inscribe patterns on-chain
-										</p>
-									</>
-								) : (
-									<>
-										<div className="mb-3">
-											<Label className="mb-1 block font-mono text-[10px] text-muted-foreground">
-												PATTERN_NAME (optional)
-											</Label>
-											<Input
-												value={patternName}
-												onChange={(e) => setPatternName(e.target.value)}
-												placeholder="My Pattern"
-												className="font-mono text-xs"
+											<Slider
+												value={[scale]}
+												onValueChange={([v]) => setScale(v)}
+												min={8}
+												max={64}
+												step={4}
 											/>
 										</div>
+
+										<div>
+											<div className="mb-2 flex items-center justify-between">
+												<span className="font-mono text-xs text-muted-foreground">Opacity</span>
+												<span className="font-mono text-xs">{opacity}%</span>
+											</div>
+											<Slider
+												value={[opacity]}
+												onValueChange={([v]) => setOpacity(v)}
+												min={10}
+												max={100}
+												step={5}
+											/>
+										</div>
+									</div>
+								</motion.div>
+							)}
+
+							{/* Copy/Export Actions */}
+							{pattern && (
+								<motion.div
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: 0.1 }}
+									className="rounded border border-border bg-card p-4"
+								>
+									<Label className="mb-3 block font-mono text-xs text-muted-foreground">
+										EXPORT_OPTIONS
+									</Label>
+
+									<div className="grid grid-cols-2 gap-2">
 										<Button
-											variant="secondary"
+											variant="outline"
 											size="sm"
-											className="w-full gap-2 font-mono text-xs"
-											onClick={handleInscribe}
-											disabled={isInscribing}
+											className="gap-2 font-mono text-xs"
+											onClick={() => copyToClipboard(pattern.svg, "svg")}
 										>
-											{isInscribing ? (
-												<>
-													<Loader2 className="h-3 w-3 animate-spin" />
-													Inscribing...
-												</>
+											{copiedType === "svg" ? (
+												<Check className="h-3 w-3 text-green-500" />
 											) : (
-												<>
-													<Sparkles className="h-3 w-3" />
-													Inscribe On-Chain
-												</>
+												<Copy className="h-3 w-3" />
 											)}
+											Copy SVG
 										</Button>
-										<p className="mt-2 text-center font-mono text-[10px] text-muted-foreground">
-											Pay BSV to permanently store your pattern on the blockchain
-										</p>
-									</>
-								)}
-							</div>
-						</motion.div>
-					)}
-				</div>
 
-				{/* Right Column: Preview */}
-				<div className="lg:sticky lg:top-32">
-					<div className="overflow-hidden rounded border border-border bg-card">
-						<div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2">
-							<Grid3X3 className="h-4 w-4 text-muted-foreground" />
-							<span className="font-mono text-xs text-muted-foreground">
-								TILED_PREVIEW
-							</span>
-						</div>
+										<Button
+											variant="outline"
+											size="sm"
+											className="gap-2 font-mono text-xs"
+											onClick={() => copyToClipboard(svgDataUrl, "dataurl")}
+										>
+											{copiedType === "dataurl" ? (
+												<Check className="h-3 w-3 text-green-500" />
+											) : (
+												<Copy className="h-3 w-3" />
+											)}
+											Copy Data URL
+										</Button>
 
-						<div className="relative aspect-square">
-							{pattern?.svg ? (
-								<>
-									{/* Pattern background - uses background-image for proper <pattern> element support */}
-									<div
-										className="absolute inset-0"
-										style={{
-											backgroundImage: `url("${svgDataUrl}")`,
-											backgroundRepeat: "repeat",
-											backgroundSize: `${scale}px ${scale}px`,
-											opacity: opacity / 100,
-										}}
-									/>
-									{/* Center badge */}
-									<div className="absolute bottom-4 right-4 rounded bg-background/80 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur">
-										{scale}px tile
+										<Button
+											variant="outline"
+											size="sm"
+											className="gap-2 font-mono text-xs"
+											onClick={() => copyToClipboard(cssSnippet, "css")}
+										>
+											{copiedType === "css" ? (
+												<Check className="h-3 w-3 text-green-500" />
+											) : (
+												<Copy className="h-3 w-3" />
+											)}
+											Copy CSS
+										</Button>
+
+										<Button
+											variant="outline"
+											size="sm"
+											className="gap-2 font-mono text-xs"
+											onClick={downloadSvg}
+										>
+											<Download className="h-3 w-3" />
+											Download
+										</Button>
 									</div>
-								</>
-							) : (
-								<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-									<div className="rounded-full bg-muted/50 p-4">
-										<Palette className="h-8 w-8 text-muted-foreground/50" />
-									</div>
-									<div>
-										<p className="font-mono text-sm text-muted-foreground">
-											No pattern generated
-										</p>
-										<p className="font-mono text-xs text-muted-foreground/70">
-											Enter a description and click Generate
-										</p>
-									</div>
-								</div>
+
+									{/* Inscribed Success */}
+									{inscribedOrigin && (
+										<div className="mt-4 space-y-2 border-t border-border pt-4">
+											<div className="flex items-center gap-2 rounded bg-green-500/10 px-3 py-2 text-green-600 dark:text-green-400">
+												<Check className="h-4 w-4" />
+												<span className="font-mono text-xs">Inscribed!</span>
+											</div>
+											<div className="space-y-1">
+												<Label className="font-mono text-[10px] text-muted-foreground">
+													ORIGIN_ID
+												</Label>
+												<div className="flex items-center gap-2">
+													<code className="flex-1 truncate rounded bg-muted px-2 py-1 font-mono text-[10px]">
+														{inscribedOrigin}
+													</code>
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-6 w-6 p-0"
+														onClick={() =>
+															copyToClipboard(`/content/${inscribedOrigin}`, "origin")
+														}
+													>
+														{copiedType === "origin" ? (
+															<Check className="h-3 w-3 text-green-500" />
+														) : (
+															<Copy className="h-3 w-3" />
+														)}
+													</Button>
+												</div>
+												<p className="font-mono text-[10px] text-muted-foreground">
+													Use <code className="text-primary">/content/{inscribedOrigin}</code> in
+													your theme&apos;s bg-image property
+												</p>
+											</div>
+											<a
+												href={`https://ordfs.network/content/${inscribedOrigin}`}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="flex items-center justify-center gap-1 text-primary hover:underline font-mono text-xs"
+											>
+												View on ORDFS <ExternalLink className="h-3 w-3" />
+											</a>
+										</div>
+									)}
+								</motion.div>
 							)}
 						</div>
 
-						{/* Raw SVG Preview Toggle */}
-						{pattern?.svg && (
-							<details className="border-t border-border">
-								<summary className="cursor-pointer bg-muted/30 px-4 py-2 font-mono text-xs text-muted-foreground hover:bg-muted/50">
-									VIEW_RAW_SVG
-								</summary>
-								<div className="max-h-48 overflow-auto bg-muted/10 p-4">
-									<pre className="font-mono text-[10px] text-muted-foreground">
-										{pattern.svg}
-									</pre>
+						{/* Right Column: Preview */}
+						<div className="lg:sticky lg:top-4">
+							<div className="overflow-hidden rounded border border-border bg-card">
+								<div className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2">
+									<Grid3X3 className="h-4 w-4 text-muted-foreground" />
+									<span className="font-mono text-xs text-muted-foreground">
+										TILED_PREVIEW
+									</span>
 								</div>
-							</details>
-						)}
-					</div>
 
-					{/* Usage Guide */}
-					<div className="mt-4 rounded border border-border bg-card p-4">
-						<Label className="mb-2 block font-mono text-xs text-muted-foreground">
-							USAGE_GUIDE
-						</Label>
-						<div className="space-y-2 font-mono text-xs text-muted-foreground">
-							<p>
-								<span className="text-primary">1.</span> Choose a preset or describe your pattern
-							</p>
-							<p>
-								<span className="text-primary">2.</span> Select color mode (currentColor for theme-reactive)
-							</p>
-							<p>
-								<span className="text-primary">3.</span> Adjust scale and opacity
-							</p>
-							<p>
-								<span className="text-primary">4.</span> Copy CSS to use with mask-image
-							</p>
+								<div className="relative aspect-square">
+									{pattern?.svg ? (
+										<>
+											{/* Pattern background - uses background-image for proper <pattern> element support */}
+											<div
+												className="absolute inset-0"
+												style={{
+													backgroundImage: `url("${svgDataUrl}")`,
+													backgroundRepeat: "repeat",
+													backgroundSize: `${scale}px ${scale}px`,
+													opacity: opacity / 100,
+												}}
+											/>
+											{/* Center badge */}
+											<div className="absolute bottom-4 right-4 rounded bg-background/80 px-2 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur">
+												{scale}px tile
+											</div>
+										</>
+									) : (
+										<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+											<div className="rounded-full bg-muted/50 p-4">
+												<Palette className="h-8 w-8 text-muted-foreground/50" />
+											</div>
+											<div>
+												<p className="font-mono text-sm text-muted-foreground">
+													No pattern generated
+												</p>
+												<p className="font-mono text-xs text-muted-foreground/70">
+													Enter a description and click Generate
+												</p>
+											</div>
+										</div>
+									)}
+								</div>
+
+								{/* Raw SVG Preview Toggle */}
+								{pattern?.svg && (
+									<details className="border-t border-border">
+										<summary className="cursor-pointer bg-muted/30 px-4 py-2 font-mono text-xs text-muted-foreground hover:bg-muted/50">
+											VIEW_RAW_SVG
+										</summary>
+										<div className="max-h-48 overflow-auto bg-muted/10 p-4">
+											<pre className="font-mono text-[10px] text-muted-foreground">
+												{pattern.svg}
+											</pre>
+										</div>
+									</details>
+								)}
+							</div>
+
+							{/* Usage Guide */}
+							<div className="mt-4 rounded border border-border bg-card p-4">
+								<Label className="mb-2 block font-mono text-xs text-muted-foreground">
+									USAGE_GUIDE
+								</Label>
+								<div className="space-y-2 font-mono text-xs text-muted-foreground">
+									<p>
+										<span className="text-primary">1.</span> Choose a preset or describe your pattern
+									</p>
+									<p>
+										<span className="text-primary">2.</span> Select color mode (currentColor for theme-reactive)
+									</p>
+									<p>
+										<span className="text-primary">3.</span> Adjust scale and opacity
+									</p>
+									<p>
+										<span className="text-primary">4.</span> Inscribe on-chain or copy CSS to use locally
+									</p>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
+
+			{/* Fixed Footer */}
+			<footer className="shrink-0 border-t border-border bg-muted/30 px-4 py-3">
+				<div className="flex items-center justify-between gap-4">
+					{/* Left: Pattern name input */}
+					<div className="flex items-center gap-3">
+						<Input
+							value={patternName}
+							onChange={(e) => setPatternName(e.target.value)}
+							placeholder="Pattern name (optional)"
+							className="h-8 w-48 font-mono text-xs"
+							disabled={!pattern || !!inscribedOrigin}
+						/>
+						{estimatedCost > 0 && !inscribedOrigin && (
+							<span className="font-mono text-[10px] text-muted-foreground">
+								~{formatSats(estimatedCost)}
+							</span>
+						)}
+					</div>
+
+					{/* Right: Wallet + Action */}
+					<div className="flex items-center gap-3">
+						{isConnected && (
+							<div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground sm:flex">
+								<Wallet className="h-3 w-3" />
+								<span className="max-w-[100px] truncate">{addresses?.ordAddress}</span>
+								{balance?.satoshis !== undefined && (
+									<span className="text-foreground">{formatSats(balance.satoshis)}</span>
+								)}
+							</div>
+						)}
+						{inscribedOrigin ? (
+							<div className="flex items-center gap-2 rounded bg-green-500/10 px-3 py-1.5 text-green-600 dark:text-green-400">
+								<Check className="h-3 w-3" />
+								<span className="font-mono text-xs">Inscribed</span>
+							</div>
+						) : isConnected ? (
+							<Button
+								onClick={handleInscribe}
+								disabled={!canInscribe || isInscribing}
+								className="gap-2 font-mono text-xs"
+							>
+								{isInscribing ? (
+									<>
+										<Loader2 className="h-3 w-3 animate-spin" />
+										INSCRIBING...
+									</>
+								) : (
+									<>
+										<Sparkles className="h-3 w-3" />
+										[ INSCRIBE ]
+									</>
+								)}
+							</Button>
+						) : (
+							<Button onClick={connect} className="gap-2 font-mono text-xs">
+								<Wallet className="h-3 w-3" />
+								Connect Wallet
+							</Button>
+						)}
+					</div>
+				</div>
+			</footer>
 		</div>
 	);
 }

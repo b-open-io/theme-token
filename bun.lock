@@ -31,6 +31,7 @@
         "@radix-ui/react-use-controllable-state": "^1.2.2",
         "@resvg/resvg-js": "^2.6.2",
         "@theme-token/sdk": "0.0.8",
+        "@vercel/functions": "^3.3.4",
         "@vercel/kv": "^3.0.0",
         "@xyflow/react": "^12.9.3",
         "ai": "^5.0.106",
@@ -56,6 +57,7 @@
         "shiki": "^3.18.0",
         "sonner": "^2.0.7",
         "streamdown": "^1.6.9",
+        "swr": "^2.3.7",
         "tailwind-merge": "^3.4.0",
         "tints.dev": "^1.0.5",
         "tokenlens": "^1.3.1",
@@ -624,6 +626,8 @@
     "@unrs/resolver-binding-win32-x64-msvc": ["@unrs/resolver-binding-win32-x64-msvc@1.11.1", "", { "os": "win32", "cpu": "x64" }, "sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g=="],
 
     "@upstash/redis": ["@upstash/redis@1.35.7", "", { "dependencies": { "uncrypto": "^0.1.3" } }, "sha512-bdCdKhke+kYUjcLLuGWSeQw7OLuWIx3eyKksyToLBAlGIMX9qiII0ptp8E0y7VFE1yuBxBd/3kSzJ8774Q4g+A=="],
+
+    "@vercel/functions": ["@vercel/functions@3.3.4", "", { "dependencies": { "@vercel/oidc": "3.0.5" }, "peerDependencies": { "@aws-sdk/credential-provider-web-identity": "*" }, "optionalPeers": ["@aws-sdk/credential-provider-web-identity"] }, "sha512-IoP8Xfr1QeCm+Dv5od3bfPiw/VgLKsA7IBd/88M/Wr421HdbH4b6bW5z8CTxiz1QRpalrPFZcLdMdxu+2hAjZg=="],
 
     "@vercel/kv": ["@vercel/kv@3.0.0", "", { "dependencies": { "@upstash/redis": "^1.34.0" } }, "sha512-pKT8fRnfyYk2MgvyB6fn6ipJPCdfZwiKDdw7vB+HL50rjboEBHDVBEcnwfkEpVSp2AjNtoaOUH7zG+bVC/rvSg=="],
 

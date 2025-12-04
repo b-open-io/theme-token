@@ -1,7 +1,8 @@
 "use client";
 
 import { Loader2, Sparkles, Wand2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
 
@@ -63,17 +64,99 @@ const STYLE_PRESETS = [
 	{ id: "pixel-art", label: "Pixel Art", prompt: "8-bit inspired bitmap-style font for games and digital nostalgia" },
 ];
 
+const STORAGE_KEY = "font:activeGeneration";
+
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+// Generation status type from API
+interface GenerationStatus {
+	success?: boolean;
+	status: "generating" | "compiling" | "complete" | "failed" | "not_found";
+	prompt?: string;
+	model?: string;
+	font?: GeneratedFont;
+	compiled?: CompiledFont;
+	error?: string;
+	age?: number;
+}
+
 export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 	const [selectedModel, setSelectedModel] = useState<AIModel>("gemini-3-pro");
 	const [prompt, setPrompt] = useState("");
 	const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-	const [isGenerating, setIsGenerating] = useState(false);
-	const [progress, setProgress] = useState(0);
-	const [progressStage, setProgressStage] = useState("");
+	const [jobId, setJobId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(null);
 	const [compiledFont, setCompiledFont] = useState<CompiledFont | null>(null);
 	const [showRemixDialog, setShowRemixDialog] = useState(false);
+
+	// Poll for generation status when we have a jobId
+	const { data: statusData } = useSWR<GenerationStatus>(
+		jobId ? `/api/font-generation/${jobId}` : null,
+		fetcher,
+		{
+			// Poll every 3 seconds while generating
+			refreshInterval: (data) => {
+				if (!data) return 3000;
+				// Stop polling when complete, failed, not found, OR when we have font data
+				if (data.status === "complete" || data.status === "failed" || data.status === "not_found") {
+					return 0;
+				}
+				// Also stop if we're "compiling" but already have font data
+				if (data.status === "compiling" && data.font) {
+					return 0;
+				}
+				return 3000;
+			},
+			revalidateOnFocus: true,
+		}
+	);
+
+	// Check localStorage for active generation on mount
+	useEffect(() => {
+		const stored = localStorage.getItem(STORAGE_KEY);
+		if (stored) {
+			try {
+				const { jobId: storedJobId, prompt: storedPrompt } = JSON.parse(stored);
+				if (storedJobId) {
+					setJobId(storedJobId);
+					setPrompt(storedPrompt || "");
+				}
+			} catch {
+				localStorage.removeItem(STORAGE_KEY);
+			}
+		}
+	}, []);
+
+	// Handle status updates from polling
+	useEffect(() => {
+		if (!statusData) return;
+
+		// Treat both "complete" and "compiling with font data" as complete
+		// (compilation is optional - if it fails, we still have the font)
+		const hasFont = statusData.font !== undefined;
+		const isComplete = statusData.status === "complete";
+		const isCompilingWithFont = statusData.status === "compiling" && hasFont;
+
+		if ((isComplete || isCompilingWithFont) && statusData.font) {
+			setGeneratedFont(statusData.font);
+			if (statusData.compiled) {
+				setCompiledFont(statusData.compiled);
+			}
+			// Clear localStorage on completion
+			localStorage.removeItem(STORAGE_KEY);
+			setJobId(null); // Stop polling
+		} else if (statusData.status === "failed") {
+			setError(statusData.error || "Generation failed");
+			setJobId(null);
+			localStorage.removeItem(STORAGE_KEY);
+		} else if (statusData.status === "not_found") {
+			// Stale localStorage - clear it
+			setJobId(null);
+			localStorage.removeItem(STORAGE_KEY);
+		}
+	}, [statusData]);
 
 	const handlePresetClick = (preset: typeof STYLE_PRESETS[0]) => {
 		setSelectedPreset(preset.id);
@@ -83,32 +166,12 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 	const handleGenerate = async () => {
 		if (!prompt.trim()) return;
 
-		setIsGenerating(true);
 		setError(null);
 		setGeneratedFont(null);
 		setCompiledFont(null);
-		setProgress(0);
-		setProgressStage("INITIALIZING...");
 
 		try {
-			// Progress animation for AI generation
-			const stages = [
-				{ progress: 10, stage: "ANALYZING_PROMPT..." },
-				{ progress: 30, stage: "GENERATING_GLYPH_DESIGNS..." },
-				{ progress: 50, stage: "CREATING_SVG_PATHS..." },
-				{ progress: 65, stage: "COMPUTING_METRICS..." },
-			];
-
-			let currentStageIndex = 0;
-			const progressInterval = setInterval(() => {
-				if (currentStageIndex < stages.length) {
-					setProgress(stages[currentStageIndex].progress);
-					setProgressStage(stages[currentStageIndex].stage);
-					currentStageIndex++;
-				}
-			}, 2000);
-
-			// Call the AI font generation API
+			// Start generation - server returns jobId immediately
 			const response = await fetch("/api/generate-font", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -118,53 +181,24 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 				}),
 			});
 
-			clearInterval(progressInterval);
-
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error || "Failed to generate font");
+				throw new Error(data.error || "Failed to start generation");
 			}
 
-			// Store the generated font data with the prompt
-			setGeneratedFont({ ...data.font, prompt });
-			setProgress(70);
-			setProgressStage("COMPILING_FONT...");
-
-			// Now compile the font to WOFF2
-			const compileResponse = await fetch("/api/compile-font", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(data.font),
-			});
-
-			setProgress(90);
-			setProgressStage("COMPRESSING_WOFF2...");
-
-			const compileData = await compileResponse.json();
-
-			if (!compileResponse.ok) {
-				console.warn("[AIGenerateTab] Compilation warning:", compileData.error);
-				// Don't fail entirely - we can still show the SVG preview
-			} else {
-				setCompiledFont({
-					woff2Base64: compileData.woff2.base64,
-					otfBase64: compileData.otf.base64,
-					woff2Size: compileData.woff2.size,
-					otfSize: compileData.otf.size,
-					familyName: compileData.metadata.familyName,
-					glyphCount: compileData.metadata.glyphCount,
-				});
-			}
-
-			setProgress(100);
-			setProgressStage("COMPLETE");
+			// Store jobId in state and localStorage
+			setJobId(data.jobId);
+			localStorage.setItem(STORAGE_KEY, JSON.stringify({
+				jobId: data.jobId,
+				prompt,
+				model: selectedModel,
+				startedAt: Date.now(),
+			}));
 
 		} catch (err) {
 			console.error("[AIGenerateTab] Error:", err);
 			setError(err instanceof Error ? err.message : "Generation failed");
-		} finally {
-			setIsGenerating(false);
 		}
 	};
 
@@ -174,18 +208,23 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 		}
 	};
 
-	const handleReset = () => {
+	const handleReset = useCallback(() => {
 		setGeneratedFont(null);
 		setCompiledFont(null);
-		setProgress(0);
-		setProgressStage("");
-	};
+		setJobId(null);
+		setError(null);
+		localStorage.removeItem(STORAGE_KEY);
+	}, []);
 
 	const handleRemixComplete = (newFont: GeneratedFont, newCompiled?: CompiledFont) => {
 		setGeneratedFont(newFont);
 		setCompiledFont(newCompiled ?? null);
 		setShowRemixDialog(false);
 	};
+
+	// Determine UI state
+	const isGenerating = jobId !== null && statusData?.status !== "complete" && statusData?.status !== "failed";
+	const progressStage = statusData?.status === "compiling" ? "COMPILING_FONT..." : "GENERATING_GLYPHS...";
 
 	// If we have a generated font, show preview
 	if (generatedFont) {
@@ -335,11 +374,12 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 								key={model.id}
 								type="button"
 								onClick={() => setSelectedModel(model.id)}
+								disabled={isGenerating}
 								className={`rounded border p-3 text-left transition-colors ${
 									selectedModel === model.id
 										? "border-primary bg-primary/10"
 										: "border-border hover:border-primary/50"
-								}`}
+								} ${isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								<div className="font-mono text-xs font-medium text-foreground">
 									{model.name}
@@ -363,11 +403,12 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 								key={preset.id}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
+								disabled={isGenerating}
 								className={`rounded border px-3 py-2 text-left font-mono text-xs transition-colors ${
 									selectedPreset === preset.id
 										? "border-primary bg-primary/10 text-primary"
 										: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-								}`}
+								} ${isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								{preset.label}
 							</button>
@@ -386,8 +427,9 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 							setPrompt(e.target.value);
 							setSelectedPreset(null);
 						}}
+						disabled={isGenerating}
 						placeholder="Describe your font style in detail... e.g., 'Elegant serif with tall ascenders, delicate hairlines, and subtle contrast between thick and thin strokes. Inspired by 18th century French typography.'"
-						className="h-24 w-full resize-none rounded border border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+						className="h-24 w-full resize-none rounded border border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none disabled:opacity-50"
 					/>
 				</div>
 
@@ -396,14 +438,17 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 					<div className="space-y-2 rounded border border-border bg-muted/30 p-3">
 						<div className="flex justify-between font-mono text-xs">
 							<span className="text-primary">{progressStage}</span>
-							<span className="tabular-nums text-muted-foreground">{progress}%</span>
+							<span className="tabular-nums text-muted-foreground animate-pulse">...</span>
 						</div>
 						<div className="h-1.5 overflow-hidden rounded-full bg-border">
 							<div
-								className="h-full bg-primary transition-all duration-500"
-								style={{ width: `${progress}%` }}
+								className="h-full bg-primary animate-pulse"
+								style={{ width: statusData?.status === "compiling" ? "80%" : "40%" }}
 							/>
 						</div>
+						<p className="font-mono text-[10px] text-muted-foreground">
+							Generation continues in background. You can navigate away and return.
+						</p>
 					</div>
 				)}
 
@@ -411,6 +456,13 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 				{error && (
 					<div className="rounded border border-destructive/50 bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive">
 						ERROR: {error}
+						<button
+							type="button"
+							onClick={handleReset}
+							className="ml-2 underline hover:no-underline"
+						>
+							Dismiss
+						</button>
 					</div>
 				)}
 
@@ -442,7 +494,7 @@ export function AIGenerateTab({ onFontGenerated }: AIGenerateTabProps) {
 						<li>You preview and approve the design</li>
 						<li>Font is compiled and ready to inscribe</li>
 					</ol>
-					<p className="mt-2">Generation typically takes 30-90 seconds.</p>
+					<p className="mt-2">Generation typically takes 30-90 seconds. You can navigate away and return.</p>
 				</div>
 			</div>
 		</div>

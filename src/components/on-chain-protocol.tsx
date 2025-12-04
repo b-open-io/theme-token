@@ -34,15 +34,15 @@ const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 	},
 	tile: {
 		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
-		required: ["app", "type", "license"],
+		required: ["app", "type"],
 	},
 	wallpaper: {
 		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
-		required: ["app", "type", "license"],
+		required: ["app", "type"],
 	},
 	icon: {
 		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
-		required: ["app", "type", "license"],
+		required: ["app", "type"],
 	},
 };
 
@@ -59,28 +59,39 @@ const JSON_DATA: Record<AssetType, string> = {
   "type": "font",
   "author": "John Doe",
   "license": "OFL",
-  "prompt": "elegant serif"
+  "prompt": "elegant serif",
+  "provider": "anthropic",
+  "model": "claude-opus-4-5"
 }`,
 	tile: `{
   "app": "theme-token",
   "type": "tile",
   "name": "Dot Grid",
+  "author": "Jane Smith",
   "license": "CC0",
-  "prompt": "evenly spaced dots"
+  "prompt": "evenly spaced dots",
+  "provider": "google",
+  "model": "gemini-2.5-flash"
 }`,
 	wallpaper: `{
   "app": "theme-token",
   "type": "wallpaper",
   "name": "Gradient Mesh",
+  "author": "Alex Chen",
   "license": "CC0",
-  "prompt": "abstract gradient"
+  "prompt": "abstract gradient",
+  "provider": "google",
+  "model": "imagen-3"
 }`,
 	icon: `{
   "app": "theme-token",
   "type": "icon",
   "name": "Settings",
+  "author": "Icon Studio",
   "license": "CC0",
-  "prompt": "minimal gear icon"
+  "prompt": "minimal gear icon",
+  "provider": "google",
+  "model": "gemini-2.5-flash"
 }`,
 };
 
@@ -149,45 +160,46 @@ export function OnChainProtocol() {
 								{ASSET_META[active].label} Fields
 							</span>
 						</div>
-						<motion.div
-							key={active}
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ duration: 0.2 }}
-							className="divide-y divide-border/50"
-						>
-							{visibleFields.map((field) => {
-								const isRequired = requiredFields.includes(field.key);
-								return (
-									<div
-										key={field.key}
-										onMouseEnter={() => setHoveredField(field.key)}
-										onMouseLeave={() => setHoveredField(null)}
-										className={`flex items-center justify-between px-4 py-2 transition-colors ${
-											hoveredField === field.key ? "bg-primary/5" : ""
-										}`}
-									>
-										<div className="flex items-center gap-2">
-											<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-primary">
-												{field.key}
-											</code>
-											<span className="hidden text-[10px] text-muted-foreground sm:inline">
-												{field.description}
-											</span>
-										</div>
-										<span
-											className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
-												isRequired
-													? "bg-primary/10 text-primary"
-													: "bg-muted text-muted-foreground"
+						{/* Visible fields + spacer to maintain 8-row height */}
+						<div className="flex flex-col">
+							<div className="divide-y divide-border/50">
+								{visibleFields.map((field) => {
+									const isRequired = requiredFields.includes(field.key);
+									return (
+										<div
+											key={field.key}
+											onMouseEnter={() => setHoveredField(field.key)}
+											onMouseLeave={() => setHoveredField(null)}
+											className={`flex items-center justify-between px-4 py-2 transition-colors ${
+												hoveredField === field.key ? "bg-primary/5" : ""
 											}`}
 										>
-											{isRequired ? "req" : "opt"}
-										</span>
-									</div>
-								);
-							})}
-						</motion.div>
+											<div className="flex items-center gap-2">
+												<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-primary">
+													{field.key}
+												</code>
+												<span className="hidden text-[10px] text-muted-foreground sm:inline">
+													{field.description}
+												</span>
+											</div>
+											<span
+												className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+													isRequired
+														? "bg-primary/10 text-primary"
+														: "bg-muted text-muted-foreground"
+												}`}
+											>
+												{isRequired ? "req" : "opt"}
+											</span>
+										</div>
+									);
+								})}
+							</div>
+							{/* Spacer rows to maintain consistent height - each row ~36px */}
+							{Array.from({ length: FIELDS.length - visibleFields.length }).map((_, i) => (
+								<div key={`spacer-${i}`} className="h-9 border-t border-transparent" />
+							))}
+						</div>
 					</div>
 
 					{/* Right: JSON Preview */}

@@ -2,14 +2,24 @@ import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
 
 /**
- * Font Generation Retrieval API
+ * Font Generation Status API
  *
- * Retrieves stored font generation data by origin (payment txid).
- * Used for recovering generations after navigation/page refresh.
+ * Retrieves stored font generation data by job ID.
+ * Used for polling status and recovering generations after navigation.
+ *
+ * Supports both:
+ * - New job IDs (UUID format): font:{jobId}
+ * - Legacy payment txids: font:generation:{origin}
  */
 
-interface StoredGeneration {
-	font: {
+interface GenerationState {
+	status: "generating" | "compiling" | "complete" | "failed";
+	prompt: string;
+	model: string;
+	createdAt: number;
+	completedAt?: number;
+	isRemix: boolean;
+	font?: {
 		name: string;
 		style: string;
 		unitsPerEm: number;
@@ -26,7 +36,22 @@ interface StoredGeneration {
 		generatedBy: string;
 		generatedAt: string;
 		isRemix: boolean;
+		prompt?: string;
 	};
+	compiled?: {
+		woff2Base64: string;
+		otfBase64: string;
+		woff2Size: number;
+		otfSize: number;
+		familyName: string;
+		glyphCount: number;
+	};
+	error?: string;
+}
+
+// Legacy format for backwards compatibility
+interface LegacyStoredGeneration {
+	font: GenerationState["font"];
 	prompt: string;
 	model: string;
 	createdAt: number;
@@ -42,16 +67,34 @@ export async function GET(
 
 		if (!origin) {
 			return NextResponse.json(
-				{ error: "Origin is required" },
+				{ error: "Job ID is required" },
 				{ status: 400 }
 			);
 		}
 
-		const cached = await kv.get<StoredGeneration>(`font:generation:${origin}`);
+		// Try new format first (job IDs)
+		let cached = await kv.get<GenerationState>(`font:${origin}`);
+
+		// Fall back to legacy format (payment txids)
+		if (!cached) {
+			const legacyCached = await kv.get<LegacyStoredGeneration>(`font:generation:${origin}`);
+			if (legacyCached) {
+				// Convert legacy format to new format
+				cached = {
+					status: "complete",
+					prompt: legacyCached.prompt,
+					model: legacyCached.model,
+					createdAt: legacyCached.createdAt,
+					completedAt: legacyCached.createdAt,
+					isRemix: legacyCached.isRemix,
+					font: legacyCached.font,
+				};
+			}
+		}
 
 		if (!cached) {
 			return NextResponse.json(
-				{ error: "Generation not found or expired" },
+				{ error: "Generation not found or expired", status: "not_found" },
 				{ status: 404 }
 			);
 		}
