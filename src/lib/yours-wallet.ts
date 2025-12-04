@@ -530,10 +530,13 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 	}
 }
 
+export type AssetType = "tile" | "wallpaper" | "icon";
+
 export interface ImageMetadata {
 	name?: string;
 	contentType: string;
 	size?: number;
+	assetType: AssetType;
 }
 
 export interface ImageMarketListing extends MarketListing {
@@ -542,14 +545,15 @@ export interface ImageMarketListing extends MarketListing {
 }
 
 /**
- * Fetch image ordinals from the marketplace
- * Queries the GorillaPool market API for image inscriptions (png, jpeg, gif, webp, svg)
+ * Fetch curated theme-token image assets from the marketplace
+ * Only returns assets with map.app === "theme-token" AND map.type in (tile, wallpaper, icon)
  */
 export async function fetchImageMarketListings(): Promise<ImageMarketListing[]> {
 	try {
 		// Query the market API for image types
 		const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
 		const allListings: ImageMarketListing[] = [];
+		const validAssetTypes: AssetType[] = ["tile", "wallpaper", "icon"];
 
 		for (const imageType of imageTypes) {
 			const response = await fetch(
@@ -563,47 +567,68 @@ export async function fetchImageMarketListings(): Promise<ImageMarketListing[]> 
 
 			const results = await response.json();
 
-			// Map to ImageMarketListing
-			const imageListings = results.map(
-				(item: {
-					txid: string;
-					vout: number;
-					outpoint: string;
-					owner: string;
-					origin?: {
-						outpoint: string;
+			// Filter for theme-token curated assets AND map to ImageMarketListing
+			const imageListings = results
+				.filter(
+					(item: {
+						origin?: {
+							data?: {
+								map?: Record<string, string>;
+							};
+						};
 						data?: {
+							map?: Record<string, string>;
+						};
+					}) => {
+						const mapData = item.origin?.data?.map || item.data?.map;
+						return (
+							mapData?.app === "theme-token" &&
+							validAssetTypes.includes(mapData?.type as AssetType)
+						);
+					},
+				)
+				.map(
+					(item: {
+						txid: string;
+						vout: number;
+						outpoint: string;
+						owner: string;
+						origin?: {
+							outpoint: string;
+							data?: {
+								insc?: { file?: { type?: string; size?: number } };
+								map?: Record<string, string>;
+							};
+						};
+						data?: {
+							list?: { price: number };
 							insc?: { file?: { type?: string; size?: number } };
 							map?: Record<string, string>;
 						};
-					};
-					data?: {
-						list?: { price: number };
-						insc?: { file?: { type?: string; size?: number } };
-						map?: Record<string, string>;
-					};
-				}) => {
-					const mapData = item.origin?.data?.map || item.data?.map || {};
-					const inscData = item.origin?.data?.insc || item.data?.insc;
-					const origin = item.origin?.outpoint || item.outpoint;
-					return {
-						outpoint: item.outpoint,
-						origin,
-						price: item.data?.list?.price || 0,
-						owner: item.owner,
-						data: {
-							insc: inscData,
-							map: mapData,
-						},
-						metadata: {
-							name: mapData.name || `Image ${origin.slice(0, 8)}`,
-							contentType: inscData?.file?.type || imageType,
-							size: inscData?.file?.size,
-						},
-						previewUrl: `https://ordfs.network/content/${origin}`,
-					};
-				},
-			);
+					}) => {
+						const mapData = item.origin?.data?.map || item.data?.map || {};
+						const inscData = item.origin?.data?.insc || item.data?.insc;
+						const origin = item.origin?.outpoint || item.outpoint;
+						const assetType = mapData.type as AssetType;
+						return {
+							outpoint: item.outpoint,
+							origin,
+							price: item.data?.list?.price || 0,
+							owner: item.owner,
+							data: {
+								insc: inscData,
+								map: mapData,
+							},
+							metadata: {
+								name: mapData.name || `${assetType} ${origin.slice(0, 8)}`,
+								contentType: inscData?.file?.type || imageType,
+								size: inscData?.file?.size,
+								assetType,
+							},
+							previewUrl: `https://ordfs.network/content/${origin}`,
+						};
+					},
+				);
 
 			allListings.push(...imageListings);
 		}

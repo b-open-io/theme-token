@@ -6,20 +6,33 @@ import {
 	Check,
 	Copy,
 	ExternalLink,
+	Filter,
 	Image,
 	Loader2,
 	RefreshCw,
 	ShoppingCart,
 	Wallet,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
 	fetchImageMarketListings,
 	type ImageMarketListing,
 } from "@/lib/yours-wallet";
+import {
+	ImageFilterSidebar,
+	type ImageFilterState,
+	DEFAULT_IMAGE_FILTERS,
+} from "@/components/market/image-filter-sidebar";
 
 // Format satoshis as BSV
 function formatBSV(sats: number): string {
@@ -45,7 +58,7 @@ export default function ImageBrowsePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [purchasing, setPurchasing] = useState<string | null>(null);
 	const [copiedOrigin, setCopiedOrigin] = useState<string | null>(null);
-	const [typeFilter, setTypeFilter] = useState<string>("all");
+	const [filters, setFilters] = useState<ImageFilterState>(DEFAULT_IMAGE_FILTERS);
 
 	const isConnected = status === "connected";
 
@@ -59,8 +72,16 @@ export default function ImageBrowsePage() {
 		try {
 			const data = await fetchImageMarketListings();
 			setListings(data);
+			// Update max price in filters
+			if (data.length > 0) {
+				const maxPrice = Math.max(...data.map((l) => l.price / 100000000));
+				setFilters((f) => ({
+					...f,
+					priceRange: [0, Math.ceil(maxPrice * 100) / 100],
+				}));
+			}
 		} catch (err) {
-			setError("Failed to load image listings");
+			setError("Failed to load asset listings");
 			console.error(err);
 		} finally {
 			setIsLoading(false);
@@ -97,134 +118,172 @@ export default function ImageBrowsePage() {
 		setTimeout(() => setCopiedOrigin(null), 2000);
 	};
 
-	// Filter listings by content type
+	// Filter listings
 	const filteredListings = useMemo(() => {
-		if (typeFilter === "all") return listings;
-		return listings.filter((l) =>
-			l.metadata.contentType.includes(typeFilter),
-		);
-	}, [listings, typeFilter]);
+		let result = [...listings];
 
-	// Get unique content types for filter
-	const contentTypes = useMemo(() => {
-		const types = new Set(listings.map((l) => {
-			const type = l.metadata.contentType;
-			if (type.includes("png")) return "png";
-			if (type.includes("jpeg") || type.includes("jpg")) return "jpeg";
-			if (type.includes("gif")) return "gif";
-			if (type.includes("webp")) return "webp";
-			if (type.includes("svg")) return "svg";
-			return "other";
-		}));
-		return Array.from(types).sort();
+		// Filter by asset type
+		if (filters.assetTypes.length > 0) {
+			result = result.filter((l) => filters.assetTypes.includes(l.metadata.assetType));
+		}
+
+		// Filter by price
+		result = result.filter((listing) => {
+			const priceInBsv = listing.price / 100000000;
+			return priceInBsv <= filters.priceRange[1];
+		});
+
+		return result;
+	}, [listings, filters]);
+
+	const maxPrice = useMemo(() => {
+		if (listings.length === 0) return 10;
+		return (
+			Math.ceil(Math.max(...listings.map((l) => l.price / 100000000)) * 100) /
+			100
+		);
 	}, [listings]);
+
+	const FilterContent = useCallback(
+		() => (
+			<ImageFilterSidebar
+				filters={filters}
+				onFiltersChange={setFilters}
+				maxPrice={maxPrice}
+			/>
+		),
+		[filters, maxPrice]
+	);
 
 	return (
 		<>
-			{/* Main Content */}
-			<div>
-				{/* Header */}
-				<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-					<div>
-						<h2 className="text-xl font-semibold">Image Ordinals</h2>
-						<p className="text-sm text-muted-foreground">
-							{filteredListings.length} image{filteredListings.length !== 1 ? "s" : ""} available
-							{" "}- Use in your theme as background images
-						</p>
+			{/* Main Grid */}
+			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+				{/* Sidebar - Desktop */}
+				<aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
+					<div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pr-4">
+						<FilterContent />
 					</div>
-					<div className="flex items-center gap-2">
-						{/* Type Filter */}
-						<select
-							value={typeFilter}
-							onChange={(e) => setTypeFilter(e.target.value)}
-							className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-						>
-							<option value="all">All Types</option>
-							{contentTypes.map((type) => (
-								<option key={type} value={type}>
-									{type.toUpperCase()}
-								</option>
-							))}
-						</select>
+				</aside>
 
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={loadListings}
-							disabled={isLoading}
-						>
-							<RefreshCw
-								className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-							/>
-							Refresh
-						</Button>
-					</div>
-				</div>
+				{/* Main Content */}
+				<main className="lg:col-span-9 xl:col-span-10">
+					{/* Header */}
+					<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+						<div>
+							<h2 className="text-xl font-semibold">Curated Assets</h2>
+							<p className="text-sm text-muted-foreground">
+								{filteredListings.length} asset{filteredListings.length !== 1 ? "s" : ""} available
+							</p>
+						</div>
+						<div className="flex items-center gap-2">
+							{/* Mobile Filter Button */}
+							<Sheet>
+								<SheetTrigger asChild>
+									<Button variant="outline" size="sm" className="lg:hidden">
+										<Filter className="mr-2 h-4 w-4" />
+										Filters
+									</Button>
+								</SheetTrigger>
+								<SheetContent side="left" className="w-80">
+									<SheetHeader>
+										<SheetTitle>Filters</SheetTitle>
+									</SheetHeader>
+									<div className="mt-6">
+										<FilterContent />
+									</div>
+								</SheetContent>
+							</Sheet>
 
-				{error && (
-					<div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-						<AlertCircle className="h-5 w-5" />
-						{error}
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={loadListings}
+								disabled={isLoading}
+							>
+								<RefreshCw
+									className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+								/>
+								Refresh
+							</Button>
+						</div>
 					</div>
-				)}
 
-				{isLoading ? (
-					<div className="flex items-center justify-center py-20">
-						<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-					</div>
-				) : (
-					<>
-						{/* Info banner */}
-						<div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4">
-							<div className="flex items-start gap-3">
-								<Image className="h-5 w-5 text-primary" />
-								<div>
-									<p className="text-sm font-medium">Use Images in Your Theme</p>
-									<p className="text-xs text-muted-foreground">
-										Copy the origin path (e.g., <code className="text-primary">/content/abc123_0</code>)
-										and use it as a background image in your theme's <code>bg-image</code> property.
+					{error && (
+						<div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+							<AlertCircle className="h-5 w-5" />
+							{error}
+						</div>
+					)}
+
+					{isLoading ? (
+						<div className="flex items-center justify-center py-20">
+							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+						</div>
+					) : (
+						<>
+							{/* Show message when no assets match filters */}
+							{listings.length > 0 && filteredListings.length === 0 && (
+								<div className="mb-6 flex items-center justify-between rounded-lg border border-muted bg-muted/30 p-4">
+									<div className="flex items-center gap-3">
+										<Filter className="h-5 w-5 text-muted-foreground" />
+										<div>
+											<p className="text-sm font-medium">
+												No assets match your filters
+											</p>
+											<p className="text-xs text-muted-foreground">
+												Try adjusting your filters or create assets in the Studio
+											</p>
+										</div>
+									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setFilters(DEFAULT_IMAGE_FILTERS)}
+									>
+										Clear filters
+									</Button>
+								</div>
+							)}
+
+							{/* Asset grid */}
+							<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+								{filteredListings.map((listing, index) => (
+									<motion.div
+										key={listing.outpoint}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: index * 0.02 }}
+									>
+										<ImageCard
+											listing={listing}
+											isConnected={isConnected}
+											isPurchasing={purchasing === listing.outpoint}
+											isCopied={copiedOrigin === listing.origin}
+											onPurchase={() => handlePurchase(listing)}
+											onConnect={connect}
+											onCopyOrigin={() => copyOriginPath(listing.origin)}
+											formatUsd={formatUsd}
+										/>
+									</motion.div>
+								))}
+							</div>
+
+							{/* Empty state */}
+							{listings.length === 0 && (
+								<div className="mt-8 rounded-xl border border-dashed border-border py-12 text-center">
+									<Image className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+									<h3 className="mb-2 text-lg font-semibold">
+										No assets available yet
+									</h3>
+									<p className="text-muted-foreground">
+										Create tiles, wallpapers, or icons in the Studio to see them here
 									</p>
 								</div>
-							</div>
-						</div>
-
-						{/* Image grid */}
-						<div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-							{filteredListings.map((listing, index) => (
-								<motion.div
-									key={listing.outpoint}
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: index * 0.02 }}
-								>
-									<ImageCard
-										listing={listing}
-										isConnected={isConnected}
-										isPurchasing={purchasing === listing.outpoint}
-										isCopied={copiedOrigin === listing.origin}
-										onPurchase={() => handlePurchase(listing)}
-										onConnect={connect}
-										onCopyOrigin={() => copyOriginPath(listing.origin)}
-										formatUsd={formatUsd}
-									/>
-								</motion.div>
-							))}
-						</div>
-
-						{/* Empty state */}
-						{listings.length === 0 && (
-							<div className="mt-8 rounded-xl border border-dashed border-border py-12 text-center">
-								<Image className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-								<h3 className="mb-2 text-lg font-semibold">
-									No images listed yet
-								</h3>
-								<p className="text-muted-foreground">
-									Check back later for image ordinals
-								</p>
-							</div>
-						)}
-					</>
-				)}
+							)}
+						</>
+					)}
+				</main>
 			</div>
 		</>
 	);
@@ -254,19 +313,41 @@ function ImageCard({
 }: ImageCardProps) {
 	const [imageError, setImageError] = useState(false);
 
+	// Determine preview class based on asset type
+	const getPreviewClass = () => {
+		switch (listing.metadata.assetType) {
+			case "tile":
+				return "object-none"; // Will be tiled via background
+			case "icon":
+				return "object-contain p-4"; // Centered with padding
+			case "wallpaper":
+			default:
+				return "object-cover";
+		}
+	};
+
 	return (
 		<div className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg">
-			{/* Image Preview */}
+			{/* Asset Preview */}
 			<div className="relative aspect-square bg-muted/30">
 				{imageError ? (
 					<div className="flex h-full items-center justify-center">
 						<Image className="h-8 w-8 text-muted-foreground/50" />
 					</div>
+				) : listing.metadata.assetType === "tile" ? (
+					<div
+						className="h-full w-full"
+						style={{
+							backgroundImage: `url(${listing.previewUrl})`,
+							backgroundSize: "64px 64px",
+							backgroundRepeat: "repeat",
+						}}
+					/>
 				) : (
 					<img
 						src={listing.previewUrl}
 						alt={listing.metadata.name}
-						className="h-full w-full object-cover"
+						className={`h-full w-full ${getPreviewClass()}`}
 						onError={() => setImageError(true)}
 					/>
 				)}
@@ -296,9 +377,9 @@ function ImageCard({
 					<ExternalLink className="h-4 w-4" />
 				</a>
 
-				{/* Content type badge */}
-				<div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
-					{listing.metadata.contentType.split("/")[1]?.toUpperCase() || "IMAGE"}
+				{/* Asset type badge */}
+				<div className="absolute bottom-2 left-2 rounded bg-background/80 px-2 py-0.5 font-mono text-[10px] uppercase backdrop-blur">
+					{listing.metadata.assetType}
 				</div>
 			</div>
 

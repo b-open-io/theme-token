@@ -259,51 +259,69 @@ export default function FontBrowsePage() {
 								</div>
 							)}
 
-							{/* Font grid */}
-							<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-								{filteredListings.map((listing, index) => (
+							{/* Empty marketplace state - 2/3 + 1/3 layout */}
+							{listings.length === 0 ? (
+								<div className="grid gap-6 lg:grid-cols-3">
+									{/* AI Generate Font Card - 1/3 */}
 									<motion.div
-										key={listing.outpoint}
 										initial={{ opacity: 0, y: 20 }}
 										animate={{ opacity: 1, y: 0 }}
-										transition={{ delay: index * 0.05 }}
 									>
-										<FontCard
-											listing={listing}
-											isConnected={isConnected}
-											isPurchasing={purchasing === listing.outpoint}
-											onPurchase={() => handlePurchase(listing)}
-											onConnect={connect}
-										/>
+										<GenerateFontCard />
 									</motion.div>
-								))}
 
-								{/* AI Generate Font Card */}
-								<motion.div
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: filteredListings.length * 0.05 }}
-								>
-									<GenerateFontCard />
-								</motion.div>
-							</div>
+									{/* Empty state message - 2/3 */}
+									<motion.div
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: 0.05 }}
+										className="lg:col-span-2"
+									>
+										<div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-border py-12 text-center">
+											<Type className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+											<h3 className="mb-2 text-lg font-semibold">
+												No fonts listed yet
+											</h3>
+											<p className="mb-4 text-muted-foreground">
+												Be the first to create and list an AI-generated font!
+											</p>
+											<Button asChild>
+												<Link href="/studio/font">
+													<Sparkles className="mr-2 h-4 w-4" />
+													Create Font
+												</Link>
+											</Button>
+										</div>
+									</motion.div>
+								</div>
+							) : (
+								/* Font grid with listings */
+								<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+									{filteredListings.map((listing, index) => (
+										<motion.div
+											key={listing.outpoint}
+											initial={{ opacity: 0, y: 20 }}
+											animate={{ opacity: 1, y: 0 }}
+											transition={{ delay: index * 0.05 }}
+										>
+											<FontCard
+												listing={listing}
+												isConnected={isConnected}
+												isPurchasing={purchasing === listing.outpoint}
+												onPurchase={() => handlePurchase(listing)}
+												onConnect={connect}
+											/>
+										</motion.div>
+									))}
 
-							{/* Empty marketplace state */}
-							{listings.length === 0 && (
-								<div className="mt-8 rounded-xl border border-dashed border-border py-12 text-center">
-									<Type className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-									<h3 className="mb-2 text-lg font-semibold">
-										No fonts listed yet
-									</h3>
-									<p className="mb-4 text-muted-foreground">
-										Be the first to create and list an AI-generated font!
-									</p>
-									<Button asChild>
-										<Link href="/studio/font">
-											<Sparkles className="mr-2 h-4 w-4" />
-											Create Font
-										</Link>
-									</Button>
+									{/* AI Generate Font Card */}
+									<motion.div
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: filteredListings.length * 0.05 }}
+									>
+										<GenerateFontCard />
+									</motion.div>
 								</div>
 							)}
 						</>
