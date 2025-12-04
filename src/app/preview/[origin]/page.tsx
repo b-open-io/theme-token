@@ -738,10 +738,10 @@ export default function PreviewPage({ params }: Props) {
 											</div>
 										</div>
 
-										{/* Mobile + Widget Row */}
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-											{/* Phone Mockup */}
-											<div className="flex justify-center">
+										{/* Mosaic Layout: Phone + Widgets */}
+										<div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+											{/* Phone Mockup - Compact & Left Aligned */}
+											<div className="lg:col-span-4 xl:col-span-3 flex justify-center lg:justify-start">
 												<div className="relative w-[260px] rounded-[2.5rem] border-[8px] border-foreground/80 bg-background shadow-xl overflow-hidden">
 													{/* Notch */}
 													<div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-foreground/80 rounded-b-2xl z-20" />
@@ -810,7 +810,7 @@ export default function PreviewPage({ params }: Props) {
 																			</div>
 																			<div className="flex-1 min-w-0">
 																				<div className="text-xs font-medium truncate">Dribbble Pro</div>
-																				<div className="text-[10px] text-muted-foreground">Subscription</div>
+																				<div className="text-xs text-muted-foreground">Subscription</div>
 																			</div>
 																			<div className="text-xs font-bold">-$12</div>
 																		</Card>
@@ -838,103 +838,106 @@ export default function PreviewPage({ params }: Props) {
 												</div>
 											</div>
 
-											{/* Widget Cards - Enhanced Layout */}
-											<div className="flex flex-col gap-6 h-full justify-center">
-												{/* Top Row: Watch + Status Grid */}
-												<div className="flex flex-wrap items-end justify-center gap-6">
-													{/* Watch Mockup */}
-													<div className="w-[140px] h-[170px] rounded-[2rem] border-[6px] border-foreground/80 bg-background shadow-xl overflow-hidden shrink-0">
-														<div className="w-full h-full flex flex-col items-center justify-center p-3 relative">
-															<div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent" />
-															<div className="text-3xl font-bold tracking-tighter relative z-10">10:09</div>
-															<div className="text-[10px] text-primary font-medium uppercase tracking-widest mt-1 relative z-10">Tue 12</div>
-															<div className="mt-3 flex gap-1.5 relative z-10">
-																<div className="w-6 h-6 rounded-full border-[3px] border-primary/30 border-t-primary" />
-																<div className="w-6 h-6 rounded-full border-[3px] border-accent/30 border-t-accent" />
-																<div className="w-6 h-6 rounded-full border-[3px] border-secondary/30 border-t-secondary" />
+											{/* Widgets Grid - Tetris Layout */}
+											<div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
+												{/* Top: Music Player */}
+												<Card className="p-4 relative overflow-hidden shadow-md w-full">
+													<div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
+														<AudioWaveform className="w-32 h-32" />
+													</div>
+													<div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+														<div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 ring-1 ring-border/50">
+															<Music className="h-8 w-8" />
+														</div>
+														<div className="flex-1 min-w-0 text-center sm:text-left">
+															<div className="flex items-center justify-center sm:justify-between mb-1">
+																<div className="text-base font-semibold truncate">Theme Token Beat</div>
+																<Badge variant="outline" className="hidden sm:flex text-[10px] font-mono">NOW PLAYING</Badge>
 															</div>
+															<div className="text-sm text-muted-foreground truncate mb-3">Lo-Fi Study Mix</div>
+															{/* Progress Bar */}
+															<div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+																<div className="h-full bg-primary w-1/3 rounded-full" />
+															</div>
+														</div>
+														<div className="flex items-center gap-2">
+															<Button variant="ghost" size="icon" className="h-10 w-10">
+																<SkipBack className="h-5 w-5" />
+															</Button>
+															<Button size="icon" className="h-12 w-12 rounded-full shadow-lg hover:scale-105 transition-transform">
+																<Play className="h-5 w-5 fill-current ml-0.5" />
+															</Button>
+															<Button variant="ghost" size="icon" className="h-10 w-10">
+																<SkipForward className="h-5 w-5" />
+															</Button>
 														</div>
 													</div>
+												</Card>
 
-													{/* Vertical Status Stack */}
-													<div className="flex flex-col gap-3">
-														<Card className="w-32 p-3 flex flex-row items-center gap-3 shadow-md">
-															<div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
-																<Check className="w-4 h-4" />
+												{/* Middle: Watch & Status & Controls */}
+												<div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-4">
+													{/* Watch Mockup - Spans 2 Rows */}
+													<Card className="md:row-span-2 h-full flex justify-center items-center p-6 relative overflow-hidden shadow-md border">
+														<div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-transparent pointer-events-none" />
+														<div className="relative w-[140px] h-[170px] rounded-[2rem] border-[6px] border-foreground/80 bg-background shadow-2xl overflow-hidden shrink-0 transform transition-transform hover:scale-105 duration-500">
+															<div className="w-full h-full flex flex-col items-center justify-center p-3 relative">
+																<div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent" />
+																<div className="text-3xl font-bold tracking-tighter relative z-10">10:09</div>
+																<div className="text-[10px] text-primary font-medium uppercase tracking-widest mt-1 relative z-10">Tue 12</div>
+																<div className="mt-3 flex gap-1.5 relative z-10">
+																	<div className="w-6 h-6 rounded-full border-[3px] border-primary/30 border-t-primary" />
+																	<div className="w-6 h-6 rounded-full border-[3px] border-accent/30 border-t-accent" />
+																	<div className="w-6 h-6 rounded-full border-[3px] border-secondary/30 border-t-secondary" />
+																</div>
 															</div>
-															<div>
-																<div className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">System</div>
-																<div className="text-xs font-bold">Active</div>
-															</div>
-														</Card>
-														<Card className="w-32 p-3 flex flex-row items-center gap-3 shadow-md">
-															<div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground shrink-0">
-																<Bot className="w-4 h-4" />
-															</div>
-															<div>
-																<div className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">AI Model</div>
-																<div className="text-xs font-bold">Ready</div>
-															</div>
-														</Card>
-													</div>
-												</div>
-
-												{/* Bottom Area: Functional Widgets */}
-												<div className="flex flex-col gap-4 w-full max-w-md mx-auto">
-													{/* Mini Music Player */}
-													<Card className="p-4 relative overflow-hidden shadow-md">
-														<div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
-															<AudioWaveform className="w-24 h-24" />
-														</div>
-														<div className="relative z-10 flex items-center gap-4">
-															<div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
-																<Music className="h-6 w-6" />
-															</div>
-															<div className="flex-1 min-w-0">
-																<div className="text-sm font-semibold truncate">Theme Token Beat</div>
-																<div className="text-xs text-muted-foreground truncate">Lo-Fi Study Mix</div>
-															</div>
-															<div className="flex items-center gap-1">
-																<Button variant="ghost" size="icon" className="h-8 w-8">
-																	<SkipBack className="h-4 w-4" />
-																</Button>
-																<Button size="icon" className="h-8 w-8 rounded-full shadow-sm">
-																	<Play className="h-3.5 w-3.5 fill-current ml-0.5" />
-																</Button>
-																<Button variant="ghost" size="icon" className="h-8 w-8">
-																	<SkipForward className="h-4 w-4" />
-																</Button>
-															</div>
-														</div>
-														{/* Progress Bar */}
-														<div className="mt-3 h-1 w-full bg-muted rounded-full overflow-hidden">
-															<div className="h-full bg-primary w-1/3 rounded-full" />
 														</div>
 													</Card>
 
-													{/* Smart Controls Grid */}
-													<div className="grid grid-cols-2 gap-4">
-														<Card className="p-3 shadow-md">
-															<div className="flex items-center justify-between mb-2">
-																<div className="p-1.5 rounded-md bg-orange-500/10 text-orange-500">
-																	<Sun className="h-4 w-4" />
-																</div>
-																<Switch checked id="light-switch" />
+													{/* Status Cards */}
+													<Card className="p-4 flex flex-row items-center gap-4 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-primary">
+														<div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+															<Check className="w-5 h-5" />
+														</div>
+														<div>
+															<div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">System Status</div>
+															<div className="text-lg font-bold">Operational</div>
+														</div>
+													</Card>
+													
+													{/* Control Card 1 */}
+													<Card className="p-4 shadow-sm hover:shadow-md transition-shadow">
+														<div className="flex items-center justify-between mb-3">
+															<div className="p-2 rounded-lg bg-orange-500/10 text-orange-500">
+																<Sun className="h-4 w-4" />
 															</div>
-															<div className="font-medium text-xs">Lighting</div>
-															<div className="text-[10px] text-muted-foreground">75% Brightness</div>
-														</Card>
-														<Card className="p-3 shadow-md">
-															<div className="flex items-center justify-between mb-2">
-																<div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500">
-																	<Sparkles className="h-4 w-4" />
-																</div>
-																<Switch id="ambiance-switch" />
+															<Switch checked id="light-switch" />
+														</div>
+														<div className="font-bold text-sm">Smart Lighting</div>
+														<div className="text-xs text-muted-foreground mt-1">75% Brightness</div>
+													</Card>
+
+													{/* AI Status */}
+													<Card className="p-4 flex flex-row items-center gap-4 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-accent">
+														<div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent-foreground shrink-0">
+															<Bot className="w-5 h-5" />
+														</div>
+														<div>
+															<div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">AI Model</div>
+															<div className="text-lg font-bold">Ready v2.4</div>
+														</div>
+													</Card>
+
+													{/* Control Card 2 */}
+													<Card className="p-4 shadow-sm hover:shadow-md transition-shadow">
+														<div className="flex items-center justify-between mb-3">
+															<div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+																<Sparkles className="h-4 w-4" />
 															</div>
-															<div className="font-medium text-xs">Ambiance</div>
-															<div className="text-[10px] text-muted-foreground">Relax Mode</div>
-														</Card>
-													</div>
+															<Switch id="ambiance-switch" />
+														</div>
+														<div className="font-bold text-sm">Ambiance</div>
+														<div className="text-xs text-muted-foreground mt-1">Relax Mode</div>
+													</Card>
 												</div>
 											</div>
 										</div>

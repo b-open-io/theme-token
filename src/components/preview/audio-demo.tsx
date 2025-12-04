@@ -13,17 +13,18 @@ import {
 } from "@/components/audio/player";
 import { AudioProvider } from "@/components/audio/provider";
 import {
-	AudioQueue,
 	AudioQueuePreferences,
 	AudioQueueRepeatMode,
 	AudioQueueShuffle,
 } from "@/components/audio/queue";
 import { AudioTrackList } from "@/components/audio/track";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { AudioWaveform, ListMusic, Music, Volume2 } from "lucide-react";
@@ -64,71 +65,125 @@ const demoTracks = [
 function AudioPlayerDemo() {
 	return (
 		<AudioProvider tracks={demoTracks}>
-			<div className="grid gap-4 md:grid-cols-2">
-				{/* Main Player Card */}
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/60">
-								<Music className="h-5 w-5 text-primary-foreground" />
-							</div>
-							<div>
-								<CardTitle className="text-base">Now Playing</CardTitle>
-								<CardDescription>Theme Token Demo</CardDescription>
-							</div>
+			<div className="grid gap-6 lg:grid-cols-2 items-stretch">
+				{/* Left Column - Fixed Height Widgets */}
+				<div className="flex flex-col gap-6">
+					{/* Widget 1: Compact Now Playing */}
+					<Card className="border-0 shadow-md bg-primary text-primary-foreground overflow-hidden relative">
+						{/* Background Pattern */}
+						<div className="absolute inset-0 opacity-10">
+							<div className="absolute right-0 top-0 -mt-8 -mr-8 h-32 w-32 rounded-full bg-white blur-3xl" />
+							<div className="absolute left-0 bottom-0 -mb-8 -ml-8 h-32 w-32 rounded-full bg-white blur-3xl" />
 						</div>
-						<AudioQueuePreferences />
-					</CardHeader>
-					<CardContent>
-						<AudioPlayer className="border-0 bg-transparent p-0">
-							<AudioPlayerControlBar variant="stacked" className="gap-4">
-								<AudioPlayerControlGroup>
-									<AudioPlayerTimeDisplay className="min-w-[40px] px-0 text-xs text-muted-foreground" />
-									<AudioPlayerSeekBar className="w-full" />
-									<AudioPlayerTimeDisplay remaining className="min-w-[40px] px-0 text-xs text-muted-foreground" />
-								</AudioPlayerControlGroup>
-								
-								<AudioPlayerControlGroup className="justify-between">
-									<div className="flex items-center gap-2">
-										<AudioQueueShuffle />
-										<AudioQueueRepeatMode />
+						
+						<CardContent className="p-6 relative z-10">
+							<div className="flex items-center gap-4">
+								<div className="h-16 w-16 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-inner shrink-0">
+									<Music className="h-8 w-8 text-white" />
+								</div>
+								<div className="flex-1 min-w-0">
+									<div className="flex items-center justify-between mb-1">
+										<Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
+											Now Playing
+										</Badge>
+										<span className="text-xs font-medium opacity-80 font-mono">02:14 / 03:00</span>
 									</div>
+									<div className="text-lg font-bold truncate leading-tight">Theme Token Demo</div>
+									<div className="text-sm opacity-80 truncate">Compact Player</div>
+								</div>
+							</div>
+							
+							{/* Custom Progress */}
+							<div className="mt-6 flex items-center gap-4">
+								<div className="h-1.5 flex-1 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
+									<div className="h-full bg-white w-[65%] rounded-full" />
+								</div>
+								<div className="flex items-center gap-2 shrink-0">
+									<Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20 hover:text-white">
+										<AudioPlayerSkipBack className="h-4 w-4" />
+									</Button>
+									<Button size="icon" className="h-10 w-10 rounded-full bg-white text-primary hover:bg-white/90 shadow-lg border-0">
+										<AudioPlayerPlay className="h-5 w-5 fill-current ml-0.5" />
+									</Button>
+									<Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20 hover:text-white">
+										<AudioPlayerSkipForward className="h-4 w-4" />
+									</Button>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
 
-									<div className="flex items-center gap-2">
-										<AudioPlayerSkipBack className="h-8 w-8" />
-										<AudioPlayerPlay className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90" />
-										<AudioPlayerSkipForward className="h-8 w-8" />
-									</div>
+					{/* Widget 2: Full Controller */}
+					<Card className="shadow-sm">
+						<CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+							<div className="text-sm font-medium text-muted-foreground">Playback Controls</div>
+							<AudioQueuePreferences />
+						</CardHeader>
+						<CardContent className="p-4 pt-2">
+							<AudioPlayer className="border-0 bg-transparent p-0">
+								<AudioPlayerControlBar variant="stacked" className="gap-4">
+									<AudioPlayerControlGroup>
+										<AudioPlayerTimeDisplay className="min-w-[40px] px-0 text-xs text-muted-foreground font-mono" />
+										<AudioPlayerSeekBar className="w-full h-2" />
+										<AudioPlayerTimeDisplay remaining className="min-w-[40px] px-0 text-xs text-muted-foreground font-mono" />
+									</AudioPlayerControlGroup>
 									
-									<div className="flex items-center gap-2">
-										<AudioPlayerVolume className="hidden sm:flex" />
-										<AudioQueue />
-									</div>
-								</AudioPlayerControlGroup>
-							</AudioPlayerControlBar>
-						</AudioPlayer>
-					</CardContent>
-				</Card>
+									<div className="flex items-center justify-between mt-2">
+										<div className="flex items-center gap-2">
+											<AudioQueueShuffle className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+											<AudioQueueRepeatMode className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+										</div>
 
-				{/* Playlist Card */}
-				<Card className="flex flex-col gap-0 p-0 overflow-hidden">
-					<CardHeader className="px-6 py-4 border-b bg-muted/5">
+										<div className="flex items-center gap-4">
+											<Button variant="ghost" size="icon" className="h-8 w-8">
+												<AudioPlayerSkipBack className="h-5 w-5" />
+											</Button>
+											<div className="h-12 w-12 rounded-full border flex items-center justify-center">
+												<AudioPlayerPlay className="h-6 w-6 fill-current ml-0.5" />
+											</div>
+											<Button variant="ghost" size="icon" className="h-8 w-8">
+												<AudioPlayerSkipForward className="h-5 w-5" />
+											</Button>
+										</div>
+										
+										<div className="flex items-center gap-2">
+											<AudioPlayerVolume className="hidden sm:flex w-24" />
+										</div>
+									</div>
+								</AudioPlayerControlBar>
+							</AudioPlayer>
+						</CardContent>
+					</Card>
+				</div>
+
+				{/* Right Column - Flexible Playlist */}
+				<Card className="flex flex-col overflow-hidden h-full shadow-md border-l-4 border-l-primary">
+					<CardHeader className="px-6 py-4 border-b bg-muted/30 shrink-0">
 						<div className="flex items-center justify-between">
-							<CardTitle className="text-base flex items-center gap-2">
-								<ListMusic className="h-4 w-4" />
-								Up Next
-							</CardTitle>
-							<Badge variant="secondary" className="font-mono text-xs">
+							<div>
+								<CardTitle className="text-base flex items-center gap-2">
+									<ListMusic className="h-4 w-4 text-primary" />
+									Up Next
+								</CardTitle>
+								<CardDescription className="text-xs mt-0.5">
+									Queue management
+								</CardDescription>
+							</div>
+							<Badge variant="outline" className="font-mono text-xs bg-background">
 								{demoTracks.length} tracks
 							</Badge>
 						</div>
 					</CardHeader>
-					<CardContent className="p-0">
-						<AudioTrackList 
-							sortable 
-							showCover 
-							className="max-h-[300px] p-0"
-						/>
+					<CardContent className="p-0 flex-1 min-h-0">
+						<ScrollArea className="h-full">
+							<div className="p-0">
+								<AudioTrackList 
+									sortable 
+									showCover 
+									className="p-0 divide-y"
+								/>
+							</div>
+						</ScrollArea>
 					</CardContent>
 				</Card>
 			</div>
