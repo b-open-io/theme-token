@@ -1,40 +1,38 @@
 /**
  * Font Loader - Load on-chain fonts from ORDFS by origin
  *
- * Fetches WOFF2 font files inscribed on the blockchain and registers
- * them as FontFace objects for use in themes.
- *
- * Font values can be:
- * - Google Font name: "Inter", "Roboto"
- * - System font: "system-ui", "Arial"
- * - On-chain path: "/content/{outpoint}" - loads from ORDFS
+ * Re-exports core font loading from @theme-token/sdk and adds
+ * website-specific extensions like metadata fetching.
  */
+
+import {
+	isOnChainPath,
+	extractOrigin,
+	loadFontByOrigin,
+	isFontLoaded,
+	getCachedFont,
+	clearFontCache,
+	getContentUrl,
+	type LoadedFont,
+} from "@theme-token/sdk";
+
+// Re-export SDK functions with legacy names for backward compatibility
+export {
+	loadFontByOrigin,
+	isFontLoaded,
+	getCachedFont,
+	clearFontCache,
+	type LoadedFont,
+};
+
+// Alias exports to match previous API names
+export const isOnChainFont = isOnChainPath;
+export const extractOriginFromPath = extractOrigin;
+export const getFontContentUrl = getContentUrl;
 
 const ORDFS_BASE = "https://ordfs.network";
 
-/**
- * Check if a font value is an on-chain path
- */
-export function isOnChainFont(fontValue: string): boolean {
-	return fontValue.startsWith("/content/");
-}
-
-/**
- * Extract the outpoint/origin from an on-chain font path
- * e.g., "/content/abc123_0" -> "abc123_0"
- */
-export function extractOriginFromPath(fontPath: string): string | null {
-	if (!fontPath.startsWith("/content/")) return null;
-	return fontPath.slice("/content/".length);
-}
-
-export interface LoadedFont {
-	origin: string;
-	familyName: string;
-	fontFace: FontFace;
-	metadata?: FontMetadata;
-}
-
+// Website-specific: Font metadata from MAP protocol
 export interface FontMetadata {
 	name: string;
 	author?: string;
@@ -45,22 +43,9 @@ export interface FontMetadata {
 	glyphCount?: number;
 }
 
-// Memory cache for loaded fonts
-const fontCache = new Map<string, LoadedFont>();
-
-// Loading promises to prevent duplicate fetches
-const loadingPromises = new Map<string, Promise<string>>();
-
-/**
- * Generate a unique font family name from an origin
- */
-function generateFamilyName(origin: string): string {
-	// Use first 8 chars of origin for a readable unique name
-	return `OnChain-${origin.slice(0, 8)}`;
-}
-
 /**
  * Fetch font metadata from ORDFS (MAP data)
+ * This is website-specific and not in the SDK
  */
 export async function fetchFontMetadata(
 	origin: string,
@@ -102,102 +87,15 @@ export async function fetchFontMetadata(
 }
 
 /**
- * Load a font from ORDFS by its origin and register it
- * Returns the generated font family name for use in CSS
+ * Get ORDFS metadata URL for a font origin
  */
-export async function loadFontByOrigin(origin: string): Promise<string> {
-	// Return cached font family name if already loaded
-	const cached = fontCache.get(origin);
-	if (cached) {
-		return cached.familyName;
-	}
-
-	// If already loading, wait for that promise
-	const existing = loadingPromises.get(origin);
-	if (existing) {
-		return existing;
-	}
-
-	// Create loading promise
-	const loadPromise = (async () => {
-		try {
-			// Fetch font file from ORDFS
-			const response = await fetch(`${ORDFS_BASE}/content/${origin}`);
-			if (!response.ok) {
-				throw new Error(`Failed to fetch font: ${response.status}`);
-			}
-
-			const buffer = await response.arrayBuffer();
-
-			// Determine format from content-type
-			const contentType = response.headers.get("content-type") || "font/woff2";
-			let format = "woff2";
-			if (contentType.includes("woff2")) format = "woff2";
-			else if (contentType.includes("woff")) format = "woff";
-			else if (contentType.includes("ttf") || contentType.includes("truetype"))
-				format = "truetype";
-			else if (contentType.includes("otf") || contentType.includes("opentype"))
-				format = "opentype";
-
-			// Generate unique family name
-			const familyName = generateFamilyName(origin);
-
-			// Create FontFace and load it
-			const fontFace = new FontFace(familyName, buffer, {
-				style: "normal",
-				weight: "400",
-			});
-
-			await fontFace.load();
-			document.fonts.add(fontFace);
-
-			// Cache the result
-			const loadedFont: LoadedFont = {
-				origin,
-				familyName,
-				fontFace,
-			};
-			fontCache.set(origin, loadedFont);
-
-			return familyName;
-		} finally {
-			loadingPromises.delete(origin);
-		}
-	})();
-
-	loadingPromises.set(origin, loadPromise);
-	return loadPromise;
-}
-
-/**
- * Get a cached font by origin (doesn't load if not cached)
- */
-export function getCachedFont(origin: string): LoadedFont | undefined {
-	return fontCache.get(origin);
-}
-
-/**
- * Check if a font is cached
- */
-export function isFontCached(origin: string): boolean {
-	return fontCache.has(origin);
-}
-
-/**
- * Clear font cache (useful for testing or memory management)
- */
-export function clearFontCache(): void {
-	// Remove all fonts from document.fonts
-	for (const loaded of fontCache.values()) {
-		document.fonts.delete(loaded.fontFace);
-	}
-	fontCache.clear();
+export function getFontMetadataUrl(origin: string): string {
+	return `${ORDFS_BASE}/${origin}`;
 }
 
 /**
  * Load fonts for a theme's style mode
- * Detects on-chain fonts by checking for "/content/" prefix
- * Returns an object mapping slots to their resolved font family names
+ * Uses SDK's loadFontByOrigin for on-chain fonts
  */
 export async function loadThemeFonts(styles: {
 	"font-sans"?: string;
@@ -213,9 +111,9 @@ export async function loadThemeFonts(styles: {
 		const fontKey = `font-${slot}` as keyof typeof styles;
 		const fontValue = styles[fontKey];
 
-		if (fontValue && typeof fontValue === "string" && isOnChainFont(fontValue)) {
+		if (fontValue && typeof fontValue === "string" && isOnChainPath(fontValue)) {
 			// Extract origin from path like "/content/abc123_0"
-			const origin = extractOriginFromPath(fontValue);
+			const origin = extractOrigin(fontValue);
 			if (origin) {
 				loads.push(
 					loadFontByOrigin(origin).then((familyName) => {
@@ -240,18 +138,4 @@ export async function loadThemeFonts(styles: {
 	}
 
 	return resolved;
-}
-
-/**
- * Get ORDFS content URL for a font origin
- */
-export function getFontContentUrl(origin: string): string {
-	return `${ORDFS_BASE}/content/${origin}`;
-}
-
-/**
- * Get ORDFS metadata URL for a font origin
- */
-export function getFontMetadataUrl(origin: string): string {
-	return `${ORDFS_BASE}/${origin}`;
 }

@@ -43,7 +43,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@resvg/resvg-js": "^2.6.2",
-    "@theme-token/sdk": "^0.0.7",
+    "@theme-token/sdk": "0.0.8",
     "@vercel/kv": "^3.0.0",
     "@xyflow/react": "^12.9.3",
     "ai": "^5.0.106",

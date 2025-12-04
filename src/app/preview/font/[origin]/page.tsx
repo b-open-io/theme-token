@@ -76,9 +76,6 @@ export default function FontPreviewPage({
 			const cached = getCachedFont(origin);
 			if (cached) {
 				setFontFamily(cached.familyName);
-				if (cached.metadata) {
-					setMetadata(cached.metadata);
-				}
 			}
 
 			// Load the font

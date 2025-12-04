@@ -80,7 +80,7 @@ export default function SpecPage() {
 								<code className="flex-1 overflow-x-auto text-muted-foreground">
 									<span className="text-primary">bunx</span> shadcn@latest add{" "}
 									<span className="text-foreground">
-										https://themetoken.dev/r/themes/[origin].json
+										https://themetoken.dev/r/themes/[origin]
 									</span>
 								</code>
 								<button
@@ -359,7 +359,7 @@ export default function SpecPage() {
 							<p className="mt-3 text-xs text-muted-foreground">
 								Our{" "}
 								<code className="rounded bg-muted px-1">
-									/r/themes/[origin].json
+									/r/themes/[origin]
 								</code>{" "}
 								endpoint serves this as{" "}
 								<a

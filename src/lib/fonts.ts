@@ -3,7 +3,11 @@
  * Supports dynamic Google Fonts loading and on-chain fonts via ORDFS
  */
 
-import { isOnChainFont, extractOriginFromPath, loadFontByOrigin } from "./font-loader";
+import {
+	isOnChainPath,
+	extractOrigin,
+	loadFontByOrigin,
+} from "@theme-token/sdk";
 
 // Available font categories with Google Fonts support
 export const FONT_CATALOG = {
@@ -185,8 +189,8 @@ export async function loadThemeFonts(theme: {
 			if (!value) continue;
 
 			// Check if it's an on-chain font
-			if (isOnChainFont(value)) {
-				const origin = extractOriginFromPath(value);
+			if (isOnChainPath(value)) {
+				const origin = extractOrigin(value);
 				if (origin) {
 					onChainLoads.push(
 						loadFontByOrigin(origin).then((familyName) => {

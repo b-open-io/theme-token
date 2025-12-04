@@ -41,7 +41,6 @@ function MarketLayoutInner({
 	const [themeListings, setThemeListings] = useState<ThemeMarketListing[]>([]);
 	const [fontListings, setFontListings] = useState<FontMarketListing[]>([]);
 	const { formatUsd } = useBsvRateContext();
-	const isFontsPage = pathname?.includes("/fonts");
 
 	// Filter tabs based on feature flags
 	const tabs = useMemo(
@@ -89,11 +88,22 @@ function MarketLayoutInner({
 		loadListings();
 	}, []);
 
-	// Compute stats from listings (show fonts stats on fonts page, themes otherwise)
-	const listings = isFontsPage ? fontListings : themeListings;
+	// Compute stats based on current tab
+	const getStats = () => {
+		if (pathname?.includes("/fonts")) {
+			return { listings: fontListings, label: "fonts" };
+		}
+		if (pathname?.includes("/images")) {
+			// No image listings yet
+			return { listings: [], label: "images" };
+		}
+		// Default to themes (browse, my-themes, sell)
+		return { listings: themeListings, label: "themes" };
+	};
+
+	const { listings, label } = getStats();
 	const totalCount = listings.length;
 	const floorPrice = listings.length > 0 ? Math.min(...listings.map(l => l.price)) : 0;
-	const label = isFontsPage ? "fonts" : "themes";
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-background">
