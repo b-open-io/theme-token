@@ -94,7 +94,7 @@ const allTools = [
 		icon: Grid3X3,
 		description:
 			"Generate infinite SVG patterns using AI. Create seamless backgrounds for your next project.",
-		feature: "patterns" as const,
+		feature: "images" as const,
 		preview: PatternPreview,
 	},
 ];

@@ -10,16 +10,13 @@
 export const featureFlags = {
 	/**
 	 * Font Studio - AI font generation and on-chain font inscription
+	 * Controls: /studio/font, /market/fonts, /market/my-fonts
 	 */
 	fonts: process.env.NEXT_PUBLIC_FEATURE_FONTS === "true",
 
 	/**
-	 * Pattern Generator - AI SVG pattern generation and inscription
-	 */
-	patterns: process.env.NEXT_PUBLIC_FEATURE_PATTERNS === "true",
-
-	/**
-	 * Images Market - Browse and use existing 1sat ordinal images
+	 * Images - Tile/Pattern Studio + Images Market
+	 * Controls: /studio/patterns (tile generation), /market/images (browse wallpapers/icons/tiles)
 	 */
 	images: process.env.NEXT_PUBLIC_FEATURE_IMAGES === "true",
 } as const;

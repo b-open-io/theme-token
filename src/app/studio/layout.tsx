@@ -15,7 +15,7 @@ import { featureFlags } from "@/lib/feature-flags";
 const allTabs = [
 	{ href: "/studio/theme", label: "Theme", icon: Palette, feature: null },
 	{ href: "/studio/font", label: "Font", icon: Type, feature: "fonts" as const },
-	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3, feature: "patterns" as const },
+	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3, feature: "images" as const },
 ];
 
 export default function StudioLayout({
