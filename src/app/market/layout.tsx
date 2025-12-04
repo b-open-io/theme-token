@@ -153,20 +153,19 @@ function MarketLayoutInner({
 							})}
 						</nav>
 
-						{/* Stats - pushed to right */}
-						{totalCount > 0 && (
-							<div className="ml-auto flex items-center gap-2 font-mono text-xs sm:gap-4">
-								<div className="flex items-center gap-1 sm:gap-1.5">
-									<span className="text-muted-foreground">{totalCount}</span>
-									<span className="text-muted-foreground/60">{label}</span>
-								</div>
-								<div className="flex items-center gap-1 sm:gap-1.5">
-									<span className="hidden text-muted-foreground/60 sm:inline">floor</span>
-									<span className="tabular-nums text-foreground">{formatUsd(floorPrice) || formatBSV(floorPrice)}</span>
-									{!formatUsd(floorPrice) && <span className="hidden text-muted-foreground/60 sm:inline">BSV</span>}
-								</div>
+						{/* Stats - pushed to right, always visible */}
+						<div className="ml-auto flex items-center gap-2 font-mono text-xs sm:gap-4">
+							<div className="flex items-center gap-1 sm:gap-1.5">
+								<span className="text-muted-foreground">{totalCount}</span>
+								<span className="text-muted-foreground/60">{label}</span>
 							</div>
-						)}
+							<div className="flex items-center gap-1 sm:gap-1.5">
+								<span className="hidden text-muted-foreground/60 sm:inline">floor</span>
+								<span className="tabular-nums text-foreground">
+									{totalCount > 0 ? (formatUsd(floorPrice) || formatBSV(floorPrice)) : "$0.00"}
+								</span>
+							</div>
+						</div>
 					</div>
 
 					{/* Animated Gradient Bar with Spotlight */}
