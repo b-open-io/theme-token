@@ -77,23 +77,31 @@ class AudioLib {
     }
 
     audio.addEventListener("error", () => {
-      const errorDetails = {
-        code: audio.error?.code,
-        message: audio.error?.message,
-        event_type: `error_code_${audio.error?.code || "unknown"}`,
-        src: audio.src,
+      const code = audio.error?.code;
+      
+      // Code 4 (SRC_NOT_SUPPORTED) often fires during normal operation
+      // (track switching, empty src, etc.) - don't spam console
+      if (!audio.src || code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+        // Only retry if we actually have a source
+        if (audio.src && this.retryAttempts < this.maxRetries) {
+          this.retryAttempts += 1;
+          setTimeout(() => this.reloadAudio(), 1000);
+        }
+        return;
+      }
+
+      // Log actual errors with useful details
+      console.warn("Audio error:", {
+        code,
+        message: audio.error?.message || "Unknown",
+        src: audio.src?.substring(0, 50),
         readyState: audio.readyState,
         networkState: audio.networkState,
-        raw_error_object: audio.error,
-      };
-      console.error("### Detailed Audio Element Error ###", errorDetails);
+      });
 
       if (this.retryAttempts < this.maxRetries) {
         this.retryAttempts += 1;
-
-        setTimeout(() => {
-          this.reloadAudio();
-        }, 1000);
+        setTimeout(() => this.reloadAudio(), 1000);
       }
 
       this.eventTarget.dispatchEvent(new CustomEvent("audioError"));
@@ -322,9 +330,19 @@ class AudioLib {
       this.playPromise = null;
     } catch (error) {
       this.playPromise = null;
+      // DOMException doesn't serialize well, extract details manually
+      const isDOMException = error instanceof DOMException;
+      const isAutoplayBlocked = isDOMException && error.name === "NotAllowedError";
+      
+      // Autoplay blocked is common and expected - don't log as error
+      if (isAutoplayBlocked) {
+        console.debug("Autoplay blocked - user interaction required");
+        return;
+      }
+      
       const errorDetails = {
-        error,
-        message: error instanceof Error ? error.message : "Unknown error",
+        name: isDOMException ? error.name : undefined,
+        message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         url: this.audio.src,
         readyState: this.audio.readyState,

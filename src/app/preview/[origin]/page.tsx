@@ -30,7 +30,7 @@ import {
 	Type,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { AiDemo } from "@/components/preview/ai-demo";
 import { AnimatedThemeStripes } from "@/components/preview/animated-theme-stripes";
@@ -253,6 +253,7 @@ type TabId = (typeof tabs)[number]["id"];
 export default function PreviewPage({ params }: Props) {
 	const { origin } = use(params);
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { mode: globalMode } = useTheme();
 	const [theme, setTheme] = useState<ThemeToken | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -261,7 +262,11 @@ export default function PreviewPage({ params }: Props) {
 	const [copied, setCopied] = useState(false);
 	const [copiedOrigin, setCopiedOrigin] = useState(false);
 	const [showRemixDialog, setShowRemixDialog] = useState(false);
-	const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+	const initialTab = (() => {
+		const tabParam = searchParams.get("tab");
+		return tabs.some((t) => t.id === tabParam) ? (tabParam as TabId) : "dashboard";
+	})();
+	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}`;
@@ -282,6 +287,26 @@ export default function PreviewPage({ params }: Props) {
 	useEffect(() => {
 		setPreviewMode(globalMode);
 	}, []);
+
+	// Keep tab in sync with URL (for refresh/back/forward)
+	useEffect(() => {
+		const tabParam = searchParams.get("tab");
+		const nextTab = tabs.some((t) => t.id === tabParam) ? (tabParam as TabId) : "dashboard";
+		if (nextTab !== activeTab) {
+			setActiveTab(nextTab);
+		}
+	}, [searchParams, activeTab]);
+
+	const handleTabChange = useCallback(
+		(tabId: TabId) => {
+			if (tabId === activeTab) return;
+			setActiveTab(tabId);
+			const params = new URLSearchParams(searchParams.toString());
+			params.set("tab", tabId);
+			router.replace(`?${params.toString()}`, { scroll: false });
+		},
+		[activeTab, router, searchParams],
+	);
 
 	// Fetch theme data
 	useEffect(() => {
@@ -577,7 +602,7 @@ export default function PreviewPage({ params }: Props) {
 								return (
 									<button
 										key={tab.id}
-										onClick={() => setActiveTab(tab.id)}
+										onClick={() => handleTabChange(tab.id)}
 										className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
 											isActive
 												? "text-foreground"

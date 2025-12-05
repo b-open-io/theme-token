@@ -5,12 +5,15 @@ import { Eye, Loader2, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { BuyThemeModal } from "@/components/market/buy-theme-modal";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { useTheme } from "@/components/theme-provider";
 import { storeRemixTheme } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
 import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+import type { ThemeToken } from "@theme-token/sdk";
 
 function formatPrice(satoshis: number): string {
 	const bsv = satoshis / 100_000_000;
@@ -23,10 +26,12 @@ function ThemeCard({
 	cached,
 	listing,
 	onRemix,
+	onBuy,
 }: {
 	cached: CachedTheme;
 	listing?: ThemeMarketListing;
 	onRemix: () => void;
+	onBuy?: () => void;
 }) {
 	const { mode } = useTheme();
 	const { theme, origin } = cached;
@@ -51,14 +56,22 @@ function ThemeCard({
 							<div key={i} className="flex-1" style={{ backgroundColor: color }} />
 						))}
 					</div>
-					{/* For Sale Badge */}
+					{/* For Sale Badge - clickable */}
 					{listing && (
-						<div className="absolute top-2 right-2 z-10">
-							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1">
+						<button
+							type="button"
+							className="absolute top-2 right-2 z-10"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onBuy?.();
+							}}
+						>
+							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 hover:bg-primary/90 cursor-pointer">
 								<ShoppingCart className="h-3 w-3" fill="currentColor" />
 								{formatPrice(listing.price)}
 							</Badge>
-						</div>
+						</button>
 					)}
 					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/40">
 						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
@@ -106,6 +119,8 @@ export default function ThemesPage() {
 	const [themes, setThemes] = useState<CachedTheme[]>([]);
 	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
+	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = useMemo(() => {
@@ -140,6 +155,13 @@ export default function ThemesPage() {
 	const handleRemix = (cached: CachedTheme) => {
 		storeRemixTheme(cached.theme, { source: "remix", txid: cached.origin });
 		router.push("/studio/theme");
+	};
+
+	const handlePurchaseComplete = (txid: string) => {
+		if (buyListing) {
+			setSuccessModal({ theme: buyListing.theme, txid });
+			setListings((prev) => prev.filter((l) => l.origin !== buyListing.origin));
+		}
 	};
 
 	// Count how many are for sale
@@ -206,17 +228,45 @@ export default function ThemesPage() {
 					</div>
 				) : (
 					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{themes.map((cached) => (
-							<ThemeCard
-								key={cached.origin}
-								cached={cached}
-								listing={listingsByOrigin.get(cached.origin)}
-								onRemix={() => handleRemix(cached)}
-							/>
-						))}
+						{themes.map((cached) => {
+							const listing = listingsByOrigin.get(cached.origin);
+							return (
+								<ThemeCard
+									key={cached.origin}
+									cached={cached}
+									listing={listing}
+									onRemix={() => handleRemix(cached)}
+									onBuy={() => listing && setBuyListing(listing)}
+								/>
+							);
+						})}
 					</div>
 				)}
 			</div>
+
+			{/* Buy Modal */}
+			{buyListing && (
+				<BuyThemeModal
+					isOpen={true}
+					onClose={() => setBuyListing(null)}
+					listing={buyListing}
+					onPurchaseComplete={handlePurchaseComplete}
+				/>
+			)}
+
+			{/* Success Modal */}
+			{successModal && (
+				<PurchaseSuccessModal
+					isOpen={true}
+					onClose={() => setSuccessModal(null)}
+					theme={successModal.theme}
+					txid={successModal.txid}
+					onApplyNow={() => {
+						storeRemixTheme(successModal.theme);
+						router.push("/studio/theme");
+					}}
+				/>
+			)}
 		</div>
 	);
 }

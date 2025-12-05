@@ -68,7 +68,7 @@ function AudioPlayerDemo() {
 			<div className="grid gap-6 lg:grid-cols-2 items-stretch">
 				{/* Left Column - Fixed Height Widgets */}
 				<div className="flex flex-col gap-6">
-					{/* Widget 1: Compact Now Playing */}
+					{/* Widget 1: Compact Now Playing (fully wired to AudioStore) */}
 					<Card className="border-0 shadow-md bg-primary text-primary-foreground overflow-hidden relative">
 						{/* Background Pattern */}
 						<div className="absolute inset-0 opacity-10">
@@ -86,29 +86,51 @@ function AudioPlayerDemo() {
 										<Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
 											Now Playing
 										</Badge>
-										<span className="text-xs font-medium opacity-80 font-mono">02:14 / 03:00</span>
+										<div className="flex items-center gap-2 text-xs font-medium opacity-80 font-mono">
+											<AudioPlayerTimeDisplay className="text-white/80 px-0" />
+											<span>/</span>
+											<AudioPlayerTimeDisplay remaining className="text-white/80 px-0" />
+										</div>
 									</div>
 									<div className="text-lg font-bold truncate leading-tight">Theme Token Demo</div>
 									<div className="text-sm opacity-80 truncate">Compact Player</div>
 								</div>
 							</div>
 							
-							{/* Custom Progress */}
-							<div className="mt-6 flex items-center gap-4">
-								<div className="h-1.5 flex-1 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
-									<div className="h-full bg-white w-[65%] rounded-full" />
-								</div>
-								<div className="flex items-center gap-2 shrink-0">
-									<Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20 hover:text-white">
-										<AudioPlayerSkipBack className="h-4 w-4" />
-									</Button>
-									<Button size="icon" className="h-10 w-10 rounded-full bg-white text-primary hover:bg-white/90 shadow-lg border-0">
-										<AudioPlayerPlay className="h-5 w-5 fill-current ml-0.5" />
-									</Button>
-									<Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20 hover:text-white">
-										<AudioPlayerSkipForward className="h-4 w-4" />
-									</Button>
-								</div>
+							<div className="mt-6 space-y-4">
+								<AudioPlayer className="border-0 bg-transparent p-0 text-white">
+									<AudioPlayerControlBar className="gap-3 items-center">
+										<AudioPlayerTimeDisplay className="text-white/80 min-w-[42px]" />
+										<AudioPlayerSeekBar className="flex-1 [&_.relative]:h-2 [&_.relative]:bg-white/15 [&_.relative]:rounded-full" />
+										<AudioPlayerTimeDisplay remaining className="text-white/80 min-w-[42px]" />
+									</AudioPlayerControlBar>
+
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<AudioQueueShuffle className="h-4 w-4 text-white/80 hover:text-white transition-colors" />
+											<AudioQueueRepeatMode className="h-4 w-4 text-white/80 hover:text-white transition-colors" />
+										</div>
+										<div className="flex items-center gap-3">
+											<AudioPlayerSkipBack 
+												variant="ghost" 
+												size="icon" 
+												className="h-9 w-9 text-white hover:bg-white/15 [&_svg]:h-5 [&_svg]:w-5" 
+											/>
+											<AudioPlayerPlay 
+												size="icon"
+												className="h-11 w-11 rounded-full bg-white text-primary hover:bg-white/90 shadow-lg border-0 [&_svg]:h-6 [&_svg]:w-6 [&_svg]:fill-current [&_svg]:ml-0.5" 
+											/>
+											<AudioPlayerSkipForward 
+												variant="ghost" 
+												size="icon" 
+												className="h-9 w-9 text-white hover:bg-white/15 [&_svg]:h-5 [&_svg]:w-5" 
+											/>
+										</div>
+										<div className="flex items-center gap-2">
+											<AudioPlayerVolume className="hidden sm:flex w-28" />
+										</div>
+									</div>
+								</AudioPlayer>
 							</div>
 						</CardContent>
 					</Card>
@@ -135,15 +157,20 @@ function AudioPlayerDemo() {
 										</div>
 
 										<div className="flex items-center gap-4">
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<AudioPlayerSkipBack className="h-5 w-5" />
-											</Button>
-											<div className="h-12 w-12 rounded-full border flex items-center justify-center">
-												<AudioPlayerPlay className="h-6 w-6 fill-current ml-0.5" />
-											</div>
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<AudioPlayerSkipForward className="h-5 w-5" />
-											</Button>
+											<AudioPlayerSkipBack 
+												variant="ghost" 
+												size="icon" 
+												className="h-8 w-8 [&_svg]:h-5 [&_svg]:w-5" 
+											/>
+											<AudioPlayerPlay 
+												size="icon"
+												className="h-12 w-12 rounded-full border bg-transparent hover:bg-muted [&_svg]:h-6 [&_svg]:w-6 [&_svg]:fill-current [&_svg]:ml-0.5" 
+											/>
+											<AudioPlayerSkipForward 
+												variant="ghost" 
+												size="icon" 
+												className="h-8 w-8 [&_svg]:h-5 [&_svg]:w-5" 
+											/>
 										</div>
 										
 										<div className="flex items-center gap-2">

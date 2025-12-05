@@ -74,7 +74,8 @@ export function generateGeoPattern(opts: GeoPatternOptions): GeoPatternResult {
 
 	// 1. Remove background rect to allow transparency (crucial for mask-image)
 	// GeoPattern adds a full-size rect as the first element
-	svg = svg.replace(/<rect[^>]*width="100%"[^>]*height="100%"[^>]*>/, "");
+	svg = svg.replace(/<rect[^>]*width="100%"[^>]*height="100%"[^>]*><\/rect>/, "");
+	svg = svg.replace(/<rect[^>]*width="100%"[^>]*height="100%"[^>]*\/>/, ""); // self-closing variant just in case
 
 	// 2. Force all remaining shapes to be white for consistent mask opacity
 	// Since we use mask-image, the actual color comes from CSS background-color
@@ -115,4 +116,3 @@ export function getGeoGeneratorLabel(gen: GeoGeneratorType): string {
 	};
 	return labels[gen];
 }
-

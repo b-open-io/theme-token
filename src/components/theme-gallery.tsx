@@ -6,6 +6,8 @@ import { ArrowRight, Eye, Loader2, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { BuyThemeModal } from "@/components/market/buy-theme-modal";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
@@ -69,11 +71,13 @@ function ThemeCard({
 	origin,
 	listing,
 	onRemix,
+	onBuy,
 }: {
 	theme: ThemeToken;
 	origin: string;
 	listing?: ThemeMarketListing;
 	onRemix?: () => void;
+	onBuy?: () => void;
 }) {
 	const { mode } = useTheme();
 	const colors = [
@@ -95,14 +99,22 @@ function ThemeCard({
 							style={{ backgroundColor: color }}
 						/>
 					))}
-					{/* For Sale Badge */}
+					{/* For Sale Badge - clickable */}
 					{listing && (
-						<div className="absolute top-2 right-2 z-10">
-							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 text-[10px]">
+						<button
+							type="button"
+							className="absolute top-2 right-2 z-10"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onBuy?.();
+							}}
+						>
+							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 text-[10px] hover:bg-primary/90 cursor-pointer">
 								<ShoppingCart className="h-2.5 w-2.5" fill="currentColor" />
 								{formatPrice(listing.price)}
 							</Badge>
-						</div>
+						</button>
 					)}
 					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
 						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 drop-shadow-md" />
@@ -140,6 +152,8 @@ export function ThemeGallery() {
 	const [publishedThemes, setPublishedThemes] = useState<CachedTheme[]>([]);
 	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
+	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = useMemo(() => {
@@ -165,6 +179,14 @@ export function ThemeGallery() {
 		storeRemixTheme(theme);
 		// Navigate to theme studio
 		router.push("/studio/theme");
+	};
+
+	const handlePurchaseComplete = (txid: string) => {
+		if (buyListing) {
+			setSuccessModal({ theme: buyListing.theme, txid });
+			// Remove from listings since it's sold
+			setListings((prev) => prev.filter((l) => l.origin !== buyListing.origin));
+		}
 	};
 
 	return (
@@ -196,21 +218,25 @@ export function ThemeGallery() {
 							No themes published yet. Be the first!
 						</p>
 					) : (
-						publishedThemes.map((published) => (
-							<motion.div
-								key={published.origin}
-								initial={{ opacity: 0, x: 20 }}
-								animate={{ opacity: 1, x: 0 }}
-								transition={{ duration: 0.3 }}
-							>
-								<ThemeCard
-									theme={published.theme}
-									origin={published.origin}
-									listing={listingsByOrigin.get(published.origin)}
-									onRemix={() => handleRemix(published.theme)}
-								/>
-							</motion.div>
-						))
+						publishedThemes.map((published) => {
+							const listing = listingsByOrigin.get(published.origin);
+							return (
+								<motion.div
+									key={published.origin}
+									initial={{ opacity: 0, x: 20 }}
+									animate={{ opacity: 1, x: 0 }}
+									transition={{ duration: 0.3 }}
+								>
+									<ThemeCard
+										theme={published.theme}
+										origin={published.origin}
+										listing={listing}
+										onRemix={() => handleRemix(published.theme)}
+										onBuy={() => listing && setBuyListing(listing)}
+									/>
+								</motion.div>
+							);
+						})
 					)}
 
 					{/* "More" card linking to themes browse */}
@@ -227,6 +253,30 @@ export function ThemeGallery() {
 					</Link>
 				</div>
 			</div>
+
+			{/* Buy Modal */}
+			{buyListing && (
+				<BuyThemeModal
+					isOpen={true}
+					onClose={() => setBuyListing(null)}
+					listing={buyListing}
+					onPurchaseComplete={handlePurchaseComplete}
+				/>
+			)}
+
+			{/* Success Modal */}
+			{successModal && (
+				<PurchaseSuccessModal
+					isOpen={true}
+					onClose={() => setSuccessModal(null)}
+					theme={successModal.theme}
+					txid={successModal.txid}
+					onApplyNow={() => {
+						storeRemixTheme(successModal.theme);
+						router.push("/studio/theme");
+					}}
+				/>
+			)}
 		</section>
 	);
 }
