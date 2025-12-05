@@ -403,7 +403,7 @@ export default function PreviewPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-background font-sans antialiased selection:bg-primary/30 theme-transition relative pattern-bg">
       {/* Preview Container - Scoped Theme */}
       <div
         ref={containerRef}

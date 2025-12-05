@@ -58,12 +58,12 @@ export function AudioDemo({ theme, mode }: { theme?: any, mode?: 'light' | 'dark
 
   return (
     <AudioDemoProvider tracks={demoTracks}>
-      <div className="relative overflow-hidden rounded-xl" style={{ height: 'calc(100vh - 24rem)' }}>
+      <div className="relative overflow-hidden rounded-xl" style={{ height: 'calc(100vh - 16rem)' }}>
         {/* Fullscreen visualizer */}
         <AudioVisualizerFractal theme={theme} mode={mode} />
 
         {/* Player overlay at bottom center */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-10">
           <ParticlePlayerWidget />
         </div>
       </div>
