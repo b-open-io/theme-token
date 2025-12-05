@@ -62,6 +62,7 @@ class AudioLib {
 
     if (this.isClient()) {
       this.audio = new Audio();
+      this.audio.crossOrigin = "anonymous"; // Essential for Web Audio API
       this.setupEventListeners();
     }
   }

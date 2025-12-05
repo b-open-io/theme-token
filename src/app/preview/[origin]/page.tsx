@@ -602,7 +602,7 @@ export default function PreviewPage({ params }: Props) {
               </TabsContent>
 
               <TabsContent value="audio" className="mt-0">
-                <AudioDemo />
+                <AudioDemo theme={theme} mode={previewMode} />
               </TabsContent>
 
               <TabsContent value="ai" className="mt-0">

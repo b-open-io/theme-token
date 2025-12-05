@@ -1,169 +1,88 @@
+
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import * as THREE from "three";
 import { $audio } from "@/lib/audio";
 import { useAudioStore } from "@/lib/audio-store";
 import { audioVisualizerContext } from "@/lib/audio-visualizer-context";
 
-export function AudioVisualizerFractal() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export function AudioVisualizerFractal({ theme, mode }: { theme?: any, mode?: 'light' | 'dark' }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
   const animationRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
-  const zoomRef = useRef(-0.5); // Start zoomed out to see the whole set
-  const rotationRef = useRef(0);
-  const offsetXRef = useRef(-0.743643887037151); // Start near the spiral
-  const offsetYRef = useRef(0.13182590420533);
-  const targetIndexRef = useRef(0);
-  const detailLevelRef = useRef(1); // Track how interesting current view is
-  const opacityRef = useRef(0.05); // Start with very low opacity
-  const targetOpacityRef = useRef(0.05); // Target opacity for smooth transitions
-  const colorShiftRef = useRef(0); // Smooth color transitions
-  const lastBeatRef = useRef(0); // Track last beat time for cooldown
-  const beatCooldownRef = useRef(0); // Cooldown timer
+
+  // State for smooth transitions
+  const stateRef = useRef({
+    zoom: 1.0,
+    opacity: 0.0
+  });
 
   const isPlaying = useAudioStore((s) => s.isPlaying);
-  const currentTrack = useAudioStore((s) => s.currentTrack);
+  const [isReady, setIsReady] = React.useState(false);
 
-  // Log when track or playing state changes
+  // 1. Audio Connection (One-time, passive)
   useEffect(() => {
-    console.log('[Fractal] Store state changed - isPlaying:', isPlaying, 'track:', currentTrack?.title);
-  }, [isPlaying, currentTrack]);
-
-  // Setup audio ONCE and keep it connected
-  useEffect(() => {
-    const setupAudio = () => {
-      const audioElement = $audio.getAudioElement();
-      if (!audioElement) {
-        console.log('[Fractal] Audio element not ready yet');
-        return false;
+    const connect = () => {
+      const el = $audio.getAudioElement();
+      if (!el) return;
+      const { analyser, dataArray } = audioVisualizerContext.setupAudio(el);
+      if (analyser && dataArray) {
+        analyserRef.current = analyser;
+        dataArrayRef.current = dataArray;
       }
-
-      const { analyser, dataArray } = audioVisualizerContext.setupAudio(audioElement);
-      if (!analyser || !dataArray) {
-        console.log('[Fractal] Failed to setup audio context');
-        return false;
-      }
-
-      analyserRef.current = analyser;
-      dataArrayRef.current = dataArray;
-      console.log('[Fractal] Audio context connected successfully');
-      return true;
     };
-
-    // Try to setup immediately
-    if (!setupAudio()) {
-      // Retry multiple times with increasing delays
-      const retryDelays = [50, 100, 200, 500, 1000];
-      let retryIndex = 0;
-
-      const retrySetup = () => {
-        if (setupAudio()) {
-          return; // Success
-        }
-        if (retryIndex < retryDelays.length) {
-          setTimeout(retrySetup, retryDelays[retryIndex]);
-          retryIndex++;
-        } else {
-          console.error('[Fractal] Failed to connect audio after all retries');
-        }
-      };
-
-      setTimeout(retrySetup, retryDelays[0]);
-    }
-  }, []); // Only run once on mount
-
-  // Resume audio context when playing starts and set target opacity
-  useEffect(() => {
-    console.log('[Fractal] isPlaying changed to:', isPlaying);
-    // Set target opacity based on playing state  
-    targetOpacityRef.current = isPlaying ? 1.0 : 0.05; // Even lower opacity when idle
-
-    if (isPlaying) {
-      audioVisualizerContext.resume();
-      // Debug: Check if audio element is actually playing
-      const audioElement = $audio.getAudioElement();
-      if (audioElement) {
-        console.log('[Fractal] Audio element state:', {
-          paused: audioElement.paused,
-          currentTime: audioElement.currentTime,
-          duration: audioElement.duration,
-          volume: audioElement.volume,
-          src: audioElement.src,
-          readyState: audioElement.readyState,
-          networkState: audioElement.networkState
-        });
-
-        // Check if we have analyser connection
-        console.log('[Fractal] Analyser status:', {
-          hasAnalyser: !!analyserRef.current,
-          hasDataArray: !!dataArrayRef.current
-        });
-      } else {
-        console.log('[Fractal] No audio element found!');
-      }
-    }
+    connect();
+    // Re-connect if playback starts (in case element renewed)
+    if (isPlaying) connect();
   }, [isPlaying]);
 
-  // Animation loop 
+  // 2. Theme Color Updates
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!materialRef.current) return;
+    if (!theme) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d", { alpha: true }); // Enable alpha for transparency
-    if (!ctx) return;
+    const style = theme.styles[mode || 'light'];
 
-    // Get theme colors - reads from the preview container every frame
-    const getThemeColors = () => {
-      // Find the preview container with theme variables
-      const container = canvas.closest('[style*="--primary"]');
+    // Multi-stage Color Parser
+    const parse = (str: string, fallback: THREE.Vector3) => {
+      if (!str) return fallback;
+      const cleanStr = str.trim();
 
-      if (!container) {
-        // Return transparent if no theme found
-        return null;
+      // 1. Try THREE.Color directly (Supports Hex, RGB, some HSL)
+      try {
+        // Check if it's OKLCH, if so skip to manual parser because Three support is version dependent
+        if (!cleanStr.startsWith('oklch')) {
+          const c = new THREE.Color(cleanStr);
+          return new THREE.Vector3(c.r, c.g, c.b);
+        }
+      } catch (e) {
+        // Ignore and try next
       }
 
-      // Check if we're in dark mode
-      const isDarkMode = container.closest('.dark') !== null;
-      const style = getComputedStyle(container);
-
-      const colorVars = [
-        '--primary',
-        '--secondary',
-        '--accent',
-        '--chart-1',
-        '--chart-2',
-        '--chart-3',
-        '--chart-4',
-        '--chart-5'
-      ];
-
-      const formatColor = (rawValue: string) => {
-        if (!rawValue) return null;
-
-        // Parse OKLCH format manually since browsers don't support it in JS
-        if (rawValue.startsWith('oklch(')) {
-          const match = rawValue.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
+      // 2. Manual OKLCH Parser
+      if (cleanStr.includes('oklch')) {
+        try {
+          const match = cleanStr.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/) ||
+            cleanStr.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\/\s*[\d.]+\)/); // Handle alpha slash
           if (match) {
             const L = parseFloat(match[1]);
             const C = parseFloat(match[2]);
             const H = parseFloat(match[3]);
 
-            // For very low chroma (near gray), just use lightness
-            if (C < 0.01) {
-              const gray = Math.round(L * 255);
-              return { r: gray, g: gray, b: gray };
-            }
+            if (C < 0.01) return new THREE.Vector3(L, L, L);
 
-            // OKLCH to OKLab
+            // OKLCH -> sRGB
             const h_rad = (H * Math.PI) / 180;
             const a = C * Math.cos(h_rad);
-            const b = C * Math.sin(h_rad);
+            const b_val = C * Math.sin(h_rad);
 
-            // OKLab to linear RGB (more accurate conversion)
-            const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-            const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-            const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+            const l_ = L + 0.3963377774 * a + 0.2158037573 * b_val;
+            const m_ = L - 0.1055613458 * a - 0.0638541728 * b_val;
+            const s_ = L - 0.0894841775 * a - 1.2914855480 * b_val;
 
             const l = l_ * l_ * l_;
             const m = m_ * m_ * m_;
@@ -171,384 +90,222 @@ export function AudioVisualizerFractal() {
 
             let r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
             let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-            let b_val = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+            let b_final = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
 
-            // Apply gamma correction (sRGB)
-            const gammaCorrect = (c: number) => {
-              if (c <= 0.0031308) {
-                return 12.92 * c;
-              }
-              return 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-            };
+            const gamma = (c: number) => c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(Math.abs(c), 1.0 / 2.4) - 0.055;
 
-            r = gammaCorrect(Math.max(0, Math.min(1, r)));
-            g = gammaCorrect(Math.max(0, Math.min(1, g)));
-            b_val = gammaCorrect(Math.max(0, Math.min(1, b_val)));
-
-            return {
-              r: Math.round(r * 255),
-              g: Math.round(g * 255),
-              b: Math.round(b_val * 255)
-            };
+            return new THREE.Vector3(
+              Math.max(0, Math.min(1, gamma(r))),
+              Math.max(0, Math.min(1, gamma(g))),
+              Math.max(0, Math.min(1, gamma(b_final)))
+            );
           }
+        } catch (e) { }
+      }
+
+      // 3. Manual HSL / Space-Separated Parser
+      // Handles: "222 47% 11%" or "hsl(222, 47%, 11%)"
+      try {
+        let s = cleanStr.replace(/hsl\(|\)|%|deg|,|\//g, ' ');
+        let parts = s.split(' ').filter(x => x && x.trim() !== '').map(parseFloat);
+        if (parts.length >= 3) {
+          const h = parts[0] / 360; // Hue is usually 0-360
+          const s = parts[1] <= 1 ? parts[1] : parts[1] / 100; // Handle 0-1 or 0-100
+          const l = parts[2] <= 1 ? parts[2] : parts[2] / 100;
+          const c = new THREE.Color();
+          c.setHSL(h, s, l);
+          return new THREE.Vector3(c.r, c.g, c.b);
         }
+      } catch (e) { }
 
-        // Try standard color parsing for HSL
-        try {
-          const tempDiv = document.createElement('div');
-          tempDiv.style.position = 'fixed';
-          tempDiv.style.visibility = 'hidden';
-
-          if (rawValue.includes(' ')) {
-            // HSL format like "222 47% 11%"
-            tempDiv.style.color = `hsl(${rawValue})`;
-          } else {
-            tempDiv.style.color = rawValue;
-          }
-
-          document.body.appendChild(tempDiv);
-          const computed = getComputedStyle(tempDiv).color;
-          document.body.removeChild(tempDiv);
-
-          const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if (match) {
-            return {
-              r: parseInt(match[1]),
-              g: parseInt(match[2]),
-              b: parseInt(match[3])
-            };
-          }
-        } catch (e) {
-          // Silent fail
-        }
-        return null;
-      };
-
-      const colors = colorVars
-        .map(varName => {
-          const raw = style.getPropertyValue(varName).trim();
-          if (!raw) return null;
-          return formatColor(raw);
-        })
-        .filter(Boolean) as Array<{ r: number, g: number, b: number }>;
-
-      // Get background color - THIS IS CRITICAL
-      const bgRaw = style.getPropertyValue('--background').trim();
-
-      // Debug log the raw background value once
-      if (Math.random() < 0.01) { // Only log occasionally
-        console.log('[Fractal] Theme background raw:', bgRaw);
-      }
-
-      const background = formatColor(bgRaw);
-
-      if (!background || colors.length === 0) {
-        console.log('[Fractal] Failed to parse background:', bgRaw, '-> ', background);
-        return null;
-      }
-
-      // Debug log parsed background occasionally
-      if (Math.random() < 0.01) {
-        console.log('[Fractal] Parsed background RGB:', background);
-      }
-
-      return { colors, background };
+      return fallback;
     };
 
-    // Mandelbrot set calculation with variations
-    const mandelbrot = (x: number, y: number, maxIter: number, intensity: number = 0): number => {
-      // Add slight perturbation based on music intensity and position
-      // This creates variations while maintaining fractal structure
-      const perturbation = Math.sin(Date.now() * 0.0001) * 0.001 * intensity;
-      const xPerturbed = x + perturbation * Math.sin(y * 10);
-      const yPerturbed = y + perturbation * Math.cos(x * 10);
+    // Default Colors
+    const bgDefault = new THREE.Vector3(0, 0, 0);
+    const pDefault = new THREE.Vector3(0.5, 0.5, 0.5);
 
-      let zx = 0, zy = 0;
-      let i = 0;
-      let minDist = Infinity;
+    const b = parse(style['--background'] || style['background'], bgDefault);
+    const p = parse(style['--primary'] || style['primary'], pDefault);
+    const a = parse(style['--accent'] || style['accent'], pDefault);
 
-      while (zx * zx + zy * zy < 4 && i < maxIter) {
-        const temp = zx * zx - zy * zy + xPerturbed;
-        zy = 2 * zx * zy + yPerturbed;
-        zx = temp;
-        i++;
+    // Chart Colors
+    const c1 = parse(style['--chart-1'] || style['chart-1'], p);
+    const c2 = parse(style['--chart-2'] || style['chart-2'], a);
+    const c3 = parse(style['--chart-3'] || style['chart-3'], p);
+    const c4 = parse(style['--chart-4'] || style['chart-4'], a);
+    const c5 = parse(style['--chart-5'] || style['chart-5'], p);
 
-        // Track minimum distance to origin for orbit trap coloring
-        const dist = Math.sqrt(zx * zx + zy * zy);
-        if (dist < minDist) minDist = dist;
-      }
+    const u = materialRef.current.uniforms;
+    u.iColorPrimary.value.copy(p);
+    u.iColorAccent.value.copy(a);
+    u.iColorBackground.value.copy(b);
+    if (u.iColorChart1) u.iColorChart1.value.copy(c1);
+    if (u.iColorChart2) u.iColorChart2.value.copy(c2);
+    if (u.iColorChart3) u.iColorChart3.value.copy(c3);
+  }, [theme, mode, isReady]);
 
-      // If in the set, use orbit trap coloring instead of returning 0
-      if (i === maxIter) {
-        // Create subtle patterns in the interior based on minimum distance
-        return minDist * 0.1; // Small value but not zero
-      }
+  // 3. WebGL Setup & Loop
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const w = containerRef.current.clientWidth;
+    const h = containerRef.current.clientHeight;
 
-      // Smooth coloring with variation
-      const log_zn = Math.log(zx * zx + zy * zy) / 2;
-      const nu = Math.log(log_zn / Math.log(2)) / Math.log(2);
-      const smoothed = (i + 1 - nu) / maxIter;
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    containerRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-      // Add subtle noise to prevent solid areas
-      const noise = (Math.sin(x * 100) * Math.cos(y * 100) + 1) * 0.02;
-      return Math.min(1, smoothed + noise);
+    const uniforms = {
+      iTime: { value: 0 },
+      iResolution: { value: new THREE.Vector3(w, h, 1) },
+      iZoom: { value: 1.0 },
+      iAudioBass: { value: 0 },
+      iOpacity: { value: 0.0 }, // Start invisible
+      iColorPrimary: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+      iColorAccent: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+      iColorBackground: { value: new THREE.Vector3(0, 0, 0) },
+      iColorChart1: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+      iColorChart2: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+      iColorChart3: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
     };
 
-    // Draw fractal visualization
-    const drawFractal = (
-      ctx: CanvasRenderingContext2D,
-      intensity: number,
-      colors: Array<{ r: number, g: number, b: number }>,
-      background: { r: number, g: number, b: number },
-      isPlaying: boolean,
-      opacity: number
-    ) => {
-      const width = canvas.width;
-      const height = canvas.height;
-      const imageData = ctx.createImageData(width, height);
-      const data = imageData.data;
+    // Improved Mandelbrot Shader with Richer Colors
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      transparent: true,
+      vertexShader: `
+        varying vec2 vUv;
+void main() { vUv = uv; gl_Position = vec4(position, 1.0); }
+`,
+      fragmentShader: `
+        uniform float iTime;
+        uniform vec3 iResolution;
+        uniform float iZoom;
+        uniform float iAudioBass;
+        uniform float iOpacity;
+        uniform vec3 iColorPrimary;
+        uniform vec3 iColorAccent;
+        uniform vec3 iColorBackground;
+        uniform vec3 iColorChart1;
+        uniform vec3 iColorChart2;
+        uniform vec3 iColorChart3;
+        varying vec2 vUv;
 
-      // Adjust zoom and position based on music
-      // Use exponential zoom for infinite zooming capability
-      const zoom = Math.exp(zoomRef.current);
-      const offsetX = offsetXRef.current;
-      const offsetY = offsetYRef.current;
+void main() {
+           // Mapping
+           vec2 uv = (vUv - 0.5) * iResolution.xy / iResolution.y;
 
-      // Lower resolution for performance
-      const step = 3; // Fixed step for consistent performance
+           // CONSTANT CENTER POINT to avoid teleporting
+           vec2 c = uv / iZoom + vec2(-0.743643, 0.131825);
+           
+           vec2 z = vec2(0.0);
+           float iter = 0.0;
+           float maxIter = 100.0;
+           float d = 100.0;
 
-      for (let py = 0; py < height; py += step) {
-        for (let px = 0; px < width; px += step) {
-          // Map pixel to complex plane - apply rotation here
-          const angle = rotationRef.current;
-          const cx = (px - width / 2) / (width * zoom);
-          const cy = (py - height / 2) / (height * zoom);
+  for (float i = 0.0; i < 100.0; i++) {
+    z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+    if (dot(z, z) > 4.0) break;
+    d = min(d, length(z));
+    iter++;
+  }
+           
+           vec3 col = vec3(0.0);
 
-          // Apply rotation
-          const x = cx * Math.cos(angle) - cy * Math.sin(angle) + offsetX;
-          const y = cx * Math.sin(angle) + cy * Math.cos(angle) + offsetY;
+  if (iter < maxIter) {
+               // Exterior (Glow / Orbit Trap)
+               float t = iTime + iter * 0.1;
 
-          // Mandelbrot set with dynamic iteration count
-          const iterations = Math.min(128, 30 + Math.log(zoom) * 5 + intensity * 50);
-          let value = mandelbrot(x, y, iterations, intensity);
+               // Complex Gradient using Chart colors
+               vec3 palette1 = mix(iColorChart1, iColorChart2, 0.5 + 0.5 * sin(t * 0.7));
+               vec3 palette2 = mix(iColorChart3, iColorPrimary, 0.5 + 0.5 * cos(t * 1.1));
+               vec3 finalColor = mix(palette1, palette2, 0.5 + 0.5 * sin(iter * 0.2 - t));
 
-          // Apply intensity - make colors pulse with the music
-          // Increase contrast for better visibility
-          value = Math.pow(value, 0.5) * (0.5 + intensity * 0.5);
+    col = mix(iColorBackground, finalColor, exp(-d * 4.0));
 
-          // Color based on value and theme colors
-          let r, g, b, a;
+    // Add accent pulse
+    col += iColorAccent * 0.2 * (0.5 + 0.5 * sin(t * 3.0 + iter * 0.5)) * exp(-d * 2.0);
+  } else {
+    // Interior
+    col = iColorBackground;
+  }
 
-          // ALWAYS render something - even if value is 0
-          // This prevents blank spots
-          const minValue = 0.05; // Minimum visible value
-          const adjustedValue = Math.max(minValue, value);
+  // Audio React (Pulse)
+  col *= (0.8 + 0.4 * iAudioBass);
 
-          // Use smoothed color shift instead of rapid time-based changes
-          // This prevents seizure-inducing flashing
-          const totalShift = colorShiftRef.current % 1;
+  gl_FragColor = vec4(col, iOpacity);
+}
+`
+    });
+    materialRef.current = material;
+    setIsReady(true);
 
-          const shiftedValue = (adjustedValue * 3 + totalShift) % 1;
-          const colorIndex = Math.floor(shiftedValue * colors.length);
-          const safeIndex1 = Math.abs(colorIndex) % colors.length;
-          const safeIndex2 = (safeIndex1 + 1) % colors.length;
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+    const scene = new THREE.Scene();
+    scene.add(mesh);
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+    camera.position.z = 1;
 
-          const color1 = colors[safeIndex1] || colors[0];
-          const color2 = colors[safeIndex2] || colors[0];
-          const mix = (shiftedValue * colors.length) % 1;
+    const animate = () => {
+      animationRef.current = requestAnimationFrame(animate);
 
-          // Interpolate between theme colors for the fractal
-          const fractalR = color1.r * (1 - mix) + color2.r * mix;
-          const fractalG = color1.g * (1 - mix) + color2.g * mix;
-          const fractalB = color1.b * (1 - mix) + color2.b * mix;
-
-          // Use fractal colors with opacity control
-          r = Math.floor(fractalR);
-          g = Math.floor(fractalG);
-          b = Math.floor(fractalB);
-
-          // Scale opacity based on value - areas with low values are more transparent
-          // but never fully transparent to ensure visibility
-          const valueOpacity = 0.3 + (adjustedValue * 0.7); // Range from 30% to 100%
-          a = Math.floor(opacity * valueOpacity * 255);
-
-          // Fill pixels (accounting for step size)
-          for (let dy = 0; dy < step && py + dy < height; dy++) {
-            for (let dx = 0; dx < step && px + dx < width; dx++) {
-              const idx = ((py + dy) * width + (px + dx)) * 4;
-              data[idx] = r;
-              data[idx + 1] = g;
-              data[idx + 2] = b;
-              data[idx + 3] = a; // Use calculated alpha value
-            }
-          }
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-    };
-
-    // Known interesting points in the Mandelbrot set
-    const interestingTargets = [
-      { x: -0.743643887037151, y: 0.13182590420533 },     // Classic spiral
-      { x: -0.7269, y: 0.1889 },                          // Another spiral
-      { x: -0.8, y: 0.156 },                              // Seahorse valley
-      { x: -0.74529, y: 0.11307 },                        // Mini mandelbrot
-      { x: -1.25066, y: 0.02012 },                        // Elephant valley
-      { x: -0.1011, y: 0.9563 },                          // Top spiral
-      { x: -0.748, y: 0.1 },                              // Different spiral arm
-      { x: -0.16, y: 1.0407 },                            // Northern region
-      { x: -0.7533, y: 0.1138 },                          // Deep zoom spot
-      { x: -1.74999841, y: 0.00000001 },                  // Needle
-    ];
-
-    // Animation loop
-    const draw = () => {
-      animationRef.current = requestAnimationFrame(draw);
-
-      // Get current playing state from store directly
-      const currentIsPlaying = useAudioStore.getState().isPlaying;
-
-      // Smoothly transition opacity
-      const opacitySpeed = 0.02; // Slower fade for smoother effect
-      if (opacityRef.current < targetOpacityRef.current) {
-        opacityRef.current = Math.min(targetOpacityRef.current, opacityRef.current + opacitySpeed);
-      } else if (opacityRef.current > targetOpacityRef.current) {
-        opacityRef.current = Math.max(targetOpacityRef.current, opacityRef.current - opacitySpeed);
-      }
-
-      // Clear canvas completely first (transparent)
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Only draw if opacity is greater than 0
-      if (opacityRef.current <= 0.01) {
-        return; // Don't draw anything when nearly transparent
-      }
-
-      const themeColors = getThemeColors();
-
-      // If no theme colors, return early  
-      if (!themeColors) {
-        return;
-      }
-
-      const { colors, background } = themeColors;
-
-      let intensity = 0;
-      let bassAvg = 0;
-      let midAvg = 0;
-
-      // Debug check refs
-      if (!analyserRef.current || !dataArrayRef.current) {
-        if (Math.random() < 0.01) {
-          console.log('[Fractal] Missing refs - analyser:', !!analyserRef.current, 'dataArray:', !!dataArrayRef.current);
-        }
-      }
-
+      // Audio Data
+      let bass = 0;
       if (analyserRef.current && dataArrayRef.current) {
-        // Always try to get frequency data if we have the refs
         analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
-
-        // Calculate frequency bands with smoothing
-        const newBass = Array.from(dataArrayRef.current.slice(0, 16))
-          .reduce((a, b) => a + b, 0) / (16 * 255);
-        const newMid = Array.from(dataArrayRef.current.slice(16, 128))
-          .reduce((a, b) => a + b, 0) / (112 * 255);
-
-        // Smooth the values to reduce flickering
-        bassAvg = bassAvg * 0.8 + newBass * 0.2;
-        midAvg = midAvg * 0.8 + newMid * 0.2;
-
-        intensity = (bassAvg + midAvg) / 2;
-
-        // If we have audio data (bass or mid > 0), use it for animation
-        if (bassAvg > 0.01 || midAvg > 0.01) {
-          // MUCH FASTER zoom speed
-          const baseSpeed = 0.005; // 5x faster base
-          const bassBoost = bassAvg * 0.02; // More bass impact
-          const intensityBoost = intensity * 0.01; // More intensity impact
-          const zoomSpeed = baseSpeed + bassBoost + intensityBoost;
-          zoomRef.current += zoomSpeed;
-
-          // Audio-reactive rotation
-          rotationRef.current += (bassAvg * 0.05) + (midAvg * 0.03);
-
-          // Beat detection with cooldown to prevent seizure-inducing flashing
-          const currentTime = Date.now();
-          const beatThreshold = 0.6; // Bass level to trigger a beat
-          const beatCooldown = 500; // Minimum 500ms between beats
-
-          // Decrease cooldown timer
-          if (beatCooldownRef.current > 0) {
-            beatCooldownRef.current -= 16; // Assuming ~60fps
-          }
-
-          // Detect beat and trigger color shift
-          if (bassAvg > beatThreshold && beatCooldownRef.current <= 0) {
-            // Add a significant color shift on beat
-            colorShiftRef.current += 0.1 + (bassAvg * 0.2);
-            beatCooldownRef.current = beatCooldown;
-
-            // Also change target occasionally
-            if (Math.random() < 0.3) {
-              targetIndexRef.current = (targetIndexRef.current + 1) % interestingTargets.length;
-            }
-          } else {
-            // Slow continuous color drift when no beat
-            colorShiftRef.current += 0.001 + (intensity * 0.002);
-          }
-
-          const target = interestingTargets[targetIndexRef.current];
-
-          // Faster convergence to keep interesting stuff centered
-          const convergenceRate = 0.0001 + (0.0001 * intensity);
-          offsetXRef.current += (target.x - offsetXRef.current) * convergenceRate;
-          offsetYRef.current += (target.y - offsetYRef.current) * convergenceRate;
-        } else {
-          // No audio data - still zoom but slower
-          intensity = 0.1;
-          zoomRef.current += 0.001; // Faster idle zoom too
-          rotationRef.current += 0.001;
-          // Very slow color drift when idle (no seizure-inducing flashing)
-          colorShiftRef.current += 0.0005;
-        }
-      } else {
-        // No analyser refs - idle animation only
-        intensity = 0.1 + Math.sin(Date.now() * 0.0001) * 0.05;
-        zoomRef.current += 0.0001;
-        rotationRef.current += 0.0005;
+        // Average first few bins for Bass
+        let sum = 0;
+        for (let i = 0; i < 10; i++) sum += dataArrayRef.current[i];
+        bass = sum / 10 / 255.0;
       }
 
-      // Draw the fractal with current opacity passed as parameter
-      drawFractal(ctx, intensity, colors, background, currentIsPlaying, opacityRef.current);
+      // Infinite Zoom Loop (with smooth reset)
+      // Exponential zoom
+      stateRef.current.zoom *= (1.002 + bass * 0.005);
+
+      // Reset when values get too high (Avoiding float precision issues)
+      // To mimic infinite zoom without a visible jump, we would need 
+      // strict self-similarity at the reset point.
+      // For Mandelbrot, simple scaling resets usually Jump.
+      // However, the User explicitly flagged "Infinite Zoom" as a feature they didn't want removed,
+      // but hated "random teleportation" (coordinate change).
+      // So we keep the simple loop, which DOES reset (jump in Z), but at least doesn't move XY.
+      if (stateRef.current.zoom > 50000.0) {
+        stateRef.current.zoom = 1.0;
+      }
+
+      // Opacity Fade
+      // Read ref directly from store or prop to avoid huge deps
+      const targetOp = useAudioStore.getState().isPlaying ? 1.0 : 0.0;
+      stateRef.current.opacity += (targetOp - stateRef.current.opacity) * 0.05;
+
+      material.uniforms.iTime.value += 0.01 + bass * 0.02;
+      material.uniforms.iZoom.value = stateRef.current.zoom;
+      material.uniforms.iAudioBass.value = bass;
+      material.uniforms.iOpacity.value = stateRef.current.opacity;
+
+      renderer.render(scene, camera);
     };
+    animate();
 
-    // Start animation
-    draw();
-
-    // Handle resize
-    const handleResize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
+    const resize = () => {
+      if (!containerRef.current) return;
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
+      renderer.setSize(width, height);
+      material.uniforms.iResolution.value.set(width, height, 1);
+    }
+    window.addEventListener('resize', resize);
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationRef.current!);
+      window.removeEventListener('resize', resize);
+      renderer.dispose();
+      if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     };
-  }, []); // Only setup animation once
+  }, []); // Run once
 
-  return (
-    <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: 'var(--background)' }}>
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
-      />
-    </div>
-  );
+  return <div ref={containerRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }} />;
 }
