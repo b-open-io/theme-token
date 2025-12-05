@@ -550,82 +550,88 @@ export default function PreviewPage({ params }: Props) {
             </div>
 
             {/* Tab Navigation using shadcn/ui Tabs with animation */}
-            <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as TabId)} className="w-full">
-              <TabsList className="mb-6 h-auto p-1 bg-muted/50 w-full justify-start overflow-x-auto flex-nowrap">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className="relative flex items-center gap-1.5 text-xs font-medium whitespace-nowrap cursor-pointer hover:bg-muted/80 data-[state=active]:shadow-sm transition-colors"
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="preview-active-tab"
-                          className="absolute inset-0 rounded-md bg-background"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
-                      )}
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5" />
-                        {tab.label}
-                      </span>
-                    </TabsTrigger>
+            <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-0 z-10 relative">
+              <div className="flex-1 flex flex-col min-h-0">
+                <Tabs
+                  defaultValue="dashboard"
+                  value={activeTab}
+                  onValueChange={(val) => handleTabChange(val as TabId)}
+                  className="flex-1 flex flex-col min-h-0"
+                >
+                  <div className="flex items-center justify-between mb-6 shrink-0">
+                    <TabsList className="grid w-full max-w-2xl grid-cols-6 h-auto p-1 bg-muted/50 backdrop-blur-sm border border-border/50">
+                      {tabs.map((tab) => (
+                        <TabsTrigger
+                          key={tab.id}
+                          value={tab.id}
+                          className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg transition-all duration-300 py-2.5 rounded-md"
+                        >
+                          <div className="flex flex-col items-center gap-1.5">
+                            <tab.icon className="w-4 h-4" />
+                            <span className="text-[10px] uppercase tracking-wider font-semibold">
+                              {tab.label}
+                            </span>
+                          </div>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+
+                  {/* Tab Content Wrapper - Scrollable for non-audio tabs */}
+                  <div className="flex-1 min-h-0 relative">
+                    <div className="absolute inset-0 overflow-y-auto pr-1">
+                      <TabsContent value="dashboard" className="mt-0 h-full">
+                        <DashboardDemo />
+                      </TabsContent>
+
+                      <TabsContent value="colors" className="mt-0 h-full">
+                        <ColorsDemo theme={theme} mode={previewMode} />
+                      </TabsContent>
+
+                      <TabsContent value="typography" className="mt-0 h-full">
+                        <TypographyDemo theme={theme} mode={previewMode} />
+                      </TabsContent>
+
+                      <TabsContent value="controls" className="mt-0 h-full">
+                        <div className="space-y-8 pb-10">
+                          <ButtonsDemo />
+                          <FormsDemo />
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="cards" className="mt-0 h-full">
+                        <CardsDemo />
+                      </TabsContent>
+
+                      {/* Audio Tab - No internal scroll, takes full height */}
+                      <TabsContent value="audio" className="mt-0 h-full overflow-hidden">
+                        <div className="w-full h-full">
+                          <AudioDemo theme={theme} mode={previewMode} />
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="ai" className="mt-0 h-full">
+                        <AiDemo />
+                      </TabsContent>
+                    </div>
+                  </div>
+                </Tabs>
+              </div>
+
+              {/* Remix Dialog */}
+              <UnifiedRemixDialog
+                isOpen={showRemixDialog}
+                onClose={() => setShowRemixDialog(false)}
+                type="theme"
+                previousTheme={theme}
+                onThemeRemixComplete={(newTheme) => {
+                  // Navigate to studio with the new remixed theme
+                  router.push(
+                    `/studio?remix=${encodeURIComponent(JSON.stringify(newTheme))}`,
                   );
-                })}
-              </TabsList>
-
-              {/* Tab Content */}
-              <TabsContent value="dashboard" className="mt-0">
-                <DashboardDemo />
-              </TabsContent>
-
-              <TabsContent value="colors" className="mt-0">
-                <ColorsDemo theme={theme} mode={previewMode} />
-              </TabsContent>
-
-              <TabsContent value="typography" className="mt-0">
-                <TypographyDemo theme={theme} mode={previewMode} />
-              </TabsContent>
-
-              <TabsContent value="controls" className="mt-0">
-                <div className="space-y-8">
-                  <ButtonsDemo />
-                  <FormsDemo />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="cards" className="mt-0">
-                <CardsDemo />
-              </TabsContent>
-
-              <TabsContent value="audio" className="mt-0">
-                <AudioDemo theme={theme} mode={previewMode} />
-              </TabsContent>
-
-              <TabsContent value="ai" className="mt-0">
-                <AiDemo />
-              </TabsContent>
-            </Tabs>
+                }}
+              />
+            </div>
           </div>
-        </div>
-
-        {/* Remix Dialog */}
-        <UnifiedRemixDialog
-          isOpen={showRemixDialog}
-          onClose={() => setShowRemixDialog(false)}
-          type="theme"
-          previousTheme={theme}
-          onThemeRemixComplete={(newTheme) => {
-            // Navigate to studio with the new remixed theme
-            router.push(
-              `/studio?remix=${encodeURIComponent(JSON.stringify(newTheme))}`,
-            );
-          }}
-        />
-      </div>
-    </div>
-  );
+          );
 }
