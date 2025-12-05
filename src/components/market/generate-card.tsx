@@ -305,51 +305,48 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 	};
 
 	return (
-		<div className="flex h-full min-h-[280px] flex-col rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 p-5">
+		<div className="flex h-full min-h-[200px] sm:min-h-[280px] flex-col rounded-lg sm:rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 p-3 sm:p-5 overflow-hidden">
 			{/* Header */}
-			<div className="mb-4 flex items-center gap-3">
-				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-					<Wand2 className="h-5 w-5 text-primary" />
+			<div className="mb-2 sm:mb-4 flex items-center gap-2 sm:gap-3">
+				<div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-primary/10">
+					<Wand2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
 				</div>
 				<div>
-					<h3 className="font-semibold">Generate with AI</h3>
-					<p className="text-xs text-muted-foreground">
-						Powered by Gemini
+					<h3 className="font-semibold text-sm sm:text-base">AI Generate</h3>
+					<p className="text-[10px] sm:text-xs text-muted-foreground">
+						Gemini
 					</p>
 				</div>
 			</div>
 
-			{/* Show active filters */}
+			{/* Show active filters - hidden on mobile */}
 			{hasFilters && (
-				<div className="mb-4 space-y-1.5 rounded-lg bg-muted/50 p-3">
-					<p className="text-xs font-medium text-muted-foreground">
-						Using your filters:
+				<div className="mb-2 sm:mb-4 space-y-1 rounded-lg bg-muted/50 p-2 sm:p-3 hidden sm:block">
+					<p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+						Using filters:
 					</p>
 					{filters.primaryColor && (
-						<div className="flex items-center gap-2 text-xs">
+						<div className="flex items-center gap-1.5 text-[10px] sm:text-xs">
 							<div
-								className="h-3 w-3 rounded-full border"
+								className="h-2.5 w-2.5 rounded-full border"
 								style={{
 									backgroundColor: `oklch(${filters.primaryColor.l} ${filters.primaryColor.c} ${filters.primaryColor.h})`,
 								}}
 							/>
-							<span>Custom primary color</span>
+							<span>Custom color</span>
 						</div>
 					)}
 					{filters.radius && (
-						<p className="text-xs">
-							<span className="font-mono text-primary">{filters.radius}</span> radius
+						<p className="text-[10px] sm:text-xs">
+							<span className="font-mono text-primary">{filters.radius}</span>
 						</p>
-					)}
-					{filters.fontTypes.length > 0 && (
-						<p className="text-xs">{filters.fontTypes.join(", ")} fonts</p>
 					)}
 				</div>
 			)}
 
 			{/* Quick style suggestions */}
-			<div className="mb-4">
-				<p className="mb-2 text-xs font-medium text-muted-foreground">Quick styles</p>
+			<div className="mb-2 sm:mb-4">
+				<p className="mb-1.5 sm:mb-2 text-[10px] sm:text-xs font-medium text-muted-foreground">Quick styles</p>
 				<Suggestions>
 					{STYLE_SUGGESTIONS.map((style) => (
 						<Suggestion
@@ -357,20 +354,20 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 							suggestion={style.label}
 							onClick={handleSuggestionClick}
 							disabled={isProcessing || !isConnected || !hasEnoughBalance}
-							className="text-xs"
+							className="text-[10px] sm:text-xs h-6 sm:h-auto px-2 sm:px-4"
 						/>
 					))}
 				</Suggestions>
 			</div>
 
 			{/* Custom prompt input */}
-			<div className="mb-4">
+			<div className="mb-2 sm:mb-4">
 				<textarea
 					value={prompt}
 					onChange={(e) => setPrompt(e.target.value)}
 					placeholder="Or describe your ideal theme..."
 					disabled={isProcessing}
-					className="h-16 w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+					className="h-12 sm:h-16 w-full resize-none rounded-lg border border-border bg-background p-2 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
 				/>
 			</div>
 
@@ -429,13 +426,13 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				<Button
 					onClick={() => handleGenerate()}
 					disabled={isProcessing || (isConnected && !hasEnoughBalance)}
-					className="w-full gap-2"
+					className="w-full gap-1.5 sm:gap-2 h-7 sm:h-8 text-xs sm:text-sm"
 					size="sm"
 				>
 					{getButtonContent()}
 				</Button>
-				<p className="mt-2 text-center text-[10px] text-muted-foreground">
-					{formatBsv(AI_GENERATION_COST_SATS)} BSV per generation
+				<p className="mt-1.5 sm:mt-2 text-center text-[9px] sm:text-[10px] text-muted-foreground">
+					{formatBsv(AI_GENERATION_COST_SATS)} BSV
 					{/* Subtle recovery link - only visible on hover/focus */}
 					{!pendingPayment && !showRecovery && (
 						<>

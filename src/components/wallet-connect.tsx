@@ -149,13 +149,19 @@ function ModeToggle() {
 	);
 }
 
-export function WalletConnect() {
+interface WalletConnectProps {
+	hideModeToggleOnMobile?: boolean;
+}
+
+export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {}) {
 	const { status, error, connect, disconnect, themeTokens, isLoading } =
 		useYoursWallet();
 	const { activeTheme, applyThemeAnimated, resetTheme, mode } = useTheme();
 	const [isOpen, setIsOpen] = useState(false);
 	const [showMobileDialog, setShowMobileDialog] = useState(false);
 	const isMobile = useIsMobile();
+
+	const showModeToggle = !hideModeToggleOnMobile || !isMobile;
 
 	const handleConnectClick = () => {
 		if (isMobile) {
@@ -169,29 +175,29 @@ export function WalletConnect() {
 	if (status === "not-installed") {
 		return (
 			<>
-				<div className="flex items-center gap-2">
-					<ModeToggle />
+				<div className="flex items-center gap-1">
+					{showModeToggle && <ModeToggle />}
 					{isMobile ? (
 						<Button
-							variant="outline"
-							size="sm"
+							variant="ghost"
+							size="icon"
 							onClick={() => setShowMobileDialog(true)}
-							className="gap-2"
 						>
 							<Wallet className="h-4 w-4" />
-							<span className="hidden sm:inline">Connect</span>
+							<span className="sr-only">Connect wallet</span>
 						</Button>
 					) : (
-						<a
-							href={YOURS_WALLET_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition-colors hover:bg-muted"
-						>
-							<Wallet className="h-4 w-4" />
-							<span className="hidden sm:inline">Install Yours Wallet</span>
-							<ExternalLink className="h-3 w-3" />
-						</a>
+						<Button variant="ghost" size="sm" className="gap-1.5" asChild>
+							<a
+								href={YOURS_WALLET_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+									>
+								<Wallet className="h-4 w-4" />
+								<span className="hidden sm:inline">Install</span>
+								<ExternalLink className="h-3 w-3" />
+							</a>
+						</Button>
 					)}
 				</div>
 				<MobileWalletDialog
@@ -206,13 +212,13 @@ export function WalletConnect() {
 	if (status === "disconnected" || status === "error") {
 		return (
 			<>
-				<div className="flex items-center gap-2">
-					<ModeToggle />
+				<div className="flex items-center gap-1">
+					{showModeToggle && <ModeToggle />}
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="sm"
 						onClick={handleConnectClick}
-						className="gap-2"
+						className="gap-1.5"
 					>
 						<Wallet className="h-4 w-4" />
 						<span className="hidden sm:inline">Connect</span>
@@ -230,9 +236,9 @@ export function WalletConnect() {
 	// Connecting state
 	if (status === "connecting") {
 		return (
-			<div className="flex items-center gap-2">
-				<ModeToggle />
-				<Button variant="outline" size="sm" disabled className="gap-2">
+			<div className="flex items-center gap-1">
+				{showModeToggle && <ModeToggle />}
+				<Button variant="ghost" size="sm" disabled className="gap-1.5">
 					<Loader2 className="h-4 w-4 animate-spin" />
 					<span className="hidden sm:inline">Connecting...</span>
 				</Button>
@@ -242,16 +248,16 @@ export function WalletConnect() {
 
 	// Connected state
 	return (
-		<div className="flex items-center gap-2">
-			<ModeToggle />
+		<div className="flex items-center gap-1">
+			{showModeToggle && <ModeToggle />}
 
 			{/* Theme Selector Dropdown */}
 			<div className="relative">
 				<Button
-					variant="outline"
+					variant="ghost"
 					size="sm"
 					onClick={() => setIsOpen(!isOpen)}
-					className="gap-2"
+					className="gap-1.5"
 				>
 					{activeTheme ? (
 						<ThemeStripes styles={activeTheme.styles} mode={mode} />

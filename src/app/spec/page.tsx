@@ -136,7 +136,7 @@ export default function SpecPage() {
 						</motion.p>
 					</motion.div>
 
-					<div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+					<div className="grid gap-8 lg:grid-cols-2 lg:items-start overflow-hidden">
 						{/* Color Variables */}
 						<motion.div
 							initial={{ opacity: 0, x: -20 }}
@@ -293,10 +293,10 @@ export default function SpecPage() {
 						<motion.div
 							initial={{ opacity: 0, x: 20 }}
 							animate={{ opacity: 1, x: 0 }}
-							className="flex flex-col"
+							className="flex flex-col min-w-0"
 						>
 							<h3 className="mb-4 font-semibold">Full Schema Structure</h3>
-							<div className="max-h-[500px] overflow-auto rounded-lg border border-border">
+							<div className="max-h-[500px] overflow-auto rounded-lg border border-border max-w-full">
 							<JsonSyntax
 								json={{
 									$schema: "https://themetoken.dev/v1/schema.json",

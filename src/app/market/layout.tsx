@@ -205,7 +205,7 @@ function MarketLayoutInner({
 			</header>
 
 			{/* Content */}
-			<div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6">
+			<div className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 overflow-x-hidden">
 				{children}
 			</div>
 		</div>

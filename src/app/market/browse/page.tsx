@@ -227,7 +227,7 @@ export default function BrowsePage() {
 				</aside>
 
 				{/* Main Content */}
-				<main className="lg:col-span-9 xl:col-span-10">
+				<main className="lg:col-span-9 xl:col-span-10 min-w-0 overflow-hidden">
 					{/* Header */}
 					<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
 						<div>
@@ -313,7 +313,7 @@ export default function BrowsePage() {
 							)}
 
 							{/* Theme grid - always show with RemixCard */}
-							<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+							<div className="grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3">
 								{filteredListings.map((listing, index) => (
 									<motion.div
 										key={listing.outpoint}
@@ -338,11 +338,12 @@ export default function BrowsePage() {
 									</motion.div>
 								))}
 
-								{/* AI Generate Card - Always visible */}
+								{/* AI Generate Card - Always visible, full width on mobile */}
 								<motion.div
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: filteredListings.length * 0.05 }}
+									className="col-span-2 xl:col-span-1"
 								>
 									<GenerateCard filters={filters} />
 								</motion.div>

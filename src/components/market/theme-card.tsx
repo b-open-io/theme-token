@@ -66,16 +66,16 @@ export function ThemeCard({
 	} as React.CSSProperties;
 
 	return (
-		<div className="group flex flex-col gap-3" onMouseEnter={() => loadThemeFonts(theme)}>
+		<div className="group flex flex-col gap-2 sm:gap-3 min-w-0" onMouseEnter={() => loadThemeFonts(theme)}>
 			{/* Live Preview Area - Click to apply theme */}
 			<button
 				type="button"
 				onClick={onApplyTheme}
-				className="text-left"
+				className="text-left w-full"
 			>
 				<div
 					style={themeVars}
-					className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border shadow-sm transition-all group-hover:shadow-lg cursor-pointer"
+					className="relative aspect-square sm:aspect-[4/3] w-full overflow-hidden rounded-lg sm:rounded-xl border shadow-sm transition-all group-hover:shadow-lg cursor-pointer"
 				>
 					{/* Background */}
 					<div
@@ -181,43 +181,37 @@ export function ThemeCard({
 					</div>
 
 					{/* Hover overlay */}
-					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20">
-						<div className="flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100">
-							<Sparkles className="h-4 w-4" />
-							Apply Theme
+					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20 overflow-hidden">
+						<div className="flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs sm:text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100 max-w-[90%]">
+							<Sparkles className="h-3.5 w-3.5 shrink-0" />
+							<span className="truncate">Apply Theme</span>
 						</div>
 					</div>
 				</div>
 			</button>
 
 			{/* Metadata */}
-			<div className="flex items-start justify-between gap-2">
+			<div className="flex items-start justify-between gap-1 sm:gap-2">
 				<div className="min-w-0 flex-1">
-					<h3 className="font-semibold text-sm truncate">{theme.name}</h3>
-					<p className="text-xs text-muted-foreground">
-						{theme.author || "Anonymous"} &middot;{" "}
+					<h3 className="font-semibold text-xs sm:text-sm truncate">{theme.name}</h3>
+					<p className="text-[10px] sm:text-xs text-muted-foreground truncate">
 						<span className="font-mono">{origin.slice(0, 8)}</span>
 					</p>
 				</div>
-				<div className="text-right">
-					<p className="font-mono text-sm font-semibold">
-						{usdPrice || `${formatBSV(price)} BSV`}
+				<div className="text-right shrink-0">
+					<p className="font-mono text-xs sm:text-sm font-semibold">
+						{usdPrice || `${formatBSV(price)}`}
 					</p>
-					{usdPrice && (
-						<span className="font-mono text-[10px] text-muted-foreground">
-							{formatBSV(price)} BSV
-						</span>
-					)}
 					{hasChange && (
 						<span
-							className={`inline-flex items-center gap-0.5 font-mono text-[10px] font-medium ${
+							className={`inline-flex items-center gap-0.5 font-mono text-[9px] sm:text-[10px] font-medium ${
 								isPositive ? "text-emerald-500" : "text-rose-500"
 							}`}
 						>
 							{isPositive ? (
-								<TrendingUp className="h-2.5 w-2.5" />
+								<TrendingUp className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
 							) : (
-								<TrendingDown className="h-2.5 w-2.5" />
+								<TrendingDown className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
 							)}
 							{isPositive ? "+" : ""}
 							{priceChange?.toFixed(1)}%
@@ -227,34 +221,32 @@ export function ThemeCard({
 			</div>
 
 			{/* Actions */}
-			<div className="flex gap-2">
+			<div className="flex gap-1.5 sm:gap-2">
 				<Button
 					variant="outline"
 					size="sm"
-					className="flex-1"
+					className="flex-1 h-7 sm:h-8 text-xs px-2 sm:px-3"
 					asChild
 				>
 					<Link href={`/preview/${origin}`}>
-						<ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-						Details
+						<ExternalLink className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
+						<span className="hidden sm:inline">Details</span>
+						<span className="sm:hidden">Info</span>
 					</Link>
 				</Button>
 				<Button
 					size="sm"
-					className="flex-1"
+					className="flex-1 h-7 sm:h-8 text-xs px-2 sm:px-3"
 					disabled={isPurchasing}
 					onClick={() => (isConnected ? onPurchase() : onConnect())}
 				>
 					{isPurchasing ? (
-						<>
-							<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-							Buying...
-						</>
+						<Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin" />
 					) : !isConnected ? (
 						"Connect"
 					) : (
 						<>
-							<ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+							<ShoppingCart className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
 							Buy
 						</>
 					)}
