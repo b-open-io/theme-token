@@ -14,6 +14,8 @@ export function AudioVisualizerFractal() {
 	const rotationRef = useRef(0);
 	const offsetXRef = useRef(-0.743643887037151); // Start near the spiral
 	const offsetYRef = useRef(0.13182590420533);
+	const targetIndexRef = useRef(0);
+	const detailLevelRef = useRef(1); // Track how interesting current view is
 	
 	const isPlaying = useAudioStore((s) => s.isPlaying);
 	const currentTrack = useAudioStore((s) => s.currentTrack);
@@ -266,21 +268,23 @@ export function AudioVisualizerFractal() {
 			const offsetX = offsetXRef.current;
 			const offsetY = offsetYRef.current;
 			
-			// Lower resolution for performance - dynamic based on zoom level
-			const step = zoom > 1000 ? 4 : (isPlaying ? 2 : 3);
+			// Lower resolution for performance
+			const step = 3; // Fixed step for consistent performance
 			
 			for (let py = 0; py < height; py += step) {
 				for (let px = 0; px < width; px += step) {
-					let value = 0;
+					// Map pixel to complex plane - apply rotation here
+					const angle = rotationRef.current;
+					const cx = (px - width / 2) / (width * zoom);
+					const cy = (py - height / 2) / (height * zoom);
 					
-					// Map pixel to complex plane
-					const x = (px - width / 2) / (width * zoom) + offsetX;
-					const y = (py - height / 2) / (height * zoom) + offsetY;
+					// Apply rotation
+					const x = cx * Math.cos(angle) - cy * Math.sin(angle) + offsetX;
+					const y = cx * Math.sin(angle) + cy * Math.cos(angle) + offsetY;
 					
-					// Mandelbrot set with dynamic iteration count based on zoom level
-					// More iterations as we zoom in to reveal finer details
-					const iterations = Math.min(256, 50 + Math.log(zoom) * 10 + intensity * 100);
-					value = mandelbrot(x, y, iterations);
+					// Mandelbrot set with dynamic iteration count
+					const iterations = Math.min(128, 30 + Math.log(zoom) * 5 + intensity * 50);
+					let value = mandelbrot(x, y, iterations);
 					
 					// Apply intensity - make colors pulse with the music
 					// Increase contrast for better visibility
@@ -289,13 +293,17 @@ export function AudioVisualizerFractal() {
 					// Color based on value and theme colors
 					let r, g, b;
 					if (value > 0.001) { // Lower threshold for more visible fractal
-						// Shift through theme colors based on music intensity
-						const colorShift = intensity * 2; // Music affects color selection
-						const shiftedValue = (value + colorShift) % 1;
-						const colorIndex = Math.floor(shiftedValue * (colors.length - 1));
-						const color1 = colors[Math.min(colorIndex, colors.length - 1)];
-						const color2 = colors[Math.min(colorIndex + 1, colors.length - 1)];
-						const mix = (shiftedValue * (colors.length - 1)) % 1;
+						// Dynamic color cycling based on time and music
+						const timeShift = Date.now() * 0.00005; // Slow continuous shift
+						const musicShift = intensity * 2; // Music adds to shift
+						const depthShift = Math.log(zoom) * 0.1; // Deeper = different colors
+						const totalShift = (timeShift + musicShift + depthShift) % 1;
+						
+						const shiftedValue = (value * 3 + totalShift) % 1;
+						const colorIndex = Math.floor(shiftedValue * colors.length);
+						const color1 = colors[colorIndex % colors.length];
+						const color2 = colors[(colorIndex + 1) % colors.length];
+						const mix = (shiftedValue * colors.length) % 1;
 						
 						// Interpolate between theme colors for the fractal
 						const fractalR = color1.r * (1 - mix) + color2.r * mix;
@@ -329,6 +337,20 @@ export function AudioVisualizerFractal() {
 			
 			ctx.putImageData(imageData, 0, 0);
 		};
+
+		// Known interesting points in the Mandelbrot set
+		const interestingTargets = [
+			{ x: -0.743643887037151, y: 0.13182590420533 },     // Classic spiral
+			{ x: -0.7269, y: 0.1889 },                          // Another spiral
+			{ x: -0.8, y: 0.156 },                              // Seahorse valley
+			{ x: -0.74529, y: 0.11307 },                        // Mini mandelbrot
+			{ x: -1.25066, y: 0.02012 },                        // Elephant valley
+			{ x: -0.1011, y: 0.9563 },                          // Top spiral
+			{ x: -0.748, y: 0.1 },                              // Different spiral arm
+			{ x: -0.16, y: 1.0407 },                            // Northern region
+			{ x: -0.7533, y: 0.1138 },                          // Deep zoom spot
+			{ x: -1.74999841, y: 0.00000001 },                  // Needle
+		];
 
 		// Animation loop
 		const draw = () => {
@@ -370,55 +392,42 @@ export function AudioVisualizerFractal() {
 				// Always try to get frequency data if we have the refs
 				analyserRef.current.getByteFrequencyData(dataArrayRef.current);
 				
-				// Calculate frequency bands
-				bassAvg = Array.from(dataArrayRef.current.slice(0, 16))
+				// Calculate frequency bands with smoothing
+				const newBass = Array.from(dataArrayRef.current.slice(0, 16))
 					.reduce((a, b) => a + b, 0) / (16 * 255);
-				midAvg = Array.from(dataArrayRef.current.slice(16, 128))
+				const newMid = Array.from(dataArrayRef.current.slice(16, 128))
 					.reduce((a, b) => a + b, 0) / (112 * 255);
+				
+				// Smooth the values to reduce flickering
+				bassAvg = bassAvg * 0.8 + newBass * 0.2;
+				midAvg = midAvg * 0.8 + newMid * 0.2;
 				
 				intensity = (bassAvg + midAvg) / 2;
 				
-				// Debug: Log audio data occasionally
-				if (Math.random() < 0.02) { // Log 2% of frames
-					const maxValue = Math.max(...Array.from(dataArrayRef.current));
-					const sum = Array.from(dataArrayRef.current).reduce((a, b) => a + b, 0);
-					const audioElement = $audio.getAudioElement();
-					console.log('[Fractal] Frame data:', {
-						isPlaying: currentIsPlaying,
-						audioPlaying: audioElement ? !audioElement.paused : false,
-						audioTime: audioElement?.currentTime,
-						dataMax: maxValue,
-						dataSum: sum,
-						bass: bassAvg.toFixed(3),
-						mid: midAvg.toFixed(3),
-						intensity: intensity.toFixed(3)
-					});
-				}
-				
 				// If we have audio data (bass or mid > 0), use it for animation
 				if (bassAvg > 0.01 || midAvg > 0.01) {
-					// MUCH SLOWER ZOOM for controlled infinite fractal experience
-					const zoomSpeed = 0.0002 + (bassAvg * 0.0008); // 10x slower
+					// MUCH FASTER zoom speed
+					const baseSpeed = 0.005; // 5x faster base
+					const bassBoost = bassAvg * 0.02; // More bass impact
+					const intensityBoost = intensity * 0.01; // More intensity impact
+					const zoomSpeed = baseSpeed + bassBoost + intensityBoost;
 					zoomRef.current += zoomSpeed;
 					
-					// Very subtle rotation
-					rotationRef.current += midAvg * 0.002; // 5x slower
+					// Audio-reactive rotation
+					rotationRef.current += (bassAvg * 0.05) + (midAvg * 0.03);
 					
-					// Classic Mandelbrot spiral coordinates for infinite zoom
-					// This point has infinite detail and beautiful spirals
-					const targetX = -0.743643887037151;
-					const targetY = 0.13182590420533;
+					// Always use the first target (classic spiral)
+					const target = interestingTargets[0];
 					
-					// Very slowly converge on the target as we zoom
-					// This keeps the interesting patterns centered
-					const convergenceRate = 0.000001 * Math.exp(zoomRef.current * 0.1);
-					offsetXRef.current += (targetX - offsetXRef.current) * convergenceRate;
-					offsetYRef.current += (targetY - offsetYRef.current) * convergenceRate;
+					// Faster convergence to keep interesting stuff centered
+					const convergenceRate = 0.0001 + (0.0001 * intensity);
+					offsetXRef.current += (target.x - offsetXRef.current) * convergenceRate;
+					offsetYRef.current += (target.y - offsetYRef.current) * convergenceRate;
 				} else {
-					// No audio data - very gentle continuous zoom
-					intensity = 0.1 + Math.sin(Date.now() * 0.0001) * 0.05;
-					zoomRef.current += 0.00005; // Even slower idle zoom
-					rotationRef.current += 0.0001;
+					// No audio data - still zoom but slower
+					intensity = 0.1;
+					zoomRef.current += 0.001; // Faster idle zoom too
+					rotationRef.current += 0.001;
 				}
 			} else {
 				// No analyser refs - idle animation only
@@ -451,12 +460,10 @@ export function AudioVisualizerFractal() {
 	}, []); // Only setup animation once
 
 	return (
-		<div className="rounded-xl border shadow-sm h-full relative overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
-			<canvas 
-				ref={canvasRef} 
-				className="w-full h-full"
-				style={{ display: 'block' }}
-			/>
-		</div>
+		<canvas 
+			ref={canvasRef} 
+			className="absolute inset-0 w-full h-full"
+			style={{ backgroundColor: 'var(--background)' }}
+		/>
 	);
 }

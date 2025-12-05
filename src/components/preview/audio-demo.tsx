@@ -57,17 +57,15 @@ export function AudioDemo() {
 
 	return (
 		<AudioDemoProvider tracks={demoTracks}>
-			<DemoSection
-				title="Audio Player"
-				description="Theme-aware audio player with real-time visualization"
-			>
-				<div className="grid gap-4 lg:grid-cols-2">
+			<div className="relative overflow-hidden rounded-xl" style={{ height: 'calc(100vh - 24rem)' }}>
+				{/* Fullscreen visualizer */}
+				<AudioVisualizerFractal />
+				
+				{/* Player overlay at bottom center */}
+				<div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
 					<ParticlePlayerWidget />
-					<div className="h-[240px]">
-						<AudioVisualizerFractal />
-					</div>
 				</div>
-			</DemoSection>
+			</div>
 		</AudioDemoProvider>
 	);
 }
