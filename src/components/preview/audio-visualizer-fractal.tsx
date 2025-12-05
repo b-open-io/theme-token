@@ -10,34 +10,88 @@ export function AudioVisualizerFractal() {
 	const animationRef = useRef<number | null>(null);
 	const analyserRef = useRef<AnalyserNode | null>(null);
 	const dataArrayRef = useRef<Uint8Array | null>(null);
-	const zoomRef = useRef(1);
+	const zoomRef = useRef(-0.5); // Start zoomed out to see the whole set
 	const rotationRef = useRef(0);
-	const offsetXRef = useRef(0);
-	const offsetYRef = useRef(0);
+	const offsetXRef = useRef(-0.743643887037151); // Start near the spiral
+	const offsetYRef = useRef(0.13182590420533);
 	
 	const isPlaying = useAudioStore((s) => s.isPlaying);
+	const currentTrack = useAudioStore((s) => s.currentTrack);
+	
+	// Log when track or playing state changes
+	useEffect(() => {
+		console.log('[Fractal] Store state changed - isPlaying:', isPlaying, 'track:', currentTrack?.title);
+	}, [isPlaying, currentTrack]);
 
 	// Setup audio ONCE and keep it connected
 	useEffect(() => {
 		const setupAudio = () => {
 			const audioElement = $audio.getAudioElement();
-			if (!audioElement) return;
+			if (!audioElement) {
+				console.log('[Fractal] Audio element not ready yet');
+				return false;
+			}
 			
 			const { analyser, dataArray } = audioVisualizerContext.setupAudio(audioElement);
+			if (!analyser || !dataArray) {
+				console.log('[Fractal] Failed to setup audio context');
+				return false;
+			}
+			
 			analyserRef.current = analyser;
 			dataArrayRef.current = dataArray;
+			console.log('[Fractal] Audio context connected successfully');
+			return true;
 		};
 
-		setupAudio();
-		const timer = setTimeout(setupAudio, 100);
-		
-		return () => clearTimeout(timer);
+		// Try to setup immediately
+		if (!setupAudio()) {
+			// Retry multiple times with increasing delays
+			const retryDelays = [50, 100, 200, 500, 1000];
+			let retryIndex = 0;
+			
+			const retrySetup = () => {
+				if (setupAudio()) {
+					return; // Success
+				}
+				if (retryIndex < retryDelays.length) {
+					setTimeout(retrySetup, retryDelays[retryIndex]);
+					retryIndex++;
+				} else {
+					console.error('[Fractal] Failed to connect audio after all retries');
+				}
+			};
+			
+			setTimeout(retrySetup, retryDelays[0]);
+		}
 	}, []); // Only run once on mount
 	
 	// Resume audio context when playing starts
 	useEffect(() => {
+		console.log('[Fractal] isPlaying changed to:', isPlaying);
 		if (isPlaying) {
 			audioVisualizerContext.resume();
+			// Debug: Check if audio element is actually playing
+			const audioElement = $audio.getAudioElement();
+			if (audioElement) {
+				console.log('[Fractal] Audio element state:', {
+					paused: audioElement.paused,
+					currentTime: audioElement.currentTime,
+					duration: audioElement.duration,
+					volume: audioElement.volume,
+					src: audioElement.src,
+					readyState: audioElement.readyState,
+					networkState: audioElement.networkState
+				});
+				
+				// Check if we have analyser connection
+				console.log('[Fractal] Analyser status:', {
+					hasAnalyser: !!analyserRef.current,
+					hasDataArray: !!dataArrayRef.current
+				});
+			} else {
+				console.log('[Fractal] No audio element found!');
+			}
 		}
 	}, [isPlaying]);
 
@@ -53,17 +107,14 @@ export function AudioVisualizerFractal() {
 		const getThemeColors = () => {
 			// Find the preview container with theme variables
 			const container = canvas.closest('[style*="--primary"]');
-			console.log('Container found:', container?.tagName, container?.className);
 			
 			if (!container) {
-				console.log('NO CONTAINER WITH THEME VARS FOUND');
 				// Return transparent if no theme found
 				return null;
 			}
 			
 			// Check if we're in dark mode
 			const isDarkMode = container.closest('.dark') !== null;
-			console.log('Dark mode:', isDarkMode);
 			const style = getComputedStyle(container);
 			
 			const colorVars = [
@@ -167,21 +218,10 @@ export function AudioVisualizerFractal() {
 			
 			// Get background color - THIS IS CRITICAL
 			const bgRaw = style.getPropertyValue('--background').trim();
-			console.log('Background raw:', bgRaw);
-			console.log('All CSS vars:', {
-				primary: style.getPropertyValue('--primary'),
-				secondary: style.getPropertyValue('--secondary'),
-				accent: style.getPropertyValue('--accent'),
-				background: style.getPropertyValue('--background'),
-				foreground: style.getPropertyValue('--foreground')
-			});
 			
 			const background = formatColor(bgRaw);
-			console.log('Parsed background RGB:', background);
-			console.log('Parsed colors:', colors);
 			
 			if (!background || colors.length === 0) {
-				console.log('FAILED - no background or colors');
 				return null;
 			}
 			
@@ -212,7 +252,8 @@ export function AudioVisualizerFractal() {
 			ctx: CanvasRenderingContext2D,
 			intensity: number,
 			colors: Array<{r: number, g: number, b: number}>,
-			background: {r: number, g: number, b: number}
+			background: {r: number, g: number, b: number},
+			isPlaying: boolean
 		) => {
 			const width = canvas.width;
 			const height = canvas.height;
@@ -220,12 +261,13 @@ export function AudioVisualizerFractal() {
 			const data = imageData.data;
 			
 			// Adjust zoom and position based on music
-			const zoom = zoomRef.current;
+			// Use exponential zoom for infinite zooming capability
+			const zoom = Math.exp(zoomRef.current);
 			const offsetX = offsetXRef.current;
 			const offsetY = offsetYRef.current;
 			
-			// Lower resolution for performance
-			const step = isPlaying ? 2 : 4;
+			// Lower resolution for performance - dynamic based on zoom level
+			const step = zoom > 1000 ? 4 : (isPlaying ? 2 : 3);
 			
 			for (let py = 0; py < height; py += step) {
 				for (let px = 0; px < width; px += step) {
@@ -235,30 +277,36 @@ export function AudioVisualizerFractal() {
 					const x = (px - width / 2) / (width * zoom) + offsetX;
 					const y = (py - height / 2) / (height * zoom) + offsetY;
 					
-					// Only Mandelbrot set
-					value = mandelbrot(x, y, 50 + intensity * 50);
+					// Mandelbrot set with dynamic iteration count based on zoom level
+					// More iterations as we zoom in to reveal finer details
+					const iterations = Math.min(256, 50 + Math.log(zoom) * 10 + intensity * 100);
+					value = mandelbrot(x, y, iterations);
 					
-					// Apply intensity
-					value = value * (0.5 + intensity * 0.5);
+					// Apply intensity - make colors pulse with the music
+					// Increase contrast for better visibility
+					value = Math.pow(value, 0.5) * (0.5 + intensity * 0.5);
 					
 					// Color based on value and theme colors
 					let r, g, b;
-					if (value > 0.01) {
-						// Use theme colors for the fractal
-						const colorIndex = Math.floor(value * (colors.length - 1));
+					if (value > 0.001) { // Lower threshold for more visible fractal
+						// Shift through theme colors based on music intensity
+						const colorShift = intensity * 2; // Music affects color selection
+						const shiftedValue = (value + colorShift) % 1;
+						const colorIndex = Math.floor(shiftedValue * (colors.length - 1));
 						const color1 = colors[Math.min(colorIndex, colors.length - 1)];
 						const color2 = colors[Math.min(colorIndex + 1, colors.length - 1)];
-						const mix = (value * (colors.length - 1)) % 1;
+						const mix = (shiftedValue * (colors.length - 1)) % 1;
 						
 						// Interpolate between theme colors for the fractal
 						const fractalR = color1.r * (1 - mix) + color2.r * mix;
 						const fractalG = color1.g * (1 - mix) + color2.g * mix;
 						const fractalB = color1.b * (1 - mix) + color2.b * mix;
 						
-						// Mix with background based on value for smooth edges
-						r = Math.floor(fractalR * value + background.r * (1 - value));
-						g = Math.floor(fractalG * value + background.g * (1 - value));
-						b = Math.floor(fractalB * value + background.b * (1 - value));
+						// Use full fractal colors for better visibility - no background mixing
+						// This ensures the fractal stands out from the background
+						r = Math.floor(fractalR);
+						g = Math.floor(fractalG);
+						b = Math.floor(fractalB);
 					} else {
 						// Use background color for areas outside the fractal
 						r = background.r;
@@ -285,6 +333,9 @@ export function AudioVisualizerFractal() {
 		// Animation loop
 		const draw = () => {
 			animationRef.current = requestAnimationFrame(draw);
+			
+			// Get current playing state from store directly
+			const currentIsPlaying = useAudioStore.getState().isPlaying;
 
 			const themeColors = getThemeColors();
 			
@@ -308,8 +359,15 @@ export function AudioVisualizerFractal() {
 			let bassAvg = 0;
 			let midAvg = 0;
 
-			if (analyserRef.current && dataArrayRef.current && isPlaying) {
-				// Get frequency data
+			// Debug check refs
+			if (!analyserRef.current || !dataArrayRef.current) {
+				if (Math.random() < 0.01) {
+					console.log('[Fractal] Missing refs - analyser:', !!analyserRef.current, 'dataArray:', !!dataArrayRef.current);
+				}
+			}
+
+			if (analyserRef.current && dataArrayRef.current) {
+				// Always try to get frequency data if we have the refs
 				analyserRef.current.getByteFrequencyData(dataArrayRef.current);
 				
 				// Calculate frequency bands
@@ -320,31 +378,56 @@ export function AudioVisualizerFractal() {
 				
 				intensity = (bassAvg + midAvg) / 2;
 				
-				// Continuous zoom (infinite zoom effect)
-				zoomRef.current *= 1 + (bassAvg * 0.01);
-				
-				// Reset zoom periodically to prevent overflow
-				if (zoomRef.current > 100) {
-					zoomRef.current = 1;
+				// Debug: Log audio data occasionally
+				if (Math.random() < 0.02) { // Log 2% of frames
+					const maxValue = Math.max(...Array.from(dataArrayRef.current));
+					const sum = Array.from(dataArrayRef.current).reduce((a, b) => a + b, 0);
+					const audioElement = $audio.getAudioElement();
+					console.log('[Fractal] Frame data:', {
+						isPlaying: currentIsPlaying,
+						audioPlaying: audioElement ? !audioElement.paused : false,
+						audioTime: audioElement?.currentTime,
+						dataMax: maxValue,
+						dataSum: sum,
+						bass: bassAvg.toFixed(3),
+						mid: midAvg.toFixed(3),
+						intensity: intensity.toFixed(3)
+					});
 				}
 				
-				// Rotation based on mids
-				rotationRef.current += midAvg * 0.02;
-				
-				// Drift based on music
-				offsetXRef.current += Math.sin(rotationRef.current) * 0.0001;
-				offsetYRef.current += Math.cos(rotationRef.current) * 0.0001;
+				// If we have audio data (bass or mid > 0), use it for animation
+				if (bassAvg > 0.01 || midAvg > 0.01) {
+					// MUCH SLOWER ZOOM for controlled infinite fractal experience
+					const zoomSpeed = 0.0002 + (bassAvg * 0.0008); // 10x slower
+					zoomRef.current += zoomSpeed;
+					
+					// Very subtle rotation
+					rotationRef.current += midAvg * 0.002; // 5x slower
+					
+					// Classic Mandelbrot spiral coordinates for infinite zoom
+					// This point has infinite detail and beautiful spirals
+					const targetX = -0.743643887037151;
+					const targetY = 0.13182590420533;
+					
+					// Very slowly converge on the target as we zoom
+					// This keeps the interesting patterns centered
+					const convergenceRate = 0.000001 * Math.exp(zoomRef.current * 0.1);
+					offsetXRef.current += (targetX - offsetXRef.current) * convergenceRate;
+					offsetYRef.current += (targetY - offsetYRef.current) * convergenceRate;
+				} else {
+					// No audio data - very gentle continuous zoom
+					intensity = 0.1 + Math.sin(Date.now() * 0.0001) * 0.05;
+					zoomRef.current += 0.00005; // Even slower idle zoom
+					rotationRef.current += 0.0001;
+				}
 			} else {
-				// Idle animation - very subtle
+				// No analyser refs - idle animation only
 				intensity = 0.1 + Math.sin(Date.now() * 0.0001) * 0.05;
-				zoomRef.current *= 1.0002;
-				if (zoomRef.current > 10) {
-					zoomRef.current = 1;
-				}
-				rotationRef.current += 0.001;
+				zoomRef.current += 0.0001;
+				rotationRef.current += 0.0005;
 			}
 			
-			drawFractal(ctx, intensity, colors, background);
+			drawFractal(ctx, intensity, colors, background, currentIsPlaying);
 		};
 
 		// Start animation
