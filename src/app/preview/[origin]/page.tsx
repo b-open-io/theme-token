@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiDemo } from "@/components/preview/ai-demo";
 import { AnimatedThemeStripes } from "@/components/preview/animated-theme-stripes";
 import { AudioDemo } from "@/components/preview/audio-demo";
@@ -262,11 +262,10 @@ export default function PreviewPage({ params }: Props) {
 	const [copied, setCopied] = useState(false);
 	const [copiedOrigin, setCopiedOrigin] = useState(false);
 	const [showRemixDialog, setShowRemixDialog] = useState(false);
-	const initialTab = (() => {
+	const activeTab = useMemo<TabId>(() => {
 		const tabParam = searchParams.get("tab");
 		return tabs.some((t) => t.id === tabParam) ? (tabParam as TabId) : "dashboard";
-	})();
-	const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+	}, [searchParams]);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}`;
@@ -288,19 +287,9 @@ export default function PreviewPage({ params }: Props) {
 		setPreviewMode(globalMode);
 	}, []);
 
-	// Keep tab in sync with URL (for refresh/back/forward)
-	useEffect(() => {
-		const tabParam = searchParams.get("tab");
-		const nextTab = tabs.some((t) => t.id === tabParam) ? (tabParam as TabId) : "dashboard";
-		if (nextTab !== activeTab) {
-			setActiveTab(nextTab);
-		}
-	}, [searchParams, activeTab]);
-
 	const handleTabChange = useCallback(
 		(tabId: TabId) => {
 			if (tabId === activeTab) return;
-			setActiveTab(tabId);
 			const params = new URLSearchParams(searchParams.toString());
 			params.set("tab", tabId);
 			router.replace(`?${params.toString()}`, { scroll: false });

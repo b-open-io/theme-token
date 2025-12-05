@@ -3,10 +3,10 @@
 import React from "react";
 import { $audio, isLive, type Track } from "@/lib/audio";
 import {
-  type AudioStore,
-  calculateNextIndex,
-  canUseDOM,
-  useAudioStore,
+	type AudioStore,
+	calculateNextIndex,
+	canUseDOM,
+	useAudioStore,
 } from "@/lib/audio-store";
 
 const MAX_ERROR_RETRIES = 3;
@@ -21,29 +21,29 @@ const MIN_UPDATE_THRESHOLD = 0.5;
  * @returns An object containing the error message and whether it's recoverable
  */
 const getErrorInfo = (
-  errorCode: number
+	errorCode: number,
 ): { message: string; recoverable: boolean } => {
-  switch (errorCode) {
-    case MediaError.MEDIA_ERR_ABORTED:
-      return { message: "Playback cancelled", recoverable: true };
-    case MediaError.MEDIA_ERR_NETWORK:
-      return { message: "Network error", recoverable: true };
-    case MediaError.MEDIA_ERR_DECODE:
-      return {
-        message: "Audio file decoding error",
-        recoverable: false,
-      };
-    case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-      return {
-        message: "File/network loading error (Code 4)",
-        recoverable: true,
-      };
-    default:
-      return {
-        message: `Unknown error (${errorCode})`,
-        recoverable: true,
-      };
-  }
+	switch (errorCode) {
+		case MediaError.MEDIA_ERR_ABORTED:
+			return { message: "Playback cancelled", recoverable: true };
+		case MediaError.MEDIA_ERR_NETWORK:
+			return { message: "Network error", recoverable: true };
+		case MediaError.MEDIA_ERR_DECODE:
+			return {
+				message: "Audio file decoding error",
+				recoverable: false,
+			};
+		case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+			return {
+				message: "File/network loading error (Code 4)",
+				recoverable: true,
+			};
+		default:
+			return {
+				message: `Unknown error (${errorCode})`,
+				recoverable: true,
+			};
+	}
 };
 
 /**
@@ -54,476 +54,486 @@ const getErrorInfo = (
  * @returns An object containing the error message, whether it's recoverable, and the error code
  */
 const parseAudioError = (
-  e: Event,
-  audio: HTMLAudioElement
+	e: Event,
+	audio: HTMLAudioElement,
 ): { message: string; recoverable: boolean; errorCode: number } => {
-  if (audio.error) {
-    const errorCode = audio.error.code;
-    const errorInfo = getErrorInfo(errorCode);
-    return { ...errorInfo, errorCode };
-  }
+	if (audio.error) {
+		const errorCode = audio.error.code;
+		const errorInfo = getErrorInfo(errorCode);
+		return { ...errorInfo, errorCode };
+	}
 
-  if (e instanceof ErrorEvent) {
-    return { message: e.message, recoverable: true, errorCode: 0 };
-  }
+	if (e instanceof ErrorEvent) {
+		return { message: e.message, recoverable: true, errorCode: 0 };
+	}
 
-  return {
-    message: "Unknown audio error",
-    recoverable: false,
-    errorCode: 0,
-  };
+	return {
+		message: "Unknown audio error",
+		recoverable: false,
+		errorCode: 0,
+	};
 };
 
 function AudioProvider({
-  tracks = [],
-  children,
+	tracks = [],
+	children,
 }: {
-  tracks?: Track[];
-  children: React.ReactNode;
+	tracks?: Track[];
+	children: React.ReactNode;
 }) {
-  const preloadAudioRef = React.useRef<HTMLAudioElement | null>(null);
-  const errorRetryCountRef = React.useRef<number>(0);
+	const preloadAudioRef = React.useRef<HTMLAudioElement | null>(null);
+	const errorRetryCountRef = React.useRef<number>(0);
 
-  const setState = React.useCallback(
-    (
-      partial:
-        | Partial<AudioStore>
-        | ((state: AudioStore) => Partial<AudioStore>)
-    ) => {
-      useAudioStore.setState(partial);
-    },
-    []
-  );
+	const setState = React.useCallback(
+		(
+			partial:
+				| Partial<AudioStore>
+				| ((state: AudioStore) => Partial<AudioStore>),
+		) => {
+			useAudioStore.setState(partial);
+		},
+		[],
+	);
 
-  React.useEffect(() => {
-    if (tracks && tracks.length > 0) {
-      const state = useAudioStore.getState();
-      const currentQueue = state.queue;
-      const tracksChanged =
-        currentQueue.length === 0 ||
-        currentQueue.length !== tracks.length ||
-        currentQueue.some((track, index) => track.id !== tracks[index]?.id);
+	React.useEffect(() => {
+		if (!tracks || tracks.length === 0) {
+			return;
+		}
 
-      if (tracksChanged) {
-        const firstTrack = tracks[0];
-        useAudioStore.setState({
-          queue: tracks,
-          currentTrack: state.currentTrack || firstTrack,
-          currentQueueIndex:
-            state.currentQueueIndex === -1 ? 0 : state.currentQueueIndex,
-        });
-      }
-    }
-  }, [tracks]);
+		const state = useAudioStore.getState();
+		const queueChanged =
+			state.queue.length !== tracks.length ||
+			state.queue.some((track, index) => track.id !== tracks[index]?.id);
 
-  const retryPlayback = React.useCallback(async (audio: HTMLAudioElement) => {
-    if (errorRetryCountRef.current >= MAX_ERROR_RETRIES) {
-      return false;
-    }
+		const matchedIndex = state.currentTrack
+			? tracks.findIndex((t) => t.id === state.currentTrack?.id)
+			: -1;
+		const nextIndex = matchedIndex >= 0 ? matchedIndex : 0;
+		const nextTrack = tracks[nextIndex] ?? null;
+		const indexChanged = state.currentQueueIndex !== nextIndex;
+		const trackChanged =
+			!state.currentTrack || state.currentTrack?.id !== nextTrack?.id;
 
-    errorRetryCountRef.current += 1;
+		if (queueChanged || indexChanged || trackChanged) {
+			useAudioStore.setState({
+				queue: tracks,
+				currentTrack: nextTrack,
+				currentQueueIndex: nextTrack ? nextIndex : -1,
+				currentTime: trackChanged ? 0 : state.currentTime,
+				duration: trackChanged ? 0 : state.duration,
+				progress: trackChanged ? 0 : state.progress,
+			});
+		}
+	}, [tracks]);
 
-    const delay = 2 ** (errorRetryCountRef.current - 1) * ERROR_RETRY_DELAY;
-    await new Promise((resolve) => setTimeout(resolve, delay));
+	const retryPlayback = React.useCallback(async (audio: HTMLAudioElement) => {
+		if (errorRetryCountRef.current >= MAX_ERROR_RETRIES) {
+			return false;
+		}
 
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      console.warn("Offline, delaying retry attempt further.");
-      return false;
-    }
+		errorRetryCountRef.current += 1;
 
-    try {
-      console.log(
-        `Retry attempt ${errorRetryCountRef.current}: Loading audio...`
-      );
-      const currentTime = audio.currentTime;
-      const wasPlaying = !audio.paused;
-      const state = useAudioStore.getState();
-      if (state.currentTrack) {
-        await $audio.load({
-          url: state.currentTrack.url,
-          startTime: currentTime,
-        });
-        if (wasPlaying) {
-          await $audio.play();
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error("Retry attempt failed:", error);
-      return false;
-    }
-  }, []);
+		const delay = 2 ** (errorRetryCountRef.current - 1) * ERROR_RETRY_DELAY;
+		await new Promise((resolve) => setTimeout(resolve, delay));
 
-  const lastUpdateTimeRef = React.useRef<number>(0);
-  const throttledTimeUpdate = React.useCallback(() => {
-    const now = Date.now();
-    if (now - lastUpdateTimeRef.current < THROTTLE_INTERVAL) {
-      return;
-    }
-    lastUpdateTimeRef.current = now;
+		if (typeof navigator !== "undefined" && !navigator.onLine) {
+			console.warn("Offline, delaying retry attempt further.");
+			return false;
+		}
 
-    const audio = $audio.getAudioElement();
-    if (!audio) {
-      return;
-    }
+		try {
+			console.log(
+				`Retry attempt ${errorRetryCountRef.current}: Loading audio...`,
+			);
+			const currentTime = audio.currentTime;
+			const wasPlaying = !audio.paused;
+			const state = useAudioStore.getState();
+			if (state.currentTrack) {
+				await $audio.load({
+					url: state.currentTrack.url,
+					startTime: currentTime,
+				});
+				if (wasPlaying) {
+					await $audio.play();
+				}
+			}
+			return true;
+		} catch (error) {
+			console.error("Retry attempt failed:", error);
+			return false;
+		}
+	}, []);
 
-    const currentTime = audio.currentTime;
-    const state = useAudioStore.getState();
+	const lastUpdateTimeRef = React.useRef<number>(0);
+	const throttledTimeUpdate = React.useCallback(() => {
+		const now = Date.now();
+		if (now - lastUpdateTimeRef.current < THROTTLE_INTERVAL) {
+			return;
+		}
+		lastUpdateTimeRef.current = now;
 
-    if (Math.abs(state.currentTime - currentTime) > MIN_UPDATE_THRESHOLD) {
-      const duration = audio.duration;
-      const newProgress = duration > 0 ? (currentTime / duration) * 100 : 0;
-      useAudioStore.setState({ currentTime, progress: newProgress });
-    }
-  }, []);
+		const audio = $audio.getAudioElement();
+		if (!audio) {
+			return;
+		}
 
-  const preloadTrack = React.useCallback((song: Track) => {
-    if (!preloadAudioRef.current || preloadAudioRef.current.src === song.url) {
-      return;
-    }
+		const currentTime = audio.currentTime;
+		const state = useAudioStore.getState();
 
-    try {
-      preloadAudioRef.current.src = song.url;
-      preloadAudioRef.current.preload = "auto";
-      preloadAudioRef.current.load();
-    } catch (error) {
-      console.error("Failed to preload next track:", error);
-      if (preloadAudioRef.current) {
-        preloadAudioRef.current.src = "";
-      }
-    }
-  }, []);
+		if (Math.abs(state.currentTime - currentTime) > MIN_UPDATE_THRESHOLD) {
+			const duration = audio.duration;
+			const newProgress = duration > 0 ? (currentTime / duration) * 100 : 0;
+			useAudioStore.setState({ currentTime, progress: newProgress });
+		}
+	}, []);
 
-  const preloadNextTrack = React.useCallback(() => {
-    if (!preloadAudioRef.current) {
-      return;
-    }
+	const preloadTrack = React.useCallback((song: Track) => {
+		if (!preloadAudioRef.current || preloadAudioRef.current.src === song.url) {
+			return;
+		}
 
-    const state = useAudioStore.getState();
-    const nextIndex = calculateNextIndex({
-      queue: state.queue,
-      currentQueueIndex: state.currentQueueIndex,
-      shuffleEnabled: state.shuffleEnabled,
-      repeatMode: state.repeatMode,
-    });
+		try {
+			preloadAudioRef.current.src = song.url;
+			preloadAudioRef.current.preload = "auto";
+			preloadAudioRef.current.load();
+		} catch (error) {
+			console.error("Failed to preload next track:", error);
+			if (preloadAudioRef.current) {
+				preloadAudioRef.current.src = "";
+			}
+		}
+	}, []);
 
-    if (nextIndex === -1 || nextIndex >= state.queue.length) {
-      return;
-    }
+	const preloadNextTrack = React.useCallback(() => {
+		if (!preloadAudioRef.current) {
+			return;
+		}
 
-    const nextSong = state.queue[nextIndex];
-    if (!nextSong || nextSong.id === state.currentTrack?.id) {
-      return;
-    }
+		const state = useAudioStore.getState();
+		const nextIndex = calculateNextIndex({
+			queue: state.queue,
+			currentQueueIndex: state.currentQueueIndex,
+			shuffleEnabled: state.shuffleEnabled,
+			repeatMode: state.repeatMode,
+		});
 
-    preloadTrack(nextSong);
-  }, [preloadTrack]);
+		if (nextIndex === -1 || nextIndex >= state.queue.length) {
+			return;
+		}
 
-  React.useEffect(() => {
-    if (!canUseDOM()) {
-      return;
-    }
+		const nextSong = state.queue[nextIndex];
+		if (!nextSong || nextSong.id === state.currentTrack?.id) {
+			return;
+		}
 
-    $audio.init();
+		preloadTrack(nextSong);
+	}, [preloadTrack]);
 
-    preloadAudioRef.current = new Audio();
-    preloadAudioRef.current.muted = true;
-    preloadAudioRef.current.preload = "none";
+	React.useEffect(() => {
+		if (!canUseDOM()) {
+			return;
+		}
 
-    const audio = $audio.getAudioElement();
-    if (!audio) {
-      console.error("Audio element initialization failed");
-      return;
-    }
+		$audio.init();
 
-    const handlePlay = () => {
-      errorRetryCountRef.current = 0;
-      const state = useAudioStore.getState();
-      $audio.setPlaybackRate(state.playbackRate);
-      setState({ isPlaying: true, isLoading: false, isBuffering: false });
-      preloadNextTrack();
-    };
+		preloadAudioRef.current = new Audio();
+		preloadAudioRef.current.muted = true;
+		preloadAudioRef.current.preload = "none";
 
-    const handlePause = () => {
-      setState({ isPlaying: false, isBuffering: false });
-    };
+		const audio = $audio.getAudioElement();
+		if (!audio) {
+			console.error("Audio element initialization failed");
+			return;
+		}
 
-    const handleErrorRetry = async (
-      audioElement: HTMLAudioElement,
-      recoverable: boolean
-    ): Promise<boolean> => {
-      if (!recoverable || errorRetryCountRef.current >= MAX_ERROR_RETRIES) {
-        return false;
-      }
+		const handlePlay = () => {
+			errorRetryCountRef.current = 0;
+			const state = useAudioStore.getState();
+			$audio.setPlaybackRate(state.playbackRate);
+			setState({ isPlaying: true, isLoading: false, isBuffering: false });
+			preloadNextTrack();
+		};
 
-      return await retryPlayback(audioElement);
-    };
+		const handlePause = () => {
+			setState({ isPlaying: false, isBuffering: false });
+		};
 
-    const handleError = async (e: Event) => {
-      const {
-        message: initialMessage,
-        recoverable,
-        errorCode,
-      } = parseAudioError(e, audio);
+		const handleErrorRetry = async (
+			audioElement: HTMLAudioElement,
+			recoverable: boolean,
+		): Promise<boolean> => {
+			if (!recoverable || errorRetryCountRef.current >= MAX_ERROR_RETRIES) {
+				return false;
+			}
 
-      console.error("Audio error details:", {
-        event: e,
-        audioError: audio.error,
-        message: initialMessage,
-        recoverable,
-        code: errorCode,
-        src: audio.src,
-        readyState: audio.readyState,
-        networkState: audio.networkState,
-      });
+			return await retryPlayback(audioElement);
+		};
 
-      if (await handleErrorRetry(audio, recoverable)) {
-        return;
-      }
+		const handleError = async (e: Event) => {
+			const {
+				message: initialMessage,
+				recoverable,
+				errorCode,
+			} = parseAudioError(e, audio);
 
-      const finalMessage =
-        recoverable && errorRetryCountRef.current >= MAX_ERROR_RETRIES
-          ? `Failed after ${MAX_ERROR_RETRIES} attempts: ${initialMessage}`
-          : initialMessage;
+			console.error("Audio error details:", {
+				event: e,
+				audioError: audio.error,
+				message: initialMessage,
+				recoverable,
+				code: errorCode,
+				src: audio.src,
+				readyState: audio.readyState,
+				networkState: audio.networkState,
+			});
 
-      setState({
-        isPlaying: false,
-        isLoading: false,
-        isBuffering: false,
-        isError: true,
-        errorMessage: finalMessage,
-      });
-    };
+			if (await handleErrorRetry(audio, recoverable)) {
+				return;
+			}
 
-    const handleEnded = async () => {
-      setState({ isPlaying: false, isBuffering: false });
+			const finalMessage =
+				recoverable && errorRetryCountRef.current >= MAX_ERROR_RETRIES
+					? `Failed after ${MAX_ERROR_RETRIES} attempts: ${initialMessage}`
+					: initialMessage;
 
-      const state = useAudioStore.getState();
+			setState({
+				isPlaying: false,
+				isLoading: false,
+				isBuffering: false,
+				isError: true,
+				errorMessage: finalMessage,
+			});
+		};
 
-      if (state.currentTrack && isLive(state.currentTrack)) {
-        console.warn("Live stream ended unexpectedly");
-        setState({
-          isError: true,
-          errorMessage: "Live stream connection lost",
-        });
-        return;
-      }
-      if (state.repeatMode === "one" && state.currentTrack) {
-        try {
-          const isLiveStream = isLive(state.currentTrack);
-          await $audio.load({
-            url: state.currentTrack.url,
-            startTime: 0,
-            isLiveStream,
-          });
-          await $audio.play();
-          setState({ currentTime: 0, progress: 0 });
-          return;
-        } catch (error) {
-          console.error("Repeat mode playback error:", error);
-        }
-      }
+		const handleEnded = async () => {
+			setState({ isPlaying: false, isBuffering: false });
 
-      state.handleTrackEnd();
-    };
+			const state = useAudioStore.getState();
 
-    // Default state for successful loading events
-    const getLoadingSuccessState = (duration = 0) => ({
-      isLoading: false,
-      isBuffering: false,
-      duration,
-      isError: false,
-      errorMessage: null,
-    });
+			if (state.currentTrack && isLive(state.currentTrack)) {
+				console.warn("Live stream ended unexpectedly");
+				setState({
+					isError: true,
+					errorMessage: "Live stream connection lost",
+				});
+				return;
+			}
+			if (state.repeatMode === "one" && state.currentTrack) {
+				try {
+					const isLiveStream = isLive(state.currentTrack);
+					await $audio.load({
+						url: state.currentTrack.url,
+						startTime: 0,
+						isLiveStream,
+					});
+					await $audio.play();
+					setState({ currentTime: 0, progress: 0 });
+					return;
+				} catch (error) {
+					console.error("Repeat mode playback error:", error);
+				}
+			}
 
-    const handleLoadStart = () => {
-      setState({
-        isLoading: true,
-        isBuffering: false,
-        isError: false,
-        errorMessage: null,
-      });
-    };
+			state.handleTrackEnd();
+		};
 
-    const handleCanPlay = () => {
-      setState(getLoadingSuccessState(audio.duration || 0));
-    };
+		// Default state for successful loading events
+		const getLoadingSuccessState = (duration = 0) => ({
+			isLoading: false,
+			isBuffering: false,
+			duration,
+			isError: false,
+			errorMessage: null,
+		});
 
-    const handleWaiting = () => {
-      setState({ isBuffering: true, isLoading: false });
-    };
+		const handleLoadStart = () => {
+			setState({
+				isLoading: true,
+				isBuffering: false,
+				isError: false,
+				errorMessage: null,
+			});
+		};
 
-    const handlePlaying = () => {
-      setState({
-        ...getLoadingSuccessState(),
-        isPlaying: true,
-      });
-    };
+		const handleCanPlay = () => {
+			setState(getLoadingSuccessState(audio.duration || 0));
+		};
 
-    const handleDurationChange = () => {
-      setState({ duration: audio.duration || 0 });
-    };
+		const handleWaiting = () => {
+			setState({ isBuffering: true, isLoading: false });
+		};
 
-    const handleVolumeChange = () => {
-      setState({ volume: audio.volume, isMuted: audio.muted });
-    };
+		const handlePlaying = () => {
+			setState({
+				...getLoadingSuccessState(),
+				isPlaying: true,
+			});
+		};
 
-    const handleBufferUpdate = (e: Event) => {
-      if (e instanceof CustomEvent && e.detail?.bufferedTime !== undefined) {
-        setState({ bufferedTime: e.detail.bufferedTime });
-      }
-    };
+		const handleDurationChange = () => {
+			setState({ duration: audio.duration || 0 });
+		};
 
-    const restoreState = async () => {
-      const state = useAudioStore.getState();
+		const handleVolumeChange = () => {
+			setState({ volume: audio.volume, isMuted: audio.muted });
+		};
 
-      if (!state.currentTrack || state.currentTime <= 0) {
-        return;
-      }
+		const handleBufferUpdate = (e: Event) => {
+			if (e instanceof CustomEvent && e.detail?.bufferedTime !== undefined) {
+				setState({ bufferedTime: e.detail.bufferedTime });
+			}
+		};
 
-      const track = state.currentTrack;
-      const isLiveStream = isLive(track);
-      const startTime = isLiveStream ? 0 : state.currentTime;
-      const volume = state.volume;
-      const muted = state.isMuted;
-      const playbackRate = state.playbackRate;
+		const restoreState = async () => {
+			const state = useAudioStore.getState();
 
-      try {
-        setState({ isLoading: true });
+			if (!state.currentTrack || state.currentTime <= 0) {
+				return;
+			}
 
-        await $audio.load({
-          url: track.url,
-          startTime,
-          isLiveStream,
-        });
-        $audio.setVolume({ volume });
-        $audio.setMuted(muted);
-        $audio.setPlaybackRate(playbackRate);
+			const track = state.currentTrack;
+			const isLiveStream = isLive(track);
+			const startTime = isLiveStream ? 0 : state.currentTime;
+			const volume = state.volume;
+			const muted = state.isMuted;
+			const playbackRate = state.playbackRate;
 
-        setState({ isLoading: false, isPlaying: false });
-      } catch (error) {
-        console.error("State restoration error:", error);
-        setState({
-          isError: true,
-          errorMessage: "Error restoring audio state",
-          isPlaying: false,
-          isLoading: false,
-          isBuffering: false,
-        });
-      }
-    };
+			try {
+				setState({ isLoading: true });
 
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
-    audio.addEventListener("playing", handlePlaying);
-    audio.addEventListener("waiting", handleWaiting);
-    audio.addEventListener("loadstart", handleLoadStart);
-    audio.addEventListener("canplay", handleCanPlay);
-    audio.addEventListener("canplaythrough", handleCanPlay);
-    audio.addEventListener("timeupdate", throttledTimeUpdate);
-    audio.addEventListener("durationchange", handleDurationChange);
-    audio.addEventListener("loadedmetadata", handleDurationChange);
-    audio.addEventListener("volumechange", handleVolumeChange);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("error", handleError);
+				await $audio.load({
+					url: track.url,
+					startTime,
+					isLiveStream,
+				});
+				$audio.setVolume({ volume });
+				$audio.setMuted(muted);
+				$audio.setPlaybackRate(playbackRate);
 
-    $audio.addEventListener("bufferUpdate", handleBufferUpdate);
+				setState({ isLoading: false, isPlaying: false });
+			} catch (error) {
+				console.error("State restoration error:", error);
+				setState({
+					isError: true,
+					errorMessage: "Error restoring audio state",
+					isPlaying: false,
+					isLoading: false,
+					isBuffering: false,
+				});
+			}
+		};
 
-    restoreState();
+		audio.addEventListener("play", handlePlay);
+		audio.addEventListener("pause", handlePause);
+		audio.addEventListener("playing", handlePlaying);
+		audio.addEventListener("waiting", handleWaiting);
+		audio.addEventListener("loadstart", handleLoadStart);
+		audio.addEventListener("canplay", handleCanPlay);
+		audio.addEventListener("canplaythrough", handleCanPlay);
+		audio.addEventListener("timeupdate", throttledTimeUpdate);
+		audio.addEventListener("durationchange", handleDurationChange);
+		audio.addEventListener("loadedmetadata", handleDurationChange);
+		audio.addEventListener("volumechange", handleVolumeChange);
+		audio.addEventListener("ended", handleEnded);
+		audio.addEventListener("error", handleError);
 
-    const unsubscribeTrack = useAudioStore.subscribe(
-      (state) => state.currentTrack?.id,
-      (newSongId, oldSongId) => {
-        if (newSongId && newSongId !== oldSongId) {
-          errorRetryCountRef.current = 0;
-          preloadNextTrack();
-        }
-      }
-    );
+		$audio.addEventListener("bufferUpdate", handleBufferUpdate);
 
-    const unsubscribePlaybackRate = useAudioStore.subscribe(
-      (state) => state.playbackRate,
-      (playbackRate) => {
-        $audio.setPlaybackRate(playbackRate);
-      }
-    );
+		restoreState();
 
-    return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
-      audio.removeEventListener("playing", handlePlaying);
-      audio.removeEventListener("waiting", handleWaiting);
-      audio.removeEventListener("loadstart", handleLoadStart);
-      audio.removeEventListener("canplay", handleCanPlay);
-      audio.removeEventListener("canplaythrough", handleCanPlay);
-      audio.removeEventListener("timeupdate", throttledTimeUpdate);
-      audio.removeEventListener("durationchange", handleDurationChange);
-      audio.removeEventListener("loadedmetadata", handleDurationChange);
-      audio.removeEventListener("volumechange", handleVolumeChange);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("error", handleError);
+		const unsubscribeTrack = useAudioStore.subscribe(
+			(state) => state.currentTrack?.id,
+			(newSongId, oldSongId) => {
+				if (newSongId && newSongId !== oldSongId) {
+					errorRetryCountRef.current = 0;
+					preloadNextTrack();
+				}
+			},
+		);
 
-      $audio.removeEventListener("bufferUpdate", handleBufferUpdate);
+		const unsubscribePlaybackRate = useAudioStore.subscribe(
+			(state) => state.playbackRate,
+			(playbackRate) => {
+				$audio.setPlaybackRate(playbackRate);
+			},
+		);
 
-      if (preloadAudioRef.current) {
-        preloadAudioRef.current.src = "";
-        preloadAudioRef.current = null;
-      }
+		return () => {
+			audio.removeEventListener("play", handlePlay);
+			audio.removeEventListener("pause", handlePause);
+			audio.removeEventListener("playing", handlePlaying);
+			audio.removeEventListener("waiting", handleWaiting);
+			audio.removeEventListener("loadstart", handleLoadStart);
+			audio.removeEventListener("canplay", handleCanPlay);
+			audio.removeEventListener("canplaythrough", handleCanPlay);
+			audio.removeEventListener("timeupdate", throttledTimeUpdate);
+			audio.removeEventListener("durationchange", handleDurationChange);
+			audio.removeEventListener("loadedmetadata", handleDurationChange);
+			audio.removeEventListener("volumechange", handleVolumeChange);
+			audio.removeEventListener("ended", handleEnded);
+			audio.removeEventListener("error", handleError);
 
-      unsubscribeTrack();
-      unsubscribePlaybackRate();
-    };
-  }, [throttledTimeUpdate, setState, retryPlayback, preloadNextTrack]);
+			$audio.removeEventListener("bufferUpdate", handleBufferUpdate);
 
-  React.useEffect(() => {
-    const unsubscribe = useAudioStore.subscribe(
-      (state) => state.queue,
-      (newQueue, oldQueue) => {
-        if (
-          (newQueue.length !== oldQueue.length || newQueue.length === 0) &&
-          preloadAudioRef.current
-        ) {
-          preloadAudioRef.current.src = "";
-        }
-      }
-    );
-    return unsubscribe;
-  }, []);
+			if (preloadAudioRef.current) {
+				preloadAudioRef.current.src = "";
+				preloadAudioRef.current = null;
+			}
 
-  return children;
+			unsubscribeTrack();
+			unsubscribePlaybackRate();
+		};
+	}, [throttledTimeUpdate, setState, retryPlayback, preloadNextTrack]);
+
+	React.useEffect(() => {
+		const unsubscribe = useAudioStore.subscribe(
+			(state) => state.queue,
+			(newQueue, oldQueue) => {
+				if (
+					(newQueue.length !== oldQueue.length || newQueue.length === 0) &&
+					preloadAudioRef.current
+				) {
+					preloadAudioRef.current.src = "";
+				}
+			},
+		);
+		return unsubscribe;
+	}, []);
+
+	return children;
 }
 const demoTracks: Track[] = [
-  {
-    id: "1",
-    title: "Beautiful Loop",
-    artist: "Flavio Concini",
-    album: "Pixabay Music",
-    url: "https://cdn.pixabay.com/audio/2024/10/21/audio_78251ef8e3.mp3",
-    genre: "Upbeat",
-  },
-  {
-    id: "2",
-    title: "Type",
-    artist: "Aliabbas Abasov",
-    album: "Pixabay Music",
-    url: "https://cdn.pixabay.com/audio/2024/02/28/audio_60f7a54400.mp3",
-    genre: "Hip Hop",
-  },
-  {
-    id: "3",
-    title: "Radio Tuxnet",
-    artist: "Tuxnet",
-    url: "/radio/live.aac?host=ice2.tuxnet.me",
-    genre: "Hip Hop",
-    artwork: "/icon",
-  },
-  {
-    id: "4",
-    title: "Live Radio",
-    artist: "Audio UI",
-    url: "https://radio.sevalla.app/live.aac",
-    artwork: "/icon",
-    genre: "Hip Hop",
-  },
+	{
+		id: "1",
+		title: "Beautiful Loop",
+		artist: "Flavio Concini",
+		album: "Pixabay Music",
+		url: "https://cdn.pixabay.com/audio/2024/10/21/audio_78251ef8e3.mp3",
+		genre: "Upbeat",
+	},
+	{
+		id: "2",
+		title: "Type",
+		artist: "Aliabbas Abasov",
+		album: "Pixabay Music",
+		url: "https://cdn.pixabay.com/audio/2024/02/28/audio_60f7a54400.mp3",
+		genre: "Hip Hop",
+	},
+	{
+		id: "3",
+		title: "Radio Tuxnet",
+		artist: "Tuxnet",
+		url: "/radio/live.aac?host=ice2.tuxnet.me",
+		genre: "Hip Hop",
+		artwork: "/icon",
+	},
+	{
+		id: "4",
+		title: "Live Radio",
+		artist: "Audio UI",
+		url: "https://radio.sevalla.app/live.aac",
+		artwork: "/icon",
+		genre: "Hip Hop",
+	},
 ];
 export { AudioProvider, demoTracks };
