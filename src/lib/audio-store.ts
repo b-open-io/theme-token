@@ -252,7 +252,15 @@ const useAudioStore = create<AudioStore>()(
         if (get().isLoading) {
           return;
         }
-        await $audio.play();
+        try {
+          await $audio.play();
+        } catch (error) {
+          // Ignore AbortError - this happens when play is interrupted by pause
+          if (error instanceof Error && error.name === 'AbortError') {
+            return;
+          }
+          console.error('Failed to play audio:', error);
+        }
       },
 
       pause() {
