@@ -2,12 +2,21 @@
 
 import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, Loader2, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { Badge } from "@/components/ui/badge";
 import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
+import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+
+function formatPrice(satoshis: number): string {
+	const bsv = satoshis / 100_000_000;
+	if (bsv >= 1) return `${bsv.toFixed(2)} BSV`;
+	if (bsv >= 0.01) return `${(bsv * 1000).toFixed(1)}m BSV`;
+	return `${satoshis.toLocaleString()} sats`;
+}
 
 // Custom event for theme remixing (works on same page)
 export const REMIX_THEME_EVENT = "remix-theme";
@@ -58,10 +67,12 @@ export function getAndClearRemixTheme(): StoredRemixTheme | null {
 function ThemeCard({
 	theme,
 	origin,
+	listing,
 	onRemix,
 }: {
 	theme: ThemeToken;
 	origin: string;
+	listing?: ThemeMarketListing;
 	onRemix?: () => void;
 }) {
 	const { mode } = useTheme();
@@ -73,10 +84,10 @@ function ThemeCard({
 	];
 
 	return (
-		<div className="group flex-shrink-0 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md">
+		<div className="group relative flex-shrink-0 rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg">
 			{/* Color stripes - clickable to preview */}
-			<Link href={`/preview/${origin}`}>
-				<div className="relative mb-2 flex h-12 w-32 cursor-pointer overflow-hidden rounded-md">
+			<Link href={`/preview/${origin}`} className="block">
+				<div className="relative flex h-32 w-52 cursor-pointer overflow-hidden rounded-t-xl">
 					{colors.map((color, i) => (
 						<div
 							key={i}
@@ -84,16 +95,27 @@ function ThemeCard({
 							style={{ backgroundColor: color }}
 						/>
 					))}
-					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
-						<Eye className="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+					{/* For Sale Badge */}
+					{listing && (
+						<div className="absolute top-2 right-2 z-10">
+							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 text-[10px]">
+								<ShoppingCart className="h-2.5 w-2.5" fill="currentColor" />
+								{formatPrice(listing.price)}
+							</Badge>
+						</div>
+					)}
+					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
+						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 drop-shadow-md" />
 					</div>
 				</div>
 			</Link>
+			
 			{/* Theme name and remix button */}
-			<div className="flex items-center justify-between gap-2">
+			<div className="flex items-center justify-between gap-3 p-3">
 				<Link
 					href={`/preview/${origin}`}
-					className="text-sm font-medium hover:text-primary"
+					className="flex-1 truncate text-sm font-medium hover:text-primary"
+					title={theme.name}
 				>
 					{theme.name}
 				</Link>
@@ -103,7 +125,7 @@ function ThemeCard({
 						e.stopPropagation();
 						onRemix?.();
 					}}
-					className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary/20"
+					className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary/20"
 				>
 					<Sparkles className="h-3 w-3" />
 					Remix
@@ -116,12 +138,26 @@ function ThemeCard({
 export function ThemeGallery() {
 	const router = useRouter();
 	const [publishedThemes, setPublishedThemes] = useState<CachedTheme[]>([]);
+	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 
+	// Map of origin -> listing for quick lookup
+	const listingsByOrigin = useMemo(() => {
+		const map = new Map<string, ThemeMarketListing>();
+		for (const listing of listings) {
+			map.set(listing.origin, listing);
+		}
+		return map;
+	}, [listings]);
+
 	useEffect(() => {
-		fetchCachedThemes()
-			.then(setPublishedThemes)
-			.finally(() => setIsLoading(false));
+		Promise.all([
+			fetchCachedThemes(),
+			fetchThemeMarketListings(),
+		]).then(([themes, marketListings]) => {
+			setPublishedThemes(themes);
+			setListings(marketListings);
+		}).finally(() => setIsLoading(false));
 	}, []);
 
 	const handleRemix = (theme: ThemeToken) => {
@@ -140,10 +176,10 @@ export function ThemeGallery() {
 						Published Themes
 					</h3>
 					<Link
-						href="/market"
+						href="/themes"
 						className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
 					>
-						Browse Market
+						Browse All
 						<ArrowRight className="h-4 w-4" />
 					</Link>
 				</div>
@@ -170,23 +206,24 @@ export function ThemeGallery() {
 								<ThemeCard
 									theme={published.theme}
 									origin={published.origin}
+									listing={listingsByOrigin.get(published.origin)}
 									onRemix={() => handleRemix(published.theme)}
 								/>
 							</motion.div>
 						))
 					)}
 
-					{/* "More" card linking to market */}
+					{/* "More" card linking to themes browse */}
 					<Link
-						href="/market"
-						className="flex flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-8 py-6 transition-all hover:border-primary/50 hover:bg-muted"
+						href="/themes"
+						className="group flex w-52 flex-shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card/30 transition-all hover:border-primary/50 hover:bg-muted"
 					>
-						<div className="text-center">
-							<p className="text-sm font-medium text-muted-foreground">
-								View all
-							</p>
-							<ArrowRight className="mx-auto mt-1 h-4 w-4 text-muted-foreground" />
+						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-primary/10">
+							<ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
 						</div>
+						<p className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+							View all themes
+						</p>
 					</Link>
 				</div>
 			</div>

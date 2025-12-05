@@ -6,273 +6,248 @@ import {
 	useState,
 	useCallback,
 	useMemo,
-	useRef,
 	type ReactNode,
 	useEffect,
 } from "react";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { PATTERN_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import { toast } from "sonner";
+import {
+	generatePattern,
+	randomSeed,
+	DEFAULT_PATTERN_PARAMS,
+	type PatternParams,
+	type PatternSource,
+	type PatternResult,
+	type GeoGeneratorType,
+	type HeroPatternName,
+	type AnimationOptions,
+	DEFAULT_ANIMATION_OPTIONS,
+} from "@/lib/pattern-engine";
 
-/**
- * Resolve currentColor and CSS variables in SVG to actual hex colors.
- * This is needed because SVGs in background-images can't inherit CSS.
- */
-function resolveColorsInSvg(svg: string, foregroundColor: string): string {
-	// Replace currentColor with the resolved foreground color
-	let resolved = svg.replace(/currentColor/gi, foregroundColor);
-	
-	// Replace hsl(var(--xxx)) patterns - these also don't work in background-image
-	// For now, we replace common theme tokens with the foreground color
-	// A more complete solution would resolve each variable
-	resolved = resolved.replace(/hsl\(var\(--foreground\)\)/gi, foregroundColor);
-	resolved = resolved.replace(/hsl\(var\(--primary\)\)/gi, foregroundColor);
-	
-	return resolved;
-}
-
-// Types
-export type ColorMode = "currentColor" | "theme" | "grayscale";
-export type GeneratorType = "ai" | "scatter" | "grid" | "waves" | "stripes" | "noise" | "topo" | "parallelogram";
-export type ShapeType = "circle" | "square" | "triangle" | "star" | "hexagon" | "emoji" | "text";
-
-export interface PatternParams {
-    // Geometric
-	scale: number; // Grid/Tile size
-	strokeWidth: number;
-	density: number;
-	jitter: number;
-	rotation: number;
-	spacing: number;
-	symmetry: "none" | "mirror" | "radial";
-	seed: number;
-    
-    // Ranges (Advanced)
-    sizeRange: [number, number]; // Min/Max element size
-    opacityRange: [number, number]; // Min/Max opacity
-    
-    // Appearance
-    opacity: number; // Global opacity
-    strokeColor: string;
-    backgroundColor: string;
-    
-    // Animation
-    animateRotation: boolean;
-    animateScale: boolean;
-    animateOpacity: boolean;
-    animatePosition: boolean; // Translation
-    animationDuration: number;
-
-    // Generator & Shape
-    generatorType: GeneratorType;
-    shape: ShapeType;
-    customSymbol: string;
-}
-
-export interface PatternState {
-	svg: string;
-	prompt: string;
-	colorMode: ColorMode;
-	provider: string;
-	model: string;
-}
+// Re-export types for convenience
+export type { PatternParams, PatternSource, GeoGeneratorType, HeroPatternName, AnimationOptions };
+export { DEFAULT_PATTERN_PARAMS, DEFAULT_ANIMATION_OPTIONS };
 
 export interface PatternHistoryItem {
 	id: string;
 	timestamp: number;
-	pattern: PatternState;
 	params: PatternParams;
+	svg: string;
 }
 
 export interface UIState {
 	isControlsOpen: boolean;
 	isPresetsOpen: boolean;
 	isHistoryOpen: boolean;
-	isPreviewExpanded: boolean;
-	activePopover: string | null;
+	activeTab: "geopattern" | "hero" | "ai";
 }
 
 interface PatternContextType {
 	// State
-	prompt: string;
-	setPrompt: (prompt: string) => void;
-	patternParams: PatternParams;
-	setPatternParams: (params: PatternParams | ((prev: PatternParams) => PatternParams)) => void;
-	pattern: PatternState | null;
-	setPattern: (pattern: PatternState | null) => void;
+	params: PatternParams;
+	setParams: (params: PatternParams | ((prev: PatternParams) => PatternParams)) => void;
+	result: PatternResult | null;
 	history: PatternHistoryItem[];
 	isGenerating: boolean;
 	uiState: UIState;
 	setUIState: (state: UIState | ((prev: UIState) => UIState)) => void;
 	
-	// Payment & Wallet
+	// Payment
 	requirePayment: boolean;
 	setRequirePayment: (required: boolean) => void;
 	isPaying: boolean;
-	paymentError: string | null;
 	
 	// Actions
-	generatePattern: () => Promise<void>;
-	applyPreset: (preset: { prompt: string; params?: Partial<PatternParams> }) => void;
+	regenerate: () => void;
 	updateParam: <K extends keyof PatternParams>(key: K, value: PatternParams[K]) => void;
-	randomizeParams: () => void;
-	addToHistory: (pattern: PatternState) => void;
+	updateAnimation: <K extends keyof AnimationOptions>(key: K, value: AnimationOptions[K]) => void;
+	setSource: (source: PatternSource) => void;
+	setGeoGenerator: (gen: GeoGeneratorType) => void;
+	setHeroPattern: (pattern: HeroPatternName) => void;
+	randomize: () => void;
 	loadFromHistory: (item: PatternHistoryItem) => void;
+	generateAI: (prompt: string) => Promise<void>;
 	
 	// Derived
 	svgDataUrl: string;
 	cssSnippet: string;
-	estimatedCost: number;
 }
-
-const DEFAULT_PARAMS: PatternParams = {
-	scale: 24,
-	strokeWidth: 1,
-	density: 50,
-	jitter: 0,
-	rotation: 0,
-	spacing: 10,
-	symmetry: "none",
-	seed: 12345,
-    sizeRange: [1, 28],
-    opacityRange: [30, 100],
-    opacity: 100,
-    strokeColor: "currentColor",
-    backgroundColor: "transparent",
-    animateRotation: false,
-    animateScale: false,
-    animateOpacity: false,
-    animatePosition: false,
-    animationDuration: 10,
-    generatorType: "ai",
-    shape: "circle",
-    customSymbol: "",
-};
 
 const PatternContext = createContext<PatternContextType | undefined>(undefined);
 
 export function PatternProvider({ children }: { children: ReactNode }) {
-	// State
-	const [prompt, setPrompt] = useState("");
-	const [patternParams, setPatternParams] = useState<PatternParams>(DEFAULT_PARAMS);
-	const [pattern, setPattern] = useState<PatternState | null>(null);
+	// Core state
+	const [params, setParams] = useState<PatternParams>(DEFAULT_PATTERN_PARAMS);
+	const [result, setResult] = useState<PatternResult | null>(null);
 	const [history, setHistory] = useState<PatternHistoryItem[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [uiState, setUIState] = useState<UIState>({
 		isControlsOpen: true,
 		isPresetsOpen: false,
 		isHistoryOpen: false,
-		isPreviewExpanded: false,
-		activePopover: null,
+		activeTab: "geopattern",
 	});
 
-	// Payment State
+	// Payment
 	const [requirePayment, setRequirePayment] = useState(false);
 	const [isPaying, setIsPaying] = useState(false);
-	const [paymentError, setPaymentError] = useState<string | null>(null);
-
-	// Wallet
 	const { status, connect, balance, sendPayment } = useYoursWallet();
 	const isConnected = status === "connected";
 
-	// Actions
+	// Generate pattern from current params
+	const regenerate = useCallback(() => {
+		try {
+			const newResult = generatePattern(params);
+			setResult(newResult);
+			
+			// Add to history
+			setHistory((prev) => [
+				{
+					id: Date.now().toString(),
+					timestamp: Date.now(),
+					params: { ...params },
+					svg: newResult.svg,
+				},
+				...prev.slice(0, 19), // Keep last 20
+			]);
+		} catch (error) {
+			console.error("Pattern generation error:", error);
+			toast.error("Failed to generate pattern");
+		}
+	}, [params]);
+
+	// Auto-regenerate when params change (for non-AI sources)
+	// Using JSON.stringify to detect actual param changes
+	const paramsKey = JSON.stringify([
+		params.source,
+		params.geoSeed,
+		params.geoGenerator,
+		params.heroPattern,
+		params.foregroundColor,
+		params.opacity,
+		params.scale,
+	]);
+	
+	// Track if we're mounted (client-side)
+	const [isMounted, setIsMounted] = useState(false);
+	
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+	
+	useEffect(() => {
+		// Only run on client-side after mount
+		if (!isMounted) return;
+		
+		if (params.source !== "ai") {
+			try {
+				const newResult = generatePattern(params);
+				setResult(newResult);
+			} catch (error) {
+				console.error("Pattern generation error:", error);
+			}
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isMounted, paramsKey]);
+
+	// Update a single param
 	const updateParam = useCallback(<K extends keyof PatternParams>(key: K, value: PatternParams[K]) => {
-		setPatternParams((prev) => ({ ...prev, [key]: value }));
+		setParams((prev) => ({ ...prev, [key]: value }));
 	}, []);
 
-	const randomizeParams = useCallback(() => {
-		setPatternParams((prev) => ({
+	// Update animation options
+	const updateAnimation = useCallback(<K extends keyof AnimationOptions>(key: K, value: AnimationOptions[K]) => {
+		setParams((prev) => ({
 			...prev,
-			seed: Math.floor(Math.random() * 100000),
-			density: Math.floor(Math.random() * 100),
-			jitter: Math.floor(Math.random() * 50),
-			rotation: Math.floor(Math.random() * 360),
-            sizeRange: [Math.floor(Math.random() * 10) + 1, Math.floor(Math.random() * 30) + 10],
-            opacityRange: [Math.floor(Math.random() * 50), 100],
-            animateRotation: Math.random() > 0.7,
-            animateScale: Math.random() > 0.8,
+			animation: { ...prev.animation, [key]: value },
 		}));
 	}, []);
 
-	const addToHistory = useCallback((newPattern: PatternState) => {
-		setHistory((prev) => [
-			{
-				id: Date.now().toString(),
-				timestamp: Date.now(),
-				pattern: newPattern,
-				params: { ...patternParams }, // snapshot params
-			},
-			...prev.slice(0, 9), // Keep last 10
-		]);
-	}, [patternParams]);
+	// Source switching helpers
+	const setSource = useCallback((source: PatternSource) => {
+		setParams((prev) => ({ ...prev, source }));
+		setUIState((prev) => ({ ...prev, activeTab: source }));
+	}, []);
 
+	const setGeoGenerator = useCallback((gen: GeoGeneratorType) => {
+		setParams((prev) => ({
+			...prev,
+			source: "geopattern",
+			geoGenerator: gen,
+			geoSeed: randomSeed(), // New seed for variety
+		}));
+	}, []);
+
+	const setHeroPattern = useCallback((pattern: HeroPatternName) => {
+		setParams((prev) => ({
+			...prev,
+			source: "hero",
+			heroPattern: pattern,
+		}));
+	}, []);
+
+	// Randomize
+	const randomize = useCallback(() => {
+		setParams((prev) => ({
+			...prev,
+			geoSeed: randomSeed(),
+			opacity: Math.floor(Math.random() * 60) + 20,
+			scale: Math.floor(Math.random() * 150) + 50,
+		}));
+	}, []);
+
+	// Load from history
 	const loadFromHistory = useCallback((item: PatternHistoryItem) => {
-		setPattern(item.pattern);
-		setPatternParams(item.params);
-		setPrompt(item.pattern.prompt);
+		setParams(item.params);
 	}, []);
 
-	const applyPreset = useCallback((preset: { prompt: string; params?: Partial<PatternParams> }) => {
-		setPrompt(preset.prompt);
-		if (preset.params) {
-			setPatternParams((prev) => ({ ...prev, ...preset.params }));
-		}
-	}, []);
-
-	const generatePattern = useCallback(async () => {
+	// AI generation
+	const generateAI = useCallback(async (prompt: string) => {
 		if (!prompt.trim()) return;
 
-		// Check wallet connection and balance only if payment is required
+		// Check wallet if payment required
 		if (requirePayment) {
 			if (!isConnected) {
 				try {
 					await connect();
 				} catch {
-					const error = "Please connect your wallet to generate patterns";
-					setPaymentError(error);
-					toast.error(error);
+					toast.error("Please connect your wallet");
 					return;
 				}
 				return;
 			}
 
-			const hasEnoughBalance = (balance?.satoshis ?? 0) >= PATTERN_GENERATION_COST_SATS;
-			if (!hasEnoughBalance) {
-				const error = `Insufficient balance. You need at least ${(PATTERN_GENERATION_COST_SATS / 100_000_000).toFixed(4)} BSV.`;
-				setPaymentError(error);
-				toast.error(error);
+			const hasBalance = (balance?.satoshis ?? 0) >= PATTERN_GENERATION_COST_SATS;
+			if (!hasBalance) {
+				toast.error("Insufficient balance");
 				return;
 			}
 		}
 
-		setPaymentError(null);
 		setIsGenerating(true);
 
 		try {
 			let paymentTxid = "free-tier";
 
-			// Process payment only if required
 			if (requirePayment) {
 				setIsPaying(true);
 				const paymentResult = await sendPayment(FEE_ADDRESS, PATTERN_GENERATION_COST_SATS);
 				setIsPaying(false);
 
 				if (!paymentResult) {
-					throw new Error("Payment failed or was cancelled");
+					throw new Error("Payment failed");
 				}
 				paymentTxid = paymentResult.txid;
 			}
 
-			// Generate pattern
 			const response = await fetch("/api/generate-pattern", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					prompt: prompt.trim(),
-					colorMode: "currentColor", // Always use currentColor
+					colorMode: "currentColor",
 					paymentTxid,
-					// Send params if API supports them
-                    ...patternParams
 				}),
 			});
 
@@ -281,89 +256,50 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 			}
 
 			const data = await response.json();
-			const newPattern = {
-				svg: data.svg,
-				prompt: prompt.trim(),
-				colorMode: "currentColor" as ColorMode,
-				provider: data.provider,
-				model: data.model,
-			};
+			
+			// Update params with AI result
+			setParams((prev) => ({
+				...prev,
+				source: "ai",
+				aiPrompt: prompt,
+				aiSvg: data.svg,
+			}));
 
-			setPattern(newPattern);
-			addToHistory(newPattern);
 			toast.success("Pattern generated!");
 		} catch (error) {
-			console.error("Error generating pattern:", error);
-			const errorMessage = error instanceof Error ? error.message : "Generation failed";
-			setPaymentError(errorMessage);
-			toast.error(errorMessage);
-			setIsPaying(false);
+			console.error("AI generation error:", error);
+			toast.error(error instanceof Error ? error.message : "Generation failed");
 		} finally {
 			setIsGenerating(false);
+			setIsPaying(false);
 		}
-	}, [prompt, requirePayment, isConnected, connect, balance, sendPayment, addToHistory, patternParams]);
+	}, [requirePayment, isConnected, connect, balance, sendPayment]);
 
-	// Track foreground color for SVG color resolution
-	const [foregroundColor, setForegroundColor] = useState("#ffffff");
-	
-	useEffect(() => {
-		// Get the computed foreground color from CSS variables
-		const updateForegroundColor = () => {
-			if (typeof document === "undefined") return;
-			const style = getComputedStyle(document.documentElement);
-			const fgHsl = style.getPropertyValue("--foreground").trim();
-			if (fgHsl) {
-				// The CSS variable contains HSL values like "0 0% 100%"
-				setForegroundColor(`hsl(${fgHsl})`);
-			}
-		};
-		
-		updateForegroundColor();
-		
-		// Listen for theme changes
-		const observer = new MutationObserver(updateForegroundColor);
-		observer.observe(document.documentElement, { 
-			attributes: true, 
-			attributeFilter: ["class", "style"] 
-		});
-		
-		return () => observer.disconnect();
-	}, []);
-
-	// Derived
+	// Derived values
 	const svgDataUrl = useMemo(() => {
-		if (!pattern?.svg) return "";
-		// Resolve currentColor to actual foreground color so it shows in background-image
-		// SVGs in data URLs can't inherit CSS colors from the document
-		const resolvedSvg = resolveColorsInSvg(pattern.svg, foregroundColor);
-		const encoded = encodeURIComponent(resolvedSvg);
-		return `data:image/svg+xml,${encoded}`;
-	}, [pattern?.svg, foregroundColor]);
+		if (!result?.svg) return "";
+		// Replace currentColor with white for mask-image
+		const maskSvg = result.svg.replace(/currentColor/gi, "#ffffff");
+		return `data:image/svg+xml,${encodeURIComponent(maskSvg)}`;
+	}, [result?.svg]);
 
 	const cssSnippet = useMemo(() => {
-		if (!pattern?.svg) return "";
-		const encoded = encodeURIComponent(pattern.svg);
+		if (!result?.svg) return "";
+		const encoded = encodeURIComponent(result.svg);
 		return `.pattern-bg {
-  background-color: ${patternParams.backgroundColor};
-  color: ${patternParams.strokeColor};
+  background-color: ${params.backgroundColor};
   background-image: url("data:image/svg+xml,${encoded}");
   background-repeat: repeat;
-  background-size: ${patternParams.scale}px ${patternParams.scale}px;
-  opacity: ${patternParams.opacity / 100};
+  background-size: ${params.scale}px ${params.scale}px;
 }`;
-	}, [pattern?.svg, patternParams.scale, patternParams.opacity, patternParams.backgroundColor, patternParams.strokeColor]);
-
-	const estimatedCost = pattern?.svg ? pattern.svg.length + 500 : 0;
+	}, [result?.svg, params.backgroundColor, params.scale]);
 
 	return (
 		<PatternContext.Provider
 			value={{
-				prompt,
-				setPrompt,
-				patternParams,
-				setPatternParams,
-				pattern,
-				setPattern,
+				params,
+				setParams,
+				result,
 				history,
 				isGenerating,
 				uiState,
@@ -371,16 +307,17 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 				requirePayment,
 				setRequirePayment,
 				isPaying,
-				paymentError,
-				generatePattern,
-				applyPreset,
+				regenerate,
 				updateParam,
-				randomizeParams,
-				addToHistory,
+				updateAnimation,
+				setSource,
+				setGeoGenerator,
+				setHeroPattern,
+				randomize,
 				loadFromHistory,
+				generateAI,
 				svgDataUrl,
 				cssSnippet,
-				estimatedCost,
 			}}
 		>
 			{children}

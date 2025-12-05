@@ -102,7 +102,7 @@ export default function Home() {
 
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
 							<Button size="lg" className="gap-2" asChild>
-								<Link href="/market">
+								<Link href="/themes">
 									<LayoutGrid className="h-5 w-5" />
 									Browse Themes
 								</Link>
@@ -189,7 +189,7 @@ export default function Home() {
 									[origin]
 								</code>{" "}
 								with any theme&apos;s blockchain ID.{" "}
-								<Link href="/market" className="text-primary hover:underline">
+								<Link href="/themes" className="text-primary hover:underline">
 									Browse themes
 								</Link>{" "}
 								to find one.

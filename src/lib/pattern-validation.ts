@@ -229,3 +229,4 @@ export function ensureSeamlessStructure(svg: string): string {
 	return svg;
 }
 
+

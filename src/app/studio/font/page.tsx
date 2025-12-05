@@ -1,7 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { Loader2, RotateCcw, Upload, Wallet, Wand2 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { AIGenerateTab, type GeneratedFont, type CompiledFont } from "@/components/font-mint/ai-generate-tab";
 import { DropZoneCLI, type FontFileWithValidation } from "@/components/font-mint/drop-zone-cli";
 import type { ZipFontMetadata } from "@/lib/zip-font-loader";
@@ -41,7 +43,10 @@ function formatSats(sats: number): string {
 	return `${(sats / 100000000).toFixed(4)} BSV`;
 }
 
-export default function FontMintPage() {
+function FontMintPageContent() {
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const pathname = usePathname();
 	const { status, connect, balance, addresses } = useYoursWallet();
 	const [inputMode, setInputMode] = useState<InputMode>("upload");
 	const [fontFiles, setFontFiles] = useState<FontFileWithValidation[]>([]);
@@ -59,8 +64,89 @@ export default function FontMintPage() {
 		txid: string;
 		ordfsUrl: string;
 	} | null>(null);
+	
+	// AI generation settings (lifted for URL sync)
+	type AIModel = "gemini-3-pro" | "claude-opus-4.5";
+	const [aiModel, setAiModel] = useState<AIModel>("gemini-3-pro");
+	const [aiPrompt, setAiPrompt] = useState("");
+	const [aiPreset, setAiPreset] = useState<string | null>(null);
+
+	// URL sync refs
+	const isInitialized = useRef(false);
+	const urlSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const isConnected = status === "connected";
+
+	// Initialize state from URL params on mount
+	useEffect(() => {
+		if (isInitialized.current) return;
+		isInitialized.current = true;
+
+		const modeParam = searchParams.get("mode");
+		const nameParam = searchParams.get("name");
+		const authorParam = searchParams.get("author");
+		const licenseParam = searchParams.get("license");
+		const websiteParam = searchParams.get("website");
+		const modelParam = searchParams.get("model");
+		const promptParam = searchParams.get("prompt");
+		const presetParam = searchParams.get("preset");
+
+		if (modeParam && ["upload", "ai"].includes(modeParam)) {
+			setInputMode(modeParam as InputMode);
+		}
+
+		if (nameParam || authorParam || licenseParam || websiteParam) {
+			setMetadata(prev => ({
+				...prev,
+				...(nameParam && { name: nameParam }),
+				...(authorParam && { author: authorParam }),
+				...(licenseParam && { license: licenseParam as FontMetadata["license"] }),
+				...(websiteParam && { website: websiteParam }),
+			}));
+		}
+
+		// AI settings
+		if (modelParam && ["gemini-3-pro", "claude-opus-4.5"].includes(modelParam)) {
+			setAiModel(modelParam as AIModel);
+		}
+		if (promptParam) setAiPrompt(promptParam);
+		if (presetParam) setAiPreset(presetParam);
+	}, [searchParams]);
+
+	// Sync state to URL (debounced)
+	const syncToUrl = useCallback(() => {
+		if (!isInitialized.current) return;
+		if (urlSyncTimeout.current) clearTimeout(urlSyncTimeout.current);
+		
+		urlSyncTimeout.current = setTimeout(() => {
+			const params = new URLSearchParams();
+			
+			// Add mode if not default
+			if (inputMode !== "upload") params.set("mode", inputMode);
+			
+			// Add metadata fields if set
+			if (metadata.name.trim()) params.set("name", metadata.name.trim());
+			if (metadata.author.trim()) params.set("author", metadata.author.trim());
+			if (metadata.license !== "CC0_1.0") params.set("license", metadata.license);
+			if (metadata.website?.trim()) params.set("website", metadata.website.trim());
+			
+			// AI settings (only when in AI mode)
+			if (inputMode === "ai") {
+				if (aiModel !== "gemini-3-pro") params.set("model", aiModel);
+				if (aiPrompt.trim()) params.set("prompt", aiPrompt.trim());
+				if (aiPreset) params.set("preset", aiPreset);
+			}
+
+			const queryString = params.toString();
+			const url = queryString ? `${pathname}?${queryString}` : pathname;
+			router.replace(url, { scroll: false });
+		}, 500);
+	}, [inputMode, metadata, aiModel, aiPrompt, aiPreset, pathname, router]);
+
+	// Trigger URL sync when relevant state changes
+	useEffect(() => {
+		syncToUrl();
+	}, [syncToUrl]);
 
 	// Calculate bytes - for uploaded files or compiled WOFF2
 	const totalBytes = compiledFont
@@ -282,6 +368,12 @@ export default function FontMintPage() {
 									generatedFont={generatedFont}
 									compiledFont={compiledFont}
 									onClear={handleClearGeneratedFont}
+									initialModel={aiModel}
+									initialPrompt={aiPrompt}
+									initialPreset={aiPreset ?? undefined}
+									onModelChange={setAiModel}
+									onPromptChange={setAiPrompt}
+									onPresetChange={setAiPreset}
 								/>
 							)}
 							<MetadataForm
@@ -395,5 +487,19 @@ export default function FontMintPage() {
 				/>
 			)}
 		</div>
+	);
+}
+
+export default function FontMintPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex h-full items-center justify-center">
+					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+				</div>
+			}
+		>
+			<FontMintPageContent />
+		</Suspense>
 	);
 }

@@ -1,5 +1,14 @@
 import { tool } from "ai";
 import { z } from "zod";
+import {
+	generateScatter as genScatter,
+	generateGrid as genGrid,
+	generateLines as genLines,
+	generateWaves as genWaves,
+	generateNoise as genNoise,
+	generateTopo as genTopo,
+	generateParallelogram as genParallelogram,
+} from "@/lib/pattern-generators";
 
 /**
  * Token enum for theme-aware colors in patterns
@@ -106,6 +115,46 @@ export const SeedShuffleSchema = z.object({
 	seed: z.string().optional().describe("Specific seed to use, or omit for random"),
 });
 
+// Generator schemas for procedural pattern generation
+export const GridParamsSchema = z.object({
+	cols: z.number().int().min(1).max(20).optional().describe("Number of columns"),
+	rows: z.number().int().min(1).max(20).optional().describe("Number of rows"),
+	gap: z.number().min(4).max(100).optional().describe("Gap between dots in pixels"),
+	dotSize: z.number().min(1).max(30).optional().describe("Size of each dot"),
+	fillToken: TokenEnum.optional().describe("Fill color token"),
+	strokeToken: TokenEnum.optional().describe("Stroke color token"),
+	strokeWidth: z.number().min(0).max(10).optional().describe("Stroke width"),
+	seed: z.string().optional().describe("Random seed"),
+});
+
+export const WaveParamsSchema = z.object({
+	amplitude: z.number().min(1).max(50).optional().describe("Wave height/amplitude"),
+	frequency: z.number().min(0.5).max(5).optional().describe("Number of wave cycles"),
+	strokeWidth: z.number().min(0.5).max(10).optional().describe("Line thickness"),
+	strokeToken: TokenEnum.optional().describe("Line color token"),
+	opacity: z.number().min(0).max(1).optional().describe("Line opacity"),
+	seed: z.string().optional().describe("Random seed"),
+});
+
+export const TopoParamsSchema = z.object({
+	levels: z.number().int().min(2).max(10).optional().describe("Number of contour levels"),
+	strokeWidth: z.number().min(0.3).max(5).optional().describe("Contour line thickness"),
+	strokeToken: TokenEnum.optional().describe("Line color token"),
+	opacity: z.number().min(0).max(1).optional().describe("Line opacity"),
+	seed: z.string().optional().describe("Random seed"),
+});
+
+export const ParallelogramParamsSchema = z.object({
+	width: z.number().min(10).max(200).optional().describe("Width of the parallelogram"),
+	height: z.number().min(10).max(200).optional().describe("Height of the parallelogram"),
+	skew: z.number().min(-60).max(60).optional().describe("Skew angle in degrees"),
+	gap: z.number().min(0).max(20).optional().describe("Gap between shapes"),
+	fillToken: TokenEnum.optional().describe("Fill color token"),
+	strokeToken: TokenEnum.optional().describe("Stroke color token"),
+	strokeWidth: z.number().min(0).max(5).optional().describe("Stroke width"),
+	seed: z.string().optional().describe("Random seed"),
+});
+
 /**
  * Remap colors in SVG pattern to theme tokens
  */
@@ -192,19 +241,126 @@ Seeds ensure reproducible pattern generation.`,
 	},
 });
 
+// ============================================================
+// PROCEDURAL GENERATOR TOOLS (actually generate SVG output)
+// ============================================================
+
+/**
+ * Generate a grid/dot matrix pattern
+ */
+export const generateGridTool = tool({
+	description: `Generate a dot grid pattern. Creates evenly spaced dots in a grid layout.
+Perfect for dot matrix, polka dot, or grid-based backgrounds.`,
+	inputSchema: GridParamsSchema,
+	execute: async (params) => {
+		const result = genGrid(params);
+		return { svg: result.svg, seed: result.seed, generator: "grid" };
+	},
+});
+
+/**
+ * Generate a scatter pattern
+ */
+export const generateScatterTool = tool({
+	description: `Generate a scatter pattern with randomly placed shapes.
+Supports circles, triangles, emoji, and custom symbols with configurable density and randomization.`,
+	inputSchema: ScatterParamsSchema,
+	execute: async (params) => {
+		const result = genScatter(params);
+		return { svg: result.svg, seed: result.seed, generator: "scatter" };
+	},
+});
+
+/**
+ * Generate a line/stripe pattern
+ */
+export const generateLinesTool = tool({
+	description: `Generate a line pattern (stripes, diagonals, hatching).
+Use angleDeg to control direction: 0=horizontal, 45=diagonal, 90=vertical.`,
+	inputSchema: LineParamsSchema,
+	execute: async (params) => {
+		const result = genLines(params);
+		return { svg: result.svg, seed: result.seed, generator: "lines" };
+	},
+});
+
+/**
+ * Generate a wave pattern
+ */
+export const generateWavesTool = tool({
+	description: `Generate a wave/curve pattern. Creates smooth sinusoidal lines.
+Good for ocean waves, sound waves, or flowing backgrounds.`,
+	inputSchema: WaveParamsSchema,
+	execute: async (params) => {
+		const result = genWaves(params);
+		return { svg: result.svg, seed: result.seed, generator: "waves" };
+	},
+});
+
+/**
+ * Generate a noise/grain pattern
+ */
+export const generateNoiseTool = tool({
+	description: `Generate a noise/grain texture pattern.
+Creates organic, film-grain-like textures with random particles.`,
+	inputSchema: NoiseParamsSchema,
+	execute: async (params) => {
+		const result = genNoise(params);
+		return { svg: result.svg, seed: result.seed, generator: "noise" };
+	},
+});
+
+/**
+ * Generate a topographic contour pattern
+ */
+export const generateTopoTool = tool({
+	description: `Generate a topographic/contour line pattern.
+Creates terrain map-like concentric irregular shapes.`,
+	inputSchema: TopoParamsSchema,
+	execute: async (params) => {
+		const result = genTopo(params);
+		return { svg: result.svg, seed: result.seed, generator: "topo" };
+	},
+});
+
+/**
+ * Generate a parallelogram pattern
+ */
+export const generateParallelogramTool = tool({
+	description: `Generate a parallelogram pattern.
+Creates a grid of skewed rectangular shapes (parallelograms).`,
+	inputSchema: ParallelogramParamsSchema,
+	execute: async (params) => {
+		const result = genParallelogram(params);
+		return { svg: result.svg, seed: result.seed, generator: "parallelogram" };
+	},
+});
+
 /**
  * All pattern tools bundled for AI SDK registration
  */
 export const patternTools = {
+	// Modification tools
 	remapColors: remapColorsTool,
 	transformPattern: transformPatternTool,
-	scatterParams: scatterParamsTool,
-	lineParams: lineParamsTool,
-	noiseParams: noiseParamsTool,
 	symmetry: symmetryTool,
 	paletteMap: paletteMapTool,
 	tileScaleRotate: tileScaleRotateTool,
 	seedShuffle: seedShuffleTool,
+	
+	// Generator tools (produce SVG output)
+	generateGrid: generateGridTool,
+	generateScatter: generateScatterTool,
+	generateLines: generateLinesTool,
+	generateWaves: generateWavesTool,
+	generateNoise: generateNoiseTool,
+	generateTopo: generateTopoTool,
+	generateParallelogram: generateParallelogramTool,
+	
+	// Deprecated param-only tools (kept for backwards compatibility)
+	scatterParams: scatterParamsTool,
+	lineParams: lineParamsTool,
+	noiseParams: noiseParamsTool,
 };
 
 /**
@@ -219,3 +375,7 @@ export type SymmetryParams = z.infer<typeof SymmetrySchema>;
 export type PaletteMapParams = z.infer<typeof PaletteMapSchema>;
 export type TileScaleRotateParams = z.infer<typeof TileScaleRotateSchema>;
 export type SeedShuffleParams = z.infer<typeof SeedShuffleSchema>;
+export type GridParams = z.infer<typeof GridParamsSchema>;
+export type WaveParams = z.infer<typeof WaveParamsSchema>;
+export type TopoParams = z.infer<typeof TopoParamsSchema>;
+export type ParallelogramParams = z.infer<typeof ParallelogramParamsSchema>;

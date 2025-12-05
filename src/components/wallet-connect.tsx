@@ -92,7 +92,7 @@ function MobileWalletDialog({
 						rel="noopener noreferrer"
 						className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
 					>
-						<Wallet className="h-4 w-4" />
+						<Wallet className="h-4 w-4" fill="currentColor" />
 						Learn about Yours Wallet
 						<ExternalLink className="h-3 w-3" />
 					</a>
@@ -182,20 +182,22 @@ export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {
 							variant="ghost"
 							size="icon"
 							onClick={() => setShowMobileDialog(true)}
+							title="Connect wallet"
 						>
-							<Wallet className="h-4 w-4" />
+							<Wallet className="h-4 w-4" fill="currentColor" />
 							<span className="sr-only">Connect wallet</span>
 						</Button>
 					) : (
-						<Button variant="ghost" size="sm" className="gap-1.5" asChild>
+						<Button variant="ghost" size="icon" className="relative" asChild>
 							<a
 								href={YOURS_WALLET_URL}
 								target="_blank"
 								rel="noopener noreferrer"
-									>
-								<Wallet className="h-4 w-4" />
-								<span className="hidden sm:inline">Install</span>
-								<ExternalLink className="h-3 w-3" />
+								title="Install Yours Wallet"
+							>
+								<Wallet className="h-4 w-4" fill="currentColor" />
+								{/* External link indicator dot */}
+								<span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary" />
 							</a>
 						</Button>
 					)}
@@ -219,8 +221,9 @@ export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {
 						size="sm"
 						onClick={handleConnectClick}
 						className="gap-1.5"
+						title="Connect wallet"
 					>
-						<Wallet className="h-4 w-4" />
+						<Wallet className="h-4 w-4" fill="currentColor" />
 						<span className="hidden sm:inline">Connect</span>
 					</Button>
 					{error && <span className="text-xs text-destructive">{error}</span>}
@@ -352,7 +355,7 @@ export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {
 									}}
 									className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 								>
-									<Wallet className="h-4 w-4" />
+									<Wallet className="h-4 w-4" fill="currentColor" />
 									Disconnect wallet
 								</button>
 							</div>

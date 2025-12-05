@@ -2,6 +2,7 @@ import type {
 	ScatterParams,
 	LineParams,
 	NoiseParams,
+	ParallelogramParams,
 	Token,
 } from "./tools/pattern-tools";
 import { tokenToCss } from "./tools/pattern-tools";
@@ -63,15 +64,15 @@ export function generateScatter(params: ScatterParams): GenResult {
 	const rng = seededRng(seed);
 
 	const shape = params.shape || "circle";
-	const count = params.count ?? Math.round((params.density ?? 0.3) * 50);
-	const sizeMin = params.sizeMin ?? 3;
-	const sizeMax = params.sizeMax ?? 8;
+	const count = params.count ?? Math.round((params.density ?? 0.3) * 30);
+	const sizeMin = params.sizeMin ?? 8;
+	const sizeMax = params.sizeMax ?? 24;
 	const jitter = params.jitter ?? 0.5;
 	const fill = getColor(params.fillToken, "currentColor");
 	const stroke = params.strokeToken ? getColor(params.strokeToken, "none") : "none";
 	const strokeWidth = params.strokeWidth ?? 0;
 
-	const tileSize = 50;
+	const tileSize = 80;
 	const shapes: string[] = [];
 
 	for (let i = 0; i < count; i++) {
@@ -112,9 +113,9 @@ export function generateScatter(params: ScatterParams): GenResult {
 		if (match && yMatch) {
 			const x = Number.parseFloat(match[1]);
 			const y = Number.parseFloat(yMatch[1]);
-			// Wrap shapes near edges
-			if (x < 10) edgeShapes.push(s.replace(/(?:cx|x)="[\d.]+"/, `cx="${(x + tileSize).toFixed(1)}"`));
-			if (y < 10) edgeShapes.push(s.replace(/(?:cy|y)="[\d.]+"/, `cy="${(y + tileSize).toFixed(1)}"`));
+			// Wrap shapes near edges for seamless tiling
+			if (x < 15) edgeShapes.push(s.replace(/(?:cx|x)="[\d.]+"/, `cx="${(x + tileSize).toFixed(1)}"`));
+			if (y < 15) edgeShapes.push(s.replace(/(?:cy|y)="[\d.]+"/, `cy="${(y + tileSize).toFixed(1)}"`));
 		}
 	}
 
@@ -123,28 +124,95 @@ export function generateScatter(params: ScatterParams): GenResult {
 }
 
 /**
- * Generate grid pattern
+ * Generate grid pattern with configurable shapes
+ * This is the main pattern generator - places shapes in a regular grid
  */
 export interface GridParams {
 	cols?: number;
 	rows?: number;
 	gap?: number;
 	dotSize?: number;
+	shape?: "circle" | "square" | "triangle" | "hexagon" | "star" | "diamond";
+	rotation?: number;
 	fillToken?: Token;
 	strokeToken?: Token;
 	strokeWidth?: number;
+	filled?: boolean;
 	seed?: string;
+}
+
+/**
+ * Generate a single shape SVG element
+ */
+function generateShapeSvg(
+	shape: string,
+	x: number,
+	y: number,
+	size: number,
+	rotation: number,
+	fill: string,
+	stroke: string,
+	strokeWidth: number,
+	filled: boolean
+): string {
+	const r = size / 2;
+	const transform = rotation !== 0 ? ` transform="rotate(${rotation} ${x} ${y})"` : "";
+	const fillAttr = filled ? fill : "none";
+	const strokeAttr = filled ? "none" : stroke;
+	const sw = filled ? 0 : strokeWidth;
+
+	switch (shape) {
+		case "circle":
+			return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
+		
+		case "square":
+			return `<rect x="${x - r}" y="${y - r}" width="${size}" height="${size}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
+		
+		case "diamond":
+			// Square rotated 45 degrees
+			const dr = r * 0.7; // Slightly smaller to look proportional
+			return `<rect x="${x - dr}" y="${y - dr}" width="${dr * 2}" height="${dr * 2}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}" transform="rotate(45 ${x} ${y})${rotation !== 0 ? ` rotate(${rotation} ${x} ${y})` : ""}"/>`;
+		
+		case "triangle":
+			const triPts = [0, 1, 2].map((n) => {
+				const a = (n * 2 * Math.PI) / 3 - Math.PI / 2;
+				return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
+			}).join(" ");
+			return `<polygon points="${triPts}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
+		
+		case "hexagon":
+			const hexPts = [0, 1, 2, 3, 4, 5].map((n) => {
+				const a = (n * Math.PI) / 3;
+				return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
+			}).join(" ");
+			return `<polygon points="${hexPts}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
+		
+		case "star":
+			const starPts: string[] = [];
+			for (let i = 0; i < 10; i++) {
+				const a = (i * Math.PI) / 5 - Math.PI / 2;
+				const sr = i % 2 === 0 ? r : r * 0.4;
+				starPts.push(`${(x + sr * Math.cos(a)).toFixed(1)},${(y + sr * Math.sin(a)).toFixed(1)}`);
+			}
+			return `<polygon points="${starPts.join(" ")}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
+		
+		default:
+			return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
+	}
 }
 
 export function generateGrid(params: GridParams): GenResult {
 	const seed = params.seed || genSeed();
-	const cols = params.cols ?? 5;
-	const rows = params.rows ?? 5;
-	const gap = params.gap ?? 10;
-	const dotSize = params.dotSize ?? 2;
+	const cols = params.cols ?? 4;
+	const rows = params.rows ?? 4;
+	const gap = params.gap ?? 24;
+	const dotSize = params.dotSize ?? 8;
+	const shape = params.shape ?? "circle";
+	const rotation = params.rotation ?? 0;
 	const fill = getColor(params.fillToken, "currentColor");
-	const stroke = params.strokeToken ? getColor(params.strokeToken, "none") : "none";
-	const strokeWidth = params.strokeWidth ?? 0;
+	const stroke = getColor(params.strokeToken, "currentColor");
+	const strokeWidth = params.strokeWidth ?? 1.5;
+	const filled = params.filled !== false; // Default to filled
 
 	const tileW = cols * gap;
 	const tileH = rows * gap;
@@ -154,9 +222,7 @@ export function generateGrid(params: GridParams): GenResult {
 		for (let c = 0; c < cols; c++) {
 			const x = c * gap + gap / 2;
 			const y = r * gap + gap / 2;
-			shapes.push(
-				`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${dotSize}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
-			);
+			shapes.push(generateShapeSvg(shape, x, y, dotSize, rotation, fill, stroke, strokeWidth, filled));
 		}
 	}
 
@@ -172,8 +238,8 @@ export function generateLines(params: LineParams): GenResult {
 	const rng = seededRng(seed);
 
 	const angle = params.angleDeg ?? 45;
-	const spacing = params.spacing ?? 10;
-	const strokeWidth = params.strokeWidth ?? 1;
+	const spacing = params.spacing ?? 16;
+	const strokeWidth = params.strokeWidth ?? 2;
 	const jitter = params.jitter ?? 0;
 	const dash = params.dash || "";
 	const stroke = getColor(params.strokeToken, "currentColor");
@@ -234,9 +300,9 @@ export interface WaveParams {
 
 export function generateWaves(params: WaveParams): GenResult {
 	const seed = params.seed || genSeed();
-	const amplitude = params.amplitude ?? 8;
+	const amplitude = params.amplitude ?? 12;
 	const frequency = params.frequency ?? 1;
-	const strokeWidth = params.strokeWidth ?? 1.5;
+	const strokeWidth = params.strokeWidth ?? 2.5;
 	const stroke = getColor(params.strokeToken, "currentColor");
 	const opacity = params.opacity ?? 1;
 
@@ -267,8 +333,8 @@ export function generateNoise(params: NoiseParams): GenResult {
 	const seed = params.seed || genSeed();
 	const rng = seededRng(seed);
 
-	const intensity = params.intensity ?? 0.5;
-	const granularity = params.granularity ?? 1;
+	const intensity = params.intensity ?? 0.3;
+	const granularity = params.granularity ?? 2;
 	const fill = getColor(params.fillToken, "currentColor");
 	const opacity = params.opacity ?? 0.3;
 
@@ -305,12 +371,12 @@ export function generateTopo(params: TopoParams): GenResult {
 	const seed = params.seed || genSeed();
 	const rng = seededRng(seed);
 
-	const levels = params.levels ?? 5;
-	const strokeWidth = params.strokeWidth ?? 0.8;
+	const levels = params.levels ?? 4;
+	const strokeWidth = params.strokeWidth ?? 1.5;
 	const stroke = getColor(params.strokeToken, "currentColor");
-	const opacity = params.opacity ?? 0.6;
+	const opacity = params.opacity ?? 0.7;
 
-	const tileSize = 80;
+	const tileSize = 100;
 	const paths: string[] = [];
 
 	// Generate concentric irregular shapes
@@ -340,6 +406,50 @@ export function generateTopo(params: TopoParams): GenResult {
 }
 
 /**
+ * Generate parallelogram pattern
+ */
+export function generateParallelogram(params: ParallelogramParams): GenResult {
+	const seed = params.seed || genSeed();
+	const width = params.width ?? 40;
+	const height = params.height ?? 40;
+	const skew = params.skew ?? 20;
+	const gap = params.gap ?? 4;
+	const fill = getColor(params.fillToken, "currentColor");
+	const stroke = params.strokeToken ? getColor(params.strokeToken, "none") : "none";
+	const strokeWidth = params.strokeWidth ?? 0;
+
+	// Calculate bounding box for the skewed shape
+	const skewRad = (skew * Math.PI) / 180;
+	const skewOffset = height * Math.tan(skewRad);
+	const tileW = width + gap + Math.abs(skewOffset);
+	const tileH = height + gap;
+
+	const shapes: string[] = [];
+
+	// Draw the parallelogram using a polygon
+	// Points: Top-Left, Top-Right, Bottom-Right, Bottom-Left
+	// Center it in the tile
+	const cx = tileW / 2;
+	const cy = tileH / 2;
+	
+	const halfW = width / 2;
+	const halfH = height / 2;
+	const halfSkew = skewOffset / 2;
+
+	const p1 = `${(cx - halfW + halfSkew).toFixed(1)},${(cy - halfH).toFixed(1)}`;
+	const p2 = `${(cx + halfW + halfSkew).toFixed(1)},${(cy - halfH).toFixed(1)}`;
+	const p3 = `${(cx + halfW - halfSkew).toFixed(1)},${(cy + halfH).toFixed(1)}`;
+	const p4 = `${(cx - halfW - halfSkew).toFixed(1)},${(cy + halfH).toFixed(1)}`;
+
+	shapes.push(
+		`<polygon points="${p1} ${p2} ${p3} ${p4}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
+	);
+
+	const svg = wrapPattern(shapes.join("\n      "), tileW, tileH);
+	return { svg, seed };
+}
+
+/**
  * All generators as a map for dynamic invocation
  */
 export const generators = {
@@ -350,7 +460,10 @@ export const generators = {
 	waves: generateWaves,
 	noise: generateNoise,
 	topo: generateTopo,
+	parallelogram: generateParallelogram,
 } as const;
 
 export type GeneratorType = keyof typeof generators;
 
+// Re-export types for external usage
+export type { ParallelogramParams } from "./tools/pattern-tools";

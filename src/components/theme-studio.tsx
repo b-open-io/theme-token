@@ -6,6 +6,7 @@ import {
 	type ThemeToken,
 } from "@theme-token/sdk";
 import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
+import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -21,13 +22,14 @@ import {
 	RotateCcw,
 	Save,
 	Settings2,
+	ShoppingCart,
 	Sparkles,
 	Sun,
 	Type,
 	Upload,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ExportModal } from "@/components/export-modal";
 import { ImportModal } from "@/components/import-modal";
 import { InscribeDialog } from "@/components/inscribe-dialog";
@@ -83,6 +85,23 @@ function loadDrafts(): ThemeDraft[] {
 
 function saveDrafts(drafts: ThemeDraft[]): void {
 	localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+}
+
+// URL encoding helpers for theme state
+function encodeStyles(styles: ThemeToken["styles"]): string {
+	try {
+		return btoa(JSON.stringify(styles));
+	} catch {
+		return "";
+	}
+}
+
+function decodeStyles(encoded: string): ThemeToken["styles"] | null {
+	try {
+		return JSON.parse(atob(encoded));
+	} catch {
+		return null;
+	}
 }
 
 // Color control component for editing individual colors
@@ -144,6 +163,8 @@ function ColorSection({
 
 export function ThemeStudio() {
 	const searchParams = useSearchParams();
+	const router = useRouter();
+	const pathname = usePathname();
 	const {
 		status,
 		connect,
@@ -166,13 +187,24 @@ export function ThemeStudio() {
 	);
 	const [txid, setTxid] = useState<string | null>(null);
 	const [customName, setCustomName] = useState("");
+	
+	// URL sync refs
+	const isInitialized = useRef(false);
+	const urlSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// Dirty state detection - compare selectedTheme styles with originalTheme styles
 	const isDirty = JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles);
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
 	const [onChainThemes, setOnChainThemes] = useState<CachedTheme[]>([]);
+	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [loadingThemes, setLoadingThemes] = useState(true);
+
+	// Map of origin -> listing for quick lookup
+	const listingsByOrigin = new Map<string, ThemeMarketListing>();
+	for (const listing of listings) {
+		listingsByOrigin.set(listing.origin, listing);
+	}
 	const [editorSubTab, setEditorSubTab] = useState<
 		"colors" | "typography" | "other"
 	>("colors");
@@ -188,11 +220,74 @@ export function ThemeStudio() {
 		setDrafts(loadDrafts());
 	}, []);
 
-	// Fetch on-chain themes
+	// Initialize state from URL params on mount
 	useEffect(() => {
-		fetchCachedThemes()
-			.then(setOnChainThemes)
-			.finally(() => setLoadingThemes(false));
+		if (isInitialized.current) return;
+		isInitialized.current = true;
+
+		// Check for styles param (base64 encoded theme styles)
+		const stylesParam = searchParams.get("styles");
+		const nameParam = searchParams.get("name");
+		const tabParam = searchParams.get("tab");
+
+		if (stylesParam) {
+			const decoded = decodeStyles(stylesParam);
+			if (decoded) {
+				const theme: ThemeToken = {
+					$schema: "https://themetoken.dev/v1/schema.json",
+					name: nameParam || "Shared Theme",
+					styles: decoded,
+				};
+				loadThemeFonts(theme);
+				setSelectedTheme(theme);
+				setOriginalTheme(theme);
+				if (nameParam) setCustomName(nameParam);
+			}
+		}
+
+		if (tabParam && ["colors", "typography", "other"].includes(tabParam)) {
+			setEditorSubTab(tabParam as "colors" | "typography" | "other");
+		}
+	}, [searchParams]);
+
+	// Sync state to URL (debounced)
+	const syncToUrl = useCallback(() => {
+		if (!isInitialized.current) return;
+		if (urlSyncTimeout.current) clearTimeout(urlSyncTimeout.current);
+		
+		urlSyncTimeout.current = setTimeout(() => {
+			const params = new URLSearchParams();
+			
+			// Encode current styles
+			const encoded = encodeStyles(selectedTheme.styles);
+			if (encoded) params.set("styles", encoded);
+			
+			// Add name if custom
+			if (customName.trim()) params.set("name", customName.trim());
+			
+			// Add tab if not default
+			if (editorSubTab !== "colors") params.set("tab", editorSubTab);
+
+			const queryString = params.toString();
+			const url = queryString ? `${pathname}?${queryString}` : pathname;
+			router.replace(url, { scroll: false });
+		}, 500); // 500ms debounce
+	}, [selectedTheme.styles, customName, editorSubTab, pathname, router]);
+
+	// Trigger URL sync when relevant state changes
+	useEffect(() => {
+		syncToUrl();
+	}, [syncToUrl]);
+
+	// Fetch on-chain themes and market listings
+	useEffect(() => {
+		Promise.all([
+			fetchCachedThemes(),
+			fetchThemeMarketListings(),
+		]).then(([themes, marketListings]) => {
+			setOnChainThemes(themes);
+			setListings(marketListings);
+		}).finally(() => setLoadingThemes(false));
 	}, []);
 
 	// Sync with wallet's active theme when it changes externally
@@ -509,29 +604,35 @@ export function ThemeStudio() {
 											<SelectLabel className="text-xs text-primary">
 												On-Chain Themes
 											</SelectLabel>
-											{onChainThemes.map((published) => (
-												<SelectItem
-													key={published.origin}
-													value={published.theme.name}
-												>
-													<div className="flex items-center gap-2">
-														<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
-															{[
-																published.theme.styles[mode].primary,
-																published.theme.styles[mode].secondary,
-																published.theme.styles[mode].accent,
-															].map((color) => (
-																<div
-																	key={color}
-																	className="flex-1"
-																	style={{ backgroundColor: color }}
-																/>
-															))}
+											{onChainThemes.map((published) => {
+												const listing = listingsByOrigin.get(published.origin);
+												return (
+													<SelectItem
+														key={published.origin}
+														value={published.theme.name}
+													>
+														<div className="flex items-center gap-2">
+															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+																{[
+																	published.theme.styles[mode].primary,
+																	published.theme.styles[mode].secondary,
+																	published.theme.styles[mode].accent,
+																].map((color) => (
+																	<div
+																		key={color}
+																		className="flex-1"
+																		style={{ backgroundColor: color }}
+																	/>
+																))}
+															</div>
+															<span>{published.theme.name}</span>
+															{listing && (
+																<ShoppingCart className="h-3 w-3 text-primary ml-auto" fill="currentColor" />
+															)}
 														</div>
-														<span>{published.theme.name}</span>
-													</div>
-												</SelectItem>
-											))}
+													</SelectItem>
+												);
+											})}
 										</SelectGroup>
 									)}
 									{loadingThemes && (

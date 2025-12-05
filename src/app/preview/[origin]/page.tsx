@@ -303,6 +303,17 @@ export default function PreviewPage({ params }: Props) {
 				}
 
 				setTheme(result.theme);
+
+				// Add to themes cache so it appears on homepage
+				// Fire and forget - non-blocking
+				fetch("/api/themes/cache", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						txid: origin.replace(/_\d+$/, ""),
+						theme: result.theme,
+					}),
+				}).catch(() => {});
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Failed to load theme");
 			} finally {

@@ -27,6 +27,10 @@ interface PatternRequest {
 	generatorParams?: Record<string, unknown>;
 	// Streaming mode
 	stream?: boolean;
+	// Augmentation mode - AI modifies existing pattern
+	mode?: "generate" | "augment";
+	existingSvg?: string;
+	currentParams?: Record<string, unknown>;
 }
 
 // Build tool descriptions for the system prompt
@@ -129,6 +133,27 @@ Circuit Board:
   <rect width="100%" height="100%" fill="url(#p)"/>
 </svg>`;
 
+// Augmentation prompt - AI modifies existing pattern
+const augmentSystemPrompt = `You are an SVG pattern editor that modifies existing patterns.
+
+## YOUR TASK
+You will receive an existing SVG pattern and instructions on how to modify it.
+Analyze the pattern, then apply the requested changes.
+
+## AVAILABLE TOOLS
+You have these tools to modify the pattern:
+${toolDescriptions}
+
+## MODIFICATION GUIDELINES
+- Preserve the pattern structure (keep the <pattern> element and patternUnits)
+- Maintain seamless tiling - any edge modifications must tile correctly
+- Use "currentColor" for theme-aware colors
+- Keep modifications minimal and targeted
+- Output the complete modified SVG
+
+## OUTPUT
+Return ONLY the modified SVG markup, no explanation.`;
+
 function buildUserPrompt(prompt: string, colorMode: ColorMode): string {
 	let colorInstruction: string;
 	switch (colorMode) {
@@ -182,7 +207,7 @@ function handleProceduralGen(
 export async function POST(request: NextRequest) {
 	try {
 		const body = (await request.json()) as PatternRequest;
-		const { prompt, colorMode = "currentColor", seed, generator, generatorParams, stream } = body;
+		const { prompt, colorMode = "currentColor", seed, generator, generatorParams, stream, mode, existingSvg, currentParams } = body;
 
 		// Handle procedural generator mode
 		if (generator && generators[generator]) {
@@ -203,13 +228,34 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
 		}
 
-		const userPrompt = buildUserPrompt(prompt.trim(), colorMode);
+		// Augmentation mode - modify existing pattern
+		const isAugment = mode === "augment" && existingSvg;
+		
+		let userPrompt: string;
+		let activeSystemPrompt: string;
+		
+		if (isAugment) {
+			activeSystemPrompt = augmentSystemPrompt;
+			userPrompt = `Here is the current SVG pattern:
+\`\`\`svg
+${existingSvg}
+\`\`\`
+
+Current parameters: ${JSON.stringify(currentParams || {}, null, 2)}
+
+Modification request: ${prompt.trim()}
+
+Apply the requested changes and return the modified SVG.`;
+		} else {
+			activeSystemPrompt = systemPrompt;
+			userPrompt = buildUserPrompt(prompt.trim(), colorMode);
+		}
 
 		// Streaming mode
 		if (stream) {
 			const result = await streamText({
 				model: "google/gemini-2.0-flash" as Parameters<typeof streamText>[0]["model"],
-				system: systemPrompt,
+				system: activeSystemPrompt,
 				prompt: userPrompt,
 				tools: patternTools,
 			});
@@ -227,7 +273,7 @@ export async function POST(request: NextRequest) {
 		// Non-streaming mode
 		const { text: svgResult, toolCalls: resultToolCalls } = await generateText({
 			model: "google/gemini-2.0-flash" as Parameters<typeof generateText>[0]["model"],
-			system: systemPrompt,
+			system: activeSystemPrompt,
 			prompt: userPrompt,
 			tools: patternTools,
 		});
@@ -275,6 +321,7 @@ export async function POST(request: NextRequest) {
 			seed: seed || Math.random().toString(36).substring(2, 10),
 			provider: "google",
 			model: "gemini-2.0-flash",
+			mode: isAugment ? "augment" : "generate",
 			meta,
 			toolCalls,
 			validation: {

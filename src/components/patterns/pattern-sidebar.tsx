@@ -1,453 +1,385 @@
 "use client";
 
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { RefreshCw, Layers, Zap, Palette, BoxSelect, Shapes } from "lucide-react";
-import { usePatternContext, type PatternParams, type GeneratorType, type ShapeType } from "./pattern-context";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ColorPicker } from "@/components/ui/color-picker";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
-
-const GENERATORS: { id: GeneratorType; label: string }[] = [
-    { id: "ai", label: "AI Prompt" },
-    { id: "scatter", label: "Scatter" },
-    { id: "grid", label: "Grid" },
-    { id: "waves", label: "Waves" },
-    { id: "stripes", label: "Stripes" },
-    { id: "noise", label: "Noise" },
-    { id: "topo", label: "Topo" },
-    { id: "parallelogram", label: "Parallelogram" },
-];
-
-const SHAPES: { id: ShapeType; label: string; icon: string }[] = [
-    { id: "circle", label: "Circle", icon: "●" },
-    { id: "square", label: "Square", icon: "■" },
-    { id: "triangle", label: "Triangle", icon: "▲" },
-    { id: "hexagon", label: "Hexagon", icon: "⬢" },
-    { id: "star", label: "Star", icon: "★" },
-    { id: "emoji", label: "Emoji", icon: "😊" },
-];
-
-// Presets data
-const PRESETS: { id: string; label: string; prompt: string; params?: Partial<PatternParams> }[] = [
-	{
-		id: "dots",
-		label: "Dot Matrix",
-		prompt: "evenly spaced small dots in a grid pattern",
-		params: { density: 40, scale: 24, symmetry: "none" },
-	},
-	{
-		id: "grid",
-		label: "Iso Grid",
-		prompt: "isometric grid lines with subtle depth",
-		params: { density: 30, scale: 32, strokeWidth: 1, rotation: 30 },
-	},
-	{
-		id: "topo",
-		label: "Topo Map",
-		prompt: "topographic contour lines like a terrain map",
-		params: { density: 60, scale: 48, jitter: 20 },
-	},
-	{
-		id: "waves",
-		label: "Waves",
-		prompt: "smooth flowing wave lines",
-		params: { density: 50, scale: 40, rotation: 0 },
-	},
-	{
-		id: "hex",
-		label: "Hexagons",
-		prompt: "hexagonal honeycomb pattern",
-		params: { density: 45, scale: 32, symmetry: "radial" },
-	},
-	{
-		id: "circuit",
-		label: "Circuit",
-		prompt: "circuit board traces and connection points",
-		params: { density: 70, scale: 64, strokeWidth: 1.5 },
-	},
-	{
-		id: "noise",
-		label: "Grain",
-		prompt: "subtle organic noise texture",
-		params: { density: 90, scale: 16, opacity: 30 },
-	},
-	{
-		id: "bauhaus",
-		label: "Bauhaus",
-		prompt: "geometric shapes in bauhaus style",
-		params: { density: 40, scale: 64, jitter: 40 },
-	},
-];
+import { usePatternContext } from "@/components/patterns/pattern-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+	Sparkles,
+	Library,
+	Wand2,
+	Search,
+	ChevronDown,
+	ChevronUp,
+	Loader2,
+} from "lucide-react";
+import { useState } from "react";
+import {
+	GEO_GENERATORS,
+	FEATURED_HERO_PATTERNS,
+	HERO_PATTERNS,
+} from "@/lib/pattern-engine";
+import { getGeoGeneratorLabel } from "@/lib/pattern-sources/geopattern-adapter";
+import { getHeroPatternLabel } from "@/lib/pattern-sources/heropattern-adapter";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export function PatternSidebar() {
-	const { patternParams, updateParam, randomizeParams, requirePayment, setRequirePayment, uiState, setUIState, applyPreset } = usePatternContext();
+	const {
+		params,
+		setSource,
+		setGeoGenerator,
+		setHeroPattern,
+		updateParam,
+		updateAnimation,
+		generateAI,
+		isGenerating,
+		uiState,
+	} = usePatternContext();
 
-    if (!uiState.isControlsOpen) return null;
+	const [aiPrompt, setAiPrompt] = useState("");
+	const [heroSearch, setHeroSearch] = useState("");
+	const [showAllHero, setShowAllHero] = useState(false);
+	const [appearanceOpen, setAppearanceOpen] = useState(true);
+	const [animationOpen, setAnimationOpen] = useState(false);
+
+	// Filter hero patterns
+	const filteredHeroPatterns = heroSearch
+		? HERO_PATTERNS.filter((p) =>
+				getHeroPatternLabel(p).toLowerCase().includes(heroSearch.toLowerCase())
+		  )
+		: showAllHero
+		? [...HERO_PATTERNS]
+		: FEATURED_HERO_PATTERNS;
 
 	return (
-		<div className="fixed inset-y-0 left-0 top-[6.375rem] z-30 w-80 border-r bg-background/95 backdrop-blur-md shadow-xl transition-transform duration-300 ease-in-out animate-in slide-in-from-left flex flex-col">
-			<div className="shrink-0 flex items-center justify-between border-b p-4">
-				<h3 className="font-medium text-sm">Studio Controls</h3>
-                <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={randomizeParams} title="Randomize All">
-                        <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button
-						variant="ghost"
-						size="icon"
-						className="h-8 w-8 md:hidden"
-						onClick={() => setUIState((prev) => ({ ...prev, isControlsOpen: false }))}
+		<div className="w-80 border-r bg-background/95 backdrop-blur flex flex-col h-full overflow-hidden">
+			{/* Source Tabs */}
+			<Tabs
+				value={uiState.activeTab}
+				onValueChange={(v) => setSource(v as "geopattern" | "hero" | "ai")}
+				className="flex flex-col h-full min-h-0"
+			>
+				<div className="p-4 border-b shrink-0">
+					<TabsList className="w-full grid grid-cols-3">
+						<TabsTrigger value="geopattern" className="gap-1.5">
+							<Sparkles className="h-3.5 w-3.5" />
+							<span className="hidden sm:inline">Generate</span>
+						</TabsTrigger>
+						<TabsTrigger value="hero" className="gap-1.5">
+							<Library className="h-3.5 w-3.5" />
+							<span className="hidden sm:inline">Library</span>
+						</TabsTrigger>
+						<TabsTrigger value="ai" className="gap-1.5">
+							<Wand2 className="h-3.5 w-3.5" />
+							<span className="hidden sm:inline">AI</span>
+						</TabsTrigger>
+					</TabsList>
+				</div>
+
+				<ScrollArea className="flex-1 min-h-0">
+					{/* GeoPattern Tab */}
+					<TabsContent value="geopattern" className="m-0 p-4 space-y-4">
+						<div>
+							<Label className="text-xs text-muted-foreground mb-2 block">
+								Pattern Type
+							</Label>
+							<div className="grid grid-cols-4 gap-2">
+								{GEO_GENERATORS.map((gen) => (
+									<button
+										key={gen}
+										onClick={() => setGeoGenerator(gen)}
+										className={cn(
+											"aspect-square rounded-md border p-2 text-[10px] leading-tight transition-colors hover:bg-muted",
+											params.geoGenerator === gen &&
+												"border-primary bg-primary/10"
+										)}
+									>
+										{getGeoGeneratorLabel(gen)}
+									</button>
+								))}
+							</div>
+						</div>
+
+						<div>
+							<Label className="text-xs text-muted-foreground mb-2 block">
+								Seed
+							</Label>
+							<Input
+								value={params.geoSeed}
+								onChange={(e) => updateParam("geoSeed", e.target.value)}
+								placeholder="Enter seed text..."
+								className="text-sm"
+							/>
+							<p className="text-[10px] text-muted-foreground mt-1">
+								Same seed = same pattern
+							</p>
+						</div>
+					</TabsContent>
+
+					{/* Hero Patterns Tab */}
+					<TabsContent value="hero" className="m-0 p-4 space-y-4">
+						<div className="relative">
+							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							<Input
+								value={heroSearch}
+								onChange={(e) => setHeroSearch(e.target.value)}
+								placeholder="Search 87 patterns..."
+								className="pl-9 text-sm"
+							/>
+						</div>
+
+						<div className="grid grid-cols-3 gap-2">
+							{filteredHeroPatterns.map((pattern) => (
+								<button
+									key={pattern}
+									onClick={() => setHeroPattern(pattern)}
+									className={cn(
+										"rounded-md border p-2 text-[10px] leading-tight transition-colors hover:bg-muted text-left",
+										params.heroPattern === pattern &&
+											"border-primary bg-primary/10"
+									)}
+								>
+									{getHeroPatternLabel(pattern)}
+								</button>
+							))}
+						</div>
+
+						{!heroSearch && !showAllHero && (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="w-full"
+								onClick={() => setShowAllHero(true)}
+							>
+								Show all 87 patterns
+								<ChevronDown className="ml-2 h-3 w-3" />
+							</Button>
+						)}
+						{showAllHero && !heroSearch && (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="w-full"
+								onClick={() => setShowAllHero(false)}
+							>
+								Show featured only
+								<ChevronUp className="ml-2 h-3 w-3" />
+							</Button>
+						)}
+					</TabsContent>
+
+					{/* AI Tab */}
+					<TabsContent value="ai" className="m-0 p-4 space-y-4">
+						<div>
+							<Label className="text-xs text-muted-foreground mb-2 block">
+								Describe your pattern
+							</Label>
+							<textarea
+								value={aiPrompt}
+								onChange={(e) => setAiPrompt(e.target.value)}
+								placeholder="A geometric pattern with interlocking hexagons..."
+								className="w-full min-h-24 rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+							/>
+						</div>
+						<Button
+							className="w-full"
+							onClick={() => generateAI(aiPrompt)}
+							disabled={isGenerating || !aiPrompt.trim()}
+						>
+							{isGenerating ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Generating...
+								</>
+							) : (
+								<>
+									<Wand2 className="mr-2 h-4 w-4" />
+									Generate with AI
+								</>
+							)}
+						</Button>
+						<p className="text-[10px] text-muted-foreground text-center">
+							AI generates unique SVG patterns from your description
+						</p>
+					</TabsContent>
+
+					<Separator className="my-2" />
+
+					{/* Appearance Controls */}
+					<Collapsible
+						open={appearanceOpen}
+						onOpenChange={setAppearanceOpen}
+						className="px-4"
 					>
-						<X className="h-4 w-4" />
-					</Button>
-                </div>
-			</div>
+						<CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+							<span className="text-sm font-medium">Appearance</span>
+							{appearanceOpen ? (
+								<ChevronUp className="h-4 w-4" />
+							) : (
+								<ChevronDown className="h-4 w-4" />
+							)}
+						</CollapsibleTrigger>
+						<CollapsibleContent className="space-y-4 pb-4">
+							<div>
+								<div className="flex items-center justify-between mb-2">
+									<Label className="text-xs text-muted-foreground">
+										Foreground
+									</Label>
+									<Input
+										type="color"
+										value={params.foregroundColor}
+										onChange={(e) =>
+											updateParam("foregroundColor", e.target.value)
+										}
+										className="w-8 h-8 p-0 border-0"
+									/>
+								</div>
+							</div>
 
-            <div className="flex-1 overflow-y-auto">
-                <div className="p-4 pb-24 space-y-6">
-                    
-                    {/* Presets Section - Prominent */}
-                    <div className="space-y-3">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Presets</Label>
-                        <div className="grid grid-cols-4 gap-2">
-                            {PRESETS.map((preset) => (
-                                <button
-                                    key={preset.id}
-                                    onClick={() => applyPreset({ prompt: preset.prompt, params: preset.params })}
-                                    className="group flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition-colors hover:bg-muted aspect-square"
-                                    title={preset.label}
-                                >
-                                    <div className="h-4 w-4 rounded-full bg-primary/20 group-hover:bg-primary/40 transition-colors" />
-                                    <span className="text-[9px] truncate w-full text-center">{preset.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+							<div>
+								<div className="flex items-center justify-between mb-2">
+									<Label className="text-xs text-muted-foreground">
+										Background
+									</Label>
+									<Input
+										type="color"
+										value={params.backgroundColor}
+										onChange={(e) =>
+											updateParam("backgroundColor", e.target.value)
+										}
+										className="w-8 h-8 p-0 border-0"
+									/>
+								</div>
+							</div>
 
-                    <div className="h-px bg-border" />
+							<div>
+								<div className="flex items-center justify-between mb-2">
+									<Label className="text-xs text-muted-foreground">
+										Opacity
+									</Label>
+									<span className="text-xs text-muted-foreground">
+										{params.opacity}%
+									</span>
+								</div>
+								<Slider
+									value={[params.opacity]}
+									onValueChange={([v]) => updateParam("opacity", v)}
+									min={10}
+									max={100}
+									step={5}
+								/>
+							</div>
 
-                    {/* Generator Type */}
-                    <div className="space-y-3">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Generator</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {GENERATORS.map((gen) => (
-                                <button
-                                    key={gen.id}
-                                    onClick={() => updateParam("generatorType", gen.id)}
-                                    className={cn(
-                                        "flex items-center justify-center rounded-md border px-2 py-1.5 text-xs font-medium transition-colors hover:bg-muted",
-                                        patternParams.generatorType === gen.id
-                                            ? "border-primary bg-primary/10 text-primary"
-                                            : "bg-card"
-                                    )}
-                                >
-                                    {gen.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+							<div>
+								<div className="flex items-center justify-between mb-2">
+									<Label className="text-xs text-muted-foreground">
+										Scale
+									</Label>
+									<span className="text-xs text-muted-foreground">
+										{params.scale}px
+									</span>
+								</div>
+								<Slider
+									value={[params.scale]}
+									onValueChange={([v]) => updateParam("scale", v)}
+									min={20}
+									max={300}
+									step={10}
+								/>
+							</div>
+						</CollapsibleContent>
+					</Collapsible>
 
-                     {/* Shape Selector (Only if not AI, though AI might use it as hint) */}
-                     <div className="space-y-3">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Shape</Label>
-                        <div className="grid grid-cols-4 gap-2">
-                            {SHAPES.map((shape) => (
-                                <button
-                                    key={shape.id}
-                                    onClick={() => updateParam("shape", shape.id)}
-                                    className={cn(
-                                        "flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition-colors hover:bg-muted aspect-square",
-                                        patternParams.shape === shape.id
-                                            ? "border-primary bg-primary/10 text-primary"
-                                            : "bg-card"
-                                    )}
-                                >
-                                    <span className="text-lg leading-none">{shape.icon}</span>
-                                    <span className="text-[9px]">{shape.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+					<Separator className="my-2" />
 
-                    <Tabs defaultValue="params" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 h-8">
-                            <TabsTrigger value="params" className="text-xs h-6">Params</TabsTrigger>
-                            <TabsTrigger value="style" className="text-xs h-6">Style</TabsTrigger>
-                            <TabsTrigger value="anim" className="text-xs h-6">Anim</TabsTrigger>
-                        </TabsList>
-                        
-                        {/* Geometric Parameters */}
-                        <TabsContent value="params" className="space-y-5 mt-4">
-                            {/* Scale */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Scale</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.scale}px</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.scale]}
-                                    onValueChange={([v]) => updateParam("scale", v)}
-                                    min={8}
-                                    max={256}
-                                    step={4}
-                                />
-                            </div>
+					{/* Animation Controls */}
+					<Collapsible
+						open={animationOpen}
+						onOpenChange={setAnimationOpen}
+						className="px-4 pb-4"
+					>
+						<CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+							<span className="text-sm font-medium">Animation</span>
+							{animationOpen ? (
+								<ChevronUp className="h-4 w-4" />
+							) : (
+								<ChevronDown className="h-4 w-4" />
+							)}
+						</CollapsibleTrigger>
+						<CollapsibleContent className="space-y-4 pb-4">
+							<div className="flex items-center justify-between">
+								<Label className="text-xs text-muted-foreground">
+									Rotate
+								</Label>
+								<Switch
+									checked={params.animation.rotate?.enabled ?? false}
+									onCheckedChange={(checked) =>
+										updateAnimation("rotate", {
+											...params.animation.rotate,
+											enabled: checked,
+										})
+									}
+								/>
+							</div>
 
-                            {/* Size Range (Min/Max) */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Size Range</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.sizeRange[0]}-{patternParams.sizeRange[1]}px</span>
-                                </div>
-                                <Slider
-                                    value={patternParams.sizeRange}
-                                    onValueChange={(v) => updateParam("sizeRange", v as [number, number])}
-                                    min={1}
-                                    max={100}
-                                    step={1}
-                                    minStepsBetweenThumbs={1}
-                                />
-                            </div>
+							<div className="flex items-center justify-between">
+								<Label className="text-xs text-muted-foreground">
+									Scale Pulse
+								</Label>
+								<Switch
+									checked={params.animation.scale?.enabled ?? false}
+									onCheckedChange={(checked) =>
+										updateAnimation("scale", {
+											...params.animation.scale,
+											enabled: checked,
+										})
+									}
+								/>
+							</div>
 
-                            {/* Density */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Density</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.density}%</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.density]}
-                                    onValueChange={([v]) => updateParam("density", v)}
-                                    min={10}
-                                    max={100}
-                                    step={5}
-                                />
-                            </div>
+							<div className="flex items-center justify-between">
+								<Label className="text-xs text-muted-foreground">
+									Opacity Fade
+								</Label>
+								<Switch
+									checked={params.animation.opacity?.enabled ?? false}
+									onCheckedChange={(checked) =>
+										updateAnimation("opacity", {
+											...params.animation.opacity,
+											enabled: checked,
+										})
+									}
+								/>
+							</div>
 
-                            {/* Stroke Width */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Stroke Width</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.strokeWidth}px</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.strokeWidth]}
-                                    onValueChange={([v]) => updateParam("strokeWidth", v)}
-                                    min={0.5}
-                                    max={10}
-                                    step={0.5}
-                                />
-                            </div>
-
-                            {/* Jitter */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Jitter</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.jitter}%</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.jitter]}
-                                    onValueChange={([v]) => updateParam("jitter", v)}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                />
-                            </div>
-                            
-                            {/* Spacing */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Spacing</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.spacing}</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.spacing]}
-                                    onValueChange={([v]) => updateParam("spacing", v)}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                />
-                            </div>
-
-                            {/* Rotation */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Rotation</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.rotation}°</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.rotation]}
-                                    onValueChange={([v]) => updateParam("rotation", v)}
-                                    min={0}
-                                    max={360}
-                                    step={15}
-                                />
-                            </div>
-
-                            {/* Symmetry */}
-                            <div className="space-y-2">
-                                <Label className="text-xs">Symmetry</Label>
-                                <Select
-                                    value={patternParams.symmetry}
-                                    onValueChange={(v) => updateParam("symmetry", v as PatternParams["symmetry"])}
-                                >
-                                    <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue placeholder="Select symmetry" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        <SelectItem value="mirror">Mirror</SelectItem>
-                                        <SelectItem value="radial">Radial</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </TabsContent>
-                        
-                        {/* Colors & Opacity */}
-                        <TabsContent value="style" className="space-y-5 mt-4">
-                            {/* Opacity (Global) */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Opacity</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.opacity}%</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.opacity]}
-                                    onValueChange={([v]) => updateParam("opacity", v)}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                />
-                            </div>
-
-                            {/* Opacity Range (Per element) */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Opacity Range</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.opacityRange[0]}-{patternParams.opacityRange[1]}%</span>
-                                </div>
-                                <Slider
-                                    value={patternParams.opacityRange}
-                                    onValueChange={(v) => updateParam("opacityRange", v as [number, number])}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                    minStepsBetweenThumbs={10}
-                                />
-                            </div>
-                            
-                            {/* Stroke/Fill Color */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Pattern Color</Label>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[80px]">
-                                            {patternParams.strokeColor}
-                                        </span>
-                                        <ColorPicker
-                                            value={patternParams.strokeColor === "currentColor" ? "#000000" : patternParams.strokeColor}
-                                            onChange={(v) => updateParam("strokeColor", v)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Background Color */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Background</Label>
-                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[80px]">
-                                            {patternParams.backgroundColor}
-                                        </span>
-                                        <ColorPicker
-                                            value={patternParams.backgroundColor === "transparent" ? "#ffffff" : patternParams.backgroundColor}
-                                            onChange={(v) => updateParam("backgroundColor", v)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </TabsContent>
-                        
-                        {/* Animation */}
-                        <TabsContent value="anim" className="space-y-5 mt-4">
-                             {/* Duration */}
-                             <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Duration</Label>
-                                    <span className="text-xs font-mono text-muted-foreground">{patternParams.animationDuration}s</span>
-                                </div>
-                                <Slider
-                                    value={[patternParams.animationDuration]}
-                                    onValueChange={([v]) => updateParam("animationDuration", v)}
-                                    min={1}
-                                    max={60}
-                                    step={1}
-                                />
-                            </div>
-
-                            <div className="space-y-4 pt-2">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Animate Rotation</Label>
-                                    <Switch
-                                        checked={patternParams.animateRotation}
-                                        onCheckedChange={(v) => updateParam("animateRotation", v)}
-                                    />
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Animate Scale</Label>
-                                    <Switch
-                                        checked={patternParams.animateScale}
-                                        onCheckedChange={(v) => updateParam("animateScale", v)}
-                                    />
-                                </div>
-                                 <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Animate Opacity</Label>
-                                    <Switch
-                                        checked={patternParams.animateOpacity}
-                                        onCheckedChange={(v) => updateParam("animateOpacity", v)}
-                                    />
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Animate Position</Label>
-                                    <Switch
-                                        checked={patternParams.animatePosition}
-                                        onCheckedChange={(v) => updateParam("animatePosition", v)}
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div className="rounded-md bg-muted/50 p-3 mt-4">
-                                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                    Animations are applied via CSS transform. Exported SVGs will include these animations as inline styles.
-                                </p>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
-
-                    {/* Payment Toggle (Dev/Test) */}
-                    <div className="flex items-center justify-between pt-4 border-t">
-                        <Label htmlFor="require-payment" className="text-[10px] text-muted-foreground">Require Payment (Test)</Label>
-                        <Switch
-                            id="require-payment"
-                            checked={requirePayment}
-                            onCheckedChange={setRequirePayment}
-                            className="scale-75 origin-right"
-                        />
-                    </div>
-                </div>
-            </div>
+							<div className="flex items-center justify-between">
+								<Label className="text-xs text-muted-foreground">
+									Translate
+								</Label>
+								<Switch
+									checked={params.animation.translate?.enabled ?? false}
+									onCheckedChange={(checked) =>
+										updateAnimation("translate", {
+											...params.animation.translate,
+											enabled: checked,
+										})
+									}
+								/>
+							</div>
+						</CollapsibleContent>
+					</Collapsible>
+				</ScrollArea>
+			</Tabs>
 		</div>
 	);
 }

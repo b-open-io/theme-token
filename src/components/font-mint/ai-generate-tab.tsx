@@ -44,6 +44,13 @@ interface AIGenerateTabProps {
 	compiledFont?: CompiledFont | null;
 	/** Called when user wants to clear and regenerate */
 	onClear?: () => void;
+	/** Controlled values for URL sync */
+	initialModel?: AIModel;
+	initialPrompt?: string;
+	initialPreset?: string;
+	onModelChange?: (model: AIModel) => void;
+	onPromptChange?: (prompt: string) => void;
+	onPresetChange?: (preset: string | null) => void;
 }
 
 type AIModel = "gemini-3-pro" | "claude-opus-4.5";
@@ -95,14 +102,41 @@ const formatBsv = (sats: number) => {
 	return bsv.toFixed(2);
 };
 
-export function AIGenerateTab({ onFontGenerated, generatedFont: externalFont, compiledFont: externalCompiled, onClear }: AIGenerateTabProps) {
+export function AIGenerateTab({ 
+	onFontGenerated, 
+	generatedFont: externalFont, 
+	compiledFont: externalCompiled, 
+	onClear,
+	initialModel = "gemini-3-pro",
+	initialPrompt = "",
+	initialPreset,
+	onModelChange,
+	onPromptChange,
+	onPresetChange,
+}: AIGenerateTabProps) {
 	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
-	const [selectedModel, setSelectedModel] = useState<AIModel>("gemini-3-pro");
-	const [prompt, setPrompt] = useState("");
-	const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+	const [selectedModel, setSelectedModel] = useState<AIModel>(initialModel);
+	const [prompt, setPrompt] = useState(initialPrompt);
+	const [selectedPreset, setSelectedPreset] = useState<string | null>(initialPreset ?? null);
 	const [jobId, setJobId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
+	
+	// Sync controlled changes to parent
+	const handleModelChange = (model: AIModel) => {
+		setSelectedModel(model);
+		onModelChange?.(model);
+	};
+	
+	const handlePromptChange = (value: string) => {
+		setPrompt(value);
+		onPromptChange?.(value);
+	};
+	
+	const handlePresetChange = (preset: string | null) => {
+		setSelectedPreset(preset);
+		onPresetChange?.(preset);
+	};
 
 	const isConnected = status === "connected";
 	const hasEnoughBalance = (balance?.satoshis ?? 0) >= FONT_GENERATION_COST_SATS;
@@ -170,8 +204,8 @@ export function AIGenerateTab({ onFontGenerated, generatedFont: externalFont, co
 	}, [statusData, onFontGenerated]);
 
 	const handlePresetClick = (preset: typeof STYLE_PRESETS[0]) => {
-		setSelectedPreset(preset.id);
-		setPrompt(preset.prompt);
+		handlePresetChange(preset.id);
+		handlePromptChange(preset.prompt);
 	};
 
 	const handleGenerate = async () => {
@@ -384,7 +418,7 @@ export function AIGenerateTab({ onFontGenerated, generatedFont: externalFont, co
 							<button
 								key={model.id}
 								type="button"
-								onClick={() => setSelectedModel(model.id)}
+								onClick={() => handleModelChange(model.id)}
 								disabled={isProcessing}
 								className={`rounded border p-3 text-left transition-colors ${
 									selectedModel === model.id
@@ -435,8 +469,8 @@ export function AIGenerateTab({ onFontGenerated, generatedFont: externalFont, co
 					<textarea
 						value={prompt}
 						onChange={(e) => {
-							setPrompt(e.target.value);
-							setSelectedPreset(null);
+							handlePromptChange(e.target.value);
+							handlePresetChange(null);
 						}}
 						disabled={isProcessing}
 						placeholder="Describe your font style in detail... e.g., 'Elegant serif with tall ascenders, delicate hairlines, and subtle contrast between thick and thin strokes. Inspired by 18th century French typography.'"
