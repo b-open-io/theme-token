@@ -220,25 +220,8 @@ export function AudioVisualizerFractal({ theme, mode }: { theme?: any, mode?: 'l
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
     camera.position.z = 1;
 
-    // Cache audio store reference for animation loop
-    const audioStore = useAudioStore;
-
     const animate = () => {
       animationRef.current = requestAnimationFrame(animate);
-
-      const state = stateRef.current;
-      const isCurrentlyPlaying = audioStore.getState().isPlaying;
-
-      // Calculate target opacity
-      const targetOp = isCurrentlyPlaying ? 1.0 : 0.0;
-      state.opacity += (targetOp - state.opacity) * 0.05;
-
-      // Skip heavy computation when fully invisible
-      if (state.opacity < 0.01 && !isCurrentlyPlaying) {
-        material.uniforms.iOpacity.value = 0;
-        renderer.render(scene, camera);
-        return;
-      }
 
       // Audio Data
       let bass = 0;
@@ -248,19 +231,23 @@ export function AudioVisualizerFractal({ theme, mode }: { theme?: any, mode?: 'l
         analyser.getByteFrequencyData(dataArray as Uint8Array<ArrayBuffer>);
         let sum = 0;
         for (let i = 0; i < 10; i++) sum += dataArray[i];
-        bass = sum / 2550; // Optimized: 10 * 255 = 2550
+        bass = sum / 2550;
       }
 
       // Infinite Zoom Loop
-      state.zoom *= (1.002 + bass * 0.005);
-      if (state.zoom > 50000.0) {
-        state.zoom = 1.0;
+      stateRef.current.zoom *= (1.002 + bass * 0.005);
+      if (stateRef.current.zoom > 50000.0) {
+        stateRef.current.zoom = 1.0;
       }
 
+      // Opacity Fade
+      const targetOp = useAudioStore.getState().isPlaying ? 1.0 : 0.0;
+      stateRef.current.opacity += (targetOp - stateRef.current.opacity) * 0.05;
+
       material.uniforms.iTime.value += 0.01 + bass * 0.02;
-      material.uniforms.iZoom.value = state.zoom;
+      material.uniforms.iZoom.value = stateRef.current.zoom;
       material.uniforms.iAudioBass.value = bass;
-      material.uniforms.iOpacity.value = state.opacity;
+      material.uniforms.iOpacity.value = stateRef.current.opacity;
 
       renderer.render(scene, camera);
     };
