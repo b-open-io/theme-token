@@ -58,7 +58,7 @@ export function AudioDemo({ theme, mode }: { theme?: any, mode?: 'light' | 'dark
 
   return (
     <AudioDemoProvider tracks={demoTracks}>
-      <div className="relative overflow-hidden rounded-xl" style={{ height: 'calc(100vh - 16rem)' }}>
+      <div className="relative overflow-hidden rounded-xl" style={{ height: 'calc(100vh - 17.5rem)' }}>
         {/* Fullscreen visualizer */}
         <AudioVisualizerFractal theme={theme} mode={mode} />
 

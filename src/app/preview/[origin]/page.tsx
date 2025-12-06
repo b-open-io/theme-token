@@ -403,11 +403,11 @@ export default function PreviewPage({ params }: Props) {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-background font-sans antialiased selection:bg-primary/30 theme-transition relative pattern-bg">
+    <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/30 theme-transition relative pattern-bg">
       {/* Preview Container - Scoped Theme */}
       <div
         ref={containerRef}
-        className={`relative z-0 flex flex-col h-screen overflow-hidden ${previewMode === "dark" ? "dark" : ""}`}
+        className={`relative z-0 min-h-screen ${previewMode === "dark" ? "dark" : ""}`}
         style={{
           backgroundColor: "var(--background)",
           color: "var(--foreground)",
@@ -476,162 +476,155 @@ export default function PreviewPage({ params }: Props) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-6 py-6">
-            {/* Header Section */}
-            <div className="mb-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                      {theme.name}
-                    </h1>
-                    <Badge
-                      variant="outline"
-                      className="font-mono text-[10px] uppercase tracking-widest"
-                      style={{
-                        borderColor: "color-mix(in oklch, var(--primary) 30%, transparent)",
-                        color: "var(--primary)",
-                        backgroundColor: "color-mix(in oklch, var(--primary) 5%, transparent)",
-                      }}
-                    >
-                      Inscribed
-                    </Badge>
-                  </div>
-                  {theme.author && (
-                    <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-                      by{" "}
-                      <span style={{ color: "var(--foreground)" }}>
-                        {theme.author}
-                      </span>
-                      <span className="mx-2" style={{ color: "var(--border)" }}>/</span>
-                      <button
-                        type="button"
-                        onClick={copyOrigin}
-                        className="inline-flex items-center gap-1 font-mono text-xs hover:text-foreground transition-colors group"
-                        title="Copy full origin TXID"
-                      >
-                        <span>{origin.slice(0, 8)}...</span>
-                        {copiedOrigin ? (
-                          <Check className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <Copy className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-                        )}
-                      </button>
-                    </p>
-                  )}
+        <div className="container mx-auto px-4 py-6">
+          {/* Header Section */}
+          <div className="mb-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                    {theme.name}
+                  </h1>
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-[10px] uppercase tracking-widest"
+                    style={{
+                      borderColor: "color-mix(in oklch, var(--primary) 30%, transparent)",
+                      color: "var(--primary)",
+                      backgroundColor: "color-mix(in oklch, var(--primary) 5%, transparent)",
+                    }}
+                  >
+                    Inscribed
+                  </Badge>
                 </div>
-
-                {/* CLI Command */}
-                <button
-                  type="button"
-                  onClick={copyCommand}
-                  className="group flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-xs transition-colors"
-                  style={{
-                    backgroundColor: "color-mix(in oklch, var(--muted) 50%, transparent)",
-                    borderWidth: "1px",
-                    borderColor: "var(--border)",
-                  }}
-                >
-                  <span style={{ color: "var(--primary)" }}>$</span>
-                  <span className="hidden sm:inline" style={{ color: "var(--muted-foreground)" }}>
-                    bunx shadcn add .../{origin.slice(0, 8)}
-                  </span>
-                  <span className="sm:hidden" style={{ color: "var(--muted-foreground)" }}>
-                    Copy install
-                  </span>
-                  {copied ? (
-                    <Check className="ml-1 h-3 w-3 text-green-500" />
-                  ) : (
-                    <Copy className="ml-1 h-3 w-3 opacity-50 group-hover:opacity-100" style={{ color: "var(--muted-foreground)" }} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Tab Navigation using shadcn/ui Tabs with animation */}
-            <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-0 z-10 relative">
-              <div className="flex-1 flex flex-col min-h-0">
-                <Tabs
-                  defaultValue="dashboard"
-                  value={activeTab}
-                  onValueChange={(val) => handleTabChange(val as TabId)}
-                  className="flex-1 flex flex-col min-h-0"
-                >
-                  <div className="flex items-center justify-between mb-6 shrink-0">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-6 h-auto p-1 bg-muted/50 backdrop-blur-sm border border-border/50">
-                      {tabs.map((tab) => (
-                        <TabsTrigger
-                          key={tab.id}
-                          value={tab.id}
-                          className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg transition-all duration-300 py-2.5 rounded-md"
-                        >
-                          <div className="flex flex-col items-center gap-1.5">
-                            <tab.icon className="w-4 h-4" />
-                            <span className="text-[10px] uppercase tracking-wider font-semibold">
-                              {tab.label}
-                            </span>
-                          </div>
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </div>
-
-                  {/* Tab Content Wrapper - Scrollable for non-audio tabs */}
-                  <div className="flex-1 min-h-0 relative">
-                    <div className="absolute inset-0 overflow-y-auto pr-1">
-                      <TabsContent value="dashboard" className="mt-0 h-full">
-                        <DashboardDemo />
-                      </TabsContent>
-
-                      <TabsContent value="colors" className="mt-0 h-full">
-                        <ColorsDemo theme={theme} mode={previewMode} />
-                      </TabsContent>
-
-                      <TabsContent value="typography" className="mt-0 h-full">
-                        <TypographyDemo theme={theme} mode={previewMode} />
-                      </TabsContent>
-
-                      <TabsContent value="controls" className="mt-0 h-full">
-                        <div className="space-y-8 pb-10">
-                          <ButtonsDemo />
-                          <FormsDemo />
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="cards" className="mt-0 h-full">
-                        <CardsDemo />
-                      </TabsContent>
-
-                      {/* Audio Tab - No internal scroll, takes full height */}
-                      <TabsContent value="audio" className="mt-0 h-full overflow-hidden">
-                        <div className="w-full h-full">
-                          <AudioDemo theme={theme} mode={previewMode} />
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="ai" className="mt-0 h-full">
-                        <AiDemo />
-                      </TabsContent>
-                    </div>
-                  </div>
-                </Tabs>
+                {theme.author && (
+                  <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+                    by{" "}
+                    <span style={{ color: "var(--foreground)" }}>
+                      {theme.author}
+                    </span>
+                    <span className="mx-2" style={{ color: "var(--border)" }}>/</span>
+                    <button
+                      type="button"
+                      onClick={copyOrigin}
+                      className="inline-flex items-center gap-1 font-mono text-xs hover:text-foreground transition-colors group"
+                      title="Copy full origin TXID"
+                    >
+                      <span>{origin.slice(0, 8)}...</span>
+                      {copiedOrigin ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                      )}
+                    </button>
+                  </p>
+                )}
               </div>
 
-              {/* Remix Dialog */}
-              <UnifiedRemixDialog
-                isOpen={showRemixDialog}
-                onClose={() => setShowRemixDialog(false)}
-                type="theme"
-                previousTheme={theme}
-                onThemeRemixComplete={(newTheme) => {
-                  // Navigate to studio with the new remixed theme
-                  router.push(
-                    `/studio?remix=${encodeURIComponent(JSON.stringify(newTheme))}`,
-                  );
+              {/* CLI Command */}
+              <button
+                type="button"
+                onClick={copyCommand}
+                className="group flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-xs transition-colors"
+                style={{
+                  backgroundColor: "color-mix(in oklch, var(--muted) 50%, transparent)",
+                  borderWidth: "1px",
+                  borderColor: "var(--border)",
                 }}
-              />
+              >
+                <span style={{ color: "var(--primary)" }}>$</span>
+                <span className="hidden sm:inline" style={{ color: "var(--muted-foreground)" }}>
+                  bunx shadcn add .../{origin.slice(0, 8)}
+                </span>
+                <span className="sm:hidden" style={{ color: "var(--muted-foreground)" }}>
+                  Copy install
+                </span>
+                {copied ? (
+                  <Check className="ml-1 h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="ml-1 h-3 w-3 opacity-50 group-hover:opacity-100" style={{ color: "var(--muted-foreground)" }} />
+                )}
+              </button>
             </div>
           </div>
-          );
+
+          {/* Tab Navigation using shadcn/ui Tabs with animation */}
+          <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as TabId)} className="w-full">
+            <TabsList className="mb-2 h-auto p-1 bg-muted/50 w-full justify-start overflow-x-auto flex-nowrap">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="relative flex items-center gap-1.5 text-xs font-medium whitespace-nowrap cursor-pointer hover:bg-muted/80 data-[state=active]:shadow-sm transition-colors"
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="preview-active-tab"
+                        className="absolute inset-0 rounded-md bg-background"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <Icon className="h-3.5 w-3.5" />
+                      {tab.label}
+                    </span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+
+            {/* Tab Content */}
+            <TabsContent value="dashboard" className="mt-0">
+              <DashboardDemo />
+            </TabsContent>
+
+            <TabsContent value="colors" className="mt-0">
+              <ColorsDemo theme={theme} mode={previewMode} />
+            </TabsContent>
+
+            <TabsContent value="typography" className="mt-0">
+              <TypographyDemo theme={theme} mode={previewMode} />
+            </TabsContent>
+
+            <TabsContent value="controls" className="mt-0">
+              <div className="space-y-8">
+                <ButtonsDemo />
+                <FormsDemo />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cards" className="mt-0">
+              <CardsDemo />
+            </TabsContent>
+
+            <TabsContent value="audio" className="mt-0">
+              <AudioDemo theme={theme} mode={previewMode} />
+            </TabsContent>
+
+            <TabsContent value="ai" className="mt-0">
+              <AiDemo />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Remix Dialog */}
+        <UnifiedRemixDialog
+          isOpen={showRemixDialog}
+          onClose={() => setShowRemixDialog(false)}
+          type="theme"
+          previousTheme={theme}
+          onThemeRemixComplete={(newTheme) => {
+            // Navigate to studio with the new remixed theme
+            router.push(
+              `/studio?remix=${encodeURIComponent(JSON.stringify(newTheme))}`,
+            );
+          }}
+        />
+      </div>
+    </div>
+  );
 }
+
