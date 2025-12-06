@@ -36,6 +36,7 @@ import { DashboardDemo } from "@/components/preview/dashboard-demo";
 import { FormsDemo } from "@/components/preview/forms-demo";
 import { TypographyDemo } from "@/components/preview/typography-demo";
 import { useTheme } from "@/components/theme-provider";
+import { useAudioStore } from "@/lib/audio-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -282,6 +283,15 @@ export default function PreviewPage({ params }: Props) {
   const handleTabChange = useCallback(
     (tabId: TabId) => {
       if (tabId === activeTab) return;
+
+      // Pause audio when leaving the audio tab
+      if (activeTab === "audio" && tabId !== "audio") {
+        const audioState = useAudioStore.getState();
+        if (audioState.isPlaying) {
+          audioState.pause();
+        }
+      }
+
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", tabId);
       router.replace(`?${params.toString()}`, { scroll: false });
