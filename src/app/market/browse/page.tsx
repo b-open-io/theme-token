@@ -325,7 +325,7 @@ export default function BrowsePage() {
 										key={listing.outpoint}
 										initial={{ opacity: 0, y: 20 }}
 										animate={{ opacity: 1, y: 0 }}
-										transition={{ delay: index * 0.05 }}
+										transition={{ delay: index * 0.1 }}
 									>
 										<ThemeCard
 											theme={listing.theme}
@@ -348,7 +348,7 @@ export default function BrowsePage() {
 								<motion.div
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: filteredListings.length * 0.05 }}
+									transition={{ delay: filteredListings.length * 0.1 }}
 									className="col-span-2 xl:col-span-1"
 								>
 									<GenerateCard filters={filters} />
