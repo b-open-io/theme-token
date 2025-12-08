@@ -432,7 +432,7 @@ export default function PreviewPage({ params }: Props) {
             borderColor: "var(--border)",
           }}
         >
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" className="h-10" onClick={handleBack}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -575,7 +575,7 @@ export default function PreviewPage({ params }: Props) {
                       <motion.div
                         layoutId="preview-active-tab"
                         className="absolute inset-0 rounded-md bg-background"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
                       />
                     )}
                     <span className="relative z-10 flex items-center gap-1.5">

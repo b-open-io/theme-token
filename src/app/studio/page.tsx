@@ -122,8 +122,8 @@ export default function StudioPage() {
 	);
 
 	return (
-		<div className="min-h-[80vh] w-full bg-background px-4 py-12 md:px-8 lg:px-12">
-			<div className="mx-auto max-w-5xl">
+		<div className="min-h-[80vh] w-full bg-background py-12">
+			<div className="mx-auto max-w-5xl px-4">
 				{/* Terminal Header */}
 				<div className="mb-12 flex items-center gap-3 border-b border-border/40 pb-6">
 					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
