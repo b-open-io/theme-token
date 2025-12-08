@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    viewTransition: true,
-  },
+  // Temporarily disabled to test if this is causing scroll issues
+  // experimental: {
+  //   viewTransition: true,
+  // },
 };
 
 export default nextConfig;

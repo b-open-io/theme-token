@@ -37,10 +37,7 @@ export function ThemeHeaderStripe({
 	};
 
 	return (
-		<div
-			className="flex h-8 w-full border-b border-border"
-			style={{ viewTransitionName: `theme-stripe-${origin}` } as React.CSSProperties}
-		>
+		<div className="flex h-8 w-full border-b border-border">
 			{colorEntries.map(({ key, value }, index) => (
 				<div
 					key={key}

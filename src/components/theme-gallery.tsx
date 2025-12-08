@@ -105,7 +105,6 @@ function ThemeCard({
 			<div
 				className="relative flex h-32 w-52 cursor-pointer overflow-hidden rounded-t-xl"
 				onClick={handleStripeClick}
-				style={{ viewTransitionName: `theme-stripe-${origin}` } as React.CSSProperties}
 			>
 				{colors.map((color, i) => (
 					<div
