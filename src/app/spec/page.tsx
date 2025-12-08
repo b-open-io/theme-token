@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { ChainImplementations } from "@/components/chain-implementations";
 import { JsonSyntax } from "@/components/json-syntax";
 import { OnChainProtocol } from "@/components/on-chain-protocol";
+import { PageContainer } from "@/components/page-container";
 
 const fadeIn = {
 	initial: { opacity: 0, y: 20 },
@@ -37,7 +38,7 @@ export default function SpecPage() {
 		<div className="min-h-screen bg-background">
 			{/* Hero - CLI Install */}
 			<section className="border-b border-border bg-gradient-to-b from-primary/5 to-transparent py-16">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						animate="animate"
@@ -102,12 +103,12 @@ export default function SpecPage() {
 							</p>
 						</div>
 					</motion.div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* Schema Documentation */}
 			<section className="py-16">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -401,12 +402,12 @@ export default function SpecPage() {
 							</p>
 						</motion.div>
 					</div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* On-Chain Protocol / MAP Metadata */}
 			<section className="border-t border-border bg-muted/30 py-16">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -440,12 +441,12 @@ export default function SpecPage() {
 					>
 						<OnChainProtocol />
 					</motion.div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* Protocol Implementations */}
 			<section className="border-t border-border py-16">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -480,12 +481,12 @@ export default function SpecPage() {
 					>
 						<ChainImplementations />
 					</motion.div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* SDK Section */}
 			<section className="border-t border-border py-16">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -611,12 +612,12 @@ export default function SpecPage() {
 							</a>
 						</div>
 					</motion.div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* LLM Documentation */}
 			<section className="border-t border-border bg-muted/30 py-16">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -885,7 +886,7 @@ export default function SpecPage() {
 							themetoken.dev/llms-full.txt
 						</code>
 					</motion.p>
-				</div>
+				</PageContainer>
 			</section>
 		</div>
 	);

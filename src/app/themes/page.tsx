@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
+import { PageContainer } from "@/components/page-container";
 import { useTheme } from "@/components/theme-provider";
 import { storeRemixTheme } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
@@ -169,7 +170,7 @@ export default function ThemesPage() {
 
 	return (
 		<div className="min-h-screen">
-			<div className="mx-auto max-w-7xl px-6 py-12">
+			<PageContainer className="py-12">
 				{/* Header */}
 				<div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div>
@@ -242,7 +243,7 @@ export default function ThemesPage() {
 						})}
 					</div>
 				)}
-			</div>
+			</PageContainer>
 
 			{/* Buy Modal */}
 			{buyListing && (

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { JsonSyntax } from "@/components/json-syntax";
+import { PageContainer } from "@/components/page-container";
 import { ThemeGallery } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export default function Home() {
 				<div className="grid-background absolute inset-0 opacity-50" />
 				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
 
-				<div className="relative mx-auto max-w-6xl px-6 pb-24 pt-32">
+				<PageContainer className="relative pb-24 pt-32">
 					<motion.div
 						initial={{ opacity: 0, y: 30 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -196,7 +197,7 @@ export default function Home() {
 							</p>
 						</motion.div>
 					</div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* Theme Gallery */}
@@ -204,7 +205,7 @@ export default function Home() {
 
 			{/* Why On-Chain Themes Section */}
 			<section className="border-t border-border bg-muted/30 py-24">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -327,12 +328,12 @@ export default function Home() {
 							</ul>
 						</motion.div>
 					</div>
-				</div>
+				</PageContainer>
 			</section>
 
 			{/* Footer */}
 			<footer className="border-t border-border py-12">
-				<div className="mx-auto max-w-6xl px-6">
+				<PageContainer>
 					<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
 						<div className="flex items-center gap-2">
 							<Layers className="h-5 w-5 text-primary" />
@@ -371,7 +372,7 @@ export default function Home() {
 							</a>
 						</div>
 					</div>
-				</div>
+				</PageContainer>
 			</footer>
 		</div>
 	);

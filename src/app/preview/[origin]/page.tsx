@@ -35,6 +35,7 @@ import { ColorsDemo } from "@/components/preview/colors-demo";
 import { DashboardDemo } from "@/components/preview/dashboard-demo";
 import { FormsDemo } from "@/components/preview/forms-demo";
 import { TypographyDemo } from "@/components/preview/typography-demo";
+import { PageContainer } from "@/components/page-container";
 import { useTheme } from "@/components/theme-provider";
 import { useAudioStore } from "@/lib/audio-store";
 import { Badge } from "@/components/ui/badge";
@@ -486,7 +487,7 @@ export default function PreviewPage({ params }: Props) {
           </div>
         </header>
 
-        <div className="container mx-auto max-w-7xl px-4 py-6">
+        <PageContainer className="py-6">
           {/* Header Section */}
           <div className="mb-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -618,7 +619,7 @@ export default function PreviewPage({ params }: Props) {
               <AiDemo />
             </TabsContent>
           </Tabs>
-        </div>
+        </PageContainer>
 
         {/* Remix Dialog */}
         <UnifiedRemixDialog
