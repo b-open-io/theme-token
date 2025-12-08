@@ -303,15 +303,33 @@ export default function PreviewPage({ params }: Props) {
     console.log('[Preview] useLayoutEffect - scroll after:', window.scrollY);
   }, [origin]);
 
-  // Debug: log scroll position changes
+  // Debug: continuously monitor scroll position
   useEffect(() => {
     const handleScroll = () => {
-      console.log('[Preview] Scroll event:', window.scrollY);
+      console.log('[Preview] Scroll event fired:', window.scrollY);
     };
     window.addEventListener('scroll', handleScroll);
     console.log('[Preview] useEffect - mounted, scroll:', window.scrollY);
+
+    // Continuously check scroll position every 100ms for 5 seconds
+    let lastScroll = window.scrollY;
+    const interval = setInterval(() => {
+      const currentScroll = window.scrollY;
+      if (currentScroll !== lastScroll) {
+        console.log('[Preview] Scroll changed (polling):', lastScroll, '->', currentScroll);
+        console.trace('[Preview] Stack trace:');
+        lastScroll = currentScroll;
+      }
+    }, 100);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      console.log('[Preview] Stopped monitoring. Final scroll:', window.scrollY);
+    }, 5000);
+
     return () => {
       console.log('[Preview] useEffect - unmounting');
+      clearInterval(interval);
       window.removeEventListener('scroll', handleScroll);
     };
   }, [origin]);
