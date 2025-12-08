@@ -37,40 +37,37 @@ export function ThemeHeaderStripe({
 	};
 
 	return (
-		<div
-			className="flex h-8 w-full overflow-hidden border-b border-border"
-			style={{
-				viewTransitionName: `theme-stripe-${origin}`,
-				borderRadius: styles.radius,
-			}}
-		>
-			{colorEntries.map(({ key, value }, index) => (
-				<div
-					key={key}
-					className="relative flex-1 cursor-pointer transition-all duration-200"
-					style={{
-						backgroundColor: value,
-						flexGrow: hoveredIndex === index ? 2 : 1,
-					}}
-					onMouseEnter={() => setHoveredIndex(index)}
-					onMouseLeave={() => setHoveredIndex(null)}
-					onClick={() => handleCopyColor(key, value)}
-				>
-					{hoveredIndex === index && (
-						<div className="absolute inset-0 flex items-center justify-center">
-							<span
-								className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
-								style={{
-									backgroundColor: styles.background,
-									color: styles.foreground,
-								}}
-							>
-								{key}
-							</span>
-						</div>
-					)}
-				</div>
-			))}
+		<div className="w-full border-b border-border">
+			<div className="mx-auto flex h-8 max-w-7xl overflow-hidden px-4">
+				{colorEntries.map(({ key, value }, index) => (
+					<div
+						key={key}
+						className="relative flex-1 cursor-pointer transition-[flex-grow] duration-300 ease-out"
+						style={{
+							backgroundColor: value,
+							flexGrow: hoveredIndex === index ? 2 : 1,
+						}}
+						onMouseEnter={() => setHoveredIndex(index)}
+						onMouseLeave={() => setHoveredIndex(null)}
+						onClick={() => handleCopyColor(key, value)}
+					>
+						{hoveredIndex === index && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<span
+									className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
+									style={{
+										backgroundColor: styles.background,
+										color: styles.foreground,
+										borderRadius: styles.radius,
+									}}
+								>
+									{key}
+								</span>
+							</div>
+						)}
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }

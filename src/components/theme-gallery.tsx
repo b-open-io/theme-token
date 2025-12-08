@@ -94,14 +94,7 @@ function ThemeCard({
 
 	const handleStripeClick = (e: React.MouseEvent) => {
 		e.preventDefault();
-		// Check if browser supports View Transition API
-		if ("startViewTransition" in document) {
-			(document as any).startViewTransition(() => {
-				router.push(`/preview/${origin}`);
-			});
-		} else {
-			router.push(`/preview/${origin}`);
-		}
+		router.push(`/preview/${origin}`, { scroll: false });
 	};
 
 	return (
@@ -110,7 +103,6 @@ function ThemeCard({
 			<div
 				className="relative flex h-32 w-52 cursor-pointer overflow-hidden rounded-t-xl"
 				onClick={handleStripeClick}
-				style={{ viewTransitionName: `theme-stripe-${origin}` }}
 			>
 				{colors.map((color, i) => (
 					<div
