@@ -94,6 +94,8 @@ function ThemeCard({
 
 	const handleStripeClick = (e: React.MouseEvent) => {
 		e.preventDefault();
+		// Force scroll to top before navigation
+		window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 		router.push(`/preview/${origin}`, { scroll: false });
 	};
 

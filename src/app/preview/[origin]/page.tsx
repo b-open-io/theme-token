@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { use, useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, startTransition } from "react";
 import { AiDemo } from "@/components/preview/ai-demo";
 import { AudioDemo } from "@/components/preview/audio-demo";
 import { ButtonsDemo } from "@/components/preview/buttons-demo";
@@ -291,9 +291,18 @@ export default function PreviewPage({ params }: Props) {
     setPreviewMode(globalMode);
   }, [globalMode]);
 
-  // Scroll to top when origin changes
+  // Force scroll to top when origin changes - use both layout effect and regular effect
+  useLayoutEffect(() => {
+    // This runs synchronously before browser paint
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [origin]);
+
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Also force scroll after a brief delay to catch any late scrolls
+    const timer = setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [origin]);
 
   const handleTabChange = useCallback(
