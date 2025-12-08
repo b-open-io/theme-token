@@ -293,12 +293,27 @@ export default function PreviewPage({ params }: Props) {
 
   // Disable browser scroll restoration and force scroll to top
   useLayoutEffect(() => {
+    console.log('[Preview] useLayoutEffect - scroll before:', window.scrollY);
     // Disable automatic scroll restoration
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
     // Force scroll to top synchronously before paint
     window.scrollTo(0, 0);
+    console.log('[Preview] useLayoutEffect - scroll after:', window.scrollY);
+  }, [origin]);
+
+  // Debug: log scroll position changes
+  useEffect(() => {
+    const handleScroll = () => {
+      console.log('[Preview] Scroll event:', window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll);
+    console.log('[Preview] useEffect - mounted, scroll:', window.scrollY);
+    return () => {
+      console.log('[Preview] useEffect - unmounting');
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [origin]);
 
   const handleTabChange = useCallback(
