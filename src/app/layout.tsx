@@ -61,7 +61,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="h-full scroll-smooth" suppressHydrationWarning>
+		<html lang="en" className="h-full" suppressHydrationWarning>
 			<body
 				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full font-sans antialiased`}
 			>

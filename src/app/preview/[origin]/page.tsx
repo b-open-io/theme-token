@@ -291,18 +291,14 @@ export default function PreviewPage({ params }: Props) {
     setPreviewMode(globalMode);
   }, [globalMode]);
 
-  // Force scroll to top when origin changes - use both layout effect and regular effect
+  // Disable browser scroll restoration and force scroll to top
   useLayoutEffect(() => {
-    // This runs synchronously before browser paint
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [origin]);
-
-  useEffect(() => {
-    // Also force scroll after a brief delay to catch any late scrolls
-    const timer = setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    }, 0);
-    return () => clearTimeout(timer);
+    // Disable automatic scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    // Force scroll to top synchronously before paint
+    window.scrollTo(0, 0);
   }, [origin]);
 
   const handleTabChange = useCallback(
