@@ -255,13 +255,22 @@ export default function PreviewPage({ params }: Props) {
   const [copied, setCopied] = useState(false);
   const [copiedOrigin, setCopiedOrigin] = useState(false);
   const [showRemixDialog, setShowRemixDialog] = useState(false);
-  const activeTab = useMemo<TabId>(() => {
+
+  // Use local state for activeTab for instant UI updates
+  const initialTab = useMemo<TabId>(() => {
     const tabParam = searchParams.get("tab");
     const normalized =
       tabParam === "buttons" || tabParam === "forms" ? "controls" : tabParam;
     return tabs.some((t) => t.id === normalized) ? (normalized as TabId) : "dashboard";
   }, [searchParams]);
+
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync local state with URL when URL changes externally
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}`;
 
@@ -299,8 +308,10 @@ export default function PreviewPage({ params }: Props) {
         }
       }
 
-      // Use startTransition to mark URL update as non-urgent
-      // This keeps the UI instantly responsive while router updates in background
+      // Update local state immediately for instant UI response
+      setActiveTab(tabId);
+
+      // Update URL in background without blocking UI
       startTransition(() => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("tab", tabId);

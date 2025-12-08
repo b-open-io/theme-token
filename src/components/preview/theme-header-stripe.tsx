@@ -37,34 +37,34 @@ export function ThemeHeaderStripe({
 	};
 
 	return (
-		<div className="w-full">
-			<div className="mx-auto flex h-8 max-w-7xl overflow-hidden border-b border-border px-4">
-				{colorEntries.map(({ key, value }, index) => (
-					<div
-						key={key}
-						className="group relative flex-1 cursor-pointer transition-all duration-300 ease-out hover:flex-[2]"
-						style={{
-							backgroundColor: value,
-						}}
-						onMouseEnter={() => setHoveredIndex(index)}
-						onMouseLeave={() => setHoveredIndex(null)}
-						onClick={() => handleCopyColor(key, value)}
-					>
-						<div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-							<span
-								className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
-								style={{
-									backgroundColor: styles.background,
-									color: styles.foreground,
-									borderRadius: styles.radius,
-								}}
-							>
-								{key}
-							</span>
-						</div>
+		<div
+			className="flex h-8 w-full border-b border-border"
+			style={{ viewTransitionName: `theme-stripe-${origin}` } as React.CSSProperties}
+		>
+			{colorEntries.map(({ key, value }, index) => (
+				<div
+					key={key}
+					className="group relative flex-1 cursor-pointer transition-all duration-300 ease-out hover:flex-[2]"
+					style={{
+						backgroundColor: value,
+					}}
+					onMouseEnter={() => setHoveredIndex(index)}
+					onMouseLeave={() => setHoveredIndex(null)}
+					onClick={() => handleCopyColor(key, value)}
+				>
+					<div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+						<span
+							className="px-2 py-0.5 text-xs font-medium shadow-lg"
+							style={{
+								backgroundColor: styles.background,
+								color: styles.foreground,
+							}}
+						>
+							{key}
+						</span>
 					</div>
-				))}
-			</div>
+				</div>
+			))}
 		</div>
 	);
 }
