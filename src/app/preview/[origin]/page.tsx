@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { AiDemo } from "@/components/preview/ai-demo";
 import { AudioDemo } from "@/components/preview/audio-demo";
 import { ButtonsDemo } from "@/components/preview/buttons-demo";
@@ -299,9 +299,13 @@ export default function PreviewPage({ params }: Props) {
         }
       }
 
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", tabId);
-      router.replace(`?${params.toString()}`, { scroll: false });
+      // Use startTransition to mark URL update as non-urgent
+      // This keeps the UI instantly responsive while router updates in background
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", tabId);
+        router.replace(`?${params.toString()}`, { scroll: false });
+      });
     },
     [activeTab, router, searchParams],
   );
