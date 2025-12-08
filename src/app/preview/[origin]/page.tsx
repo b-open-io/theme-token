@@ -44,6 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isOnChainFont, loadThemeFonts } from "@/lib/font-loader";
 import { cn } from "@/lib/utils";
 import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
+import { ThemeHeaderStripe } from "@/components/preview/theme-header-stripe";
 
 interface Props {
   params: Promise<{ origin: string }>;
@@ -281,6 +282,11 @@ export default function PreviewPage({ params }: Props) {
     setPreviewMode(globalMode);
   }, [globalMode]);
 
+  // Scroll to top when origin changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [origin]);
+
   const handleTabChange = useCallback(
     (tabId: TabId) => {
       if (tabId === activeTab) return;
@@ -486,6 +492,9 @@ export default function PreviewPage({ params }: Props) {
             </div>
           </div>
         </header>
+
+        {/* Persistent Color Stripe */}
+        <ThemeHeaderStripe theme={theme} mode={previewMode} origin={origin} />
 
         <PageContainer className="py-6">
           {/* Header Section */}

@@ -80,47 +80,66 @@ function ThemeCard({
 	onBuy?: () => void;
 }) {
 	const { mode } = useTheme();
+	const router = useRouter();
 	const colors = [
-		theme.styles[mode].primary,
-		theme.styles[mode].secondary,
-		theme.styles[mode].accent,
 		theme.styles[mode].background,
+		theme.styles[mode].card,
+		theme.styles[mode].popover,
+		theme.styles[mode].muted,
+		theme.styles[mode].accent,
+		theme.styles[mode].secondary,
+		theme.styles[mode].primary,
+		theme.styles[mode].destructive,
 	];
+
+	const handleStripeClick = (e: React.MouseEvent) => {
+		e.preventDefault();
+		// Check if browser supports View Transition API
+		if ("startViewTransition" in document) {
+			(document as any).startViewTransition(() => {
+				router.push(`/preview/${origin}`);
+			});
+		} else {
+			router.push(`/preview/${origin}`);
+		}
+	};
 
 	return (
 		<div className="group relative flex-shrink-0 rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg">
 			{/* Color stripes - clickable to preview */}
-			<Link href={`/preview/${origin}`} className="block">
-				<div className="relative flex h-32 w-52 cursor-pointer overflow-hidden rounded-t-xl">
-					{colors.map((color, i) => (
-						<div
-							key={i}
-							className="flex-1"
-							style={{ backgroundColor: color }}
-						/>
-					))}
-					{/* For Sale Badge - clickable */}
-					{listing && (
-						<button
-							type="button"
-							className="absolute top-2 right-2 z-10"
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								onBuy?.();
-							}}
-						>
-							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 text-[10px] hover:bg-primary/90 cursor-pointer">
-								<ShoppingCart className="h-2.5 w-2.5" fill="currentColor" />
-								{formatPrice(listing.price)}
-							</Badge>
-						</button>
-					)}
-					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
-						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 drop-shadow-md" />
-					</div>
+			<div
+				className="relative flex h-32 w-52 cursor-pointer overflow-hidden rounded-t-xl"
+				onClick={handleStripeClick}
+				style={{ viewTransitionName: `theme-stripe-${origin}` }}
+			>
+				{colors.map((color, i) => (
+					<div
+						key={i}
+						className="flex-1"
+						style={{ backgroundColor: color }}
+					/>
+				))}
+				{/* For Sale Badge - clickable */}
+				{listing && (
+					<button
+						type="button"
+						className="absolute top-2 right-2 z-10"
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							onBuy?.();
+						}}
+					>
+						<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 text-[10px] hover:bg-primary/90 cursor-pointer">
+							<ShoppingCart className="h-2.5 w-2.5" fill="currentColor" />
+							{formatPrice(listing.price)}
+						</Badge>
+					</button>
+				)}
+				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
+					<Eye className="h-8 w-8 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 drop-shadow-md" />
 				</div>
-			</Link>
+			</div>
 			
 			{/* Theme name and remix button */}
 			<div className="flex items-center justify-between gap-3 p-3">

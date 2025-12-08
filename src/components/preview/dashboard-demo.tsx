@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatedThemeStripes } from "./animated-theme-stripes";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,9 +27,6 @@ import { Switch } from "@/components/ui/switch";
 export function DashboardDemo() {
 	return (
 		<div className="space-y-6">
-			<AnimatedThemeStripes />
-			
-			<div className="space-y-6">
 				{/* Desktop Mockup - Full Width */}
 				<div className="overflow-hidden flex flex-col shadow-2xl rounded-xl border bg-background">
 					{/* Mock Browser Chrome */}
@@ -369,7 +365,6 @@ export function DashboardDemo() {
 						</div>
 					</div>
 				</div>
-			</div>
 		</div>
 	);
 }
