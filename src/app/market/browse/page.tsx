@@ -37,7 +37,7 @@ import {
 import { GenerateCard } from "@/components/market/generate-card";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { ThemeCard } from "@/components/market/theme-card";
-import { TrendingRail } from "@/components/market/trending-rail";
+import { TrendingRail, TrendingRailSkeleton } from "@/components/market/trending-rail";
 
 const DEFAULT_FILTERS: FilterState = {
 	primaryColor: null,
@@ -207,10 +207,16 @@ export default function BrowsePage() {
 	return (
 		<>
 			{/* Trending Rail */}
-			{!isLoading && trendingItems.length > 0 && (
+			{isLoading ? (
 				<div className="mb-6">
-					<TrendingRail items={trendingItems} mode={mode} />
+					<TrendingRailSkeleton />
 				</div>
+			) : (
+				trendingItems.length > 0 && (
+					<div className="mb-6">
+						<TrendingRail items={trendingItems} mode={mode} />
+					</div>
+				)
 			)}
 
 			{/* Main Grid */}

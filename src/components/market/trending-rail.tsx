@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import type { ThemeWithChange } from "@/hooks/use-market-history";
 import { formatBSV } from "./theme-stripes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TrendingItem extends ThemeWithChange {
 	theme: ThemeToken;
@@ -108,6 +109,45 @@ function TrendingCard({
 				</div>
 			</Link>
 		</motion.div>
+	);
+}
+
+export function TrendingRailSkeleton() {
+	return (
+		<section className="mb-8">
+			<div className="mb-4 flex items-center gap-2">
+				<Skeleton className="h-5 w-5" />
+				<Skeleton className="h-5 w-32" />
+				<Skeleton className="h-4 w-8" />
+			</div>
+
+			<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+				{Array.from({ length: 6 }).map((_, index) => (
+					<div
+						key={index}
+						className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card p-3"
+					>
+						{/* Top row: swatch + name + change */}
+						<div className="mb-2 flex items-start gap-2">
+							<Skeleton className="h-8 w-8 shrink-0 rounded-md" />
+							<div className="min-w-0 flex-1">
+								<Skeleton className="mb-1 h-4 w-full" />
+								<Skeleton className="h-3 w-16" />
+							</div>
+						</div>
+
+						{/* Color spectrum mini-bar */}
+						<Skeleton className="mb-2 h-1.5 w-full rounded-full" />
+
+						{/* Bottom: price */}
+						<div className="mt-auto flex items-end justify-between gap-2">
+							<Skeleton className="h-3 w-8" />
+							<Skeleton className="h-4 w-20" />
+						</div>
+					</div>
+				))}
+			</div>
+		</section>
 	);
 }
 
