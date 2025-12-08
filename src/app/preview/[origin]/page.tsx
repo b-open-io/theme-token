@@ -291,48 +291,6 @@ export default function PreviewPage({ params }: Props) {
     setPreviewMode(globalMode);
   }, [globalMode]);
 
-  // Disable browser scroll restoration and force scroll to top
-  useLayoutEffect(() => {
-    console.log('[Preview] useLayoutEffect - scroll before:', window.scrollY);
-    // Disable automatic scroll restoration
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-    // Force scroll to top synchronously before paint
-    window.scrollTo(0, 0);
-    console.log('[Preview] useLayoutEffect - scroll after:', window.scrollY);
-  }, [origin]);
-
-  // Debug: continuously monitor scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      console.log('[Preview] Scroll event fired:', window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll);
-    console.log('[Preview] useEffect - mounted, scroll:', window.scrollY);
-
-    // Continuously check scroll position every 100ms for 5 seconds
-    let lastScroll = window.scrollY;
-    const interval = setInterval(() => {
-      const currentScroll = window.scrollY;
-      if (currentScroll !== lastScroll) {
-        console.log('[Preview] Scroll changed (polling):', lastScroll, '->', currentScroll);
-        console.trace('[Preview] Stack trace:');
-        lastScroll = currentScroll;
-      }
-    }, 100);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      console.log('[Preview] Stopped monitoring. Final scroll:', window.scrollY);
-    }, 5000);
-
-    return () => {
-      console.log('[Preview] useEffect - unmounting');
-      clearInterval(interval);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [origin]);
 
   const handleTabChange = useCallback(
     (tabId: TabId) => {
@@ -443,7 +401,7 @@ export default function PreviewPage({ params }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <div className="flex items-center gap-3 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin" />
           <span>Loading theme...</span>
@@ -454,7 +412,7 @@ export default function PreviewPage({ params }: Props) {
 
   if (error || !theme) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
           <AlertCircle className="mx-auto mb-4 h-12 w-12 text-destructive" />
           <h1 className="mb-2 text-xl font-semibold">Theme Not Found</h1>
@@ -473,11 +431,11 @@ export default function PreviewPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/30 theme-transition relative pattern-bg">
+    <div className="flex-1 bg-background font-sans antialiased selection:bg-primary/30 theme-transition relative pattern-bg">
       {/* Preview Container - Scoped Theme */}
       <div
         ref={containerRef}
-        className={`relative z-0 min-h-screen ${previewMode === "dark" ? "dark" : ""}`}
+        className={`relative z-0 ${previewMode === "dark" ? "dark" : ""}`}
         style={{
           backgroundColor: "var(--background)",
           color: "var(--foreground)",

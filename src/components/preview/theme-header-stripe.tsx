@@ -33,6 +33,11 @@ export function ThemeHeaderStripe({
 		navigator.clipboard.writeText(colorValue);
 		toast.success(`Copied ${colorKey}`, {
 			description: colorValue,
+			style: {
+				backgroundColor: styles.popover,
+				color: styles["popover-foreground"],
+				borderColor: styles.border,
+			},
 		});
 	};
 
@@ -44,17 +49,25 @@ export function ThemeHeaderStripe({
 			{colorEntries.map(({ key, value }, index) => (
 				<div
 					key={key}
-					className="group relative flex-1 cursor-pointer transition-all duration-300 ease-out hover:flex-[2]"
+					className="relative cursor-pointer"
 					style={{
 						backgroundColor: value,
+						flex: hoveredIndex === index ? 2 : 1,
+						transition: "flex 300ms ease-out",
 					}}
 					onMouseEnter={() => setHoveredIndex(index)}
 					onMouseLeave={() => setHoveredIndex(null)}
 					onClick={() => handleCopyColor(key, value)}
 				>
-					<div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+					<div
+						className="absolute inset-0 flex items-center justify-center"
+						style={{
+							opacity: hoveredIndex === index ? 1 : 0,
+							transition: "opacity 200ms ease-out",
+						}}
+					>
 						<span
-							className="px-2 py-0.5 text-xs font-medium shadow-lg"
+							className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
 							style={{
 								backgroundColor: styles.background,
 								color: styles.foreground,
