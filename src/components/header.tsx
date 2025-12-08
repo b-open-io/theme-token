@@ -16,6 +16,7 @@ const WIDTH_CONFIG = {
 	"studio-landing": "max-w-5xl", // matches studio landing page content width
 	"studio-sub": "max-w-full", // studio sub-pages are full-width edge-to-edge
 	market: "max-w-[1400px]", // matches market/layout.tsx content width
+	themes: "max-w-7xl", // matches themes/page.tsx content width
 	default: "max-w-6xl", // matches home page content width
 } as const;
 
@@ -43,6 +44,7 @@ function getWidthVariant(pathname: string | null): keyof typeof WIDTH_CONFIG {
 	if (pathname === "/studio") return "studio-landing";
 	if (pathname?.startsWith("/studio/")) return "studio-sub";
 	if (pathname?.startsWith("/market")) return "market";
+	if (pathname?.startsWith("/themes")) return "themes";
 	return "default";
 }
 
@@ -81,7 +83,7 @@ export function Header() {
 	return (
 		<>
 			<header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-				<div className={`mx-auto flex h-14 items-center justify-between px-4 transition-[max-width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${widthClass}`}>
+				<div className={`mx-auto flex h-14 items-center justify-between px-4 md:px-0 transition-[max-width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${widthClass}`}>
 					{/* Logo - Text on mobile, icon+text on desktop */}
 					<Link href="/" className="flex items-center gap-2">
 						<Image
