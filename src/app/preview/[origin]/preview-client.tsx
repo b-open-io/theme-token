@@ -284,11 +284,11 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
   }, [router]);
 
   return (
-    <div className="flex-1 bg-background font-sans antialiased selection:bg-primary/30 theme-transition relative pattern-bg">
+    <div className="flex flex-1 flex-col">
       {/* Preview Container - Scoped Theme */}
       <div
         ref={containerRef}
-        className={`relative z-0 ${previewMode === "dark" ? "dark" : ""}`}
+        className={`relative z-0 min-h-screen flex-1 ${previewMode === "dark" ? "dark" : ""}`}
         style={{
           backgroundColor: "var(--background)",
           color: "var(--foreground)",
@@ -549,6 +549,30 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
           />
         )}
       </div>
+
+      {/* Footer - Outside themed container */}
+      <footer className="border-t border-border bg-muted/30 py-8">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p className="text-sm text-muted-foreground">
+              Built on Bitcoin SV with 1Sat Ordinals
+            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/spec" className="hover:text-foreground transition-colors">
+                Spec
+              </Link>
+              <a
+                href="https://github.com/b-open-io/theme-token"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
