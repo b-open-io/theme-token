@@ -69,35 +69,36 @@ function ThemeCard({
 		<div className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg animate-in fade-in duration-300">
 			{/* Color Preview */}
 			<Link href={`/preview/${origin}`}>
-				<ViewTransition name={`theme-stripe-${origin}`}>
-					<div className="relative h-32 cursor-pointer overflow-hidden">
+				<div className="relative h-32 cursor-pointer overflow-hidden">
+					{/* Color stripes - wrapped in ViewTransition for shared element */}
+					<ViewTransition name={`theme-stripe-${origin}`}>
 						<div className="absolute inset-0 flex">
 							{colors.map((color, i) => (
 								<div key={i} className="flex-1" style={{ backgroundColor: color }} />
 							))}
 						</div>
-						{/* For Sale Badge - clickable */}
-						{listing && (
-							<button
-								type="button"
-								className="absolute top-2 right-2 z-10"
-								onClick={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									onBuy?.();
-								}}
-							>
-								<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 hover:bg-primary/90 cursor-pointer">
-									<ShoppingCart className="h-3 w-3" fill="currentColor" />
-									{formatPrice(listing.price)}
-								</Badge>
-							</button>
-						)}
-						<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/40">
-							<Eye className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
-						</div>
+					</ViewTransition>
+					{/* For Sale Badge - clickable */}
+					{listing && (
+						<button
+							type="button"
+							className="absolute top-2 right-2 z-10"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onBuy?.();
+							}}
+						>
+							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 hover:bg-primary/90 cursor-pointer">
+								<ShoppingCart className="h-3 w-3" fill="currentColor" />
+								{formatPrice(listing.price)}
+							</Badge>
+						</button>
+					)}
+					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/40">
+						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
 					</div>
-				</ViewTransition>
+				</div>
 			</Link>
 
 			{/* Info */}

@@ -90,9 +90,9 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
-	// Only first set of cards get ViewTransition names to avoid duplicates
-	const stripeContent = (
-		<div className="relative flex h-16 w-40 overflow-hidden rounded-t-lg">
+	// Color stripes content (just the colors, no overlay)
+	const colorStripes = (
+		<div className="absolute inset-0 flex">
 			{colors.map((color, i) => (
 				<div
 					key={i}
@@ -100,26 +100,6 @@ function ThemeCard({
 					style={{ backgroundColor: color }}
 				/>
 			))}
-			{/* For Sale Badge */}
-			{listing && (
-				<button
-					type="button"
-					className="absolute top-1.5 right-1.5 z-10"
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						onBuy?.();
-					}}
-				>
-					<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-0.5 text-[9px] px-1.5 py-0.5 hover:bg-primary/90 cursor-pointer">
-						<ShoppingCart className="h-2 w-2" fill="currentColor" />
-						{formatPrice(listing.price)}
-					</Badge>
-				</button>
-			)}
-			<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
-				<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
-			</div>
 		</div>
 	);
 
@@ -128,14 +108,36 @@ function ThemeCard({
 			href={`/preview/${origin}`}
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
 		>
-			{/* Color stripes - only first set gets ViewTransition */}
-			{isFirst ? (
-				<ViewTransition name={`theme-stripe-${origin}`}>
-					{stripeContent}
-				</ViewTransition>
-			) : (
-				stripeContent
-			)}
+			<div className="relative flex h-16 w-40 overflow-hidden rounded-t-lg">
+				{/* Color stripes - only first set gets ViewTransition */}
+				{isFirst ? (
+					<ViewTransition name={`theme-stripe-${origin}`}>
+						{colorStripes}
+					</ViewTransition>
+				) : (
+					colorStripes
+				)}
+				{/* For Sale Badge */}
+				{listing && (
+					<button
+						type="button"
+						className="absolute top-1.5 right-1.5 z-10"
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							onBuy?.();
+						}}
+					>
+						<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-0.5 text-[9px] px-1.5 py-0.5 hover:bg-primary/90 cursor-pointer">
+							<ShoppingCart className="h-2 w-2" fill="currentColor" />
+							{formatPrice(listing.price)}
+						</Badge>
+					</button>
+				)}
+				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
+					<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
+				</div>
+			</div>
 
 			{/* Theme name */}
 			<div className="px-2 py-1.5">

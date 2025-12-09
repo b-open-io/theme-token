@@ -42,41 +42,54 @@ export function ThemeHeaderStripe({
 	};
 
 	return (
-		<ViewTransition name={`theme-stripe-${origin}`}>
-		<div className="flex h-8 w-full border-b border-border">
-			{colorEntries.map(({ key, value }, index) => (
-				<div
-					key={key}
-					className="relative cursor-pointer"
-					style={{
-						backgroundColor: value,
-						flex: hoveredIndex === index ? 2 : 1,
-						transition: "flex 300ms ease-out",
-					}}
-					onMouseEnter={() => setHoveredIndex(index)}
-					onMouseLeave={() => setHoveredIndex(null)}
-					onClick={() => handleCopyColor(key, value)}
-				>
+		<div className="relative h-8 w-full border-b border-border">
+			{/* Pure color stripes - wrapped in ViewTransition for shared element */}
+			<ViewTransition name={`theme-stripe-${origin}`}>
+				<div className="absolute inset-0 flex">
+					{colorEntries.map(({ key, value }) => (
+						<div
+							key={key}
+							className="flex-1"
+							style={{ backgroundColor: value }}
+						/>
+					))}
+				</div>
+			</ViewTransition>
+
+			{/* Interactive overlay for hover/click */}
+			<div className="absolute inset-0 flex">
+				{colorEntries.map(({ key, value }, index) => (
 					<div
-						className="absolute inset-0 flex items-center justify-center"
+						key={key}
+						className="relative flex-1 cursor-pointer"
 						style={{
-							opacity: hoveredIndex === index ? 1 : 0,
-							transition: "opacity 200ms ease-out",
+							flex: hoveredIndex === index ? 2 : 1,
+							transition: "flex 300ms ease-out",
 						}}
+						onMouseEnter={() => setHoveredIndex(index)}
+						onMouseLeave={() => setHoveredIndex(null)}
+						onClick={() => handleCopyColor(key, value)}
 					>
-						<span
-							className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
+						<div
+							className="absolute inset-0 flex items-center justify-center"
 							style={{
-								backgroundColor: styles.background,
-								color: styles.foreground,
+								opacity: hoveredIndex === index ? 1 : 0,
+								transition: "opacity 200ms ease-out",
 							}}
 						>
-							{key}
-						</span>
+							<span
+								className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
+								style={{
+									backgroundColor: styles.background,
+									color: styles.foreground,
+								}}
+							>
+								{key}
+							</span>
+						</div>
 					</div>
-				</div>
-			))}
+				))}
+			</div>
 		</div>
-		</ViewTransition>
 	);
 }
