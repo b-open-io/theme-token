@@ -31,6 +31,7 @@ function useGitHubStars() {
 }
 
 const NAV_LINKS = [
+	{ href: "/themes", label: "Themes", description: "Browse published themes" },
 	{ href: "/spec", label: "Spec", description: "Protocol specification" },
 	{ href: "/studio", label: "Studio", description: "Create & edit themes" },
 	{ href: "/market", label: "Market", description: "Browse & buy themes" },
