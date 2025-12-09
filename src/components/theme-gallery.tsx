@@ -72,7 +72,7 @@ function ThemeCard({
 	onBuy,
 	cardId,
 	isActiveForTransition,
-	onHover,
+	onSetActive,
 }: {
 	theme: ThemeToken;
 	origin: string;
@@ -80,9 +80,10 @@ function ThemeCard({
 	onBuy?: () => void;
 	cardId: string;
 	isActiveForTransition: boolean;
-	onHover: (cardId: string | null) => void;
+	onSetActive: (cardId: string | null) => void;
 }) {
 	const { mode } = useTheme();
+	const router = useRouter();
 	const colors = [
 		theme.styles[mode].background,
 		theme.styles[mode].card,
@@ -94,18 +95,36 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
-	// Only the hovered card gets the real viewTransitionName
+	// Only the active card gets the real viewTransitionName
 	// Others get a unique fake one to avoid duplicates
 	const viewTransitionName = isActiveForTransition
 		? `theme-stripe-${origin}`
 		: `theme-stripe-${cardId}`;
 
+	const handleClick = (e: React.MouseEvent) => {
+		e.preventDefault();
+		// Lock this card as active before starting navigation
+		onSetActive(cardId);
+
+		// Small delay to ensure React has re-rendered with the correct viewTransitionName
+		requestAnimationFrame(() => {
+			if (document.startViewTransition) {
+				document.startViewTransition(() => {
+					router.push(`/preview/${origin}`);
+				});
+			} else {
+				router.push(`/preview/${origin}`);
+			}
+		});
+	};
+
 	return (
-		<Link
+		<a
 			href={`/preview/${origin}`}
+			onClick={handleClick}
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
-			onMouseEnter={() => onHover(cardId)}
-			onMouseLeave={() => onHover(null)}
+			onMouseEnter={() => onSetActive(cardId)}
+			onMouseLeave={() => onSetActive(null)}
 		>
 			{/* Color stripes */}
 			<div
@@ -147,7 +166,7 @@ function ThemeCard({
 					{theme.name}
 				</p>
 			</div>
-		</Link>
+		</a>
 	);
 }
 
@@ -254,7 +273,7 @@ export function ThemeGallery() {
 											onBuy={() => listing && setBuyListing(listing)}
 											cardId={cardId}
 											isActiveForTransition={hoveredCardId === cardId}
-											onHover={setHoveredCardId}
+											onSetActive={setHoveredCardId}
 										/>
 									);
 								})}
