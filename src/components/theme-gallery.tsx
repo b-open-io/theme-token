@@ -1,11 +1,11 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { motion } from "framer-motion";
+import { motion, useAnimationControls } from "framer-motion";
 import { ArrowRight, Eye, Loader2, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { useTheme } from "@/components/theme-provider";
@@ -70,13 +70,11 @@ function ThemeCard({
 	theme,
 	origin,
 	listing,
-	onRemix,
 	onBuy,
 }: {
 	theme: ThemeToken;
 	origin: string;
 	listing?: ThemeMarketListing;
-	onRemix?: () => void;
 	onBuy?: () => void;
 }) {
 	const { mode } = useTheme();
@@ -92,17 +90,19 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
-	const handleStripeClick = (e: React.MouseEvent) => {
+	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
 		router.push(`/preview/${origin}`);
 	};
 
 	return (
-		<div className="group relative flex-shrink-0 rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg">
-			{/* Color stripes - clickable to preview */}
+		<div
+			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
+			onClick={handleClick}
+		>
+			{/* Color stripes */}
 			<div
-				className="relative flex h-32 w-52 cursor-pointer overflow-hidden rounded-t-xl"
-				onClick={handleStripeClick}
+				className="relative flex h-16 w-40 overflow-hidden rounded-t-lg"
 				style={{ viewTransitionName: `theme-stripe-${origin}` } as React.CSSProperties}
 			>
 				{colors.map((color, i) => (
@@ -112,48 +112,33 @@ function ThemeCard({
 						style={{ backgroundColor: color }}
 					/>
 				))}
-				{/* For Sale Badge - clickable */}
+				{/* For Sale Badge */}
 				{listing && (
 					<button
 						type="button"
-						className="absolute top-2 right-2 z-10"
+						className="absolute top-1.5 right-1.5 z-10"
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
 							onBuy?.();
 						}}
 					>
-						<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 text-[10px] hover:bg-primary/90 cursor-pointer">
-							<ShoppingCart className="h-2.5 w-2.5" fill="currentColor" />
+						<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-0.5 text-[9px] px-1.5 py-0.5 hover:bg-primary/90 cursor-pointer">
+							<ShoppingCart className="h-2 w-2" fill="currentColor" />
 							{formatPrice(listing.price)}
 						</Badge>
 					</button>
 				)}
 				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
-					<Eye className="h-8 w-8 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 drop-shadow-md" />
+					<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
 				</div>
 			</div>
-			
-			{/* Theme name and remix button */}
-			<div className="flex items-center justify-between gap-3 p-3">
-				<Link
-					href={`/preview/${origin}`}
-					className="flex-1 truncate text-sm font-medium hover:text-primary"
-					title={theme.name}
-				>
+
+			{/* Theme name */}
+			<div className="px-2 py-1.5">
+				<p className="truncate text-xs font-medium" title={theme.name}>
 					{theme.name}
-				</Link>
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onRemix?.();
-					}}
-					className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary/20"
-				>
-					<Sparkles className="h-3 w-3" />
-					Remix
-				</button>
+				</p>
 			</div>
 		</div>
 	);
@@ -166,6 +151,8 @@ export function ThemeGallery() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+	const [isHovered, setIsHovered] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = useMemo(() => {
@@ -186,84 +173,92 @@ export function ThemeGallery() {
 		}).finally(() => setIsLoading(false));
 	}, []);
 
-	const handleRemix = (theme: ThemeToken) => {
-		// Store theme for the studio page to pick up
-		storeRemixTheme(theme);
-		// Navigate to theme studio
-		router.push("/studio/theme");
-	};
-
 	const handlePurchaseComplete = (txid: string) => {
 		if (buyListing) {
 			setSuccessModal({ theme: buyListing.theme, txid });
-			// Remove from listings since it's sold
 			setListings((prev) => prev.filter((l) => l.origin !== buyListing.origin));
 		}
 	};
 
+	// Calculate animation duration based on number of items
+	const itemCount = publishedThemes.length;
+	const baseSpeed = 30; // seconds for full scroll
+	const duration = Math.max(baseSpeed, itemCount * 3);
+
 	return (
-		<section className="border-y border-border bg-muted/30 py-8">
-			<div className="mx-auto max-w-7xl">
-				{/* Header */}
-				<div className="mb-4 flex items-center justify-between px-6">
-					<h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-						Published Themes
-					</h3>
-					<Link
-						href="/themes"
-						className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
-					>
-						Browse All
-						<ArrowRight className="h-4 w-4" />
-					</Link>
-				</div>
+		<section className="border-y border-border bg-muted/30 py-4 overflow-hidden">
+			{/* Header */}
+			<div className="mx-auto max-w-7xl mb-3 flex items-center justify-between px-6">
+				<h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+					Published Themes
+				</h3>
+				<Link
+					href="/themes"
+					className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
+				>
+					Browse All
+					<ArrowRight className="h-4 w-4" />
+				</Link>
+			</div>
 
-				{/* Horizontal scroll container */}
-				<div className="flex gap-4 overflow-x-auto px-6 pb-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border">
-					{isLoading ? (
-						<div className="flex items-center gap-2 text-muted-foreground">
-							<Loader2 className="h-4 w-4 animate-spin" />
-							<span className="text-sm">Loading themes...</span>
-						</div>
-					) : publishedThemes.length === 0 ? (
-						<p className="text-sm text-muted-foreground">
-							No themes published yet. Be the first!
-						</p>
-					) : (
-						publishedThemes.map((published) => {
-							const listing = listingsByOrigin.get(published.origin);
-							return (
-								<motion.div
-									key={published.origin}
-									initial={{ opacity: 0, x: 20 }}
-									animate={{ opacity: 1, x: 0 }}
-									transition={{ duration: 0.3 }}
-								>
-									<ThemeCard
-										theme={published.theme}
-										origin={published.origin}
-										listing={listing}
-										onRemix={() => handleRemix(published.theme)}
-										onBuy={() => listing && setBuyListing(listing)}
-									/>
-								</motion.div>
-							);
-						})
-					)}
+			{/* Marquee container */}
+			<div
+				ref={containerRef}
+				className="relative"
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+			>
+				{isLoading ? (
+					<div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+						<Loader2 className="h-4 w-4 animate-spin" />
+						<span className="text-sm">Loading themes...</span>
+					</div>
+				) : publishedThemes.length === 0 ? (
+					<p className="text-center text-sm text-muted-foreground py-4">
+						No themes published yet. Be the first!
+					</p>
+				) : (
+					<div className="flex">
+						{/* Duplicate the content for seamless loop */}
+						{[0, 1].map((setIndex) => (
+							<motion.div
+								key={setIndex}
+								className="flex gap-3 pr-3"
+								animate={{
+									x: isHovered ? 0 : "-100%",
+								}}
+								transition={{
+									x: {
+										duration: isHovered ? 0 : duration,
+										ease: "linear",
+										repeat: Infinity,
+										repeatType: "loop",
+									},
+								}}
+								style={{
+									willChange: "transform",
+								}}
+							>
+								{publishedThemes.map((published) => {
+									const listing = listingsByOrigin.get(published.origin);
+									return (
+										<ThemeCard
+											key={`${setIndex}-${published.origin}`}
+											theme={published.theme}
+											origin={published.origin}
+											listing={listing}
+											onBuy={() => listing && setBuyListing(listing)}
+										/>
+									);
+								})}
+							</motion.div>
+						))}
+					</div>
+				)}
 
-					{/* "More" card linking to themes browse */}
-					<Link
-						href="/themes"
-						className="group flex w-52 flex-shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card/30 transition-all hover:border-primary/50 hover:bg-muted"
-					>
-						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-primary/10">
-							<ArrowRight className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
-						</div>
-						<p className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-							View all themes
-						</p>
-					</Link>
-				</div>
+				{/* Fade edges */}
+				<div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-muted/30 to-transparent" />
+				<div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-muted/30 to-transparent" />
 			</div>
 
 			{/* Buy Modal */}
