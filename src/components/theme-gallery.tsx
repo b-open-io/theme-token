@@ -111,11 +111,28 @@ function ThemeCard({
 			onSetActive(cardId);
 		});
 
+		console.log("[ViewTransition] Starting transition for:", {
+			origin,
+			cardId,
+			viewTransitionName: `theme-stripe-${origin}`,
+		});
+
 		if (document.startViewTransition) {
-			document.startViewTransition(async () => {
+			const transition = document.startViewTransition(async () => {
 				await router.push(`/preview/${origin}`);
 			});
+
+			transition.ready.then(() => {
+				console.log("[ViewTransition] Transition ready - animations starting");
+			});
+
+			transition.finished.then(() => {
+				console.log("[ViewTransition] Transition finished");
+			}).catch((err) => {
+				console.error("[ViewTransition] Transition failed:", err);
+			});
 		} else {
+			console.log("[ViewTransition] API not available, using regular navigation");
 			router.push(`/preview/${origin}`);
 		}
 	};
