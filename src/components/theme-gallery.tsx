@@ -96,10 +96,11 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
-	// Only the active card gets the real viewTransitionName
-	// Others get a unique fake one to avoid duplicates
+	// Only the active card gets the shared viewTransitionName
+	// Others get a unique name to avoid duplicates
+	// Using a fixed name "theme-stripe" allows us to target it with CSS
 	const viewTransitionName = isActiveForTransition
-		? `theme-stripe-${origin}`
+		? "theme-stripe"
 		: `theme-stripe-${cardId}`;
 
 	const handleClick = (e: React.MouseEvent) => {
@@ -114,7 +115,7 @@ function ThemeCard({
 		console.log("[ViewTransition] Starting transition for:", {
 			origin,
 			cardId,
-			viewTransitionName: `theme-stripe-${origin}`,
+			viewTransitionName: "theme-stripe",
 		});
 
 		if (document.startViewTransition) {

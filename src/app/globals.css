@@ -308,7 +308,17 @@
 	mix-blend-mode: normal;
 }
 
-/* Theme stripe shared element transition - uses default morph animation */
-/* Note: CSS pseudo-elements for specific viewTransitionNames would go here
-   but wildcards aren't supported. The browser handles the transition automatically
-   based on matching viewTransitionName values between pages. */
+/* Theme stripe shared element transition */
+::view-transition-group(theme-stripe) {
+	animation-duration: 0.5s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(theme-stripe),
+::view-transition-new(theme-stripe) {
+	animation-duration: 0.5s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	/* Prevent cross-fade, let the morph do the work */
+	animation: none;
+	mix-blend-mode: normal;
+}
