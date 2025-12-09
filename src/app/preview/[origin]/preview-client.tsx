@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition, ViewTransition } from "react";
 import { AiDemo } from "@/components/preview/ai-demo";
 import { AudioDemo } from "@/components/preview/audio-demo";
 import { ButtonsDemo } from "@/components/preview/buttons-demo";
@@ -96,29 +96,6 @@ function applyStylesToElement(
   }
 }
 
-// View transition helper
-function startViewTransition(
-  callback: () => void,
-  x?: number,
-  y?: number,
-): void {
-  if (
-    !document.startViewTransition ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  ) {
-    callback();
-    return;
-  }
-
-  if (x !== undefined && y !== undefined) {
-    document.documentElement.style.setProperty("--click-x", `${x}px`);
-    document.documentElement.style.setProperty("--click-y", `${y}px`);
-  }
-
-  document.startViewTransition(() => {
-    callback();
-  });
-}
 
 const tabs = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -294,6 +271,7 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
           color: "var(--foreground)",
         }}
       >
+        <ViewTransition>
         {/* Compact Header */}
         <header
           className="sticky top-0 z-50 border-b backdrop-blur"
@@ -322,13 +300,11 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
                     : "bg-transparent text-muted-foreground",
                 )}
                 aria-label={`Switch to ${previewMode === "light" ? "dark" : "light"} mode`}
-                onClick={(e) => {
+                onClick={() => {
                   const nextMode = previewMode === "light" ? "dark" : "light";
-                  startViewTransition(
-                    () => setPreviewMode(nextMode),
-                    e.clientX,
-                    e.clientY,
-                  );
+                  startTransition(() => {
+                    setPreviewMode(nextMode);
+                  });
                 }}
               >
                 {previewMode === "light" ? (
@@ -548,6 +524,7 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
             }}
           />
         )}
+        </ViewTransition>
       </div>
     </div>
   );

@@ -307,7 +307,7 @@ export function ThemeGallery() {
 											theme={published.theme}
 											origin={published.origin}
 											listing={listing}
-											onBuy={() => listing && setBuyListing(listing)}
+											onBuy={() => listing && setBuyListing({ ...listing, origin: published.origin })}
 											cardId={cardId}
 											isActiveForTransition={hoveredCardId === cardId}
 											onSetActive={setHoveredCardId}

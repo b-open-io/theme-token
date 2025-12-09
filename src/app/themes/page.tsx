@@ -261,7 +261,7 @@ export default function ThemesPage() {
 									cached={cached}
 									listing={listing}
 									onRemix={() => handleRemix(cached)}
-									onBuy={() => listing && setBuyListing(listing)}
+									onBuy={() => listing && setBuyListing({ ...listing, origin: cached.origin })}
 								/>
 							);
 						})}
