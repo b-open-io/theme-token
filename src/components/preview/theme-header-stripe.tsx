@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ViewTransition } from "react";
 import { toast } from "sonner";
 import type { ThemeToken } from "@theme-token/sdk";
 
@@ -42,10 +42,8 @@ export function ThemeHeaderStripe({
 	};
 
 	return (
-		<div
-			className="flex h-8 w-full border-b border-border"
-			style={{ viewTransitionName: "theme-stripe" } as React.CSSProperties}
-		>
+		<ViewTransition name={`theme-stripe-${origin}`}>
+		<div className="flex h-8 w-full border-b border-border">
 			{colorEntries.map(({ key, value }, index) => (
 				<div
 					key={key}
@@ -79,5 +77,6 @@ export function ThemeHeaderStripe({
 				</div>
 			))}
 		</div>
+		</ViewTransition>
 	);
 }

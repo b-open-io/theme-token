@@ -4,8 +4,7 @@ import type { ThemeToken } from "@theme-token/sdk";
 import { ArrowRight, Eye, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { useTheme } from "@/components/theme-provider";
@@ -71,22 +70,15 @@ function ThemeCard({
 	origin,
 	listing,
 	onBuy,
-	cardId,
-	isActiveForTransition,
-	onSetActive,
-	onStartTransition,
+	isFirst,
 }: {
 	theme: ThemeToken;
 	origin: string;
 	listing?: ThemeMarketListing;
 	onBuy?: () => void;
-	cardId: string;
-	isActiveForTransition: boolean;
-	onSetActive: (cardId: string | null) => void;
-	onStartTransition: () => void;
+	isFirst: boolean;
 }) {
 	const { mode } = useTheme();
-	const router = useRouter();
 	const colors = [
 		theme.styles[mode].background,
 		theme.styles[mode].card,
@@ -98,89 +90,52 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
-	// Only the active card gets the shared viewTransitionName
-	// Others get a unique name to avoid duplicates
-	// Using a fixed name "theme-stripe" allows us to target it with CSS
-	const viewTransitionName = isActiveForTransition
-		? "theme-stripe"
-		: `theme-stripe-${cardId}`;
-
-	const handleClick = (e: React.MouseEvent) => {
-		e.preventDefault();
-
-		// Lock the marquee animation before taking snapshot
-		// Use flushSync to ensure both states are updated in DOM
-		flushSync(() => {
-			onStartTransition();
-			onSetActive(cardId);
-		});
-
-		console.log("[ViewTransition] Starting transition for:", {
-			origin,
-			cardId,
-			viewTransitionName: "theme-stripe",
-		});
-
-		if (document.startViewTransition) {
-			const transition = document.startViewTransition(async () => {
-				await router.push(`/preview/${origin}`);
-			});
-
-			transition.ready.then(() => {
-				console.log("[ViewTransition] Transition ready - animations starting");
-			});
-
-			transition.finished.then(() => {
-				console.log("[ViewTransition] Transition finished");
-			}).catch((err) => {
-				console.error("[ViewTransition] Transition failed:", err);
-			});
-		} else {
-			router.push(`/preview/${origin}`);
-		}
-	};
+	// Only first set of cards get ViewTransition names to avoid duplicates
+	const stripeContent = (
+		<div className="relative flex h-16 w-40 overflow-hidden rounded-t-lg">
+			{colors.map((color, i) => (
+				<div
+					key={i}
+					className="flex-1"
+					style={{ backgroundColor: color }}
+				/>
+			))}
+			{/* For Sale Badge */}
+			{listing && (
+				<button
+					type="button"
+					className="absolute top-1.5 right-1.5 z-10"
+					onClick={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						onBuy?.();
+					}}
+				>
+					<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-0.5 text-[9px] px-1.5 py-0.5 hover:bg-primary/90 cursor-pointer">
+						<ShoppingCart className="h-2 w-2" fill="currentColor" />
+						{formatPrice(listing.price)}
+					</Badge>
+				</button>
+			)}
+			<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
+				<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
+			</div>
+		</div>
+	);
 
 	return (
-		<a
+		<Link
 			href={`/preview/${origin}`}
-			onClick={handleClick}
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
-			onMouseEnter={() => onSetActive(cardId)}
-			onMouseLeave={() => onSetActive(null)}
 		>
-			{/* Color stripes */}
-			<div
-				className="relative flex h-16 w-40 overflow-hidden rounded-t-lg"
-				style={{ viewTransitionName } as React.CSSProperties}
-			>
-				{colors.map((color, i) => (
-					<div
-						key={i}
-						className="flex-1"
-						style={{ backgroundColor: color }}
-					/>
-				))}
-				{/* For Sale Badge */}
-				{listing && (
-					<button
-						type="button"
-						className="absolute top-1.5 right-1.5 z-10"
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							onBuy?.();
-						}}
-					>
-						<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-0.5 text-[9px] px-1.5 py-0.5 hover:bg-primary/90 cursor-pointer">
-							<ShoppingCart className="h-2 w-2" fill="currentColor" />
-							{formatPrice(listing.price)}
-						</Badge>
-					</button>
-				)}
-				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
-					<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
-				</div>
-			</div>
+			{/* Color stripes - only first set gets ViewTransition */}
+			{isFirst ? (
+				<ViewTransition name={`theme-stripe-${origin}`}>
+					{stripeContent}
+				</ViewTransition>
+			) : (
+				stripeContent
+			)}
 
 			{/* Theme name */}
 			<div className="px-2 py-1.5">
@@ -188,7 +143,7 @@ function ThemeCard({
 					{theme.name}
 				</p>
 			</div>
-		</a>
+		</Link>
 	);
 }
 
@@ -200,12 +155,7 @@ export function ThemeGallery() {
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 	const [isHovered, setIsHovered] = useState(false);
-	const [isTransitioning, setIsTransitioning] = useState(false);
-	const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	// Pause marquee when hovered OR transitioning
-	const shouldPauseMarquee = isHovered || isTransitioning;
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = useMemo(() => {
@@ -285,7 +235,7 @@ export function ThemeGallery() {
 					<div
 						className="flex"
 						style={{
-							animationPlayState: shouldPauseMarquee ? "paused" : "running",
+							animationPlayState: isHovered ? "paused" : "running",
 						}}
 					>
 						{/* Duplicate the content for seamless loop */}
@@ -295,23 +245,19 @@ export function ThemeGallery() {
 								className="flex gap-3 pr-3 animate-marquee"
 								style={{
 									animationDuration: `${duration}s`,
-									animationPlayState: shouldPauseMarquee ? "paused" : "running",
+									animationPlayState: isHovered ? "paused" : "running",
 								}}
 							>
 								{publishedThemes.map((published) => {
 									const listing = listingsByOrigin.get(published.origin);
-									const cardId = `${setIndex}-${published.origin}`;
 									return (
 										<ThemeCard
-											key={cardId}
+											key={`${setIndex}-${published.origin}`}
 											theme={published.theme}
 											origin={published.origin}
 											listing={listing}
 											onBuy={() => listing && setBuyListing({ ...listing, origin: published.origin })}
-											cardId={cardId}
-											isActiveForTransition={hoveredCardId === cardId}
-											onSetActive={setHoveredCardId}
-											onStartTransition={() => setIsTransitioning(true)}
+											isFirst={setIndex === 0}
 										/>
 									);
 								})}
