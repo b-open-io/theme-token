@@ -286,6 +286,20 @@
 	z-index: 1;
 }
 
+/* Marquee animation */
+@keyframes marquee {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-100%);
+	}
+}
+
+.animate-marquee {
+	animation: marquee linear infinite;
+}
+
 /* View Transition - Use Web Animations API for dynamic clip-path */
 ::view-transition-old(root),
 ::view-transition-new(root) {

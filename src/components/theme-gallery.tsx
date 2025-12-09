@@ -1,8 +1,7 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { motion, useAnimationControls } from "framer-motion";
-import { ArrowRight, Eye, Loader2, ShoppingCart, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, Loader2, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -218,25 +217,20 @@ export function ThemeGallery() {
 						No themes published yet. Be the first!
 					</p>
 				) : (
-					<div className="flex">
+					<div
+						className="flex"
+						style={{
+							animationPlayState: isHovered ? "paused" : "running",
+						}}
+					>
 						{/* Duplicate the content for seamless loop */}
 						{[0, 1].map((setIndex) => (
-							<motion.div
+							<div
 								key={setIndex}
-								className="flex gap-3 pr-3"
-								animate={{
-									x: isHovered ? 0 : "-100%",
-								}}
-								transition={{
-									x: {
-										duration: isHovered ? 0 : duration,
-										ease: "linear",
-										repeat: Infinity,
-										repeatType: "loop",
-									},
-								}}
+								className="flex gap-3 pr-3 animate-marquee"
 								style={{
-									willChange: "transform",
+									animationDuration: `${duration}s`,
+									animationPlayState: isHovered ? "paused" : "running",
 								}}
 							>
 								{publishedThemes.map((published) => {
@@ -251,7 +245,7 @@ export function ThemeGallery() {
 										/>
 									);
 								})}
-							</motion.div>
+							</div>
 						))}
 					</div>
 				)}
