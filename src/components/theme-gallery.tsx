@@ -70,11 +70,17 @@ function ThemeCard({
 	origin,
 	listing,
 	onBuy,
+	cardId,
+	isActiveForTransition,
+	onHover,
 }: {
 	theme: ThemeToken;
 	origin: string;
 	listing?: ThemeMarketListing;
 	onBuy?: () => void;
+	cardId: string;
+	isActiveForTransition: boolean;
+	onHover: (cardId: string | null) => void;
 }) {
 	const { mode } = useTheme();
 	const router = useRouter();
@@ -103,15 +109,23 @@ function ThemeCard({
 		}
 	};
 
+	// Only the hovered card gets the real viewTransitionName
+	// Others get a unique fake one to avoid duplicates
+	const viewTransitionName = isActiveForTransition
+		? `theme-stripe-${origin}`
+		: `theme-stripe-${cardId}`;
+
 	return (
 		<div
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
 			onClick={handleClick}
+			onMouseEnter={() => onHover(cardId)}
+			onMouseLeave={() => onHover(null)}
 		>
 			{/* Color stripes */}
 			<div
 				className="relative flex h-16 w-40 overflow-hidden rounded-t-lg"
-				style={{ viewTransitionName: `theme-stripe-${origin}` } as React.CSSProperties}
+				style={{ viewTransitionName } as React.CSSProperties}
 			>
 				{colors.map((color, i) => (
 					<div
@@ -160,6 +174,7 @@ export function ThemeGallery() {
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 	const [isHovered, setIsHovered] = useState(false);
+	const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	// Map of origin -> listing for quick lookup
@@ -244,13 +259,17 @@ export function ThemeGallery() {
 							>
 								{publishedThemes.map((published) => {
 									const listing = listingsByOrigin.get(published.origin);
+									const cardId = `${setIndex}-${published.origin}`;
 									return (
 										<ThemeCard
-											key={`${setIndex}-${published.origin}`}
+											key={cardId}
 											theme={published.theme}
 											origin={published.origin}
 											listing={listing}
 											onBuy={() => listing && setBuyListing(listing)}
+											cardId={cardId}
+											isActiveForTransition={hoveredCardId === cardId}
+											onHover={setHoveredCardId}
 										/>
 									);
 								})}
