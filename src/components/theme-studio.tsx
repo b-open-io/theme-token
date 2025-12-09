@@ -5,8 +5,12 @@ import {
 	parseCss,
 	type ThemeToken,
 } from "@theme-token/sdk";
+import { useQuery } from "@tanstack/react-query";
 import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
 import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+import { BuyThemeModal } from "@/components/market/buy-theme-modal";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
+import { storeRemixTheme } from "@/components/theme-gallery";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -196,15 +200,31 @@ export function ThemeStudio() {
 	const isDirty = JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles);
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
-	const [onChainThemes, setOnChainThemes] = useState<CachedTheme[]>([]);
-	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
-	const [loadingThemes, setLoadingThemes] = useState(true);
+	const [selectedThemeOrigin, setSelectedThemeOrigin] = useState<string | null>(null);
+	const [showBuyModal, setShowBuyModal] = useState(false);
+	const [purchaseSuccess, setPurchaseSuccess] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+
+	// Fetch on-chain themes and market listings with TanStack Query
+	const { data: onChainThemes = [], isLoading: loadingThemes } = useQuery({
+		queryKey: ["cached-themes"],
+		queryFn: fetchCachedThemes,
+		staleTime: 5 * 60 * 1000,
+	});
+
+	const { data: listings = [], refetch: refetchListings } = useQuery({
+		queryKey: ["theme-listings"],
+		queryFn: fetchThemeMarketListings,
+		staleTime: 5 * 60 * 1000,
+	});
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = new Map<string, ThemeMarketListing>();
 	for (const listing of listings) {
 		listingsByOrigin.set(listing.origin, listing);
 	}
+
+	// Get listing for currently selected theme
+	const selectedListing = selectedThemeOrigin ? listingsByOrigin.get(selectedThemeOrigin) : null;
 	const [editorSubTab, setEditorSubTab] = useState<
 		"colors" | "typography" | "other"
 	>("colors");
@@ -279,17 +299,7 @@ export function ThemeStudio() {
 		syncToUrl();
 	}, [syncToUrl]);
 
-	// Fetch on-chain themes and market listings
-	useEffect(() => {
-		Promise.all([
-			fetchCachedThemes(),
-			fetchThemeMarketListings(),
-		]).then(([themes, marketListings]) => {
-			setOnChainThemes(themes);
-			setListings(marketListings);
-		}).finally(() => setLoadingThemes(false));
-	}, []);
-
+	
 	// Sync with wallet's active theme when it changes externally
 	useEffect(() => {
 		if (activeTheme) {
@@ -571,6 +581,7 @@ export function ThemeStudio() {
 										isAnimatingRef.current = true;
 										setSelectedTheme(theme);
 										setOriginalTheme(theme); // Reset original when selecting a new theme
+										setSelectedThemeOrigin(onChain?.origin || null); // Track origin for on-chain themes
 										setCustomName("");
 										await applyThemeAnimated(theme);
 										isAnimatingRef.current = false;
@@ -1424,29 +1435,44 @@ export function ThemeStudio() {
 					</div>
 				)}
 
-				<Button
-					size="lg"
-					disabled={!canMint}
-					onClick={isConnected ? () => setShowInscribeDialog(true) : connect}
-					className="gap-2"
-				>
-					{isConnected ? (
-						<>
-							<PenLine className="h-5 w-5" />
-							Inscribe Theme
-						</>
-					) : status === "connecting" ? (
-						<>
-							<Loader2 className="h-5 w-5 animate-spin" />
-							Connecting...
-						</>
-					) : (
-						<>
-							<PenLine className="h-5 w-5" />
-							Connect to Inscribe
-						</>
+				<div className="flex items-center gap-2">
+					{/* Buy Button - only show when selected theme is for sale */}
+					{selectedListing && (
+						<Button
+							size="lg"
+							onClick={() => setShowBuyModal(true)}
+							className="gap-2"
+						>
+							<ShoppingCart className="h-5 w-5" />
+							Buy
+						</Button>
 					)}
-				</Button>
+
+					<Button
+						size="lg"
+						variant={selectedListing ? "outline" : "default"}
+						disabled={!canMint}
+						onClick={isConnected ? () => setShowInscribeDialog(true) : connect}
+						className="gap-2"
+					>
+						{isConnected ? (
+							<>
+								<PenLine className="h-5 w-5" />
+								Inscribe Theme
+							</>
+						) : status === "connecting" ? (
+							<>
+								<Loader2 className="h-5 w-5 animate-spin" />
+								Connecting...
+							</>
+						) : (
+							<>
+								<PenLine className="h-5 w-5" />
+								Connect to Inscribe
+							</>
+						)}
+					</Button>
+				</div>
 			</div>
 
 			{/* Inscribe Confirmation Dialog */}
@@ -1460,6 +1486,35 @@ export function ThemeStudio() {
 				isInscribing={isInscribing}
 				mode={mode}
 			/>
+
+			{/* Buy Modal */}
+			{selectedListing && (
+				<BuyThemeModal
+					isOpen={showBuyModal}
+					onClose={() => setShowBuyModal(false)}
+					listing={selectedListing}
+					onPurchaseComplete={(purchaseTxid) => {
+						setPurchaseSuccess({ theme: selectedListing.theme, txid: purchaseTxid });
+						setShowBuyModal(false);
+						refetchListings(); // Refresh listings after purchase
+					}}
+				/>
+			)}
+
+			{/* Purchase Success Modal */}
+			{purchaseSuccess && (
+				<PurchaseSuccessModal
+					isOpen={true}
+					onClose={() => setPurchaseSuccess(null)}
+					theme={purchaseSuccess.theme}
+					txid={purchaseSuccess.txid}
+					onApplyNow={() => {
+						storeRemixTheme(purchaseSuccess.theme);
+						router.push("/studio/theme");
+						setPurchaseSuccess(null);
+					}}
+				/>
+			)}
 		</div>
 		</>
 	);
