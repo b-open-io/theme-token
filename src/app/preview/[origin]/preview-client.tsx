@@ -20,6 +20,7 @@ import {
   Type,
 } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { AiDemo } from "@/components/preview/ai-demo";
@@ -139,9 +140,15 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
   const [copied, setCopied] = useState(false);
   const [copiedOrigin, setCopiedOrigin] = useState(false);
   const [showRemixDialog, setShowRemixDialog] = useState(false);
-  const [listing, setListing] = useState<ThemeMarketListing | null>(null);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+
+  // Fetch listing to check if for sale
+  const { data: listing, refetch: refetchListing } = useQuery({
+    queryKey: ["theme-listing", origin],
+    queryFn: () => fetchThemeListingByOrigin(origin),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Determine active tab from URL or initial prop
   const activeTabFromUrl = useMemo<TabId>(() => {
@@ -249,16 +256,11 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
     }).catch(() => {});
   }, [origin, theme]);
 
-  // Fetch listing to check if for sale
-  useEffect(() => {
-    fetchThemeListingByOrigin(origin).then(setListing).catch(() => {});
-  }, [origin]);
-
   const handlePurchaseComplete = useCallback((txid: string) => {
     setSuccessModal({ theme, txid });
-    setListing(null); // No longer for sale
+    refetchListing(); // Refresh listing status
     setShowBuyModal(false);
-  }, [theme]);
+  }, [theme, refetchListing]);
 
   const handleBack = useCallback(() => {
     router.back();
