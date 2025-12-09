@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Eye, Loader2, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Eye, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { PageContainer } from "@/components/page-container";
@@ -12,7 +12,7 @@ import { useTheme } from "@/components/theme-provider";
 import { storeRemixTheme } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
+import { type CachedTheme } from "@/lib/themes-cache";
 import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
 import type { ThemeToken } from "@theme-token/sdk";
 
@@ -21,6 +21,24 @@ function formatPrice(satoshis: number): string {
 	if (bsv >= 1) return `${bsv.toFixed(2)} BSV`;
 	if (bsv >= 0.01) return `${(bsv * 1000).toFixed(1)}m BSV`;
 	return `${satoshis.toLocaleString()} sats`;
+}
+
+function ThemeCardSkeleton() {
+	return (
+		<div className="rounded-xl border border-border bg-card overflow-hidden">
+			<div className="h-32 bg-muted animate-pulse" />
+			<div className="p-4 space-y-3">
+				<div className="flex items-start justify-between gap-2">
+					<div className="space-y-2 flex-1">
+						<div className="h-5 w-32 bg-muted animate-pulse rounded" />
+						<div className="h-4 w-20 bg-muted animate-pulse rounded" />
+					</div>
+					<div className="h-7 w-16 bg-muted animate-pulse rounded" />
+				</div>
+				<div className="h-4 w-40 bg-muted animate-pulse rounded" />
+			</div>
+		</div>
+	);
 }
 
 function ThemeCard({
@@ -48,11 +66,7 @@ function ThemeCard({
 	];
 
 	return (
-		<motion.div
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg"
-		>
+		<div className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg animate-in fade-in duration-300">
 			{/* Color Preview */}
 			<Link href={`/preview/${origin}`}>
 				<div
@@ -118,17 +132,32 @@ function ThemeCard({
 					{origin.slice(0, 12)}...{origin.slice(-6)}
 				</p>
 			</div>
-		</motion.div>
+		</div>
 	);
 }
 
 export default function ThemesPage() {
 	const router = useRouter();
-	const [themes, setThemes] = useState<CachedTheme[]>([]);
-	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+
+	// Fetch themes with TanStack Query
+	const { data: themes = [], isLoading: themesLoading, refetch: refetchThemes } = useQuery({
+		queryKey: ["themes"],
+		queryFn: async () => {
+			const res = await fetch("/api/themes/cache");
+			const data = await res.json();
+			return (data.themes || []) as CachedTheme[];
+		},
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
+
+	// Fetch listings with TanStack Query
+	const { data: listings = [], refetch: refetchListings } = useQuery({
+		queryKey: ["theme-listings"],
+		queryFn: fetchThemeMarketListings,
+		staleTime: 2 * 60 * 1000, // 2 minutes
+	});
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = useMemo(() => {
@@ -139,26 +168,12 @@ export default function ThemesPage() {
 		return map;
 	}, [listings]);
 
-	const loadData = async (refresh = false) => {
-		setIsLoading(true);
-		try {
-			const url = refresh ? "/api/themes/cache?refresh=true" : "/api/themes/cache";
-			const [themesRes, marketListings] = await Promise.all([
-				fetch(url).then(r => r.json()),
-				fetchThemeMarketListings(),
-			]);
-			setThemes(themesRes.themes || []);
-			setListings(marketListings);
-		} catch (err) {
-			console.error("Failed to load themes:", err);
-		} finally {
-			setIsLoading(false);
-		}
+	const handleRefresh = async () => {
+		// Force refresh from server
+		await fetch("/api/themes/cache?refresh=true");
+		refetchThemes();
+		refetchListings();
 	};
-
-	useEffect(() => {
-		loadData();
-	}, []);
 
 	const handleRemix = (cached: CachedTheme) => {
 		storeRemixTheme(cached.theme, { source: "remix", txid: cached.origin });
@@ -168,7 +183,7 @@ export default function ThemesPage() {
 	const handlePurchaseComplete = (txid: string) => {
 		if (buyListing) {
 			setSuccessModal({ theme: buyListing.theme, txid });
-			setListings((prev) => prev.filter((l) => l.origin !== buyListing.origin));
+			refetchListings();
 		}
 	};
 
@@ -186,17 +201,17 @@ export default function ThemesPage() {
 							All themes inscribed on the blockchain
 						</p>
 					</div>
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2">
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() => loadData(true)}
-							disabled={isLoading}
+							onClick={handleRefresh}
+							disabled={themesLoading}
 						>
-							<RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+							<RefreshCw className={`mr-2 h-4 w-4 ${themesLoading ? "animate-spin" : ""}`} />
 							Refresh
 						</Button>
-						<Button asChild>
+						<Button size="sm" asChild>
 							<Link href="/studio/theme">
 								<Sparkles className="mr-2 h-4 w-4" />
 								Create Theme
@@ -219,9 +234,11 @@ export default function ThemesPage() {
 				</div>
 
 				{/* Grid */}
-				{isLoading ? (
-					<div className="flex items-center justify-center py-20">
-						<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+				{themesLoading ? (
+					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{Array.from({ length: 8 }).map((_, i) => (
+							<ThemeCardSkeleton key={i} />
+						))}
 					</div>
 				) : themes.length === 0 ? (
 					<div className="rounded-xl border border-dashed border-border py-20 text-center">
