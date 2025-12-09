@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
@@ -66,9 +67,10 @@ export default function RootLayout({
 				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full font-sans antialiased`}
 			>
 				<Providers>
-					<div className="flex h-full flex-col">
+					<div className="flex min-h-full flex-col">
 						<Header />
 						<main className="flex min-h-0 flex-1 flex-col">{children}</main>
+						<Footer />
 					</div>
 					<Toaster position="bottom-right" richColors closeButton />
 				</Providers>

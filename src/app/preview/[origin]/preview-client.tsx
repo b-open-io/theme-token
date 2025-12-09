@@ -549,30 +549,6 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
           />
         )}
       </div>
-
-      {/* Footer - Outside themed container */}
-      <footer className="border-t border-border bg-muted/30 py-8">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-muted-foreground">
-              Built on Bitcoin SV with 1Sat Ordinals
-            </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <Link href="/spec" className="hover:text-foreground transition-colors">
-                Spec
-              </Link>
-              <a
-                href="https://github.com/b-open-io/theme-token"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
-                GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
