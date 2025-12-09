@@ -5,6 +5,7 @@ import { ArrowRight, Eye, Loader2, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { useTheme } from "@/components/theme-provider";
@@ -103,19 +104,20 @@ function ThemeCard({
 
 	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
-		// Lock this card as active before starting navigation
-		onSetActive(cardId);
 
-		// Small delay to ensure React has re-rendered with the correct viewTransitionName
-		requestAnimationFrame(() => {
-			if (document.startViewTransition) {
-				document.startViewTransition(() => {
-					router.push(`/preview/${origin}`);
-				});
-			} else {
-				router.push(`/preview/${origin}`);
-			}
+		// Use flushSync to ensure the viewTransitionName is updated in DOM
+		// before the browser takes the snapshot for the view transition
+		flushSync(() => {
+			onSetActive(cardId);
 		});
+
+		if (document.startViewTransition) {
+			document.startViewTransition(async () => {
+				await router.push(`/preview/${origin}`);
+			});
+		} else {
+			router.push(`/preview/${origin}`);
+		}
 	};
 
 	return (
