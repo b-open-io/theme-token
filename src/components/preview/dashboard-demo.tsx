@@ -166,7 +166,7 @@ export function DashboardDemo() {
 				<div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 					{/* Phone Mockup - Compact & Left Aligned */}
 					<div className="lg:col-span-4 xl:col-span-3 flex justify-center lg:justify-start">
-						<div className="relative w-[260px] rounded-[2.5rem] border-[8px] border-foreground/80 bg-background shadow-xl overflow-hidden">
+						<div className="relative mx-auto w-[260px] rounded-[2.5rem] border-[8px] border-foreground/80 bg-background shadow-xl overflow-hidden">
 							{/* Notch */}
 							<div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-foreground/80 rounded-b-2xl z-20" />
 							
