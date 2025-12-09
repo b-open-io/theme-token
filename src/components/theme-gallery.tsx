@@ -74,6 +74,7 @@ function ThemeCard({
 	cardId,
 	isActiveForTransition,
 	onSetActive,
+	onStartTransition,
 }: {
 	theme: ThemeToken;
 	origin: string;
@@ -82,6 +83,7 @@ function ThemeCard({
 	cardId: string;
 	isActiveForTransition: boolean;
 	onSetActive: (cardId: string | null) => void;
+	onStartTransition: () => void;
 }) {
 	const { mode } = useTheme();
 	const router = useRouter();
@@ -106,9 +108,10 @@ function ThemeCard({
 	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
 
-		// Use flushSync to ensure the viewTransitionName is updated in DOM
-		// before the browser takes the snapshot for the view transition
+		// Lock the marquee animation before taking snapshot
+		// Use flushSync to ensure both states are updated in DOM
 		flushSync(() => {
+			onStartTransition();
 			onSetActive(cardId);
 		});
 
@@ -133,7 +136,6 @@ function ThemeCard({
 				console.error("[ViewTransition] Transition failed:", err);
 			});
 		} else {
-			console.log("[ViewTransition] API not available, using regular navigation");
 			router.push(`/preview/${origin}`);
 		}
 	};
@@ -198,8 +200,12 @@ export function ThemeGallery() {
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 	const [isHovered, setIsHovered] = useState(false);
+	const [isTransitioning, setIsTransitioning] = useState(false);
 	const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
+
+	// Pause marquee when hovered OR transitioning
+	const shouldPauseMarquee = isHovered || isTransitioning;
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = useMemo(() => {
@@ -279,7 +285,7 @@ export function ThemeGallery() {
 					<div
 						className="flex"
 						style={{
-							animationPlayState: isHovered ? "paused" : "running",
+							animationPlayState: shouldPauseMarquee ? "paused" : "running",
 						}}
 					>
 						{/* Duplicate the content for seamless loop */}
@@ -289,7 +295,7 @@ export function ThemeGallery() {
 								className="flex gap-3 pr-3 animate-marquee"
 								style={{
 									animationDuration: `${duration}s`,
-									animationPlayState: isHovered ? "paused" : "running",
+									animationPlayState: shouldPauseMarquee ? "paused" : "running",
 								}}
 							>
 								{publishedThemes.map((published) => {
@@ -305,6 +311,7 @@ export function ThemeGallery() {
 											cardId={cardId}
 											isActiveForTransition={hoveredCardId === cardId}
 											onSetActive={setHoveredCardId}
+											onStartTransition={() => setIsTransitioning(true)}
 										/>
 									);
 								})}
