@@ -62,9 +62,9 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="h-full" suppressHydrationWarning>
+		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full font-sans antialiased`}
+				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}
 			>
 				<Providers>
 					<div className="flex min-h-full flex-col">

@@ -43,53 +43,43 @@ export function ThemeHeaderStripe({
 
 	return (
 		<div className="relative h-8 w-full border-b border-border">
-			{/* Pure color stripes - wrapped in ViewTransition for shared element */}
+			{/* Color stripes with hover interaction - wrapped in ViewTransition for shared element */}
 			<ViewTransition name={`theme-stripe-${origin}`}>
 				<div className="absolute inset-0 flex">
-					{colorEntries.map(({ key, value }) => (
+					{colorEntries.map(({ key, value }, index) => (
 						<div
 							key={key}
-							className="flex-1"
-							style={{ backgroundColor: value }}
-						/>
+							className="relative cursor-pointer"
+							style={{
+								flex: hoveredIndex === index ? 2 : 1,
+								backgroundColor: value,
+								transition: "flex 300ms ease-out",
+							}}
+							onMouseEnter={() => setHoveredIndex(index)}
+							onMouseLeave={() => setHoveredIndex(null)}
+							onClick={() => handleCopyColor(key, value)}
+						>
+							<div
+								className="absolute inset-0 flex items-center justify-center"
+								style={{
+									opacity: hoveredIndex === index ? 1 : 0,
+									transition: "opacity 200ms ease-out",
+								}}
+							>
+								<span
+									className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
+									style={{
+										backgroundColor: styles.background,
+										color: styles.foreground,
+									}}
+								>
+									{key}
+								</span>
+							</div>
+						</div>
 					))}
 				</div>
 			</ViewTransition>
-
-			{/* Interactive overlay for hover/click */}
-			<div className="absolute inset-0 flex">
-				{colorEntries.map(({ key, value }, index) => (
-					<div
-						key={key}
-						className="relative flex-1 cursor-pointer"
-						style={{
-							flex: hoveredIndex === index ? 2 : 1,
-							transition: "flex 300ms ease-out",
-						}}
-						onMouseEnter={() => setHoveredIndex(index)}
-						onMouseLeave={() => setHoveredIndex(null)}
-						onClick={() => handleCopyColor(key, value)}
-					>
-						<div
-							className="absolute inset-0 flex items-center justify-center"
-							style={{
-								opacity: hoveredIndex === index ? 1 : 0,
-								transition: "opacity 200ms ease-out",
-							}}
-						>
-							<span
-								className="rounded px-2 py-0.5 text-xs font-medium shadow-lg"
-								style={{
-									backgroundColor: styles.background,
-									color: styles.foreground,
-								}}
-							>
-								{key}
-							</span>
-						</div>
-					</div>
-				))}
-			</div>
 		</div>
 	);
 }

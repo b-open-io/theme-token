@@ -77,6 +77,7 @@ function ThemeCard({
 	onBuy?: () => void;
 }) {
 	const { mode } = useTheme();
+	const [isHovered, setIsHovered] = useState(false);
 	const colors = [
 		theme.styles[mode].background,
 		theme.styles[mode].card,
@@ -101,14 +102,19 @@ function ThemeCard({
 		</div>
 	);
 
+	// Only assign the real ViewTransition name on hover to avoid duplicates
+	const viewTransitionName = isHovered ? `theme-stripe-${origin}` : undefined;
+
 	return (
 		<Link
 			href={`/preview/${origin}`}
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
 		>
 			<div className="relative flex h-16 w-40 overflow-hidden rounded-t-lg">
-				{/* Color stripes - all get ViewTransition, duplicates handled by browser */}
-				<ViewTransition name={`theme-stripe-${origin}`}>
+				{/* Color stripes - only hovered card gets the real ViewTransition name */}
+				<ViewTransition name={viewTransitionName}>
 					{colorStripes}
 				</ViewTransition>
 				{/* For Sale Badge */}

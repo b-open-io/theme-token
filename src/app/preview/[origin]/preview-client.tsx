@@ -273,7 +273,10 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
           color: "var(--foreground)",
         }}
       >
-        <ViewTransition>
+        {/* Persistent Color Stripe - above header for visual continuity with navbar */}
+      <ThemeHeaderStripe theme={theme} mode={previewMode} origin={origin} />
+
+      <ViewTransition>
         {/* Compact Header */}
         <header
           className="sticky top-0 z-50 border-b backdrop-blur"
@@ -341,9 +344,6 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
             </div>
           </div>
         </header>
-
-        {/* Persistent Color Stripe */}
-        <ThemeHeaderStripe theme={theme} mode={previewMode} origin={origin} />
 
         <PageContainer className="py-6">
           {/* Header Section */}

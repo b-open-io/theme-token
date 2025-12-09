@@ -53,6 +53,7 @@ function ThemeCard({
 	onBuy?: () => void;
 }) {
 	const { mode } = useTheme();
+	const [isHovered, setIsHovered] = useState(false);
 	const { theme, origin } = cached;
 	const colors = [
 		theme.styles[mode].background,
@@ -65,13 +66,20 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
+	// Only assign the real ViewTransition name on hover to avoid duplicates
+	const viewTransitionName = isHovered ? `theme-stripe-${origin}` : undefined;
+
 	return (
-		<div className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg animate-in fade-in duration-300">
+		<div
+			className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg animate-in fade-in duration-300"
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
+		>
 			{/* Color Preview */}
 			<Link href={`/preview/${origin}`}>
 				<div className="relative h-32 cursor-pointer overflow-hidden">
-					{/* Color stripes - wrapped in ViewTransition for shared element */}
-					<ViewTransition name={`theme-stripe-${origin}`}>
+					{/* Color stripes - only hovered card gets the real ViewTransition name */}
+					<ViewTransition name={viewTransitionName}>
 						<div className="absolute inset-0 flex">
 							{colors.map((color, i) => (
 								<div key={i} className="flex-1" style={{ backgroundColor: color }} />
