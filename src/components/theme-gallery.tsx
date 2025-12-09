@@ -1,7 +1,7 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { ArrowRight, Eye, Loader2, ShoppingCart } from "lucide-react";
+import { ArrowRight, Eye, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -256,9 +256,20 @@ export function ThemeGallery() {
 				onMouseLeave={() => setIsHovered(false)}
 			>
 				{isLoading ? (
-					<div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
-						<Loader2 className="h-4 w-4 animate-spin" />
-						<span className="text-sm">Loading themes...</span>
+					<div className="flex gap-3 px-3">
+						{Array.from({ length: 8 }).map((_, i) => (
+							<div
+								key={i}
+								className="flex-shrink-0 rounded-lg border border-border bg-card"
+							>
+								{/* Skeleton color stripes - matches h-16 w-40 */}
+								<div className="h-16 w-40 rounded-t-lg bg-muted animate-pulse" />
+								{/* Skeleton theme name - matches px-2 py-1.5 */}
+								<div className="px-2 py-1.5">
+									<div className="h-4 w-24 rounded bg-muted animate-pulse" />
+								</div>
+							</div>
+						))}
 					</div>
 				) : publishedThemes.length === 0 ? (
 					<p className="text-center text-sm text-muted-foreground py-4">
