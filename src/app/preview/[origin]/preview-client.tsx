@@ -257,7 +257,9 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
   }, [theme, refetchListing]);
 
   const handleBack = useCallback(() => {
-    router.back();
+    startTransition(() => {
+      router.push("/themes");
+    });
   }, [router]);
 
   return (
@@ -284,7 +286,7 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" className="h-10" onClick={handleBack}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
+                Themes
               </Button>
             </div>
 

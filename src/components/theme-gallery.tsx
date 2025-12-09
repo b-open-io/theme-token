@@ -70,13 +70,11 @@ function ThemeCard({
 	origin,
 	listing,
 	onBuy,
-	isFirst,
 }: {
 	theme: ThemeToken;
 	origin: string;
 	listing?: ThemeMarketListing;
 	onBuy?: () => void;
-	isFirst: boolean;
 }) {
 	const { mode } = useTheme();
 	const colors = [
@@ -109,14 +107,10 @@ function ThemeCard({
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
 		>
 			<div className="relative flex h-16 w-40 overflow-hidden rounded-t-lg">
-				{/* Color stripes - only first set gets ViewTransition */}
-				{isFirst ? (
-					<ViewTransition name={`theme-stripe-${origin}`}>
-						{colorStripes}
-					</ViewTransition>
-				) : (
-					colorStripes
-				)}
+				{/* Color stripes - all get ViewTransition, duplicates handled by browser */}
+				<ViewTransition name={`theme-stripe-${origin}`}>
+					{colorStripes}
+				</ViewTransition>
 				{/* For Sale Badge */}
 				{listing && (
 					<button
@@ -259,7 +253,6 @@ export function ThemeGallery() {
 											origin={published.origin}
 											listing={listing}
 											onBuy={() => listing && setBuyListing({ ...listing, origin: published.origin })}
-											isFirst={setIndex === 0}
 										/>
 									);
 								})}
