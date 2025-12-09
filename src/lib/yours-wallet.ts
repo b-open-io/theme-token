@@ -346,6 +346,59 @@ export async function fetchThemeMarketListings(): Promise<
 }
 
 /**
+ * Fetch a single theme listing by origin
+ * Returns null if not listed for sale
+ */
+export async function fetchThemeListingByOrigin(
+	origin: string,
+): Promise<ThemeMarketListing | null> {
+	try {
+		// Query the market API for this specific origin
+		const response = await fetch(
+			`${ORDINALS_API}/market?origin=${origin}`,
+		);
+
+		if (!response.ok) {
+			return null;
+		}
+
+		const results = await response.json();
+		if (!results || results.length === 0) {
+			return null;
+		}
+
+		const item = results[0];
+		const { validateThemeToken } = await import("@theme-token/sdk");
+
+		// Fetch and validate the theme content
+		const content = await fetchOrdinalContent(origin);
+		if (!content) {
+			return null;
+		}
+
+		const result = validateThemeToken(content);
+		if (!result.valid) {
+			return null;
+		}
+
+		return {
+			outpoint: item.outpoint,
+			origin: item.origin?.outpoint || origin,
+			price: item.data?.list?.price || 0,
+			owner: item.owner,
+			data: {
+				insc: item.origin?.data?.insc || item.data?.insc,
+				map: item.origin?.data?.map || item.data?.map,
+			},
+			theme: result.theme,
+		};
+	} catch (err) {
+		console.error("[Market] Failed to fetch listing for origin:", origin, err);
+		return null;
+	}
+}
+
+/**
  * Fetch all font listings from the marketplace
  * Queries the GorillaPool market API for font inscriptions
  */

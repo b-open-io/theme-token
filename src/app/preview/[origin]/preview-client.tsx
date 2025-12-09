@@ -9,10 +9,12 @@ import {
   Check,
   Copy,
   CreditCard,
+  ExternalLink,
   Grid3X3,
   LayoutDashboard,
   Moon,
   Palette,
+  ShoppingCart,
   Sparkles,
   Sun,
   Type,
@@ -36,8 +38,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isOnChainFont, loadThemeFonts } from "@/lib/font-loader";
 import { cn } from "@/lib/utils";
+import { BuyThemeModal } from "@/components/market/buy-theme-modal";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
 import { ThemeHeaderStripe } from "@/components/preview/theme-header-stripe";
+import { storeRemixTheme } from "@/components/theme-gallery";
+import { fetchThemeListingByOrigin, type ThemeMarketListing } from "@/lib/yours-wallet";
 
 interface PreviewClientProps {
   theme: ThemeToken;
@@ -133,6 +139,9 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
   const [copied, setCopied] = useState(false);
   const [copiedOrigin, setCopiedOrigin] = useState(false);
   const [showRemixDialog, setShowRemixDialog] = useState(false);
+  const [listing, setListing] = useState<ThemeMarketListing | null>(null);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 
   // Determine active tab from URL or initial prop
   const activeTabFromUrl = useMemo<TabId>(() => {
@@ -240,6 +249,17 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
     }).catch(() => {});
   }, [origin, theme]);
 
+  // Fetch listing to check if for sale
+  useEffect(() => {
+    fetchThemeListingByOrigin(origin).then(setListing).catch(() => {});
+  }, [origin]);
+
+  const handlePurchaseComplete = useCallback((txid: string) => {
+    setSuccessModal({ theme, txid });
+    setListing(null); // No longer for sale
+    setShowBuyModal(false);
+  }, [theme]);
+
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
@@ -271,7 +291,7 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
               </Button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Mode Toggle */}
               <Button
                 variant="outline"
@@ -299,22 +319,9 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
                 )}
               </Button>
 
-              {/* External Link */}
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  href={`https://1satordinals.com/outpoint/${origin}`}
-                  target="_blank"
-                >
-                  <span className="hidden sm:inline mr-2">View Inscription</span>
-                  <span className="sm:hidden mr-2">1Sat</span>
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
-                  </svg>
-                </Link>
-              </Button>
-
               {/* Remix Button */}
               <Button
+                variant={listing ? "outline" : "default"}
                 size="sm"
                 onClick={() => setShowRemixDialog(true)}
                 className="gap-1.5"
@@ -322,6 +329,18 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
                 <Sparkles className="h-4 w-4" />
                 <span className="hidden sm:inline">Remix</span>
               </Button>
+
+              {/* Buy Button - only if for sale */}
+              {listing && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowBuyModal(true)}
+                  className="gap-1.5"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Buy</span>
+                </Button>
+              )}
             </div>
           </div>
         </header>
@@ -357,19 +376,30 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
                       {theme.author}
                     </span>
                     <span className="mx-2" style={{ color: "var(--border)" }}>/</span>
-                    <button
-                      type="button"
-                      onClick={copyOrigin}
-                      className="inline-flex items-center gap-1 font-mono text-xs hover:text-foreground transition-colors group"
-                      title="Copy full origin TXID"
-                    >
-                      <span>{origin.slice(0, 8)}...</span>
-                      {copiedOrigin ? (
-                        <Check className="h-3 w-3 text-green-500" />
-                      ) : (
-                        <Copy className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-                      )}
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 group">
+                      <button
+                        type="button"
+                        onClick={copyOrigin}
+                        className="inline-flex items-center gap-1 font-mono text-xs hover:text-foreground transition-colors"
+                        title="Copy full origin TXID"
+                      >
+                        <span>{origin.slice(0, 8)}...</span>
+                        {copiedOrigin ? (
+                          <Check className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <Copy className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                        )}
+                      </button>
+                      <a
+                        href={`https://1sat.market/outpoint/${origin}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity"
+                        title="View on 1Sat Market"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </span>
                   </p>
                 )}
               </div>
@@ -475,6 +505,30 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
             );
           }}
         />
+
+        {/* Buy Modal */}
+        {listing && (
+          <BuyThemeModal
+            isOpen={showBuyModal}
+            onClose={() => setShowBuyModal(false)}
+            listing={listing}
+            onPurchaseComplete={handlePurchaseComplete}
+          />
+        )}
+
+        {/* Success Modal */}
+        {successModal && (
+          <PurchaseSuccessModal
+            isOpen={true}
+            onClose={() => setSuccessModal(null)}
+            theme={successModal.theme}
+            txid={successModal.txid}
+            onApplyNow={() => {
+              storeRemixTheme(successModal.theme);
+              router.push("/studio/theme");
+            }}
+          />
+        )}
       </div>
     </div>
   );
