@@ -83,7 +83,6 @@ function ThemeCard({
 	onHover: (cardId: string | null) => void;
 }) {
 	const { mode } = useTheme();
-	const router = useRouter();
 	const colors = [
 		theme.styles[mode].background,
 		theme.styles[mode].card,
@@ -95,20 +94,6 @@ function ThemeCard({
 		theme.styles[mode].destructive,
 	];
 
-	const handleClick = (e: React.MouseEvent) => {
-		e.preventDefault();
-		const href = `/preview/${origin}`;
-
-		// Wrap navigation in view transition if supported
-		if (document.startViewTransition) {
-			document.startViewTransition(() => {
-				router.push(href);
-			});
-		} else {
-			router.push(href);
-		}
-	};
-
 	// Only the hovered card gets the real viewTransitionName
 	// Others get a unique fake one to avoid duplicates
 	const viewTransitionName = isActiveForTransition
@@ -116,9 +101,9 @@ function ThemeCard({
 		: `theme-stripe-${cardId}`;
 
 	return (
-		<div
+		<Link
+			href={`/preview/${origin}`}
 			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
-			onClick={handleClick}
 			onMouseEnter={() => onHover(cardId)}
 			onMouseLeave={() => onHover(null)}
 		>
@@ -162,7 +147,7 @@ function ThemeCard({
 					{theme.name}
 				</p>
 			</div>
-		</div>
+		</Link>
 	);
 }
 
