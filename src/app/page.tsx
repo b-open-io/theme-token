@@ -329,49 +329,6 @@ export default function Home() {
 				</PageContainer>
 			</section>
 
-			{/* Footer */}
-			<footer className="border-t border-border py-12">
-				<PageContainer>
-					<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-						<div className="flex items-center gap-2">
-							<Layers className="h-5 w-5 text-primary" />
-							<span className="font-semibold">Theme Token</span>
-							<Badge variant="outline" className="ml-2">
-								v1.0
-							</Badge>
-						</div>
-						<p className="text-sm text-muted-foreground">
-							Open source. Built on Bitcoin.
-						</p>
-						<div className="flex gap-4">
-							<a
-								href="https://github.com/b-open-io/theme-token"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-sm text-muted-foreground hover:text-foreground"
-							>
-								GitHub
-							</a>
-							<a
-								href="https://1satordinals.com"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-sm text-muted-foreground hover:text-foreground"
-							>
-								1Sat Ordinals
-							</a>
-							<a
-								href="https://ui.shadcn.com"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-sm text-muted-foreground hover:text-foreground"
-							>
-								ShadCN UI
-							</a>
-						</div>
-					</div>
-				</PageContainer>
-			</footer>
 		</div>
 	);
 }
