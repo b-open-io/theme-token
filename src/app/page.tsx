@@ -91,7 +91,7 @@ export default function Home() {
 						</Badge>
 
 						<h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-							<span className="block">ShadCN UI,</span>
+							<span className="block">Shadcn Themes,</span>
 							<span className="block text-primary">on Bitcoin</span>
 						</h1>
 

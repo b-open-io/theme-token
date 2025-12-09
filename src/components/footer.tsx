@@ -3,10 +3,12 @@
 import {
 	Box,
 	Cpu,
+	ExternalLink,
 	Github,
 	Layers,
 	Package,
 	Palette,
+	Wallet,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -135,13 +137,21 @@ export function Footer() {
 								</a>
 							</li>
 							<li>
+								<Link
+									href="/spec#sdk"
+									className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+								>
+									<Package className="w-3.5 h-3.5" /> SDK
+								</Link>
+							</li>
+							<li>
 								<a
-									href="https://www.npmjs.com/package/@theme-token/sdk"
+									href="https://yours.org"
 									target="_blank"
 									rel="noreferrer"
 									className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
 								>
-									<Package className="w-3.5 h-3.5" /> SDK Package
+									<Wallet className="w-3.5 h-3.5" /> Yours Wallet
 								</a>
 							</li>
 						</ul>
@@ -153,37 +163,53 @@ export function Footer() {
 							Infrastructure
 						</h3>
 
-						<div className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group">
+						<a
+							href="https://1satordinals.com"
+							target="_blank"
+							rel="noreferrer"
+							className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group"
+						>
 							<div className="flex items-start gap-3">
 								<div className="bg-orange-500/10 p-2 rounded-md text-orange-500">
 									<Box className="w-4 h-4" />
 								</div>
-								<div>
-									<h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
-										Built on Bitcoin SV
-									</h4>
-									<p className="text-xs text-muted-foreground mt-1">
-										Unbounded scaling and low fees of the original Bitcoin.
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group">
-							<div className="flex items-start gap-3">
-								<div className="bg-blue-500/10 p-2 rounded-md text-blue-500">
-									<Cpu className="w-4 h-4" />
-								</div>
-								<div>
-									<h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
-										1Sat Ordinals
-									</h4>
+								<div className="flex-1">
+									<div className="flex items-center justify-between">
+										<h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
+											1Sat Ordinals
+										</h4>
+										<ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+									</div>
 									<p className="text-xs text-muted-foreground mt-1">
 										Themes inscribed on-chain. Permanent ownership.
 									</p>
 								</div>
 							</div>
-						</div>
+						</a>
+
+						<a
+							href="https://ordfs.network"
+							target="_blank"
+							rel="noreferrer"
+							className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group"
+						>
+							<div className="flex items-start gap-3">
+								<div className="bg-blue-500/10 p-2 rounded-md text-blue-500">
+									<Cpu className="w-4 h-4" />
+								</div>
+								<div className="flex-1">
+									<div className="flex items-center justify-between">
+										<h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
+											ORDFS Network
+										</h4>
+										<ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+									</div>
+									<p className="text-xs text-muted-foreground mt-1">
+										Decentralized file system for ordinals content.
+									</p>
+								</div>
+							</div>
+						</a>
 					</div>
 				</div>
 
