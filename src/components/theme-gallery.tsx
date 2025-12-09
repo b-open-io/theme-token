@@ -91,7 +91,16 @@ function ThemeCard({
 
 	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
-		router.push(`/preview/${origin}`);
+		const href = `/preview/${origin}`;
+
+		// Wrap navigation in view transition if supported
+		if (document.startViewTransition) {
+			document.startViewTransition(() => {
+				router.push(href);
+			});
+		} else {
+			router.push(href);
+		}
 	};
 
 	return (

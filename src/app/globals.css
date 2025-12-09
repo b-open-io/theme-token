@@ -300,9 +300,22 @@
 	animation: marquee linear infinite;
 }
 
-/* View Transition - Use Web Animations API for dynamic clip-path */
+/* View Transition - Smooth page transitions */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-	animation: none;
+	animation-duration: 0.3s;
+	animation-timing-function: ease-out;
 	mix-blend-mode: normal;
+}
+
+/* Theme stripe shared element transition */
+::view-transition-group(theme-stripe-*) {
+	animation-duration: 0.4s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(theme-stripe-*),
+::view-transition-new(theme-stripe-*) {
+	animation-duration: 0.4s;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

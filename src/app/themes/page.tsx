@@ -37,10 +37,14 @@ function ThemeCard({
 	const { mode } = useTheme();
 	const { theme, origin } = cached;
 	const colors = [
-		theme.styles[mode].primary,
-		theme.styles[mode].secondary,
-		theme.styles[mode].accent,
 		theme.styles[mode].background,
+		theme.styles[mode].card,
+		theme.styles[mode].popover,
+		theme.styles[mode].muted,
+		theme.styles[mode].accent,
+		theme.styles[mode].secondary,
+		theme.styles[mode].primary,
+		theme.styles[mode].destructive,
 	];
 
 	return (
@@ -51,7 +55,10 @@ function ThemeCard({
 		>
 			{/* Color Preview */}
 			<Link href={`/preview/${origin}`}>
-				<div className="relative h-32 cursor-pointer overflow-hidden">
+				<div
+					className="relative h-32 cursor-pointer overflow-hidden"
+					style={{ viewTransitionName: `theme-stripe-${origin}` } as React.CSSProperties}
+				>
 					<div className="absolute inset-0 flex">
 						{colors.map((color, i) => (
 							<div key={i} className="flex-1" style={{ backgroundColor: color }} />
