@@ -96,9 +96,7 @@ export default function Home() {
 						</h1>
 
 						<p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-							Themes on-chain. Install via{" "}
-							<span className="font-semibold text-foreground">CLI</span>.
-							No servers. No downtime.
+							Ownable, cross-site theming. Buy, Sell, Create.
 						</p>
 
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
