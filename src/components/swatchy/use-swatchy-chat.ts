@@ -2,22 +2,26 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSwatchyStore } from "./swatchy-store";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
 	PAID_TOOLS,
 	TOOL_COSTS,
 	FEE_ADDRESS,
+	type SwatchyContext,
 } from "@/lib/agent/config";
 import type { ToolName } from "@/lib/agent/tools";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
 import { storeRemixTheme } from "@/components/theme-gallery";
+import { useTheme } from "@/components/theme-provider";
 
 export function useSwatchyChat() {
 	const router = useRouter();
+	const pathname = usePathname();
+	const { mode: themeMode } = useTheme();
 	const { sendPayment, status: walletStatus, balance } = useYoursWallet();
 	const {
 		paymentPending,
@@ -34,11 +38,84 @@ export function useSwatchyChat() {
 		setChatMessages,
 		chatInput,
 		setChatInput,
+		remixContext,
+		consumePendingMessage,
+		position,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
-	const { setThemeColor, setThemeRadius, setThemeFont } = useStudioStore();
-	const { setParams: setPatternParams, setColors: setPatternColors } = usePatternStore();
+	const studioStore = useStudioStore();
+	const { setThemeColor, setThemeRadius, setThemeFont } = studioStore;
+	const patternStore = usePatternStore();
+	const { setParams: setPatternParams, setColors: setPatternColors } = patternStore;
+
+	// Build context to pass to API - includes current state for Swatchy's awareness
+	const context = useMemo((): SwatchyContext => {
+		const ctx: SwatchyContext = {
+			currentPage: pathname,
+			themeMode: themeMode as "light" | "dark",
+			walletConnected: walletStatus === "connected",
+			walletBalance: balance?.satoshis,
+		};
+
+		// Add current theme being edited if in studio
+		if (pathname.includes("/studio/theme") && studioStore.themeColors) {
+			const { themeColors, themeRadius, themeFonts } = studioStore;
+			ctx.currentTheme = {
+				name: "Current Theme",
+				colors: {
+					primary: themeColors.light.primary,
+					secondary: themeColors.light.secondary,
+					accent: themeColors.light.accent,
+					background: themeColors.light.background,
+					foreground: themeColors.light.foreground,
+					muted: themeColors.light.muted,
+				},
+				radius: themeRadius,
+				fonts: {
+					sans: themeFonts.sans,
+					serif: themeFonts.serif,
+					mono: themeFonts.mono,
+				},
+			};
+		}
+
+		// Add remix context if remixing a theme
+		if (remixContext) {
+			const { theme } = remixContext;
+			ctx.currentTheme = {
+				name: theme.name,
+				colors: {
+					primary: theme.styles.light.primary,
+					secondary: theme.styles.light.secondary,
+					accent: theme.styles.light.accent,
+					background: theme.styles.light.background,
+					foreground: theme.styles.light.foreground,
+					muted: theme.styles.light.muted,
+				},
+				radius: theme.styles.light.radius,
+			};
+		}
+
+		// Add pattern state if in pattern studio
+		if (pathname.includes("/studio/pattern")) {
+			ctx.patternState = {
+				source: patternStore.generatorType,
+				scale: patternStore.params.spacing,
+				opacity: patternStore.params.opacity,
+			};
+		}
+
+		return ctx;
+	}, [pathname, themeMode, walletStatus, balance, studioStore, patternStore, remixContext]);
+
+	// Create transport with context in body - recreate when context changes
+	const transport = useMemo(() => {
+		return new DefaultChatTransport({
+			api: "/api/swatchy",
+			body: { context },
+		});
+	}, [context]);
 
 	const {
 		messages,
@@ -49,9 +126,7 @@ export function useSwatchyChat() {
 		addToolOutput,
 	} = useChat({
 		id: "swatchy-chat",
-		transport: new DefaultChatTransport({
-			api: "/api/swatchy",
-		}),
+		transport,
 		onToolCall: async ({ toolCall }) => {
 			const toolName = toolCall.toolName as ToolName;
 
@@ -107,6 +182,23 @@ export function useSwatchyChat() {
 			setChatMessages(messages);
 		}
 	}, [messages, setChatMessages]);
+
+	// Handle pending message when chat opens (e.g., from remix button)
+	const hasSentPendingRef = useRef(false);
+	useEffect(() => {
+		if (position === "expanded" && !hasSentPendingRef.current) {
+			const pendingMessage = consumePendingMessage();
+			if (pendingMessage) {
+				hasSentPendingRef.current = true;
+				// Send the pending message automatically
+				sendMessage({ text: pendingMessage });
+			}
+		}
+		// Reset when chat closes
+		if (position === "corner") {
+			hasSentPendingRef.current = false;
+		}
+	}, [position, consumePendingMessage, sendMessage]);
 
 	// Compute loading state from status
 	const isLoading = status === "submitted" || status === "streaming";

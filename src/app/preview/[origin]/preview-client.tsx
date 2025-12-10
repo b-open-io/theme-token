@@ -22,7 +22,6 @@ import {
   Type,
 } from "lucide-react";
 import type { ThemeSource } from "./page";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition, ViewTransition } from "react";
@@ -44,10 +43,10 @@ import { isOnChainFont, loadThemeFonts } from "@/lib/font-loader";
 import { cn } from "@/lib/utils";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
-import { UnifiedRemixDialog } from "@/components/market/unified-remix-dialog";
 import { ThemeHeaderStripe } from "@/components/preview/theme-header-stripe";
 import { storeRemixTheme } from "@/components/theme-gallery";
-import { fetchThemeListingByOrigin, type ThemeMarketListing } from "@/lib/yours-wallet";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
+import { fetchThemeListingByOrigin } from "@/lib/yours-wallet";
 
 interface PreviewClientProps {
   theme: ThemeToken;
@@ -143,9 +142,11 @@ export function PreviewClient({ theme, origin, initialTab, source, owner }: Prev
   const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
   const [copied, setCopied] = useState(false);
   const [copiedOrigin, setCopiedOrigin] = useState(false);
-  const [showRemixDialog, setShowRemixDialog] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+
+  // Swatchy store for remix
+  const { openWithRemix } = useSwatchyStore();
 
   // Fetch listing to check if for sale
   const { data: listing, refetch: refetchListing } = useQuery({
@@ -346,11 +347,11 @@ export function PreviewClient({ theme, origin, initialTab, source, owner }: Prev
                 )}
               </Button>
 
-              {/* Remix Button */}
+              {/* Remix Button - Opens Swatchy with theme context */}
               <Button
                 variant={listing ? "outline" : "default"}
                 size="sm"
-                onClick={() => setShowRemixDialog(true)}
+                onClick={() => openWithRemix(theme, origin)}
                 className="gap-1.5"
               >
                 <Sparkles className="h-4 w-4" />
@@ -526,19 +527,6 @@ export function PreviewClient({ theme, origin, initialTab, source, owner }: Prev
             </TabsContent>
           </Tabs>
         </PageContainer>
-
-        {/* Remix Dialog */}
-        <UnifiedRemixDialog
-          isOpen={showRemixDialog}
-          onClose={() => setShowRemixDialog(false)}
-          type="theme"
-          previousTheme={theme}
-          onThemeRemixComplete={(newTheme) => {
-            router.push(
-              `/studio?remix=${encodeURIComponent(JSON.stringify(newTheme))}`,
-            );
-          }}
-        />
 
         {/* Buy Modal */}
         {listing && (

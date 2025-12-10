@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
 	conversationModel,
 	buildSwatchySystemPrompt,
+	type SwatchyContext,
 } from "@/lib/agent/config";
 import { getAvailableTools } from "@/lib/agent/tools";
 
@@ -11,7 +12,7 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { messages }: { messages: UIMessage[] } = body;
+		const { messages, context }: { messages: UIMessage[]; context?: SwatchyContext } = body;
 
 		if (!messages || !Array.isArray(messages)) {
 			return NextResponse.json(
@@ -20,8 +21,8 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Build dynamic system prompt and get available tools based on feature flags
-		const systemPrompt = buildSwatchySystemPrompt();
+		// Build dynamic system prompt with context and get available tools based on feature flags
+		const systemPrompt = buildSwatchySystemPrompt(context);
 		const availableTools = getAvailableTools();
 
 		// Use streaming text generation with tools
