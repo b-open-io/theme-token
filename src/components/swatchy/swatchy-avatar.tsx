@@ -15,37 +15,33 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isLeft = side === "left";
 
 	// Calculate positions based on state
+	// Use calc() with top/right consistently to enable smooth animation
+	// (can't animate between bottom and top - they're different properties)
 	const getAnimateProps = () => {
 		if (!isCorner) {
 			// Expanded - large avatar at top right, partially behind chat
 			return {
-				left: "auto",
-				bottom: "auto",
-				right: -20,
 				top: -75,
+				right: -20,
 				width: 280,
 				height: 280,
 			};
 		}
 
-		// Corner position - depends on side
+		// Corner position - use top with calc to position from bottom
 		if (isLeft) {
 			return {
-				left: 16,
-				bottom: 16,
-				right: "auto",
-				top: "auto",
+				top: "calc(100vh - 96px)", // 80px height + 16px margin
+				right: "calc(100vw - 96px)", // 80px width + 16px margin
 				width: 80,
 				height: 80,
 			};
 		}
 
-		// Right side
+		// Right side corner
 		return {
-			left: "auto",
-			bottom: 16,
+			top: "calc(100vh - 96px)", // 80px height + 16px margin
 			right: 16,
-			top: "auto",
 			width: 80,
 			height: 80,
 		};
