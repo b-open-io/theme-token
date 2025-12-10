@@ -161,8 +161,8 @@ export function ThemeNotFound() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Card className="max-w-md overflow-hidden shadow-2xl backdrop-blur-sm">
-            <CardHeader className="p-0">
+          <Card className="max-w-md gap-0 overflow-hidden py-0 shadow-2xl backdrop-blur-sm">
+            <CardHeader className="gap-0 p-0">
               <Image
                 src="/swatchy-not-found.jpeg"
                 alt="Swatchy in the mempool"
