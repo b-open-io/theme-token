@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import {
 	Check,
@@ -80,39 +79,6 @@ export default function Home() {
 				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
 
 				<PageContainer className="relative pb-24 pt-32">
-					{/* Swatchy Mascot - Floating in background */}
-					<motion.div
-						className="pointer-events-none absolute left-1/2 top-10 z-0 w-[300px] -translate-x-1/2 opacity-20 sm:opacity-30 lg:left-auto lg:right-0 lg:top-0 lg:w-[450px] lg:translate-x-1/4 lg:opacity-40"
-						initial={{ y: 20, opacity: 0 }}
-						animate={{
-							y: [0, -20, 0],
-							rotate: [0, 2, 0],
-							opacity: 1,
-						}}
-						transition={{
-							opacity: { duration: 1, delay: 0.5 },
-							y: {
-								duration: 6,
-								repeat: Number.POSITIVE_INFINITY,
-								ease: "easeInOut",
-							},
-							rotate: {
-								duration: 7,
-								repeat: Number.POSITIVE_INFINITY,
-								ease: "easeInOut",
-							},
-						}}
-					>
-						<Image
-							src="/swatchy-meditation.png"
-							alt="Swatchy Meditating"
-							width={1024}
-							height={1024}
-							className="h-auto w-full drop-shadow-2xl"
-							priority
-						/>
-					</motion.div>
-
 					<motion.div
 						initial={{ opacity: 0, y: 30 }}
 						animate={{ opacity: 1, y: 0 }}

@@ -3,6 +3,7 @@ import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
+import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -73,6 +74,7 @@ export default function RootLayout({
 						<Footer />
 					</div>
 					<Toaster position="bottom-right" richColors closeButton />
+					<SwatchyAssistant />
 				</Providers>
 			</body>
 		</html>
