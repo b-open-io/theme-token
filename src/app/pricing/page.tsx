@@ -71,9 +71,9 @@ function TheArtifact({ active }: { active: boolean }) {
 						{/* Terminal Header */}
 						<div>
 							<div className="mb-6 flex items-center gap-2">
-								<div className="h-3 w-3 rounded-full bg-red-500/60" />
-								<div className="h-3 w-3 rounded-full bg-yellow-500/60" />
-								<div className="h-3 w-3 rounded-full bg-green-500/60" />
+								<div className="traffic-close h-3 w-3 rounded-full" />
+								<div className="traffic-minimize h-3 w-3 rounded-full" />
+								<div className="traffic-maximize h-3 w-3 rounded-full" />
 								<span className="ml-2 font-mono text-xs text-muted-foreground">
 									guest.config
 								</span>
@@ -306,7 +306,7 @@ function AmbientBackground({ active }: { active: boolean }) {
 					scale: active ? 1.1 : 0.9,
 				}}
 				transition={{ delay: 0.1 }}
-				className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-purple-500/20 blur-[80px]"
+				className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-chart-5/20 blur-[80px]"
 			/>
 		</>
 	);
