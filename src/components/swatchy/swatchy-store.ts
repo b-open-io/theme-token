@@ -15,6 +15,9 @@ interface SwatchyStore {
 	// UI State
 	position: SwatchyPosition;
 
+	// Navigation tracking - when Swatchy triggers navigation, we don't reset position
+	isNavigating: boolean;
+
 	// Payment State
 	paymentPending: PaymentRequest | null;
 	paymentTxid: string | null;
@@ -23,6 +26,10 @@ interface SwatchyStore {
 	openChat: () => void;
 	closeChat: () => void;
 	toggleChat: () => void;
+
+	// Navigation Actions
+	setNavigating: (navigating: boolean) => void;
+	handleExternalNavigation: () => void;
 
 	// Payment Actions
 	setPaymentPending: (payment: PaymentRequest | null) => void;
@@ -35,6 +42,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 	persist(
 		(set, get) => ({
 			position: "corner",
+			isNavigating: false,
 			paymentPending: null,
 			paymentTxid: null,
 
@@ -54,6 +62,19 @@ export const useSwatchyStore = create<SwatchyStore>()(
 					get().openChat();
 				} else {
 					get().closeChat();
+				}
+			},
+
+			setNavigating: (isNavigating) => set({ isNavigating }),
+
+			handleExternalNavigation: () => {
+				const { isNavigating } = get();
+				if (isNavigating) {
+					// Navigation was triggered by Swatchy, just reset the flag
+					set({ isNavigating: false });
+				} else {
+					// External navigation - close chat and return to corner
+					set({ position: "corner" });
 				}
 			},
 

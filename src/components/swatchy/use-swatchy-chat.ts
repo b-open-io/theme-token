@@ -24,6 +24,7 @@ export function useSwatchyChat() {
 		confirmPayment,
 		cancelPayment,
 		closeChat,
+		setNavigating,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
@@ -91,6 +92,7 @@ export function useSwatchyChat() {
 					const url = params
 						? `${path}?${new URLSearchParams(params).toString()}`
 						: path;
+					setNavigating(true);
 					router.push(url);
 					closeChat();
 					return `Navigating to ${path}`;
@@ -134,14 +136,17 @@ export function useSwatchyChat() {
 				}
 
 				case "prepareInscribe":
+					setNavigating(true);
 					router.push(`/studio/${args.assetType}?inscribe=true&name=${encodeURIComponent(args.name as string)}`);
 					return `Opening ${args.assetType} studio for inscription`;
 
 				case "prepareListing":
+					setNavigating(true);
 					router.push(`/market/sell?origin=${encodeURIComponent(args.origin as string)}&price=${args.priceSatoshis}`);
 					return "Opening marketplace listing page";
 
 				case "browseThemes":
+					setNavigating(true);
 					router.push("/themes");
 					closeChat();
 					return "Opening themes gallery";
@@ -160,7 +165,7 @@ export function useSwatchyChat() {
 					return `Unknown tool: ${toolName}`;
 			}
 		},
-		[router, closeChat, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors],
+		[router, closeChat, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors],
 	);
 
 	// Handle payment confirmation for paid tools

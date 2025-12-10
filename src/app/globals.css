@@ -300,3 +300,11 @@
 	animation: marquee linear infinite;
 }
 
+/* View Transition - Enable smooth theme toggle animations */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 0.5s;
+	animation-timing-function: ease-out;
+	mix-blend-mode: normal;
+}
+

@@ -1,9 +1,9 @@
 // Model IDs for AI Gateway (Vercel AI SDK v6 gateway format)
 // Free model for conversation - fast and cost-effective
-export const conversationModel = "google/gemini-2.5-flash-preview-05-20" as const;
+export const conversationModel = "google/gemini-2.0-flash" as const;
 
 // Paid model for expensive generation operations
-export const generationModel = "google/gemini-2.5-pro-preview-06-05" as const;
+export const generationModel = "google/gemini-3-pro-preview" as const;
 
 // Tool cost configuration (in satoshis)
 export const TOOL_COSTS = {
