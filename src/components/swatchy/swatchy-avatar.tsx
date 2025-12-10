@@ -36,15 +36,15 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 		if (isHero) {
 			// Hero pose - larger, positioned to the right side of the hero content
-			// Positioned lower-right of the hero section, not blocking centered UI
+			// Higher up and more towards center, but not blocking the main UI
 			return {
 				position: "fixed",
 				top: "auto",
-				bottom: "18%",
+				bottom: "25%",
 				left: "auto",
-				right: "8%",
-				width: 200,
-				height: 200,
+				right: "15%",
+				width: 280,
+				height: 280,
 				zIndex: 40, // Below corner z-index so it doesn't feel too prominent
 			};
 		}

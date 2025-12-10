@@ -13,7 +13,7 @@ import { useSwatchyStore } from "./swatchy-store";
  */
 export function SwatchyHeroController() {
 	const { scrollY } = useScroll();
-	const { position, setHeroMode, isChatOpen } = useSwatchyStore();
+	const setHeroMode = useSwatchyStore((s) => s.setHeroMode);
 
 	// Set initial state based on scroll position on mount
 	useEffect(() => {
@@ -24,7 +24,8 @@ export function SwatchyHeroController() {
 
 		// Check initial scroll position to prevent flicker on refresh
 		const initialScroll = typeof window !== "undefined" ? window.scrollY : 0;
-		if (!isChatOpen()) {
+		const store = useSwatchyStore.getState();
+		if (!store.isChatOpen()) {
 			setHeroMode(initialScroll < 150);
 		}
 
@@ -34,7 +35,7 @@ export function SwatchyHeroController() {
 				setHeroMode(false);
 			}
 		};
-	}, [isChatOpen, setHeroMode]);
+	}, [setHeroMode]);
 
 	// Listen to scroll changes
 	useMotionValueEvent(scrollY, "change", (latest) => {
@@ -43,15 +44,19 @@ export function SwatchyHeroController() {
 			return;
 		}
 
+		// Get fresh state from store (not stale closure values)
+		const store = useSwatchyStore.getState();
+
 		// If chat is open, scroll should NOT affect Swatchy
-		if (isChatOpen()) return;
+		if (store.isChatOpen()) return;
 
 		// Threshold: switch between hero and corner
 		const threshold = 150;
+		const currentPosition = store.position;
 
-		if (latest < threshold && position !== "hero" && position !== "expanded") {
+		if (latest < threshold && currentPosition === "corner") {
 			setHeroMode(true);
-		} else if (latest >= threshold && position === "hero") {
+		} else if (latest >= threshold && currentPosition === "hero") {
 			setHeroMode(false);
 		}
 	});
