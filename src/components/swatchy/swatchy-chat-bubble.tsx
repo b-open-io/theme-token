@@ -23,6 +23,7 @@ import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import { useSwatchyStore } from "./swatchy-store";
 import { useSwatchyChat } from "./use-swatchy-chat";
 import { PaymentRequestCard } from "./payment-request";
+import { BlockPreview } from "./block-preview";
 import { featureFlags } from "@/lib/feature-flags";
 import type { ThemeToken } from "@theme-token/sdk";
 
@@ -198,12 +199,14 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	prepareListing: "Preparing listing",
 	getWalletBalance: "Checking balance",
 	getExchangeRate: "Getting exchange rate",
+	generateBlock: "Generating block",
+	generateComponent: "Generating component",
 };
 
 export function SwatchyChatBubble() {
 	const router = useRouter();
 	const pathname = usePathname();
-	const { closeChat, setNavigating, clearGeneration } = useSwatchyStore();
+	const { closeChat, setNavigating, clearGeneration, generatedRegistryItem } = useSwatchyStore();
 	const {
 		messages,
 		input,
@@ -452,7 +455,9 @@ export function SwatchyChatBubble() {
 									<span className="text-sm font-medium text-green-700 dark:text-green-300">
 										{generation.toolName === "generateTheme" && generation.result
 											? `"${(generation.result as ThemeToken).name}" created!`
-											: "Generation complete!"}
+											: (generation.toolName === "generateBlock" || generation.toolName === "generateComponent")
+												? "Code generated!"
+												: "Generation complete!"}
 									</span>
 								</div>
 								{generation.toolName === "generateTheme" && (
@@ -477,6 +482,11 @@ export function SwatchyChatBubble() {
 									</div>
 								)}
 							</motion.div>
+						)}
+
+						{/* Block/Component preview */}
+						{generatedRegistryItem && (
+							<BlockPreview item={generatedRegistryItem} />
 						)}
 
 						{/* Generation error */}

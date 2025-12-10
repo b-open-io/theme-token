@@ -48,6 +48,25 @@ export interface AIGeneratedTheme {
 	timestamp: number;
 }
 
+// Generated registry item (block or component)
+export interface GeneratedRegistryItem {
+	manifest: {
+		name: string;
+		type: "registry:block" | "registry:component";
+		description: string;
+		dependencies: string[];
+		registryDependencies: string[];
+		files: Array<{
+			path: string;
+			type: string;
+			content: string;
+			vout?: number;
+		}>;
+	};
+	txid: string;
+	timestamp: number;
+}
+
 interface SwatchyStore {
 	// UI State
 	position: SwatchyPosition;
@@ -64,6 +83,9 @@ interface SwatchyStore {
 
 	// AI-generated theme (single source of truth for success modal/confetti)
 	aiGeneratedTheme: AIGeneratedTheme | null;
+
+	// Generated registry item (block or component) for preview
+	generatedRegistryItem: GeneratedRegistryItem | null;
 
 	// Payment State
 	paymentPending: PaymentRequest | null;
@@ -95,6 +117,10 @@ interface SwatchyStore {
 	// AI Generation Actions
 	setAIGeneratedTheme: (theme: ThemeToken, txid: string) => void;
 	clearAIGeneratedTheme: () => void;
+
+	// Registry Item Generation Actions
+	setGeneratedRegistryItem: (manifest: GeneratedRegistryItem["manifest"], txid: string) => void;
+	clearGeneratedRegistryItem: () => void;
 
 	// Navigation Actions
 	setNavigating: (navigating: boolean) => void;
@@ -140,6 +166,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			context: null,
 			remixContext: null,
 			aiGeneratedTheme: null,
+			generatedRegistryItem: null,
 			paymentPending: null,
 			paymentTxid: null,
 			generation: initialGenerationState,
@@ -218,6 +245,17 @@ How would you like to modify this theme?`;
 				}),
 
 			clearAIGeneratedTheme: () => set({ aiGeneratedTheme: null }),
+
+			setGeneratedRegistryItem: (manifest, txid) =>
+				set({
+					generatedRegistryItem: {
+						manifest,
+						txid,
+						timestamp: Date.now(),
+					},
+				}),
+
+			clearGeneratedRegistryItem: () => set({ generatedRegistryItem: null }),
 
 			setNavigating: (isNavigating) => {
 				// When Swatchy triggers navigation, toggle which side he's on for fun

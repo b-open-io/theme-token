@@ -44,6 +44,7 @@ export function useSwatchyChat() {
 		consumePendingMessage,
 		position,
 		setAIGeneratedTheme,
+		setGeneratedRegistryItem,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
@@ -449,11 +450,84 @@ export function useSwatchyChat() {
 					}
 				}
 
+				case "generateBlock": {
+					setGenerating(toolName, "Generating your block...");
+					try {
+						const response = await fetch("/api/generate-block", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt: args.prompt,
+								name: args.name,
+								includeHook: args.includeHook,
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate block");
+						}
+
+						const data = await response.json();
+
+						// Store the generated block for preview
+						setGeneratedRegistryItem(data.block, txid);
+						setGenerationSuccess(data.block);
+
+						const fileCount = data.block.files.length;
+						const deps = data.block.registryDependencies.length > 0
+							? ` Uses: ${data.block.registryDependencies.join(", ")}.`
+							: "";
+
+						return `Block "${data.block.name}" generated! ${fileCount} file(s).${deps} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+						return `Error generating block: ${errorMsg}`;
+					}
+				}
+
+				case "generateComponent": {
+					setGenerating(toolName, "Generating your component...");
+					try {
+						const response = await fetch("/api/generate-component", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt: args.prompt,
+								name: args.name,
+								variants: args.variants,
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate component");
+						}
+
+						const data = await response.json();
+
+						// Store the generated component for preview
+						setGeneratedRegistryItem(data.component, txid);
+						setGenerationSuccess(data.component);
+
+						const deps = data.component.registryDependencies.length > 0
+							? ` Based on: ${data.component.registryDependencies.join(", ")}.`
+							: "";
+
+						return `Component "${data.component.name}" generated!${deps} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+						return `Error generating component: ${errorMsg}`;
+					}
+				}
+
 				default:
 					return `Unknown paid tool: ${toolName}`;
 			}
 		},
-		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, setAIGeneratedTheme, router, pathname],
+		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, setAIGeneratedTheme, setGeneratedRegistryItem, router, pathname],
 	);
 
 	// Handle payment confirmation for paid tools

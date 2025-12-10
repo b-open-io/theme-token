@@ -125,6 +125,66 @@ export const generateWallpaper = tool({
 });
 
 // ============================================================================
+// Registry Tools (Paid - generate shadcn blocks and components)
+// ============================================================================
+
+export const generateBlock = tool({
+	description: `Generate a shadcn UI block using AI. This costs 1,000,000 satoshis (~0.01 BSV).
+
+A block is a complex, multi-component UI composition like:
+- Dashboard sections (stats, charts, activity feeds)
+- Authentication flows (login forms, signup wizards)
+- Feature sections (pricing tables, testimonials, hero sections)
+- Data displays (data tables with filters, card grids)
+
+The AI generates production-ready React code following shadcn patterns.
+All blocks use CSS variables for theme-awareness.`,
+	inputSchema: z.object({
+		prompt: z
+			.string()
+			.describe(
+				"Description of the desired block (e.g., 'pricing table with three tiers and feature comparison', 'dashboard stats section with 4 metric cards')",
+			),
+		name: z
+			.string()
+			.optional()
+			.describe("Optional name for the block (e.g., 'pricing-table', 'stats-dashboard')"),
+		includeHook: z
+			.boolean()
+			.optional()
+			.describe("Whether to generate a companion React hook for state/logic"),
+	}),
+});
+
+export const generateComponent = tool({
+	description: `Generate a single shadcn UI component using AI. This costs 500,000 satoshis (~0.005 BSV).
+
+A component is a reusable UI element like:
+- Custom buttons with specific styling
+- Specialized input fields
+- Card variants
+- Custom badges, avatars, or indicators
+
+The AI generates production-ready React code following shadcn patterns.
+All components use CSS variables for theme-awareness.`,
+	inputSchema: z.object({
+		prompt: z
+			.string()
+			.describe(
+				"Description of the desired component (e.g., 'animated submit button with loading state', 'user avatar with online status indicator')",
+			),
+		name: z
+			.string()
+			.optional()
+			.describe("Optional name for the component (e.g., 'submit-button', 'user-avatar')"),
+		variants: z
+			.array(z.string())
+			.optional()
+			.describe("Optional variant names to generate (e.g., ['default', 'outline', 'ghost'])"),
+	}),
+});
+
+// ============================================================================
 // Studio Control Tools (Free - manipulate current studio state)
 // ============================================================================
 
@@ -299,6 +359,12 @@ export function getAvailableTools() {
 		tools.generateWallpaper = generateWallpaper;
 	}
 
+	// Add registry-related tools if registry feature is enabled
+	if (featureFlags.registry) {
+		tools.generateBlock = generateBlock;
+		tools.generateComponent = generateComponent;
+	}
+
 	return tools;
 }
 
@@ -308,6 +374,8 @@ export const allTools = {
 	generateFont,
 	generatePattern,
 	generateWallpaper,
+	generateBlock,
+	generateComponent,
 	setThemeColor,
 	setThemeRadius,
 	setThemeFont,

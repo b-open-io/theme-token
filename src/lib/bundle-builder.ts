@@ -1,15 +1,4 @@
-import type { ThemeStyleProps, ThemeToken } from "@theme-token/sdk";
-
-// TODO: Import from SDK once published
-// ThemeBundle type - will be added to @theme-token/sdk
-interface ThemeBundle {
-	version: 1;
-	assets: Array<{
-		vout: number;
-		type: "font" | "pattern" | "wallpaper" | "icon";
-		slot: string;
-	}>;
-}
+import type { ThemeStyleProps, ThemeToken, ThemeBundle } from "@theme-token/sdk";
 import type { BundleAssetType, BundleItem } from "@/hooks/use-yours-wallet";
 
 /**
@@ -147,11 +136,10 @@ export function buildThemeBundle(
 	};
 
 	// Merge bundle info into theme
-	// TODO: Remove type assertion once SDK is updated with bundle field
-	const finalTheme = {
+	const finalTheme: ThemeToken = {
 		...themeWithRefs,
 		bundle: bundleMetadata,
-	} as ThemeToken & { bundle: ThemeBundle };
+	};
 
 	// Convert theme to base64 for inscription
 	const themeJson = JSON.stringify(finalTheme);

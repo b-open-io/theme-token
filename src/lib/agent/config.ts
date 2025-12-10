@@ -14,6 +14,8 @@ export const TOOL_COSTS = {
 	generateFont: 10_000_000, // 10M sats (~$0.10 BSV)
 	generatePattern: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateWallpaper: 1_000_000, // 1M sats (~$0.01 BSV)
+	generateBlock: 1_000_000, // 1M sats (~$0.01 BSV)
+	generateComponent: 500_000, // 500K sats (~$0.005 BSV)
 } as const;
 
 // Tools that require payment before execution
@@ -22,6 +24,8 @@ export const PAID_TOOLS = new Set([
 	"generateFont",
 	"generatePattern",
 	"generateWallpaper",
+	"generateBlock",
+	"generateComponent",
 ]);
 
 // Tools that require wallet connection
@@ -103,6 +107,17 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 	if (featureFlags.wallpapers) {
 		capabilities.push(
 			`${capabilityNumber}. **Wallpaper Generation** - Create AI wallpapers for desktop/mobile (costs 1M sats)`,
+		);
+		capabilityNumber++;
+	}
+
+	if (featureFlags.registry) {
+		capabilities.push(
+			`${capabilityNumber}. **Block Generation** - Create complex shadcn UI blocks (costs 1M sats)`,
+		);
+		capabilityNumber++;
+		capabilities.push(
+			`${capabilityNumber}. **Component Generation** - Create single shadcn components (costs 500K sats)`,
 		);
 		capabilityNumber++;
 	}
@@ -253,6 +268,34 @@ To publish a theme on-chain:
 - fetchThemeByOrigin() - Fetch from blockchain
 - parseCss() - Convert CSS to ThemeToken
 - applyTheme() - Apply at runtime
+
+### Blocks & Components (Registry Items)
+Blocks and components are shadcn-compatible React code inscribed on-chain:
+
+**Installing from blockchain:**
+\`\`\`bash
+bunx shadcn@latest add https://themetoken.dev/r/blocks/[origin]
+bunx shadcn@latest add https://themetoken.dev/r/components/[origin]
+\`\`\`
+
+**What's a Block vs Component?**
+- **Block**: Complex multi-component composition (dashboard, auth flow, pricing table)
+- **Component**: Single reusable UI element (button variant, avatar, badge)
+
+## Code Generation Rules
+
+When generating blocks or components, you MUST follow these rules:
+
+1. **IMPORTS**: Use standard shadcn aliases - \`import { Button } from "@/components/ui/button"\`
+2. **DEPENDENCIES**: Track npm deps needed (lucide-react, zod, date-fns, etc.)
+3. **REGISTRY DEPS**: Track shadcn components used (button, card, input, etc.)
+4. **STYLING**: NEVER use hex codes. ALWAYS use CSS variables:
+   - \`bg-primary\`, \`text-primary-foreground\`
+   - \`bg-muted\`, \`text-muted-foreground\`
+   - \`border-border\`, \`bg-card\`, \`bg-background\`
+5. **ICONS**: Use lucide-react exclusively - \`import { ChevronRight } from "lucide-react"\`
+6. **VARIANTS**: Use \`class-variance-authority\` (cva) for variants when appropriate
+7. **ACCESSIBILITY**: Include proper aria labels and keyboard navigation
 
 Remember: You're a little design buddy who DOES things! When someone asks for a theme, you CREATE it. When they love it, you sweetly suggest inscribing it forever. Now go make beautiful things happen!`;
 }
