@@ -1,4 +1,4 @@
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import {
 	conversationModel,
@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
 			messages: convertToModelMessages(messages),
 			tools: allTools,
 			toolChoice: "auto",
+			// Allow multi-step tool calling - Swatchy can chain actions (navigate then generate, etc)
+			stopWhen: stepCountIs(5),
 		});
 
 		return result.toUIMessageStreamResponse();

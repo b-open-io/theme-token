@@ -17,14 +17,14 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	// Calculate positions based on state
 	const getAnimateProps = () => {
 		if (!isCorner) {
-			// Expanded - small avatar near chat bubble (always top right)
+			// Expanded - large avatar peeking from bottom right, partially behind chat
 			return {
 				left: "auto",
-				bottom: "auto",
-				right: 16,
-				top: 72,
-				width: 48,
-				height: 48,
+				bottom: -40, // Partially off-screen
+				right: -20,  // Partially off-screen
+				top: "auto",
+				width: 180,
+				height: 180,
 			};
 		}
 
@@ -53,7 +53,8 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 	return (
 		<motion.button
-			className="fixed z-[60] cursor-pointer overflow-visible rounded-full"
+			// z-50 when expanded (behind chat at z-55), z-60 when in corner (above everything)
+			className={`fixed cursor-pointer overflow-visible rounded-full ${isCorner ? "z-[60]" : "z-[50]"}`}
 			initial={false}
 			animate={getAnimateProps()}
 			transition={{
@@ -62,8 +63,8 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 				damping: 25,
 			}}
 			onClick={onClick}
-			whileHover={{ scale: 1.1 }}
-			whileTap={{ scale: 0.95 }}
+			whileHover={isCorner ? { scale: 1.1 } : undefined}
+			whileTap={isCorner ? { scale: 0.95 } : undefined}
 			aria-label={isCorner ? "Open Swatchy assistant" : "Close chat"}
 		>
 			{/* Floating animation wrapper - only when in corner */}
