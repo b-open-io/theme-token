@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { Loader2, X, CheckCircle2, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,7 @@ export function SwatchyChatBubble() {
 		paymentPending,
 		handlePaymentConfirmed,
 		cancelPayment,
+		generation,
 	} = useSwatchyChat();
 
 	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -79,7 +80,7 @@ export function SwatchyChatBubble() {
 		if (scrollContainerRef.current) {
 			scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
 		}
-	}, [messages, paymentPending]);
+	}, [messages, paymentPending, generation.status]);
 
 	return (
 		<motion.div
@@ -158,6 +159,42 @@ export function SwatchyChatBubble() {
 									onCancel={cancelPayment}
 									isProcessing={isPaymentProcessing}
 								/>
+							</div>
+						)}
+
+						{/* Generation progress indicator */}
+						{generation.status === "generating" && (
+							<div className="mt-2 rounded-lg border bg-muted/50 p-3">
+								<div className="flex items-center gap-2">
+									<Loader2 className="h-4 w-4 animate-spin text-primary" />
+									<span className="text-sm font-medium">
+										{generation.progress || "Processing..."}
+									</span>
+								</div>
+							</div>
+						)}
+
+						{/* Generation success */}
+						{generation.status === "success" && (
+							<div className="mt-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+								<div className="flex items-center gap-2">
+									<CheckCircle2 className="h-4 w-4 text-green-500" />
+									<span className="text-sm font-medium text-green-700 dark:text-green-300">
+										Generation complete!
+									</span>
+								</div>
+							</div>
+						)}
+
+						{/* Generation error */}
+						{generation.status === "error" && (
+							<div className="mt-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+								<div className="flex items-center gap-2">
+									<XCircle className="h-4 w-4 text-destructive" />
+									<span className="text-sm text-destructive">
+										{generation.error || "Generation failed"}
+									</span>
+								</div>
 							</div>
 						)}
 					</div>

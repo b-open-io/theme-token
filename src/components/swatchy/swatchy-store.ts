@@ -6,8 +6,20 @@ export type SwatchyPosition = "corner" | "expanded";
 // Payment request for paid tools
 export interface PaymentRequest {
 	toolName: ToolName;
+	toolCallId: string;
 	cost: number;
 	args: Record<string, unknown>;
+}
+
+// Generation state for progress tracking
+export type GenerationStatus = "idle" | "generating" | "success" | "error";
+
+export interface GenerationState {
+	status: GenerationStatus;
+	toolName: ToolName | null;
+	progress?: string;
+	result?: unknown;
+	error?: string;
 }
 
 interface SwatchyStore {
@@ -20,6 +32,9 @@ interface SwatchyStore {
 	// Payment State
 	paymentPending: PaymentRequest | null;
 	paymentTxid: string | null;
+
+	// Generation State
+	generation: GenerationState;
 
 	// Actions
 	openChat: () => void;
@@ -35,13 +50,25 @@ interface SwatchyStore {
 	confirmPayment: (txid: string) => void;
 	cancelPayment: () => void;
 	clearPayment: () => void;
+
+	// Generation Actions
+	setGenerating: (toolName: ToolName, progress?: string) => void;
+	setGenerationSuccess: (result: unknown) => void;
+	setGenerationError: (error: string) => void;
+	clearGeneration: () => void;
 }
+
+const initialGenerationState: GenerationState = {
+	status: "idle",
+	toolName: null,
+};
 
 export const useSwatchyStore = create<SwatchyStore>()((set, get) => ({
 	position: "corner",
 	isNavigating: false,
 	paymentPending: null,
 	paymentTxid: null,
+	generation: initialGenerationState,
 
 	openChat: () =>
 		set({
@@ -92,5 +119,37 @@ export const useSwatchyStore = create<SwatchyStore>()((set, get) => ({
 		set({
 			paymentPending: null,
 			paymentTxid: null,
+		}),
+
+	setGenerating: (toolName, progress) =>
+		set({
+			generation: {
+				status: "generating",
+				toolName,
+				progress,
+			},
+		}),
+
+	setGenerationSuccess: (result) =>
+		set({
+			generation: {
+				status: "success",
+				toolName: get().generation.toolName,
+				result,
+			},
+		}),
+
+	setGenerationError: (error) =>
+		set({
+			generation: {
+				status: "error",
+				toolName: get().generation.toolName,
+				error,
+			},
+		}),
+
+	clearGeneration: () =>
+		set({
+			generation: initialGenerationState,
 		}),
 }));

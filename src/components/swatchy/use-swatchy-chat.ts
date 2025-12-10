@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useSwatchyStore } from "./swatchy-store";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
@@ -25,6 +25,11 @@ export function useSwatchyChat() {
 		cancelPayment,
 		closeChat,
 		setNavigating,
+		setGenerating,
+		setGenerationSuccess,
+		setGenerationError,
+		clearGeneration,
+		generation,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
@@ -33,6 +38,9 @@ export function useSwatchyChat() {
 
 	// In v6, input state is managed externally
 	const [input, setInput] = useState("");
+
+	// Store addToolOutput ref so we can call it after payment
+	const addToolOutputRef = useRef<((params: { tool: string; toolCallId: string; output: string }) => void) | null>(null);
 
 	const {
 		messages,
@@ -53,14 +61,16 @@ export function useSwatchyChat() {
 			if (PAID_TOOLS.has(toolName)) {
 				const cost = TOOL_COSTS[toolName as keyof typeof TOOL_COSTS];
 
-				// Set payment pending - UI will show payment request
+				// Set payment pending with toolCallId - UI will show payment request
 				setPaymentPending({
 					toolName,
+					toolCallId: toolCall.toolCallId,
 					cost,
 					args: toolCall.input as Record<string, unknown>,
 				});
 
-				// Return - payment will be handled separately
+				// Don't return anything - we'll complete the tool call after payment
+				// The AI will wait for the tool result
 				return;
 			}
 
@@ -78,6 +88,9 @@ export function useSwatchyChat() {
 			console.error("[Swatchy Chat Error]", err);
 		},
 	});
+
+	// Store ref so we can use it after payment
+	addToolOutputRef.current = addToolOutput;
 
 	// Compute loading state from status
 	const isLoading = status === "submitted" || status === "streaming";
@@ -168,11 +181,111 @@ export function useSwatchyChat() {
 		[router, closeChat, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors],
 	);
 
+	// Execute paid tool after payment is confirmed
+	const executePaidTool = useCallback(
+		async (toolName: ToolName, toolCallId: string, args: Record<string, unknown>, txid: string): Promise<string> => {
+			switch (toolName) {
+				case "generateTheme": {
+					setGenerating(toolName, "Generating your theme...");
+					try {
+						const response = await fetch("/api/generate-theme", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt: args.prompt,
+								primaryColor: args.primaryColor,
+								radius: args.radius,
+								style: args.style,
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate theme");
+						}
+
+						const data = await response.json();
+						setGenerationSuccess(data.theme);
+
+						// Store the theme for the studio
+						if (typeof window !== "undefined") {
+							sessionStorage.setItem("swatchy-generated-theme", JSON.stringify(data.theme));
+						}
+
+						return `Theme "${data.theme.name}" generated successfully! Payment txid: ${txid}. You can now navigate to the Theme Studio to view and customize it.`;
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg);
+						return `Error generating theme: ${errorMsg}`;
+					}
+				}
+
+				case "generatePattern": {
+					setGenerating(toolName, "Generating your pattern...");
+					try {
+						const response = await fetch("/api/generate-pattern", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt: args.prompt,
+								colorMode: args.colorMode,
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate pattern");
+						}
+
+						const data = await response.json();
+						setGenerationSuccess(data);
+						return `Pattern generated successfully! Payment txid: ${txid}. Navigate to the Pattern Studio to view it.`;
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg);
+						return `Error generating pattern: ${errorMsg}`;
+					}
+				}
+
+				case "generateFont": {
+					setGenerating(toolName, "Starting font generation (this may take 1-3 minutes)...");
+					try {
+						const response = await fetch("/api/generate-font", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt: args.prompt,
+								preset: args.preset,
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate font");
+						}
+
+						const data = await response.json();
+						setGenerationSuccess(data);
+						return `Font generation started! Payment txid: ${txid}. This is an async process - check back in a few minutes.`;
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg);
+						return `Error generating font: ${errorMsg}`;
+					}
+				}
+
+				default:
+					return `Unknown paid tool: ${toolName}`;
+			}
+		},
+		[setGenerating, setGenerationSuccess, setGenerationError],
+	);
+
 	// Handle payment confirmation for paid tools
 	const handlePaymentConfirmed = useCallback(async () => {
-		if (!paymentPending) return;
+		if (!paymentPending || !addToolOutputRef.current) return;
 
-		const { toolName, cost } = paymentPending;
+		const { toolName, toolCallId, args, cost } = paymentPending;
 
 		try {
 			// Process payment via Yours Wallet
@@ -182,23 +295,40 @@ export function useSwatchyChat() {
 				// Payment successful - confirm in store
 				confirmPayment(result.txid);
 
-				// Send a follow-up message indicating payment was successful
-				await sendMessage({
-					text: `[Payment confirmed: ${result.txid}] Please proceed with ${toolName} using the parameters I specified.`,
+				// Execute the actual tool and get the result
+				const toolResult = await executePaidTool(toolName, toolCallId, args, result.txid);
+
+				// Provide the tool output back to the model to complete the tool call
+				addToolOutputRef.current({
+					tool: toolName,
+					toolCallId,
+					output: toolResult,
 				});
 			}
 		} catch (error) {
 			console.error("[Payment Error]", error);
 			// Cancel payment on error
 			cancelPayment();
+
+			// Still need to provide output to unblock the AI
+			if (addToolOutputRef.current) {
+				addToolOutputRef.current({
+					tool: toolName,
+					toolCallId,
+					output: `Payment failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+				});
+			}
 		}
-	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, sendMessage]);
+	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, executePaidTool]);
 
 	// Form submission handler
 	const handleSubmit = useCallback(
 		async (e?: React.FormEvent) => {
 			e?.preventDefault();
 			if (!input.trim() || isLoading) return;
+
+			// Clear any previous generation state
+			clearGeneration();
 
 			const message = input.trim();
 			setInput(""); // Clear input immediately
@@ -207,7 +337,7 @@ export function useSwatchyChat() {
 				text: message,
 			});
 		},
-		[input, isLoading, sendMessage],
+		[input, isLoading, sendMessage, clearGeneration],
 	);
 
 	return {
@@ -223,5 +353,6 @@ export function useSwatchyChat() {
 		walletStatus,
 		balance,
 		setMessages,
+		generation,
 	};
 }
