@@ -138,10 +138,16 @@ export const useSwatchyStore = create<SwatchyStore>()(
 					position: "expanded",
 				}),
 
-			closeChat: () =>
+			closeChat: () => {
+				// Determine if we should return to hero or corner based on scroll position
+				// Hero threshold is 150px, only on homepage
+				const isHomepage = typeof window !== "undefined" && window.location.pathname === "/";
+				const isAboveThreshold = typeof window !== "undefined" && window.scrollY < 150;
+				const shouldBeHero = isHomepage && isAboveThreshold;
 				set({
-					position: "corner",
-				}),
+					position: shouldBeHero ? "hero" : "corner",
+				});
+			},
 
 			toggleChat: () => {
 				const { position } = get();
