@@ -19,9 +19,26 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 	// Position styles applied directly to style prop - layout animation handles the transition
 	// CSS cannot interpolate between numeric values and "auto", so we use layout animation
+	// Check mobile once for all position calculations
+	const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+
 	const getPositionStyle = (): React.CSSProperties => {
 		if (isExpanded) {
-			// Expanded - large avatar at top right, partially behind chat
+			// Expanded - large avatar partially behind chat
+			// On mobile: position near bottom-right where chat appears
+			// On desktop: position at top-right behind chat
+			if (isMobile) {
+				return {
+					position: "fixed",
+					top: "auto",
+					bottom: -40,
+					right: -30,
+					left: "auto",
+					width: 180,
+					height: 180,
+					zIndex: 50,
+				};
+			}
 			return {
 				position: "fixed",
 				top: -75,
@@ -37,7 +54,6 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 		if (isHero) {
 			// Hero pose - larger, positioned to the right side of the hero content
 			// On mobile: push further right (partially off-screen) so text is readable
-			const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 			return {
 				position: "fixed",
 				top: "auto",
