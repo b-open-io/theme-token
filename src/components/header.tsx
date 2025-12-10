@@ -69,7 +69,7 @@ export function Header() {
 					{/* Logo - Text on mobile, icon+text on desktop */}
 					<Link href="/" className="flex items-center gap-2">
 						<Image
-							src="/icon-transparent.png"
+							src="/icon.svg"
 							alt="Theme Token"
 							width={24}
 							height={24}
