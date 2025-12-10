@@ -2,7 +2,7 @@
 
 import { isTextUIPart, isToolOrDynamicToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
-import { Loader2, X, CheckCircle2, XCircle, Wrench, Sparkles, ArrowRight } from "lucide-react";
+import { Loader2, X, CheckCircle2, XCircle, Wrench, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,10 @@ import type { ThemeToken } from "@theme-token/sdk";
  * Get dynamic suggestions based on enabled feature flags
  */
 function getSuggestions(): string[] {
-	const baseSuggestions = [
+	// First suggestion is always "Create a Barbie theme"
+	const firstSuggestion = "Create a Barbie theme";
+
+	const otherSuggestions = [
 		"Create a dark cyberpunk theme",
 		"Make my theme more accessible",
 		"Show me warm color palettes",
@@ -54,13 +57,13 @@ function getSuggestions(): string[] {
 		featureSuggestions.push("Help me design a wellness app theme");
 	}
 
-	// Combine base suggestions with feature-specific ones and shuffle
-	const allSuggestions = [...baseSuggestions, ...featureSuggestions];
-
-	// Return a random selection of 4 suggestions
-	return allSuggestions
+	// Combine other suggestions with feature-specific ones and shuffle
+	const shuffledOthers = [...otherSuggestions, ...featureSuggestions]
 		.sort(() => Math.random() - 0.5)
-		.slice(0, 4);
+		.slice(0, 3);
+
+	// Return first suggestion followed by 3 random others
+	return [firstSuggestion, ...shuffledOthers];
 }
 
 const SUGGESTIONS = getSuggestions();
@@ -94,7 +97,9 @@ export function SwatchyChatBubble() {
 		paymentPending,
 		handlePaymentConfirmed,
 		handlePaymentCancelled,
+		handleRetry,
 		generation,
+		failedRequest,
 	} = useSwatchyChat();
 
 	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -367,6 +372,22 @@ export function SwatchyChatBubble() {
 										{generation.error || "Generation failed"}
 									</span>
 								</div>
+								{/* Free Retry button - shown when we have a failed paid request */}
+								{failedRequest && (
+									<div className="mt-2 flex items-center justify-between">
+										<p className="text-xs text-destructive/70">
+											Your payment was processed - retry is free
+										</p>
+										<button
+											type="button"
+											onClick={handleRetry}
+											className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80"
+										>
+											<RotateCcw className="h-3 w-3" />
+											Free Retry
+										</button>
+									</div>
+								)}
 							</div>
 						)}
 					</div>

@@ -27,6 +27,14 @@ export interface GenerationState {
 	error?: string;
 }
 
+// Failed request context for free retry
+export interface FailedRequest {
+	toolName: ToolName;
+	toolCallId: string;
+	args: Record<string, unknown>;
+	txid: string; // The original payment txid (already paid)
+}
+
 // Theme being remixed/previewed
 export interface RemixContext {
 	theme: ThemeToken;
@@ -63,6 +71,9 @@ interface SwatchyStore {
 
 	// Generation State
 	generation: GenerationState;
+
+	// Failed Request (for free retry)
+	failedRequest: FailedRequest | null;
 
 	// Chat State (persisted)
 	chatMessages: UIMessage[];
@@ -102,8 +113,11 @@ interface SwatchyStore {
 	// Generation Actions
 	setGenerating: (toolName: ToolName, progress?: string) => void;
 	setGenerationSuccess: (result: unknown) => void;
-	setGenerationError: (error: string) => void;
+	setGenerationError: (error: string, failedRequest?: FailedRequest) => void;
 	clearGeneration: () => void;
+
+	// Retry Actions
+	clearFailedRequest: () => void;
 
 	// Chat Actions
 	setChatMessages: (messages: UIMessage[]) => void;
@@ -129,6 +143,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			paymentPending: null,
 			paymentTxid: null,
 			generation: initialGenerationState,
+			failedRequest: null,
 			chatMessages: [],
 			chatInput: "",
 			pendingMessage: null,
@@ -274,19 +289,23 @@ How would you like to modify this theme?`;
 					},
 				}),
 
-			setGenerationError: (error) =>
+			setGenerationError: (error, failedRequest) =>
 				set({
 					generation: {
 						status: "error",
 						toolName: get().generation.toolName,
 						error,
 					},
+					failedRequest: failedRequest ?? null,
 				}),
 
 			clearGeneration: () =>
 				set({
 					generation: initialGenerationState,
+					failedRequest: null,
 				}),
+
+			clearFailedRequest: () => set({ failedRequest: null }),
 
 			setChatMessages: (chatMessages) => set({ chatMessages }),
 

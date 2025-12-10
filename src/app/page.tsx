@@ -22,6 +22,7 @@ import { ThemeGallery } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SwatchyHeroController } from "@/components/swatchy/swatchy-hero-controller";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 
 const fadeIn = {
 	initial: { opacity: 0, y: 20 },
@@ -64,6 +65,7 @@ const exampleOrigin =
 
 export default function Home() {
 	const [copied, setCopied] = useState(false);
+	const openChat = useSwatchyStore((state) => state.openChat);
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}`;
 
 	const copyCommand = useCallback(() => {
@@ -110,11 +112,9 @@ export default function Home() {
 									Browse Themes
 								</Link>
 							</Button>
-							<Button size="lg" variant="outline" className="gap-2" asChild>
-								<Link href="/studio/theme">
-									<Wand2 className="h-5 w-5" />
-									Create Theme
-								</Link>
+							<Button size="lg" variant="outline" className="gap-2" onClick={openChat}>
+								<Wand2 className="h-5 w-5" />
+								Create Theme
 							</Button>
 						</div>
 					</motion.div>

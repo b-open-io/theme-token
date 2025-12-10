@@ -34,6 +34,8 @@ export function useSwatchyChat() {
 		setGenerationError,
 		clearGeneration,
 		generation,
+		failedRequest,
+		clearFailedRequest,
 		chatMessages,
 		setChatMessages,
 		chatInput,
@@ -385,7 +387,8 @@ export function useSwatchyChat() {
 						return `Theme "${data.theme.name}" generated! Opening studio...`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
-						setGenerationError(errorMsg);
+						// Store failed request context for free retry (already paid)
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
 						return `Error generating theme: ${errorMsg}`;
 					}
 				}
@@ -412,7 +415,8 @@ export function useSwatchyChat() {
 						return `Pattern generated successfully! Payment txid: ${txid}. Navigate to the Pattern Studio to view it.`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
-						setGenerationError(errorMsg);
+						// Store failed request context for free retry (already paid)
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
 						return `Error generating pattern: ${errorMsg}`;
 					}
 				}
@@ -439,7 +443,8 @@ export function useSwatchyChat() {
 						return `Font generation started! Payment txid: ${txid}. This is an async process - check back in a few minutes.`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
-						setGenerationError(errorMsg);
+						// Store failed request context for free retry (already paid)
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
 						return `Error generating font: ${errorMsg}`;
 					}
 				}
@@ -542,6 +547,19 @@ export function useSwatchyChat() {
 		[chatInput, isLoading, sendMessage, clearGeneration, setChatInput],
 	);
 
+	// Handle free retry for failed paid tool (user already paid, just retry the generation)
+	const handleRetry = useCallback(async () => {
+		if (!failedRequest) return;
+
+		const { toolName, toolCallId, args, txid } = failedRequest;
+
+		// Clear the failed state first
+		clearFailedRequest();
+
+		// Re-execute the paid tool with the original payment txid
+		await executePaidTool(toolName, toolCallId, args, txid);
+	}, [failedRequest, clearFailedRequest, executePaidTool]);
+
 	return {
 		messages,
 		input: chatInput,
@@ -552,9 +570,11 @@ export function useSwatchyChat() {
 		paymentPending,
 		handlePaymentConfirmed,
 		handlePaymentCancelled,
+		handleRetry,
 		walletStatus,
 		balance,
 		setMessages,
 		generation,
+		failedRequest,
 	};
 }
