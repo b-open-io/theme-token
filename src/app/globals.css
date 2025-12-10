@@ -42,6 +42,8 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
+	--radius-2xl: calc(var(--radius) + 8px);
+	--radius-3xl: calc(var(--radius) + 12px);
 }
 
 :root {
@@ -168,6 +170,35 @@
 	}
 }
 
+/* Semantic color utilities using theme chart colors */
+/* Traffic light pattern: success (chart-3), warning (chart-4), error (destructive) */
+.traffic-close {
+	background-color: var(--destructive);
+	opacity: 0.6;
+}
+.traffic-minimize {
+	background-color: var(--chart-4);
+	opacity: 0.6;
+}
+.traffic-maximize {
+	background-color: var(--chart-3);
+	opacity: 0.6;
+}
+
+/* Status indicators */
+.status-success {
+	background-color: var(--chart-3);
+}
+.status-warning {
+	background-color: var(--chart-4);
+}
+.status-error {
+	background-color: var(--destructive);
+}
+.status-info {
+	background-color: var(--chart-2);
+}
+
 /* Ensure dropdowns/popovers appear above everything */
 [data-radix-popper-content-wrapper] {
 	z-index: 9999 !important;
@@ -188,66 +219,34 @@
 	background-size: 24px 24px;
 }
 
-/* Code block styling */
+/* Code block styling - uses theme colors */
 .code-block {
-	@apply font-mono text-sm leading-relaxed;
-	background: linear-gradient(
-		135deg,
-		oklch(0.96 0.005 240) 0%,
-		oklch(0.98 0.003 240) 100%
-	);
+	@apply font-mono text-sm leading-relaxed bg-muted;
 }
 
-.dark .code-block {
-	background: linear-gradient(
-		135deg,
-		oklch(0.14 0.015 240) 0%,
-		oklch(0.16 0.01 240) 100%
-	);
-}
-
-/* Syntax highlighting */
+/* Syntax highlighting - uses theme chart colors for variety */
 .token-key {
-	color: oklch(0.55 0.22 255);
+	color: var(--primary);
 }
 .token-string {
-	color: oklch(0.5 0.15 145);
+	color: var(--chart-3);
 }
 .token-number {
-	color: oklch(0.55 0.18 60);
+	color: var(--chart-4);
 }
 .token-boolean {
-	color: oklch(0.5 0.18 330);
+	color: var(--chart-5);
 }
 .token-null {
-	color: oklch(0.5 0.01 240);
+	color: var(--muted-foreground);
 }
 .token-punctuation {
-	color: oklch(0.5 0.01 240);
+	color: var(--muted-foreground);
 }
 
-.dark .token-key {
-	color: oklch(0.7 0.22 255);
-}
-.dark .token-string {
-	color: oklch(0.65 0.15 145);
-}
-.dark .token-number {
-	color: oklch(0.7 0.18 60);
-}
-.dark .token-boolean {
-	color: oklch(0.65 0.18 330);
-}
-.dark .token-null {
-	color: oklch(0.6 0.01 240);
-}
-.dark .token-punctuation {
-	color: oklch(0.6 0.01 240);
-}
-
-/* Selection color */
+/* Selection color - uses theme primary */
 ::selection {
-	background: oklch(0.55 0.22 255 / 0.3);
+	background: oklch(from var(--primary) l c h / 0.3);
 }
 
 /* Smooth transitions for theme preview */

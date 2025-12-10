@@ -20,9 +20,9 @@ const ThemePreview = () => (
 	<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-transparent">
 		<div className="relative h-24 w-32 rounded-lg border border-border bg-card shadow-2xl">
 			<div className="flex items-center gap-1 border-b border-border p-2">
-				<div className="h-2 w-2 rounded-full bg-red-500/50" />
-				<div className="h-2 w-2 rounded-full bg-yellow-500/50" />
-				<div className="h-2 w-2 rounded-full bg-green-500/50" />
+				<div className="traffic-close h-2 w-2 rounded-full" />
+				<div className="traffic-minimize h-2 w-2 rounded-full" />
+				<div className="traffic-maximize h-2 w-2 rounded-full" />
 			</div>
 			<div className="space-y-2 p-3">
 				<div className="h-2 w-3/4 rounded-full bg-primary/20" />
@@ -33,7 +33,7 @@ const ThemePreview = () => (
 			</div>
 			{/* Floating abstract elements */}
 			<div className="absolute -right-4 -top-4 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
-			<div className="absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-blue-500/10 blur-xl" />
+			<div className="absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-accent/10 blur-xl" />
 		</div>
 	</div>
 );
