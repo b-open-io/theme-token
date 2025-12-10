@@ -26,6 +26,18 @@ export const featureFlags = {
 	 * Controls: /studio/ai
 	 */
 	ai: process.env.NEXT_PUBLIC_FEATURE_AI === "true" || isDev,
+
+	/**
+	 * Icon Studio - Custom icon generation for themes
+	 * Controls: /studio/icon
+	 */
+	icons: process.env.NEXT_PUBLIC_FEATURE_ICONS === "true" || isDev,
+
+	/**
+	 * Wallpaper Studio - Wallpaper generation for desktop and mobile
+	 * Controls: /studio/wallpaper
+	 */
+	wallpapers: process.env.NEXT_PUBLIC_FEATURE_WALLPAPERS === "true" || isDev,
 } as const;
 
 /**

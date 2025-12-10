@@ -6,7 +6,7 @@ import {
 	useSpring,
 	useTransform,
 } from "framer-motion";
-import { Bot, Grid3X3, Palette, Type } from "lucide-react";
+import { Bot, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useMemo } from "react";
@@ -16,6 +16,8 @@ const allTabs = [
 	{ href: "/studio/theme", label: "Theme", icon: Palette, feature: null },
 	{ href: "/studio/font", label: "Font", icon: Type, feature: "fonts" as const },
 	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3, feature: "images" as const },
+	{ href: "/studio/icon", label: "Icon", icon: Shapes, feature: "icons" as const },
+	{ href: "/studio/wallpaper", label: "Wallpaper", icon: Image, feature: "wallpapers" as const },
 	{ href: "/studio/ai", label: "AI", icon: Bot, feature: "ai" as const },
 ];
 
@@ -124,6 +126,13 @@ export default function StudioLayout({
 									<span className="text-muted-foreground/60">AI SVG patterns —</span>{" "}
 									<span className="text-primary">root</span>/studio/
 									<span className="text-foreground">patterns</span>{" "}
+									<span className="animate-pulse">_</span>
+								</>
+							)}
+							{pathname === "/studio/icon" && (
+								<>
+									<span className="text-primary">root</span>/studio/
+									<span className="text-foreground">icon</span>{" "}
 									<span className="animate-pulse">_</span>
 								</>
 							)}
