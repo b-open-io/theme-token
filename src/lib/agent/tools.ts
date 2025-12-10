@@ -100,6 +100,30 @@ export const generatePattern = tool({
 	}),
 });
 
+export const generateWallpaper = tool({
+	description:
+		"Generate a custom wallpaper image using AI. This costs 1,000,000 satoshis (~0.01 BSV). The AI will create a high-resolution wallpaper based on your description. Optionally specify aspect ratio and style.",
+	inputSchema: z.object({
+		prompt: z
+			.string()
+			.describe(
+				"Description of the desired wallpaper (e.g., 'cyberpunk cityscape at night with neon lights', 'serene mountain landscape at sunset')",
+			),
+		aspectRatio: z
+			.enum(["16:9", "9:16", "1:1", "4:3", "3:2"])
+			.optional()
+			.describe(
+				"Output aspect ratio - 16:9 for desktop, 9:16 for mobile, 1:1 for square",
+			),
+		style: z
+			.enum(["photorealistic", "artistic", "abstract", "minimal", "3d-render"])
+			.optional()
+			.describe(
+				"Style direction for the wallpaper - photorealistic, artistic, abstract, minimal, or 3D rendered",
+			),
+	}),
+});
+
 // ============================================================================
 // Studio Control Tools (Free - manipulate current studio state)
 // ============================================================================
@@ -270,6 +294,11 @@ export function getAvailableTools() {
 		tools.setPatternParams = setPatternParams;
 	}
 
+	// Add wallpaper-related tools if wallpapers feature is enabled
+	if (featureFlags.wallpapers) {
+		tools.generateWallpaper = generateWallpaper;
+	}
+
 	return tools;
 }
 
@@ -278,6 +307,7 @@ export const allTools = {
 	generateTheme,
 	generateFont,
 	generatePattern,
+	generateWallpaper,
 	setThemeColor,
 	setThemeRadius,
 	setThemeFont,

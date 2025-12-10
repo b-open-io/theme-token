@@ -727,6 +727,9 @@ export const FONT_GENERATION_COST_SATS = 10_000_000;
 // Pattern generation cost: 0.01 BSV = 1,000,000 satoshis (same as themes - uses Gemini SVG)
 export const PATTERN_GENERATION_COST_SATS = 1_000_000;
 
+// Wallpaper generation cost: 0.01 BSV = 1,000,000 satoshis (same as themes - uses Gemini Image)
+export const WALLPAPER_GENERATION_COST_SATS = 1_000_000;
+
 export interface SendBsvResult {
 	txid: string;
 	rawtx: string;

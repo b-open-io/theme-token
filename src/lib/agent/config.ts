@@ -12,6 +12,7 @@ export const TOOL_COSTS = {
 	generateTheme: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateFont: 10_000_000, // 10M sats (~$0.10 BSV)
 	generatePattern: 1_000_000, // 1M sats (~$0.01 BSV)
+	generateWallpaper: 1_000_000, // 1M sats (~$0.01 BSV)
 } as const;
 
 // Tools that require payment before execution
@@ -19,6 +20,7 @@ export const PAID_TOOLS = new Set([
 	"generateTheme",
 	"generateFont",
 	"generatePattern",
+	"generateWallpaper",
 ]);
 
 // Tools that require wallet connection
@@ -93,6 +95,13 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 	if (featureFlags.images) {
 		capabilities.push(
 			`${capabilityNumber}. **Pattern Generation** - Create SVG patterns (costs 1M sats)`,
+		);
+		capabilityNumber++;
+	}
+
+	if (featureFlags.wallpapers) {
+		capabilities.push(
+			`${capabilityNumber}. **Wallpaper Generation** - Create AI wallpapers for desktop/mobile (costs 1M sats)`,
 		);
 		capabilityNumber++;
 	}

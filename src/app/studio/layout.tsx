@@ -143,6 +143,14 @@ export default function StudioLayout({
 									<span className="animate-pulse">_</span>
 								</>
 							)}
+							{pathname === "/studio/wallpaper" && (
+								<>
+									<span className="text-muted-foreground/60">AI wallpapers —</span>{" "}
+									<span className="text-primary">root</span>/studio/
+									<span className="text-foreground">wallpaper</span>{" "}
+									<span className="animate-pulse">_</span>
+								</>
+							)}
 						</div>
 					</div>
 

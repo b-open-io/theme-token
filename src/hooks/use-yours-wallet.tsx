@@ -89,6 +89,19 @@ interface WalletContextValue {
 			model?: string;
 		},
 	) => Promise<InscribeResponse | null>;
+	inscribeImage: (
+		base64Data: string,
+		mimeType: string,
+		metadata?: {
+			name?: string;
+			author?: string;
+			license?: string;
+			prompt?: string;
+			aspectRatio?: string;
+			style?: string;
+			dimensions?: { width: number; height: number };
+		},
+	) => Promise<InscribeResponse | null>;
 	isInscribing: boolean;
 	listTheme: (
 		outpoint: string,
@@ -493,6 +506,76 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		[addresses, fetchThemeTokens, fetchWalletInfo],
 	);
 
+	const inscribeImage = useCallback(
+		async (
+			base64Data: string,
+			mimeType: string,
+			metadata?: {
+				name?: string;
+				author?: string;
+				license?: string;
+				prompt?: string;
+				aspectRatio?: string;
+				style?: string;
+				dimensions?: { width: number; height: number };
+			},
+		): Promise<InscribeResponse | null> => {
+			const wallet = walletRef.current;
+			if (!wallet || !addresses) {
+				setError("Wallet not connected");
+				return null;
+			}
+
+			setIsInscribing(true);
+			setError(null);
+
+			try {
+				// Build metadata with image-specific fields
+				const mapData = buildTileMetadata({
+					name: metadata?.name,
+					author: metadata?.author,
+					license: metadata?.license,
+					prompt: metadata?.prompt,
+				});
+
+				// Add image-specific metadata
+				if (metadata?.aspectRatio) {
+					mapData.aspectRatio = metadata.aspectRatio;
+				}
+				if (metadata?.style) {
+					mapData.style = metadata.style;
+				}
+				if (metadata?.dimensions) {
+					mapData.width = String(metadata.dimensions.width);
+					mapData.height = String(metadata.dimensions.height);
+				}
+
+				const response = await wallet.inscribe([
+					{
+						address: addresses.ordAddress,
+						base64Data,
+						mimeType,
+						map: mapData,
+						satoshis: 1,
+					},
+				]);
+
+				// Submit to indexer
+				submitToIndexer(response.txid).catch(() => {});
+
+				await fetchThemeTokens();
+				await fetchWalletInfo();
+				return response;
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Inscription failed");
+				return null;
+			} finally {
+				setIsInscribing(false);
+			}
+		},
+		[addresses, fetchThemeTokens, fetchWalletInfo],
+	);
+
 	const listTheme = useCallback(
 		async (
 			outpoint: string,
@@ -601,6 +684,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				profile,
 				inscribeTheme,
 				inscribePattern,
+				inscribeImage,
 				isInscribing,
 				listTheme,
 				isListing,
