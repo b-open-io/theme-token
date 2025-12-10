@@ -25,20 +25,20 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const getPositionStyle = (): React.CSSProperties => {
 		if (isExpanded) {
 			// Expanded - large avatar partially behind chat
-			// On mobile: position near bottom-right where chat appears
-			// On desktop: position at top-right behind chat
+			// On mobile: position just above the chat bubble (which is at bottom)
 			if (isMobile) {
 				return {
 					position: "fixed",
 					top: "auto",
-					bottom: -40,
-					right: -30,
+					bottom: "calc(70vh - 40px)", // Chat is 70vh tall, position just above it
+					right: -20,
 					left: "auto",
-					width: 180,
-					height: 180,
+					width: 140,
+					height: 140,
 					zIndex: 50,
 				};
 			}
+			// Desktop: at top right, partially behind chat
 			return {
 				position: "fixed",
 				top: -75,
