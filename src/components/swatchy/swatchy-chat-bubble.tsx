@@ -99,6 +99,33 @@ export function SwatchyChatBubble() {
 
 	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const chatContainerRef = useRef<HTMLDivElement>(null);
+
+	// Close on Escape (only when textarea not focused)
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				const activeElement = document.activeElement;
+				const isTextareaFocused = activeElement?.tagName === "TEXTAREA";
+				if (!isTextareaFocused) {
+					closeChat();
+				}
+			}
+		};
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [closeChat]);
+
+	// Close on click outside
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (chatContainerRef.current && !chatContainerRef.current.contains(e.target as Node)) {
+				closeChat();
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [closeChat]);
 
 	const handleSuggestionClick = (suggestion: string) => {
 		setInput(suggestion);
@@ -127,6 +154,7 @@ export function SwatchyChatBubble() {
 
 	return (
 		<motion.div
+			ref={chatContainerRef}
 			className="fixed right-4 top-32 z-[55] flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
 			initial={{ opacity: 0, scale: 0.9, x: 20 }}
 			animate={{ opacity: 1, scale: 1, x: 0 }}
