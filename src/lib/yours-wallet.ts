@@ -211,7 +211,7 @@ const ORDINALS_API = "https://ordinals.gorillapool.io/api";
  */
 export async function submitToIndexer(txid: string): Promise<boolean> {
 	try {
-		const response = await fetch(`${ORDINALS_API}/submit/${txid}`, {
+		const response = await fetch(`${ORDINALS_API}/tx/${txid}/submit`, {
 			method: "POST",
 		});
 		return response.ok;

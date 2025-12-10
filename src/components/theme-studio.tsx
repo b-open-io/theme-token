@@ -8,7 +8,7 @@ import {
 } from "@theme-token/sdk";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
-import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+import { fetchThemeMarketListings, submitToIndexer, type ThemeMarketListing } from "@/lib/yours-wallet";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { storeRemixTheme } from "@/components/theme-gallery";
@@ -513,6 +513,8 @@ export function ThemeStudio() {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ txid: result.txid, theme: themeToMint }),
 			}).catch(() => {});
+			// Submit to GorillaPool indexer so it appears in search
+			submitToIndexer(result.txid).catch(() => {});
 			// Pre-warm OG image so it's ready for sharing
 			fetch(`/og/${origin}`).catch(() => {});
 			setTxid(result.txid);
