@@ -14,45 +14,53 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
 	const isLeft = side === "left";
 
-	// Calculate positions based on state
-	// Use calc() with top/right consistently to enable smooth animation
-	// (can't animate between bottom and top - they're different properties)
-	const getAnimateProps = () => {
+	// Position config - uses bottom/right for corner, top/right for expanded
+	// Separate corner positions so we don't animate across the screen
+	const getPositionStyle = () => {
 		if (!isCorner) {
 			// Expanded - large avatar at top right, partially behind chat
 			return {
 				top: -75,
 				right: -20,
+				bottom: "auto" as const,
+				left: "auto" as const,
 				width: 280,
 				height: 280,
 			};
 		}
 
-		// Corner position - use top with calc to position from bottom
+		// Corner positions - use bottom positioning for stability
 		if (isLeft) {
 			return {
-				top: "calc(100vh - 96px)", // 80px height + 16px margin
-				right: "calc(100vw - 96px)", // 80px width + 16px margin
+				top: "auto" as const,
+				right: "auto" as const,
+				bottom: 16,
+				left: 16,
 				width: 80,
 				height: 80,
 			};
 		}
 
-		// Right side corner
+		// Right side corner (default)
 		return {
-			top: "calc(100vh - 96px)", // 80px height + 16px margin
+			top: "auto" as const,
 			right: 16,
+			bottom: 16,
+			left: "auto" as const,
 			width: 80,
 			height: 80,
 		};
 	};
 
+	const positionStyle = getPositionStyle();
+
 	return (
 		<motion.button
 			// z-50 when expanded (behind chat at z-55), z-60 when in corner (above everything)
 			className={`fixed cursor-pointer overflow-visible rounded-full ${isCorner ? "z-[60]" : "z-[50]"}`}
-			initial={false}
-			animate={getAnimateProps()}
+			// Start at target position to prevent weird initial animations
+			initial={positionStyle}
+			animate={positionStyle}
 			transition={{
 				type: "spring",
 				stiffness: 80,
