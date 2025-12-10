@@ -48,9 +48,9 @@ export default function StudioLayout({
 	}
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col bg-background">
+		<div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden bg-background">
 			{/* Terminal-style Header */}
-			<header className="sticky top-14 z-40 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+			<header className="shrink-0 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="mx-auto max-w-full px-4">
 					{/* Row: Title + Tabs */}
 					<div className="flex h-11 items-center gap-2 sm:gap-6">
@@ -175,7 +175,7 @@ export default function StudioLayout({
 			</header>
 
 			{/* Content */}
-			<div className="flex min-h-0 flex-1 flex-col">
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				{children}
 			</div>
 		</div>

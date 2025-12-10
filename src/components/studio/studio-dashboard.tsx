@@ -26,7 +26,7 @@ interface StudioDashboardProps {
  * │ Bottom Bar: [bottomLeft]                      [bottomRight]     │
  * └─────────────────────────────────────────────────────────────────┘
  *
- * - Total height: h-[calc(100vh-6.375rem)] (viewport minus headers)
+ * - Total height: fills parent (studio layout sets viewport constraint)
  * - Bottom bar: shrink-0, always visible, never scrolls
  * - Sidebar & canvas scroll independently
  */
@@ -37,7 +37,7 @@ export function StudioDashboard({
 	bottomRight,
 }: StudioDashboardProps) {
 	return (
-		<div className="flex h-[calc(100vh-6.375rem)] w-full flex-col overflow-hidden bg-background">
+		<div className="flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* Main content area - sidebar + canvas */}
 			<div className="flex min-h-0 flex-1 overflow-hidden">
 				{/* Sidebar */}

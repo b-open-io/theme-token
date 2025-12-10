@@ -332,7 +332,7 @@ function FontMintPageContent() {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-6.375rem)] w-full flex-col overflow-hidden bg-background">
+		<div className="flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* Main content area - resizable two panel layout */}
 			<ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1 overflow-hidden">
 				{/* Left Panel: Controls (scrollable) */}

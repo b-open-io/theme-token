@@ -680,9 +680,9 @@ export function ThemeStudio() {
 													selectedTheme.styles[mode].primary,
 													selectedTheme.styles[mode].secondary,
 													selectedTheme.styles[mode].accent,
-												].map((color) => (
+												].map((color, i) => (
 													<div
-														key={color}
+														key={i}
 														className="flex-1"
 														style={{ backgroundColor: color }}
 													/>
@@ -712,9 +712,9 @@ export function ThemeStudio() {
 																	published.theme.styles[mode].primary,
 																	published.theme.styles[mode].secondary,
 																	published.theme.styles[mode].accent,
-																].map((color) => (
+																].map((color, i) => (
 																	<div
-																		key={color}
+																		key={i}
 																		className="flex-1"
 																		style={{ backgroundColor: color }}
 																	/>
@@ -750,9 +750,9 @@ export function ThemeStudio() {
 																theme.styles[mode].primary,
 																theme.styles[mode].secondary,
 																theme.styles[mode].accent,
-															].map((color) => (
+															].map((color, i) => (
 																<div
-																	key={color}
+																	key={i}
 																	className="flex-1"
 																	style={{ backgroundColor: color }}
 																/>
@@ -778,9 +778,9 @@ export function ThemeStudio() {
 																draft.theme.styles[mode].primary,
 																draft.theme.styles[mode].secondary,
 																draft.theme.styles[mode].accent,
-															].map((color) => (
+															].map((color, i) => (
 																<div
-																	key={color}
+																	key={i}
 																	className="flex-1"
 																	style={{ backgroundColor: color }}
 																/>
@@ -805,9 +805,9 @@ export function ThemeStudio() {
 															theme.styles[mode].primary,
 															theme.styles[mode].secondary,
 															theme.styles[mode].accent,
-														].map((color) => (
+														].map((color, i) => (
 															<div
-																key={color}
+																key={i}
 																className="flex-1"
 																style={{ backgroundColor: color }}
 															/>
