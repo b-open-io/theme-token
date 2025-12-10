@@ -29,6 +29,7 @@ export function buildFontMetadata(params: {
 	prompt?: string;
 	provider?: string;
 	model?: string;
+	previewOutput?: number;
 }): Record<string, string> {
 	const result: Record<string, string> = {
 		app: "theme-token",
@@ -41,8 +42,21 @@ export function buildFontMetadata(params: {
 	if (params.prompt) result.prompt = params.prompt;
 	if (params.provider) result.provider = params.provider;
 	if (params.model) result.model = params.model;
+	if (params.previewOutput !== undefined) {
+		result.previewOutput = params.previewOutput.toString();
+	}
 
 	return result;
+}
+
+export function buildFontPreviewMetadata(params: {
+	fontName: string;
+}): Record<string, string> {
+	return {
+		app: "theme-token",
+		type: "font-preview",
+		fontName: params.fontName,
+	};
 }
 
 export function buildThemeMetadata(params?: {

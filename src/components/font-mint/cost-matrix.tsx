@@ -5,6 +5,7 @@ import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 interface CostMatrixProps {
 	totalBytes: number;
 	metadataBytes: number;
+	previewBytes?: number;
 }
 
 // Approximate costs (these would be fetched from a fee API in production)
@@ -12,13 +13,16 @@ const SATS_PER_BYTE = 0.5; // Current BSV mining fee rate
 const ORDFS_INDEX_FEE = 1000; // Satoshis for ORDFS indexing
 const TX_OVERHEAD_BYTES = 250; // Base transaction overhead
 
-export function CostMatrix({ totalBytes, metadataBytes }: CostMatrixProps) {
+export function CostMatrix({ totalBytes, metadataBytes, previewBytes = 0 }: CostMatrixProps) {
 	const { formatUsd, rate } = useBsvRateContext();
 
-	const payloadBytes = totalBytes + metadataBytes;
+	const hasPreview = previewBytes > 0;
+	const outputCount = hasPreview ? 2 : 1;
+	const payloadBytes = totalBytes + metadataBytes + previewBytes;
 	const totalTxBytes = payloadBytes + TX_OVERHEAD_BYTES;
 	const networkFee = Math.ceil(totalTxBytes * SATS_PER_BYTE);
-	const totalSats = networkFee + ORDFS_INDEX_FEE;
+	// ORDFS index fee per output
+	const totalSats = networkFee + (ORDFS_INDEX_FEE * outputCount);
 	const totalBsv = totalSats / 100_000_000;
 
 	const formatBytes = (bytes: number): string => {
@@ -42,6 +46,12 @@ export function CostMatrix({ totalBytes, metadataBytes }: CostMatrixProps) {
 					<span>&gt; FONT_PAYLOAD:</span>
 					<span className="tabular-nums">{formatBytes(totalBytes)}</span>
 				</div>
+				{hasPreview && (
+					<div className="flex justify-between text-muted-foreground">
+						<span>&gt; PREVIEW_IMAGE:</span>
+						<span className="tabular-nums">{formatBytes(previewBytes)}</span>
+					</div>
+				)}
 				<div className="flex justify-between text-muted-foreground">
 					<span>&gt; METADATA_SIZE:</span>
 					<span className="tabular-nums">{formatBytes(metadataBytes)}</span>
@@ -59,7 +69,10 @@ export function CostMatrix({ totalBytes, metadataBytes }: CostMatrixProps) {
 				</div>
 				<div className="flex justify-between text-muted-foreground">
 					<span>&gt; ORDFS_INDEX_FEE:</span>
-					<span className="tabular-nums">{ORDFS_INDEX_FEE.toLocaleString()} sats</span>
+					<span className="tabular-nums">
+						{(ORDFS_INDEX_FEE * outputCount).toLocaleString()} sats
+						{hasPreview && <span className="text-muted-foreground/60"> ({outputCount} outputs)</span>}
+					</span>
 				</div>
 
 				<div className="my-2 border-t border-border" />

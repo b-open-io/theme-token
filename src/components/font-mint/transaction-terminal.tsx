@@ -8,7 +8,8 @@ import type { FontMetadata } from "./metadata-form";
 import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { buildFontMetadata } from "@/lib/asset-metadata";
+import { buildFontMetadata, buildFontPreviewMetadata } from "@/lib/asset-metadata";
+import { generateFontPreviewFromData } from "@/lib/font-preview-generator";
 import { getYoursWallet, submitToIndexer } from "@/lib/yours-wallet";
 
 interface TransactionTerminalProps {
@@ -70,52 +71,90 @@ export function TransactionTerminal({
 			addLog("PACKING_DATA...", "info");
 			await new Promise((r) => setTimeout(r, 300));
 
-			// Build inscription payload
-			const inscriptions = [];
+			// Build inscription payload - always includes font + preview image
+			const inscriptions: Array<{
+				address: string;
+				base64Data: string;
+				mimeType: string;
+				map: Record<string, string>;
+			}> = [];
+
+			let fontBase64: string;
+			let fontMimeType: string;
+			let fontName: string;
 
 			// If we have a compiled AI-generated font, use that
 			if (compiledFont) {
 				addLog("ENCODING_AI_GENERATED_WOFF2...", "info");
 				await new Promise((r) => setTimeout(r, 200));
 
-				const mapData = buildFontMetadata({
-					author: metadata.author || undefined,
-					license: metadata.license,
-					prompt: metadata.prompt,
-				});
+				fontBase64 = compiledFont.woff2Base64;
+				fontMimeType = "font/woff2";
+				fontName = compiledFont.familyName || metadata.name || "AI Font";
+			} else if (files.length > 0) {
+				// Use first uploaded font file
+				const fontFile = files[0];
+				addLog(`ENCODING_${fontFile.name.toUpperCase()}...`, "info");
+				fontBase64 = await fileToBase64(fontFile.file);
 
+				// Determine MIME type
+				fontMimeType = "font/woff2";
+				if (fontFile.name.endsWith(".woff")) {
+					fontMimeType = "font/woff";
+				} else if (fontFile.name.endsWith(".ttf")) {
+					fontMimeType = "font/ttf";
+				}
+
+				fontName = metadata.name || fontFile.name.replace(/\.(woff2?|ttf)$/i, "");
+			} else {
+				throw new Error("No font data available");
+			}
+
+			// Generate preview image from the font
+			addLog("GENERATING_PREVIEW_IMAGE...", "info");
+			await new Promise((r) => setTimeout(r, 200));
+
+			let previewResult: { base64: string; sizeBytes: number };
+			try {
+				previewResult = await generateFontPreviewFromData(
+					fontBase64,
+					fontName,
+					fontMimeType,
+				);
+				addLog(`GENERATING_PREVIEW_IMAGE... ${(previewResult.sizeBytes / 1024).toFixed(1)}KB`, "success");
+			} catch (previewError) {
+				// If preview generation fails, continue without it
+				console.warn("[TransactionTerminal] Preview generation failed:", previewError);
+				addLog("GENERATING_PREVIEW_IMAGE... SKIPPED (font loading error)", "info");
+				previewResult = { base64: "", sizeBytes: 0 };
+			}
+
+			const hasPreview = previewResult.base64.length > 0;
+
+			// Output 0: Font file
+			const fontMapData = buildFontMetadata({
+				name: fontName,
+				author: metadata.author || undefined,
+				license: metadata.license,
+				prompt: metadata.prompt,
+				previewOutput: hasPreview ? 1 : undefined,
+			});
+
+			inscriptions.push({
+				address: addresses.ordAddress,
+				base64Data: fontBase64,
+				mimeType: fontMimeType,
+				map: fontMapData,
+			});
+
+			// Output 1: Preview image (if generated successfully)
+			if (hasPreview) {
 				inscriptions.push({
 					address: addresses.ordAddress,
-					base64Data: compiledFont.woff2Base64,
-					mimeType: "font/woff2",
-					map: mapData,
+					base64Data: previewResult.base64,
+					mimeType: "image/png",
+					map: buildFontPreviewMetadata({ fontName }),
 				});
-			} else {
-				// Otherwise inscribe uploaded font files
-				for (const fontFile of files) {
-					addLog(`ENCODING_${fontFile.name.toUpperCase()}...`, "info");
-					const base64Data = await fileToBase64(fontFile.file);
-
-					// Determine MIME type
-					let mimeType = "font/woff2";
-					if (fontFile.name.endsWith(".woff")) {
-						mimeType = "font/woff";
-					} else if (fontFile.name.endsWith(".ttf")) {
-						mimeType = "font/ttf";
-					}
-
-					const mapData = buildFontMetadata({
-						author: metadata.author || undefined,
-						license: metadata.license,
-					});
-
-					inscriptions.push({
-						address: addresses.ordAddress,
-						base64Data,
-						mimeType,
-						map: mapData,
-					});
-				}
 			}
 
 			addLog("PACKING_DATA... OK", "success");
@@ -127,12 +166,13 @@ export function TransactionTerminal({
 			await new Promise((r) => setTimeout(r, 200));
 
 			addLog("CALCULATING_TX_SIZE...", "info");
-			const totalBytes = compiledFont
+			const fontBytes = compiledFont
 				? compiledFont.woff2Size
-				: files.reduce((acc, f) => acc + f.size, 0);
+				: files.length > 0 ? files[0].size : 0;
+			const totalBytes = fontBytes + previewResult.sizeBytes;
 			await new Promise((r) => setTimeout(r, 200));
 			addLog(
-				`CALCULATING_TX_SIZE... ${(totalBytes / 1024).toFixed(1)}KB`,
+				`CALCULATING_TX_SIZE... ${(totalBytes / 1024).toFixed(1)}KB (${inscriptions.length} outputs)`,
 				"success",
 			);
 			await new Promise((r) => setTimeout(r, 200));

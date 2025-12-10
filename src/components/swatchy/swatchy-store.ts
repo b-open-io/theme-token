@@ -5,7 +5,7 @@ import type { ToolName } from "@/lib/agent/tools";
 import type { ThemeToken } from "@theme-token/sdk";
 import type { SwatchyContext } from "@/lib/agent/config";
 
-export type SwatchyPosition = "corner" | "expanded";
+export type SwatchyPosition = "corner" | "expanded" | "hero";
 export type SwatchySide = "left" | "right";
 
 // Payment request for paid tools
@@ -88,6 +88,10 @@ interface SwatchyStore {
 	// Navigation Actions
 	setNavigating: (navigating: boolean) => void;
 	handleExternalNavigation: () => void;
+
+	// Hero mode (homepage only)
+	setHeroMode: (isHero: boolean) => void;
+	isChatOpen: () => boolean;
 
 	// Payment Actions
 	setPaymentPending: (payment: PaymentRequest | null) => void;
@@ -217,6 +221,15 @@ How would you like to modify this theme?`;
 					set({ position: "corner" });
 				}
 			},
+
+			setHeroMode: (isHero) => {
+				const { position } = get();
+				// Don't change position if chat is open
+				if (position === "expanded") return;
+				set({ position: isHero ? "hero" : "corner" });
+			},
+
+			isChatOpen: () => get().position === "expanded",
 
 			setPaymentPending: (paymentPending) => set({ paymentPending }),
 
