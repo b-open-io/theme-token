@@ -449,12 +449,15 @@ export function ThemeStudio() {
 
 		const result = await inscribeTheme(themeToMint);
 		if (result) {
+			const origin = `${result.txid}_0`;
 			// Cache theme for immediate preview (before ORDFS indexes it)
 			fetch("/api/themes/cache", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ txid: result.txid, theme: themeToMint }),
 			}).catch(() => {});
+			// Pre-warm OG image so it's ready for sharing
+			fetch(`/og/${origin}`).catch(() => {});
 			setTxid(result.txid);
 			setShowInscribeDialog(false);
 		}

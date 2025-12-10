@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Search, Loader2 } from "lucide-react";
+import { motion, useAnimation } from "framer-motion";
+import { ArrowLeft, Compass } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CachedTheme } from "@/lib/themes-cache";
 
@@ -12,77 +12,113 @@ interface ThemesResponse {
   themes: CachedTheme[];
 }
 
-function ThemeCard({
+// Falling color column - each column shows one theme's palette
+function ColorColumn({
   theme,
+  delay,
+  speed,
 }: {
   theme: CachedTheme;
+  delay: number;
+  speed: number;
 }) {
-  const randomX = useMemo(() => Math.random() * 80 - 40, []);
-  const randomY = useMemo(() => Math.random() * 80 - 40, []);
-  const duration = useMemo(() => 15 + Math.random() * 20, []);
-  const delay = useMemo(() => Math.random() * 2, []);
-  const scale = useMemo(() => 0.6 + Math.random() * 0.6, []);
+  const colors = useMemo(
+    () => [
+      theme.theme.styles.dark.primary,
+      theme.theme.styles.dark.secondary,
+      theme.theme.styles.dark.accent,
+      theme.theme.styles.dark.destructive,
+      theme.theme.styles.dark.muted,
+      theme.theme.styles.dark.card,
+    ],
+    [theme]
+  );
 
-  const colors = theme.theme.styles.dark;
+  // Create a long trail by repeating colors
+  const tiles = useMemo(
+    () => [...colors, ...colors, ...colors, ...colors],
+    [colors]
+  );
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{
-        opacity: [0, 0.6, 0.6, 0],
-        scale: [scale * 0.8, scale, scale * 0.8],
-        x: [`${randomX}%`, `${randomX + (Math.random() * 20 - 10)}%`],
-        y: [`${randomY}%`, `${randomY + (Math.random() * 20 - 10)}%`],
-        rotate: [0, Math.random() * 15 - 7.5, 0],
-      }}
+      className="flex flex-col gap-1"
+      initial={{ y: "-100%" }}
+      animate={{ y: "100%" }}
       transition={{
-        duration: duration,
+        duration: speed,
         repeat: Number.POSITIVE_INFINITY,
-        repeatType: "reverse",
-        ease: "easeInOut",
+        ease: "linear",
         delay: delay,
       }}
-      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-      style={{ zIndex: 0 }}
     >
-      <div
-        className="relative overflow-hidden rounded-xl border border-white/10 shadow-2xl backdrop-blur-sm"
-        style={{ backgroundColor: colors.card || "#18181b", width: "140px" }}
-      >
-        <div className="flex items-center gap-1 border-b border-white/5 bg-white/5 px-2 py-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-red-500/50" />
-          <div className="h-1.5 w-1.5 rounded-full bg-yellow-500/50" />
-          <div className="h-1.5 w-1.5 rounded-full bg-green-500/50" />
-        </div>
-
-        <div className="flex h-16 w-full flex-col gap-1 p-2">
-          <div className="flex flex-1 gap-1">
-            <div
-              className="flex-[2] rounded"
-              style={{ background: colors.primary }}
-            />
-            <div
-              className="flex-1 rounded"
-              style={{ background: colors.secondary }}
-            />
-          </div>
-          <div className="flex flex-1 gap-1">
-            <div
-              className="flex-1 rounded"
-              style={{ background: colors.accent }}
-            />
-            <div
-              className="flex-[2] rounded"
-              style={{ background: colors.muted }}
-            />
-          </div>
-        </div>
-
-        <div className="px-2 pb-2">
-          <div className="h-1.5 w-2/3 rounded-full bg-white/10" />
-        </div>
-      </div>
+      {tiles.map((color, i) => (
+        <div
+          key={i}
+          className="aspect-square w-full rounded-sm"
+          style={{
+            backgroundColor: color,
+            opacity: 1 - i / tiles.length,
+          }}
+        />
+      ))}
     </motion.div>
+  );
+}
+
+// Glitchy 404 text
+function GlitchText() {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    const glitchSequence = async () => {
+      while (true) {
+        await controls.start({
+          x: 0,
+          opacity: 1,
+          textShadow: "0 0 0 transparent",
+        });
+        await new Promise((r) =>
+          setTimeout(r, Math.random() * 4000 + 2000)
+        );
+
+        // Glitch burst
+        await controls.start({
+          x: -8,
+          opacity: 0.8,
+          textShadow: "4px 0 oklch(0.7 0.25 25)",
+          transition: { duration: 0.05 },
+        });
+        await controls.start({
+          x: 8,
+          opacity: 0.9,
+          textShadow: "-4px 0 oklch(0.7 0.2 250)",
+          transition: { duration: 0.05 },
+        });
+        await controls.start({
+          x: -3,
+          textShadow: "2px 0 oklch(0.8 0.15 150)",
+          transition: { duration: 0.03 },
+        });
+        await controls.start({
+          x: 0,
+          opacity: 1,
+          textShadow: "0 0 0 transparent",
+          transition: { duration: 0.05 },
+        });
+      }
+    };
+    glitchSequence();
+  }, [controls]);
+
+  return (
+    <motion.h1
+      animate={controls}
+      className="select-none text-[20vw] font-black leading-none tracking-tighter text-white mix-blend-difference md:text-[15vw]"
+      style={{ fontFamily: "var(--font-mono), monospace" }}
+    >
+      404
+    </motion.h1>
   );
 }
 
@@ -97,91 +133,117 @@ export function ThemeNotFound() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const backgroundThemes = useMemo(() => {
-    if (!data?.themes) return [];
-    const shuffled = [...data.themes].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 16);
-  }, [data]);
+  const [columnCount, setColumnCount] = useState(0);
+
+  useEffect(() => {
+    const updateColumns = () => {
+      const width = window.innerWidth;
+      // ~40px per column on mobile, ~50px on desktop
+      setColumnCount(Math.floor(width / (width < 768 ? 36 : 48)));
+    };
+    updateColumns();
+    window.addEventListener("resize", updateColumns);
+    return () => window.removeEventListener("resize", updateColumns);
+  }, []);
+
+  const themes = data?.themes || [];
+  const columns = useMemo(
+    () => Array.from({ length: columnCount }, (_, i) => i),
+    [columnCount]
+  );
 
   return (
-    <main className="relative flex min-h-[80vh] w-full flex-col items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-muted/50 via-background to-background" />
+    <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-black">
+      {/* Matrix rain of theme colors */}
+      {themes.length > 0 && columnCount > 0 && (
+        <div className="absolute inset-0 flex gap-1 px-1 opacity-60">
+          {columns.map((i) => {
+            const theme = themes[i % themes.length];
+            const theme2 = themes[(i + Math.floor(themes.length / 2)) % themes.length];
+            return (
+              <div key={i} className="relative h-full flex-1 overflow-hidden">
+                <ColorColumn
+                  theme={theme}
+                  delay={Math.random() * 3}
+                  speed={4 + Math.random() * 4}
+                />
+                <div className="absolute inset-0">
+                  <ColorColumn
+                    theme={theme2}
+                    delay={Math.random() * 3 + 1.5}
+                    speed={6 + Math.random() * 5}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
+      {/* Radial vignette */}
       <div
-        className="absolute inset-0 z-0 opacity-10"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage: "radial-gradient(var(--border) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
+          background:
+            "radial-gradient(ellipse at center, transparent 0%, transparent 30%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.95) 100%)",
         }}
       />
 
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <AnimatePresence>
-          {!isLoading &&
-            backgroundThemes.map((theme) => (
-              <ThemeCard key={theme.origin} theme={theme} />
-            ))}
-        </AnimatePresence>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 mx-4 max-w-lg rounded-2xl border border-border bg-card/80 p-8 text-center shadow-2xl backdrop-blur-xl md:p-12"
-      >
-        <div className="absolute left-1/2 top-1/2 -z-10 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[60px]" />
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center px-4">
+        <GlitchText />
 
         <motion.div
-          animate={{ scale: [1, 1.02, 1] }}
-          transition={{
-            duration: 3,
-            repeat: Number.POSITIVE_INFINITY,
-            repeatType: "reverse",
-          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-6 max-w-md rounded-xl border border-white/10 bg-black/80 p-6 text-center backdrop-blur-xl md:p-8"
         >
-          <h1 className="bg-gradient-to-b from-foreground to-foreground/40 bg-clip-text text-8xl font-black tracking-tighter text-transparent md:text-9xl">
-            404
-          </h1>
+          <h2
+            className="mb-2 text-lg font-bold uppercase tracking-widest text-white"
+            style={{ fontFamily: "var(--font-mono), monospace" }}
+          >
+            Page Not Found
+          </h2>
+          <p className="mb-6 text-sm text-neutral-400">
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved. But look at all these beautiful themes you could explore
+            instead.
+          </p>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button asChild size="lg" className="gap-2">
+              <Link href="/themes">
+                <Compass className="h-4 w-4" />
+                Browse Themes
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="gap-2">
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4" />
+                Back Home
+              </Link>
+            </Button>
+          </div>
         </motion.div>
 
-        <h2 className="mt-4 text-2xl font-bold tracking-tight md:text-3xl">
-          Theme Not Found
-        </h2>
-
-        <p className="mt-4 text-muted-foreground">
-          This theme hasn&apos;t been indexed yet or the origin is invalid. The
-          marketplace is full of other stunning designs to explore.
-        </p>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
-            <Link href="/themes">
-              <Search className="h-4 w-4" />
-              Browse Themes
-            </Link>
-          </Button>
-
-          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className="w-full gap-2 sm:w-auto"
-          >
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4" />
-              Back Home
-            </Link>
-          </Button>
-        </div>
-
         {isLoading && (
-          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Loading themes...
-          </div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-4 text-xs text-neutral-600"
+          >
+            Loading theme colors...
+          </motion.p>
         )}
-      </motion.div>
-    </main>
+      </div>
+
+      {/* Bottom attribution */}
+      <div className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-neutral-700">
+          ThemeToken
+        </p>
+      </div>
+    </div>
   );
 }

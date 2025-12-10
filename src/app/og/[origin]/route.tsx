@@ -4,6 +4,9 @@ import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
 
 export const runtime = "edge";
 
+// Cache OG images for 1 hour, stale-while-revalidate for 1 day
+export const revalidate = 3600;
+
 // Space Grotesk Bold TTF from Fontsource CDN
 const FONT_URL =
 	"https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.ttf";
@@ -49,6 +52,34 @@ function seededRandom(seed: number, i: number) {
 	return x - Math.floor(x);
 }
 
+// Fetch theme from cache first, then ORDFS
+async function getTheme(origin: string): Promise<ThemeToken | null> {
+	// Try our KV cache API first (for recently inscribed themes)
+	try {
+		const cacheUrl = new URL("/api/themes/cache", "https://themetoken.dev");
+		const cacheRes = await fetch(cacheUrl.toString(), {
+			headers: { "Content-Type": "application/json" },
+		});
+		if (cacheRes.ok) {
+			const data = await cacheRes.json();
+			const cached = data.themes?.find((t: { origin: string }) => t.origin === origin);
+			if (cached?.theme) {
+				return cached.theme;
+			}
+		}
+	} catch {
+		// Fall through to ORDFS
+	}
+
+	// Fall back to ORDFS via SDK
+	try {
+		const published = await fetchThemeByOrigin(origin);
+		return published?.theme || null;
+	} catch {
+		return null;
+	}
+}
+
 export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ origin: string }> },
@@ -62,21 +93,16 @@ export async function GET(
 	const defaultColors = ["#6366f1", "#a855f7", "#ec4899", "#52525b", "#3b82f6"];
 	let stripeColors = defaultColors;
 	let foregroundColor = "#fafafa";
+	let themeName = "Theme Token";
 
-	try {
-		const published = await fetchThemeByOrigin(origin);
-		if (published) {
-			const extracted = extractColors(published.theme);
-			if (extracted.length > 0) {
-				stripeColors = extracted;
-			}
-			foregroundColor = toHex(
-				published.theme.styles.dark.foreground,
-				"#fafafa",
-			);
+	const theme = await getTheme(origin);
+	if (theme) {
+		const extracted = extractColors(theme);
+		if (extracted.length > 0) {
+			stripeColors = extracted;
 		}
-	} catch {
-		// Use defaults
+		foregroundColor = toHex(theme.styles.dark.foreground, "#fafafa");
+		themeName = theme.name || "Theme Token";
 	}
 
 	// Generate seed from origin for deterministic layout
@@ -163,7 +189,7 @@ export async function GET(
 					<div
 						style={{
 							display: "flex",
-							fontSize: 96,
+							fontSize: themeName.length > 20 ? 64 : 96,
 							fontWeight: 700,
 							fontFamily: "Space Grotesk",
 							color: foregroundColor,
@@ -171,7 +197,7 @@ export async function GET(
 							letterSpacing: "-0.02em",
 						}}
 					>
-						Theme Token
+						{themeName}
 					</div>
 					<div
 						style={{
@@ -182,6 +208,7 @@ export async function GET(
 							color: foregroundColor,
 							textShadow: "0 2px 10px rgba(0,0,0,0.5)",
 							marginTop: 8,
+							opacity: 0.8,
 						}}
 					>
 						themetoken.dev
