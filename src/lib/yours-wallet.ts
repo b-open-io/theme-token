@@ -192,8 +192,8 @@ export async function fetchOrdinalContent<T = unknown>(
 	outpoint: string,
 ): Promise<T | null> {
 	try {
-		const { getContentUrl } = await import("@theme-token/sdk");
-		const response = await fetch(getContentUrl(outpoint));
+		const { getOrdfsUrl } = await import("@theme-token/sdk");
+		const response = await fetch(getOrdfsUrl(outpoint));
 		if (!response.ok) return null;
 		return await response.json();
 	} catch {

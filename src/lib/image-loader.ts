@@ -15,7 +15,7 @@
  * - Result: 100% theme-reactive patterns
  */
 
-import { isOnChainPath, extractOrigin, getContentUrl } from "@theme-token/sdk";
+import { isOnChainPath, extractOrigin, getOrdfsUrl } from "@theme-token/sdk";
 
 // Re-export SDK functions with image-specific names for backwards compatibility
 export const isOnChainImage = isOnChainPath;
@@ -101,7 +101,7 @@ export async function loadImageByOrigin(origin: string): Promise<string> {
 	const loadPromise = (async () => {
 		try {
 			// Fetch image from ORDFS using SDK URL builder
-			const response = await fetch(getContentUrl(origin));
+			const response = await fetch(getOrdfsUrl(origin));
 			if (!response.ok) {
 				throw new Error(`Failed to fetch image: ${response.status}`);
 			}
@@ -237,7 +237,7 @@ export async function loadThemeBackgrounds(styles: {
  * Get ORDFS content URL for an image origin
  * Re-exports SDK function for backwards compatibility
  */
-export const getImageContentUrl = getContentUrl;
+export const getImageContentUrl = getOrdfsUrl;
 
 /**
  * Preload an image by origin (useful for preview)

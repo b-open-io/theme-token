@@ -1,6 +1,6 @@
 "use client";
 
-import { getContentUrl } from "@theme-token/sdk";
+import { getOrdfsUrl } from "@theme-token/sdk";
 import { use, useCallback, useEffect, useState } from "react";
 import {
 	ArrowLeft,
@@ -402,7 +402,7 @@ export default function FontPreviewPage({
 										asChild
 									>
 										<a
-											href={getContentUrl(origin)}
+											href={getOrdfsUrl(origin)}
 											target="_blank"
 											rel="noopener noreferrer"
 										>
@@ -424,7 +424,7 @@ export default function FontPreviewPage({
 							</Button>
 							<Button variant="outline" className="w-full" asChild>
 								<a
-									href={getContentUrl(origin)}
+									href={getOrdfsUrl(origin)}
 									download
 									target="_blank"
 									rel="noopener noreferrer"

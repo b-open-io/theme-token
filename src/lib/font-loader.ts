@@ -12,7 +12,6 @@ import {
 	isFontLoaded,
 	getCachedFont,
 	clearFontCache,
-	getContentUrl,
 	getOrdfsUrl,
 	type LoadedFont,
 } from "@theme-token/sdk";
@@ -29,7 +28,7 @@ export {
 // Alias exports to match previous API names
 export const isOnChainFont = isOnChainPath;
 export const extractOriginFromPath = extractOrigin;
-export const getFontContentUrl = getContentUrl;
+export const getFontContentUrl = getOrdfsUrl;
 
 // Website-specific: Font metadata from MAP protocol
 export interface FontMetadata {
