@@ -224,8 +224,8 @@ export function InscribedSuccessModal({
                 Install via CLI
               </label>
               <div className="group relative rounded-md border bg-muted/50">
-                <div className="overflow-x-auto p-3 pr-10">
-                  <code className="block whitespace-nowrap font-mono text-xs">
+                <div className="overflow-hidden p-3 pr-10">
+                  <code className="block truncate font-mono text-xs">
                     {installCommand}
                   </code>
                 </div>
