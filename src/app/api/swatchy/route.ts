@@ -2,9 +2,9 @@ import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from 
 import { type NextRequest, NextResponse } from "next/server";
 import {
 	conversationModel,
-	SWATCHY_SYSTEM_PROMPT,
+	buildSwatchySystemPrompt,
 } from "@/lib/agent/config";
-import { allTools } from "@/lib/agent/tools";
+import { getAvailableTools } from "@/lib/agent/tools";
 
 export const maxDuration = 60;
 
@@ -20,13 +20,17 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		// Build dynamic system prompt and get available tools based on feature flags
+		const systemPrompt = buildSwatchySystemPrompt();
+		const availableTools = getAvailableTools();
+
 		// Use streaming text generation with tools
 		// The model string format "provider/model" is used by Vercel AI Gateway
 		const result = streamText({
 			model: conversationModel as Parameters<typeof streamText>[0]["model"],
-			system: SWATCHY_SYSTEM_PROMPT,
+			system: systemPrompt,
 			messages: convertToModelMessages(messages),
-			tools: allTools,
+			tools: availableTools,
 			toolChoice: "auto",
 			// Allow multi-step tool calling - Swatchy can chain actions (navigate then generate, etc)
 			stopWhen: stepCountIs(5),

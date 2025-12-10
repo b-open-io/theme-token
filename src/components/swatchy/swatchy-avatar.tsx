@@ -17,12 +17,12 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	// Calculate positions based on state
 	const getAnimateProps = () => {
 		if (!isCorner) {
-			// Expanded - large avatar peeking from bottom right, partially behind chat
+			// Expanded - large avatar at top right, partially behind chat
 			return {
 				left: "auto",
-				bottom: -40, // Partially off-screen
+				bottom: "auto",
 				right: -20,  // Partially off-screen
-				top: "auto",
+				top: 100,    // Position at top (below header)
 				width: 180,
 				height: 180,
 			};

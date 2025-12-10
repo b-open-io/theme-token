@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { UIMessage } from "ai";
 import type { ToolName } from "@/lib/agent/tools";
 
 export type SwatchyPosition = "corner" | "expanded";
@@ -38,6 +40,10 @@ interface SwatchyStore {
 	// Generation State
 	generation: GenerationState;
 
+	// Chat State (persisted)
+	chatMessages: UIMessage[];
+	chatInput: string;
+
 	// Actions
 	openChat: () => void;
 	closeChat: () => void;
@@ -58,6 +64,10 @@ interface SwatchyStore {
 	setGenerationSuccess: (result: unknown) => void;
 	setGenerationError: (error: string) => void;
 	clearGeneration: () => void;
+
+	// Chat Actions
+	setChatMessages: (messages: UIMessage[]) => void;
+	setChatInput: (input: string) => void;
 }
 
 const initialGenerationState: GenerationState = {
@@ -65,105 +75,123 @@ const initialGenerationState: GenerationState = {
 	toolName: null,
 };
 
-export const useSwatchyStore = create<SwatchyStore>()((set, get) => ({
-	position: "corner",
-	side: "left",
-	isNavigating: false,
-	paymentPending: null,
-	paymentTxid: null,
-	generation: initialGenerationState,
-
-	openChat: () =>
-		set({
-			position: "expanded",
-		}),
-
-	closeChat: () =>
-		set({
+export const useSwatchyStore = create<SwatchyStore>()(
+	persist(
+		(set, get) => ({
 			position: "corner",
-		}),
-
-	toggleChat: () => {
-		const { position } = get();
-		if (position === "corner") {
-			get().openChat();
-		} else {
-			get().closeChat();
-		}
-	},
-
-	setNavigating: (isNavigating) => {
-		// When Swatchy triggers navigation, toggle which side he's on for fun
-		if (isNavigating) {
-			const currentSide = get().side;
-			set({
-				isNavigating: true,
-				side: currentSide === "left" ? "right" : "left",
-			});
-		} else {
-			set({ isNavigating: false });
-		}
-	},
-
-	handleExternalNavigation: () => {
-		const { isNavigating } = get();
-		if (isNavigating) {
-			// Navigation was triggered by Swatchy, just reset the flag but keep chat open
-			set({ isNavigating: false });
-		} else {
-			// External navigation - close chat and return to corner
-			set({ position: "corner" });
-		}
-	},
-
-	setPaymentPending: (paymentPending) => set({ paymentPending }),
-
-	confirmPayment: (txid) =>
-		set({
-			paymentTxid: txid,
-			paymentPending: null,
-		}),
-
-	cancelPayment: () =>
-		set({
-			paymentPending: null,
-		}),
-
-	clearPayment: () =>
-		set({
+			side: "left",
+			isNavigating: false,
 			paymentPending: null,
 			paymentTxid: null,
-		}),
-
-	setGenerating: (toolName, progress) =>
-		set({
-			generation: {
-				status: "generating",
-				toolName,
-				progress,
-			},
-		}),
-
-	setGenerationSuccess: (result) =>
-		set({
-			generation: {
-				status: "success",
-				toolName: get().generation.toolName,
-				result,
-			},
-		}),
-
-	setGenerationError: (error) =>
-		set({
-			generation: {
-				status: "error",
-				toolName: get().generation.toolName,
-				error,
-			},
-		}),
-
-	clearGeneration: () =>
-		set({
 			generation: initialGenerationState,
+			chatMessages: [],
+			chatInput: "",
+
+			openChat: () =>
+				set({
+					position: "expanded",
+				}),
+
+			closeChat: () =>
+				set({
+					position: "corner",
+				}),
+
+			toggleChat: () => {
+				const { position } = get();
+				if (position === "corner") {
+					get().openChat();
+				} else {
+					get().closeChat();
+				}
+			},
+
+			setNavigating: (isNavigating) => {
+				// When Swatchy triggers navigation, toggle which side he's on for fun
+				if (isNavigating) {
+					const currentSide = get().side;
+					set({
+						isNavigating: true,
+						side: currentSide === "left" ? "right" : "left",
+					});
+				} else {
+					set({ isNavigating: false });
+				}
+			},
+
+			handleExternalNavigation: () => {
+				const { isNavigating } = get();
+				if (isNavigating) {
+					// Navigation was triggered by Swatchy, just reset the flag but keep chat open
+					set({ isNavigating: false });
+				} else {
+					// External navigation - close chat and return to corner
+					set({ position: "corner" });
+				}
+			},
+
+			setPaymentPending: (paymentPending) => set({ paymentPending }),
+
+			confirmPayment: (txid) =>
+				set({
+					paymentTxid: txid,
+					paymentPending: null,
+				}),
+
+			cancelPayment: () =>
+				set({
+					paymentPending: null,
+				}),
+
+			clearPayment: () =>
+				set({
+					paymentPending: null,
+					paymentTxid: null,
+				}),
+
+			setGenerating: (toolName, progress) =>
+				set({
+					generation: {
+						status: "generating",
+						toolName,
+						progress,
+					},
+				}),
+
+			setGenerationSuccess: (result) =>
+				set({
+					generation: {
+						status: "success",
+						toolName: get().generation.toolName,
+						result,
+					},
+				}),
+
+			setGenerationError: (error) =>
+				set({
+					generation: {
+						status: "error",
+						toolName: get().generation.toolName,
+						error,
+					},
+				}),
+
+			clearGeneration: () =>
+				set({
+					generation: initialGenerationState,
+				}),
+
+			setChatMessages: (chatMessages) => set({ chatMessages }),
+
+			setChatInput: (chatInput) => set({ chatInput }),
 		}),
-}));
+		{
+			name: "swatchy-state",
+			partialize: (state) => ({
+				chatMessages: state.chatMessages,
+				chatInput: state.chatInput,
+				side: state.side,
+			}),
+		}
+	)
+);

@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSwatchyStore } from "./swatchy-store";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
@@ -14,6 +14,7 @@ import {
 import type { ToolName } from "@/lib/agent/tools";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
+import { storeRemixTheme } from "@/components/theme-gallery";
 
 export function useSwatchyChat() {
 	const router = useRouter();
@@ -29,14 +30,15 @@ export function useSwatchyChat() {
 		setGenerationError,
 		clearGeneration,
 		generation,
+		chatMessages,
+		setChatMessages,
+		chatInput,
+		setChatInput,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
 	const { setThemeColor, setThemeRadius, setThemeFont } = useStudioStore();
 	const { setParams: setPatternParams, setColors: setPatternColors } = usePatternStore();
-
-	// In v6, input state is managed externally
-	const [input, setInput] = useState("");
 
 	const {
 		messages,
@@ -89,6 +91,22 @@ export function useSwatchyChat() {
 	// Using typeof to get the exact type from useChat return value
 	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
 	addToolOutputRef.current = addToolOutput;
+
+	// Restore messages from store on mount
+	const hasRestoredRef = useRef(false);
+	useEffect(() => {
+		if (!hasRestoredRef.current && chatMessages.length > 0) {
+			setMessages(chatMessages);
+			hasRestoredRef.current = true;
+		}
+	}, [chatMessages, setMessages]);
+
+	// Sync messages to store when they change
+	useEffect(() => {
+		if (hasRestoredRef.current) {
+			setChatMessages(messages);
+		}
+	}, [messages, setChatMessages]);
 
 	// Compute loading state from status
 	const isLoading = status === "submitted" || status === "streaming";
@@ -251,14 +269,16 @@ export function useSwatchyChat() {
 						}
 
 						const data = await response.json();
+
+						// Store theme for studio to pick up (triggers success modal)
+						storeRemixTheme(data.theme, { source: "ai-generate", paymentTxid: txid });
+
+						// Navigate to studio - this loads the theme and shows the success modal
+						setNavigating(true);
+						router.push("/studio/theme");
+
 						setGenerationSuccess(data.theme);
-
-						// Store the theme for the studio
-						if (typeof window !== "undefined") {
-							sessionStorage.setItem("swatchy-generated-theme", JSON.stringify(data.theme));
-						}
-
-						return `Theme "${data.theme.name}" generated successfully! Payment txid: ${txid}. You can now navigate to the Theme Studio to view and customize it.`;
+						return `Theme "${data.theme.name}" generated! Opening studio...`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg);
@@ -324,7 +344,7 @@ export function useSwatchyChat() {
 					return `Unknown paid tool: ${toolName}`;
 			}
 		},
-		[setGenerating, setGenerationSuccess, setGenerationError],
+		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, router],
 	);
 
 	// Handle payment confirmation for paid tools
@@ -350,11 +370,25 @@ export function useSwatchyChat() {
 					toolCallId,
 					output: toolResult,
 				});
+			} else {
+				// Payment returned null - user cancelled or wallet error
+				console.log("[Payment] User cancelled or wallet returned null");
+				cancelPayment();
+				clearGeneration();
+
+				// Inform the AI that payment was cancelled
+				addToolOutputRef.current({
+					tool: toolName,
+					toolCallId,
+					state: "output-error",
+					errorText: "Payment was cancelled by user",
+				});
 			}
 		} catch (error) {
 			console.error("[Payment Error]", error);
 			// Cancel payment on error
 			cancelPayment();
+			clearGeneration();
 
 			// Use output-error state per AI SDK v6 best practices
 			addToolOutputRef.current({
@@ -364,37 +398,56 @@ export function useSwatchyChat() {
 				errorText: error instanceof Error ? error.message : "Payment failed",
 			});
 		}
-	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, executePaidTool]);
+	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, clearGeneration, executePaidTool]);
+
+	// Handle explicit cancel button click
+	const handlePaymentCancelled = useCallback(() => {
+		if (!paymentPending || !addToolOutputRef.current) return;
+
+		const { toolName, toolCallId } = paymentPending;
+
+		console.log("[Payment] User clicked cancel button");
+		cancelPayment();
+		clearGeneration();
+
+		// Inform the AI that payment was cancelled
+		addToolOutputRef.current({
+			tool: toolName,
+			toolCallId,
+			state: "output-error",
+			errorText: "Payment was cancelled by user",
+		});
+	}, [paymentPending, cancelPayment, clearGeneration]);
 
 	// Form submission handler
 	const handleSubmit = useCallback(
 		async (e?: React.FormEvent) => {
 			e?.preventDefault();
-			if (!input.trim() || isLoading) return;
+			if (!chatInput.trim() || isLoading) return;
 
 			// Clear any previous generation state
 			clearGeneration();
 
-			const message = input.trim();
-			setInput(""); // Clear input immediately
+			const message = chatInput.trim();
+			setChatInput(""); // Clear input immediately
 
 			await sendMessage({
 				text: message,
 			});
 		},
-		[input, isLoading, sendMessage, clearGeneration],
+		[chatInput, isLoading, sendMessage, clearGeneration, setChatInput],
 	);
 
 	return {
 		messages,
-		input,
-		setInput,
+		input: chatInput,
+		setInput: setChatInput,
 		handleSubmit,
 		isLoading,
 		error,
 		paymentPending,
 		handlePaymentConfirmed,
-		cancelPayment,
+		handlePaymentCancelled,
 		walletStatus,
 		balance,
 		setMessages,

@@ -184,7 +184,7 @@ export default function ThemesPage() {
 	};
 
 	const handleRemix = (cached: CachedTheme) => {
-		storeRemixTheme(cached.theme, { source: "remix", txid: cached.origin });
+		storeRemixTheme(cached.theme, { source: "remix" });
 		router.push("/studio/theme");
 	};
 

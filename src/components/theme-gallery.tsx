@@ -28,7 +28,7 @@ const REMIX_STORAGE_KEY = "theme-token-remix";
 export interface StoredRemixTheme {
 	theme: ThemeToken;
 	source?: "ai-generate" | "remix";
-	txid?: string;
+	paymentTxid?: string;
 }
 
 export function dispatchRemixTheme(theme: ThemeToken) {
@@ -37,12 +37,12 @@ export function dispatchRemixTheme(theme: ThemeToken) {
 
 export function storeRemixTheme(
 	theme: ThemeToken,
-	metadata?: { source?: "ai-generate" | "remix"; txid?: string },
+	metadata?: { source?: "ai-generate" | "remix"; paymentTxid?: string },
 ) {
 	const data: StoredRemixTheme = {
 		theme,
 		source: metadata?.source,
-		txid: metadata?.txid,
+		paymentTxid: metadata?.paymentTxid,
 	};
 	localStorage.setItem(REMIX_STORAGE_KEY, JSON.stringify(data));
 }

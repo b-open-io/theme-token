@@ -233,9 +233,9 @@ export function AiStudio() {
 					</div>
 				),
 				actions: (
-					<Button 
+					<Button
 						onClick={() => {
-							storeRemixTheme(theme, { source: "ai-generate", txid: paymentTxid! });
+							storeRemixTheme(theme, { source: "ai-generate", paymentTxid: paymentTxid! });
 							router.push("/studio/theme");
 						}}
 					>

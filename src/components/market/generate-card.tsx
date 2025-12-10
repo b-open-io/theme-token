@@ -188,7 +188,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			// Store the theme with AI generation metadata and navigate to studio
 			storeRemixTheme(theme, {
 				source: "ai-generate",
-				txid: paymentTxid,
+				paymentTxid: paymentTxid,
 			});
 			router.push("/studio/theme");
 		} catch (err) {

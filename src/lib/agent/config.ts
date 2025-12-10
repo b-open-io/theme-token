@@ -1,3 +1,5 @@
+import { featureFlags } from "@/lib/feature-flags";
+
 // Model IDs for AI Gateway (Vercel AI SDK v6 gateway format)
 // Free model for conversation - fast and cost-effective
 export const conversationModel = "google/gemini-2.0-flash" as const;
@@ -27,8 +29,60 @@ export const WALLET_REQUIRED_TOOLS = new Set([
 	...PAID_TOOLS,
 ]);
 
-// System prompt for Swatchy
-export const SWATCHY_SYSTEM_PROMPT = `You are Swatchy, the friendly AI assistant for Theme Token - a platform for creating, owning, and trading ShadCN themes on the Bitcoin blockchain.
+/**
+ * Build the system prompt for Swatchy based on enabled feature flags
+ */
+export function buildSwatchySystemPrompt(): string {
+	// Build capabilities list based on enabled features
+	const capabilities: string[] = [
+		"1. **Navigation** - Take users anywhere: themes gallery, studios, marketplace, docs",
+		"2. **Theme Generation** - Create AI themes (costs 1M sats - payment UI will appear)",
+	];
+
+	let capabilityNumber = 3;
+
+	if (featureFlags.fonts) {
+		capabilities.push(
+			`${capabilityNumber}. **Font Generation** - Generate custom fonts (costs 10M sats)`,
+		);
+		capabilityNumber++;
+	}
+
+	if (featureFlags.images) {
+		capabilities.push(
+			`${capabilityNumber}. **Pattern Generation** - Create SVG patterns (costs 1M sats)`,
+		);
+		capabilityNumber++;
+	}
+
+	capabilities.push(
+		`${capabilityNumber}. **Studio Control** - Adjust colors, fonts, and settings in real-time`,
+		`${capabilityNumber + 1}. **Publishing** - Help inscribe creations to blockchain`,
+		`${capabilityNumber + 2}. **Marketplace** - Help list ordinals for sale`,
+	);
+
+	// Build navigation hints based on enabled features
+	const studios: string[] = ["theme studio"];
+
+	if (featureFlags.fonts) {
+		studios.push("font studio");
+	}
+
+	if (featureFlags.images) {
+		studios.push("pattern studio");
+	}
+
+	if (featureFlags.icons) {
+		studios.push("icon studio");
+	}
+
+	if (featureFlags.wallpapers) {
+		studios.push("wallpaper studio");
+	}
+
+	const studiosList = studios.join(", ");
+
+	return `You are Swatchy, the friendly AI assistant for Theme Token - a platform for creating, owning, and trading ShadCN themes on the Bitcoin blockchain.
 
 ## Your Personality
 - Enthusiastic about design, colors, and typography
@@ -37,13 +91,7 @@ export const SWATCHY_SYSTEM_PROMPT = `You are Swatchy, the friendly AI assistant
 - Knowledgeable about color theory, accessibility (WCAG), and modern UI design
 
 ## Your Capabilities
-1. **Navigation** - Take users anywhere: themes gallery, studios, marketplace, docs
-2. **Theme Generation** - Create AI themes (costs 1M sats - payment UI will appear)
-3. **Font Generation** - Generate custom fonts (costs 10M sats)
-4. **Pattern Generation** - Create SVG patterns (costs 1M sats)
-5. **Studio Control** - Adjust colors, fonts, and settings in real-time
-6. **Publishing** - Help inscribe creations to blockchain
-7. **Marketplace** - Help list ordinals for sale
+${capabilities.join("\n")}
 
 ## How to Behave
 - **BE PROACTIVE**: When users ask to do something, DO IT immediately. Don't ask for confirmation on free actions.
@@ -52,6 +100,9 @@ export const SWATCHY_SYSTEM_PROMPT = `You are Swatchy, the friendly AI assistant
 - **BRIEF RESPONSES**: Say what you're doing in a few words while doing it. "Taking you to the theme studio..." then navigate.
 - Use OKLCH color format (e.g., "oklch(0.7 0.15 250)")
 
+## Available Studios
+Users can visit these creative studios: ${studiosList}. Guide them to the right one for their needs.
+
 ## Site Context
 - ShadCN UI component library
 - 1-Sat Ordinals on BSV blockchain
@@ -59,6 +110,7 @@ export const SWATCHY_SYSTEM_PROMPT = `You are Swatchy, the friendly AI assistant
 - OrdLock smart contracts for marketplace
 
 Be helpful, be fast, make beautiful things happen!`;
+}
 
 // Fee address for AI generation payments
 export const FEE_ADDRESS = "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z";

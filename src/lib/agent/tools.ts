@@ -240,6 +240,39 @@ export const getExchangeRate = tool({
 // Tool Registry
 // ============================================================================
 
+import { featureFlags } from "@/lib/feature-flags";
+
+/**
+ * Get all available tools based on feature flags
+ */
+export function getAvailableTools() {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const tools: Record<string, any> = {
+		navigate,
+		generateTheme,
+		setThemeColor,
+		setThemeRadius,
+		setThemeFont,
+		prepareInscribe,
+		prepareListing,
+		getWalletBalance,
+		getExchangeRate,
+	};
+
+	// Add font-related tools if fonts feature is enabled
+	if (featureFlags.fonts) {
+		tools.generateFont = generateFont;
+	}
+
+	// Add pattern-related tools if images feature is enabled
+	if (featureFlags.images) {
+		tools.generatePattern = generatePattern;
+		tools.setPatternParams = setPatternParams;
+	}
+
+	return tools;
+}
+
 export const allTools = {
 	navigate,
 	generateTheme,

@@ -372,9 +372,9 @@ export function ThemeStudio() {
 			setCustomName(remixData.theme.name);
 
 			// If from AI generation, show success dialog and auto-save draft
-			if (remixData.source === "ai-generate" && remixData.txid) {
+			if (remixData.source === "ai-generate" && remixData.paymentTxid) {
 				setAiGenerationInfo({
-					txid: remixData.txid,
+					txid: remixData.paymentTxid,
 					themeName: remixData.theme.name,
 				});
 

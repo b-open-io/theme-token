@@ -22,13 +22,46 @@ import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import { useSwatchyStore } from "./swatchy-store";
 import { useSwatchyChat } from "./use-swatchy-chat";
 import { PaymentRequestCard } from "./payment-request";
+import { featureFlags } from "@/lib/feature-flags";
 
-const SUGGESTIONS = [
-	"Create a dark cyberpunk theme",
-	"Help me pick colors",
-	"Browse popular themes",
-	"How do I mint a theme?",
-];
+/**
+ * Get dynamic suggestions based on enabled feature flags
+ */
+function getSuggestions(): string[] {
+	const baseSuggestions = [
+		"Create a dark cyberpunk theme",
+		"Make my theme more accessible",
+		"Show me warm color palettes",
+		"Take me to the marketplace",
+		"Generate a minimalist theme",
+		"Browse popular themes",
+		"How do I mint a theme?",
+	];
+
+	const featureSuggestions: string[] = [];
+
+	if (featureFlags.fonts) {
+		featureSuggestions.push("Create a custom display font");
+	}
+
+	if (featureFlags.images) {
+		featureSuggestions.push("Generate a geometric pattern");
+	}
+
+	if (featureFlags.ai) {
+		featureSuggestions.push("Help me design a wellness app theme");
+	}
+
+	// Combine base suggestions with feature-specific ones and shuffle
+	const allSuggestions = [...baseSuggestions, ...featureSuggestions];
+
+	// Return a random selection of 4 suggestions
+	return allSuggestions
+		.sort(() => Math.random() - 0.5)
+		.slice(0, 4);
+}
+
+const SUGGESTIONS = getSuggestions();
 
 // Tool name display mapping
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -56,7 +89,7 @@ export function SwatchyChatBubble() {
 		isLoading,
 		paymentPending,
 		handlePaymentConfirmed,
-		cancelPayment,
+		handlePaymentCancelled,
 		generation,
 	} = useSwatchyChat();
 
@@ -218,7 +251,7 @@ export function SwatchyChatBubble() {
 								<PaymentRequestCard
 									payment={paymentPending}
 									onConfirm={onPaymentConfirm}
-									onCancel={cancelPayment}
+									onCancel={handlePaymentCancelled}
 									isProcessing={isPaymentProcessing}
 								/>
 							</div>
