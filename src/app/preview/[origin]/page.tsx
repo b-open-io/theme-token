@@ -11,22 +11,56 @@ interface Props {
 
 const THEMES_CACHE_KEY = "themes:published";
 
+export type ThemeSource = "chain" | "cache" | "ordfs";
+
+interface GetThemeResult {
+  theme: ThemeToken;
+  source: ThemeSource;
+  owner?: string;
+}
+
 // Fetch theme data - check KV cache first, then ORDFS
-async function getTheme(origin: string): Promise<ThemeToken | null> {
+async function getTheme(origin: string): Promise<GetThemeResult | null> {
   // First, try the KV cache (for recently inscribed themes not yet indexed)
+  let cachedTheme: CachedTheme | undefined;
   try {
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const cache = await kv.get<{ themes: CachedTheme[] }>(THEMES_CACHE_KEY);
-      const cached = cache?.themes?.find((t) => t.origin === origin);
-      if (cached) {
-        return cached.theme;
-      }
+      cachedTheme = cache?.themes?.find((t) => t.origin === origin);
     }
   } catch (e) {
     console.warn("[Preview] KV cache check failed:", e);
   }
 
-  // Fall back to ORDFS
+  // Check if theme is indexed on-chain by GorillaPool
+  let isOnChain = false;
+  try {
+    const searchRes = await fetch("https://ordinals.gorillapool.io/api/inscriptions/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ map: { type: "theme" } }),
+      next: { revalidate: 300 }, // Check every 5 minutes
+    });
+    if (searchRes.ok) {
+      const results = await searchRes.json();
+      isOnChain = Array.isArray(results) && results.some(
+        (item: { origin?: { outpoint?: string } }) => item.origin?.outpoint === origin
+      );
+    }
+  } catch {
+    // Ignore chain check errors
+  }
+
+  // If found in cache, return with appropriate source
+  if (cachedTheme) {
+    return {
+      theme: cachedTheme.theme,
+      source: isOnChain ? "chain" : "cache",
+      owner: cachedTheme.owner,
+    };
+  }
+
+  // Fall back to ORDFS (direct inscription fetch)
   try {
     const response = await fetch(`https://ordfs.network/${origin}`, {
       next: { revalidate: 3600 }, // Cache for 1 hour
@@ -43,7 +77,10 @@ async function getTheme(origin: string): Promise<ThemeToken | null> {
       return null;
     }
 
-    return result.theme;
+    return {
+      theme: result.theme,
+      source: isOnChain ? "chain" : "ordfs",
+    };
   } catch {
     return null;
   }
@@ -53,11 +90,19 @@ export default async function PreviewPage({ params, searchParams }: Props) {
   const { origin } = await params;
   const { tab } = await searchParams;
 
-  const theme = await getTheme(origin);
+  const result = await getTheme(origin);
 
-  if (!theme) {
+  if (!result) {
     notFound();
   }
 
-  return <PreviewClient theme={theme} origin={origin} initialTab={tab} />;
+  return (
+    <PreviewClient
+      theme={result.theme}
+      origin={origin}
+      initialTab={tab}
+      source={result.source}
+      owner={result.owner}
+    />
+  );
 }

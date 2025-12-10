@@ -3,7 +3,7 @@ import { validateThemeToken, type ThemeToken } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 
 const THEMES_CACHE_KEY = "themes:published";
-const CACHE_TTL_SECONDS = 60 * 60; // 1 hour TTL, refreshed on access
+const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 day TTL - KV persists across deploys
 
 export interface CachedTheme {
 	origin: string;
@@ -34,27 +34,29 @@ export async function GET(request: Request) {
 			});
 		}
 
-		const cache: ThemesCache | null = forceRefresh ? null : await kv.get(THEMES_CACHE_KEY);
+		// Always fetch existing cache for merging (even on force refresh)
+		const existingCache: ThemesCache | null = await kv.get(THEMES_CACHE_KEY);
 
-		// If cache exists and is fresh (< 5 min old), return it
-		if (cache && Date.now() - cache.lastSynced < 5 * 60 * 1000) {
+		// If cache exists, is fresh (< 5 min old), and not force refreshing, return it
+		if (!forceRefresh && existingCache && Date.now() - existingCache.lastSynced < 5 * 60 * 1000) {
 			return NextResponse.json({
-				themes: cache.themes,
+				themes: existingCache.themes,
 				cached: true,
-				lastSynced: cache.lastSynced,
+				lastSynced: existingCache.lastSynced,
 			});
 		}
 
 		// Fetch fresh from GorillaPool
 		const freshThemes = await fetchFromChain();
 
-		// Merge with any themes in cache that aren't on-chain yet (recently inscribed)
+		// Merge: Keep ALL cached themes that aren't on-chain yet
+		// (they may just not be indexed by GorillaPool, but are valid inscriptions)
 		const chainOrigins = new Set(freshThemes.map((t) => t.origin));
-		const recentlyInscribed = cache?.themes.filter(
-			(t) => !chainOrigins.has(t.origin) && Date.now() - t.inscribedAt < 60 * 60 * 1000
+		const notOnChain = existingCache?.themes.filter(
+			(t) => !chainOrigins.has(t.origin)
 		) || [];
 
-		const mergedThemes = [...recentlyInscribed, ...freshThemes];
+		const mergedThemes = [...notOnChain, ...freshThemes];
 
 		// Update cache
 		const newCache: ThemesCache = {
@@ -93,11 +95,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
 	try {
 		const body = await request.json();
-		const { txid, theme, owner } = body;
+		const { txid, origin: providedOrigin, theme, owner } = body;
 
-		if (!txid || !theme) {
+		// Accept either origin (full) or txid (legacy, assumes _0)
+		const origin = providedOrigin || (txid ? `${txid}_0` : null);
+
+		if (!origin || !theme) {
 			return NextResponse.json(
-				{ error: "Missing txid or theme" },
+				{ error: "Missing origin/txid or theme" },
 				{ status: 400 }
 			);
 		}
@@ -110,8 +115,6 @@ export async function POST(request: Request) {
 				{ status: 400 }
 			);
 		}
-
-		const origin = `${txid}_0`;
 		const newTheme: CachedTheme = {
 			origin,
 			theme: result.theme,

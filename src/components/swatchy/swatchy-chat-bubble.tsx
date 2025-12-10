@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { useRef, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Conversation,
@@ -10,9 +10,17 @@ import {
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+	PromptInput,
+	PromptInputTextarea,
+	PromptInputFooter,
+	PromptInputTools,
+	PromptInputSubmit,
+} from "@/components/ai-elements/prompt-input";
 import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
 import { useSwatchyStore } from "./swatchy-store";
 import { useSwatchyChat } from "./use-swatchy-chat";
+import { PaymentRequestCard } from "./payment-request";
 
 const SUGGESTIONS = [
 	"Create a dark cyberpunk theme",
@@ -21,28 +29,57 @@ const SUGGESTIONS = [
 	"How do I mint a theme?",
 ];
 
-export function SwatchyChatBubble() {
-	const { messages, closeChat } = useSwatchyStore();
-	const { input, setInput, handleSubmit, isLoading } = useSwatchyChat();
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+// Helper to extract text content from message parts
+function getMessageText(message: { role: string; parts?: Array<{ type: string; text?: string }> }): string {
+	if (!message.parts) return "";
 
-	const onSubmit = (e: FormEvent) => {
-		e.preventDefault();
-		handleSubmit();
-	};
+	const textParts = message.parts
+		.filter((part) => part.type === "text" && part.text)
+		.map((part) => part.text);
+
+	return textParts.join("\n");
+}
+
+export function SwatchyChatBubble() {
+	const { closeChat } = useSwatchyStore();
+	const {
+		messages,
+		input,
+		setInput,
+		handleSubmit,
+		isLoading,
+		paymentPending,
+		handlePaymentConfirmed,
+		cancelPayment,
+	} = useSwatchyChat();
+
+	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
 	const handleSuggestionClick = (suggestion: string) => {
 		setInput(suggestion);
-		// Focus the textarea after setting input
-		setTimeout(() => textareaRef.current?.focus(), 0);
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (e.key === "Enter" && !e.shiftKey) {
-			e.preventDefault();
-			handleSubmit();
+	const onPromptSubmit = () => {
+		if (!input.trim() || isLoading) return;
+		handleSubmit();
+	};
+
+	const onPaymentConfirm = async () => {
+		setIsPaymentProcessing(true);
+		try {
+			await handlePaymentConfirmed();
+		} finally {
+			setIsPaymentProcessing(false);
 		}
 	};
+
+	// Auto-scroll to bottom when messages change
+	useEffect(() => {
+		if (scrollContainerRef.current) {
+			scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+		}
+	}, [messages, paymentPending]);
 
 	return (
 		<motion.div
@@ -70,75 +107,86 @@ export function SwatchyChatBubble() {
 			{/* Messages */}
 			<Conversation className="flex-1">
 				<ConversationContent className="gap-4 p-3">
-					{messages.length === 0 ? (
-						<div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
-							<p className="text-sm text-muted-foreground">
-								Hi! I&apos;m Swatchy, your theme assistant. How can I help you
-								today?
-							</p>
-							<Suggestions className="flex-wrap justify-center gap-2">
-								{SUGGESTIONS.map((suggestion) => (
-									<Suggestion
-										key={suggestion}
-										suggestion={suggestion}
-										onClick={handleSuggestionClick}
-										className="text-xs"
-									/>
-								))}
-							</Suggestions>
-						</div>
-					) : (
-						messages.map((msg) => (
-							<Message key={msg.id} from={msg.role}>
-								<MessageContent>{msg.content}</MessageContent>
+					<div ref={scrollContainerRef} className="flex flex-col gap-4">
+						{messages.length === 0 ? (
+							<div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
+								<p className="text-sm text-muted-foreground">
+									Hi! I&apos;m Swatchy, your theme assistant. How can I help you
+									today?
+								</p>
+								<Suggestions className="flex-wrap justify-center gap-2">
+									{SUGGESTIONS.map((suggestion) => (
+										<Suggestion
+											key={suggestion}
+											suggestion={suggestion}
+											onClick={handleSuggestionClick}
+											className="text-xs"
+										/>
+									))}
+								</Suggestions>
+							</div>
+						) : (
+							<>
+								{messages.map((msg) => {
+									const text = getMessageText(msg as { role: string; parts?: Array<{ type: string; text?: string }> });
+									if (!text) return null;
+
+									return (
+										<Message key={msg.id} from={msg.role === "user" ? "user" : "assistant"}>
+											<MessageContent>{text}</MessageContent>
+										</Message>
+									);
+								})}
+							</>
+						)}
+
+						{/* Loading indicator */}
+						{isLoading && !paymentPending && (
+							<Message from="assistant">
+								<MessageContent>
+									<span className="animate-pulse">Thinking...</span>
+								</MessageContent>
 							</Message>
-						))
-					)}
-					{isLoading && (
-						<Message from="assistant">
-							<MessageContent>
-								<span className="animate-pulse">Thinking...</span>
-							</MessageContent>
-						</Message>
-					)}
+						)}
+
+						{/* Payment request card */}
+						{paymentPending && (
+							<div className="mt-2">
+								<PaymentRequestCard
+									payment={paymentPending}
+									onConfirm={onPaymentConfirm}
+									onCancel={cancelPayment}
+									isProcessing={isPaymentProcessing}
+								/>
+							</div>
+						)}
+					</div>
 				</ConversationContent>
 				<ConversationScrollButton />
 			</Conversation>
 
 			{/* Input */}
-			<form onSubmit={onSubmit} className="border-t p-3">
-				<div className="flex gap-2">
-					<textarea
-						ref={textareaRef}
+			<div className="border-t p-3">
+				<PromptInput
+					onSubmit={onPromptSubmit}
+					className="rounded-lg border bg-muted/30"
+				>
+					<PromptInputTextarea
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={handleKeyDown}
 						placeholder="Ask me anything about themes..."
-						className="min-h-10 max-h-24 flex-1 resize-none rounded-lg border bg-muted/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-						rows={1}
+						className="min-h-10 max-h-24 text-sm"
+						disabled={!!paymentPending}
 					/>
-					<Button
-						type="submit"
-						size="icon"
-						disabled={!input.trim() || isLoading}
-						className="shrink-0"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="h-4 w-4"
-						>
-							<path d="m5 12 7-7 7 7" />
-							<path d="M12 19V5" />
-						</svg>
-					</Button>
-				</div>
-			</form>
+					<PromptInputFooter>
+						<PromptInputTools />
+						<PromptInputSubmit
+							disabled={!input.trim() || isLoading || !!paymentPending}
+							status={isLoading ? "submitted" : undefined}
+						/>
+					</PromptInputFooter>
+				</PromptInput>
+			</div>
 		</motion.div>
 	);
 }

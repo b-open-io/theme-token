@@ -1,38 +1,42 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { ToolName } from "@/lib/agent/tools";
 
 export type SwatchyPosition = "corner" | "expanded";
 
-export interface SwatchyMessage {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-	timestamp: number;
+// Payment request for paid tools
+export interface PaymentRequest {
+	toolName: ToolName;
+	cost: number;
+	args: Record<string, unknown>;
 }
 
 interface SwatchyStore {
 	// UI State
 	position: SwatchyPosition;
 
-	// Chat State
-	messages: SwatchyMessage[];
-	isStreaming: boolean;
+	// Payment State
+	paymentPending: PaymentRequest | null;
+	paymentTxid: string | null;
 
 	// Actions
 	openChat: () => void;
 	closeChat: () => void;
 	toggleChat: () => void;
-	addMessage: (message: Omit<SwatchyMessage, "id" | "timestamp">) => void;
-	clearMessages: () => void;
-	setStreaming: (streaming: boolean) => void;
+
+	// Payment Actions
+	setPaymentPending: (payment: PaymentRequest | null) => void;
+	confirmPayment: (txid: string) => void;
+	cancelPayment: () => void;
+	clearPayment: () => void;
 }
 
 export const useSwatchyStore = create<SwatchyStore>()(
 	persist(
 		(set, get) => ({
 			position: "corner",
-			messages: [],
-			isStreaming: false,
+			paymentPending: null,
+			paymentTxid: null,
 
 			openChat: () =>
 				set({
@@ -53,24 +57,31 @@ export const useSwatchyStore = create<SwatchyStore>()(
 				}
 			},
 
-			addMessage: (message) =>
-				set((state) => ({
-					messages: [
-						...state.messages,
-						{
-							...message,
-							id: crypto.randomUUID(),
-							timestamp: Date.now(),
-						},
-					],
-				})),
+			setPaymentPending: (paymentPending) => set({ paymentPending }),
 
-			clearMessages: () => set({ messages: [] }),
-			setStreaming: (isStreaming) => set({ isStreaming }),
+			confirmPayment: (txid) =>
+				set({
+					paymentTxid: txid,
+					paymentPending: null,
+				}),
+
+			cancelPayment: () =>
+				set({
+					paymentPending: null,
+				}),
+
+			clearPayment: () =>
+				set({
+					paymentPending: null,
+					paymentTxid: null,
+				}),
 		}),
 		{
 			name: "swatchy-assistant",
-			partialize: (state) => ({ messages: state.messages }),
-		}
-	)
+			partialize: (state) => ({
+				// Only persist UI position, not payment state
+				position: state.position,
+			}),
+		},
+	),
 );

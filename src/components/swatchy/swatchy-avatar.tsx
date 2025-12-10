@@ -14,7 +14,7 @@ export function SwatchyAvatar({ position, onClick }: SwatchyAvatarProps) {
 
 	return (
 		<motion.button
-			className="fixed z-[60] cursor-pointer overflow-visible rounded-full shadow-lg transition-shadow hover:shadow-xl"
+			className="fixed z-[60] cursor-pointer overflow-visible rounded-full"
 			initial={false}
 			animate={
 				isCorner
@@ -78,7 +78,7 @@ export function SwatchyAvatar({ position, onClick }: SwatchyAvatarProps) {
 					alt="Swatchy Assistant"
 					width={80}
 					height={80}
-					className="h-full w-full rounded-full object-cover"
+					className="h-full w-full object-contain"
 					priority
 				/>
 			</motion.div>

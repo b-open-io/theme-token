@@ -7,6 +7,8 @@ import {
   AudioWaveform,
   Bot,
   Check,
+  CheckCircle,
+  Clock,
   Copy,
   CreditCard,
   ExternalLink,
@@ -19,6 +21,7 @@ import {
   Sun,
   Type,
 } from "lucide-react";
+import type { ThemeSource } from "./page";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -50,6 +53,8 @@ interface PreviewClientProps {
   theme: ThemeToken;
   origin: string;
   initialTab?: string;
+  source: ThemeSource;
+  owner?: string;
 }
 
 // Extract Google Font name from CSS font-family value
@@ -109,7 +114,29 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
-export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps) {
+// Status badge configuration
+const statusConfig: Record<ThemeSource, { label: string; icon: typeof CheckCircle; className: string; tooltip: string }> = {
+  chain: {
+    label: "On Chain",
+    icon: CheckCircle,
+    className: "text-green-600 dark:text-green-400",
+    tooltip: "Indexed on blockchain and visible in gallery",
+  },
+  cache: {
+    label: "Pending Indexing",
+    icon: Clock,
+    className: "text-amber-600 dark:text-amber-400",
+    tooltip: "Inscribed but not yet indexed by blockchain explorer",
+  },
+  ordfs: {
+    label: "Inscribed",
+    icon: CheckCircle,
+    className: "text-blue-600 dark:text-blue-400",
+    tooltip: "Available via ORDFS",
+  },
+};
+
+export function PreviewClient({ theme, origin, initialTab, source, owner }: PreviewClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { mode: globalMode } = useTheme();
@@ -244,7 +271,7 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        txid: origin.replace(/_\d+$/, ""),
+        origin,
         theme,
       }),
     }).catch(() => {});
@@ -354,17 +381,27 @@ export function PreviewClient({ theme, origin, initialTab }: PreviewClientProps)
                   <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
                     {theme.name}
                   </h1>
-                  <Badge
-                    variant="outline"
-                    className="font-mono text-[10px] uppercase tracking-widest"
-                    style={{
-                      borderColor: "color-mix(in oklch, var(--primary) 30%, transparent)",
-                      color: "var(--primary)",
-                      backgroundColor: "color-mix(in oklch, var(--primary) 5%, transparent)",
-                    }}
-                  >
-                    Inscribed
-                  </Badge>
+                  {(() => {
+                    const status = statusConfig[source];
+                    const StatusIcon = status.icon;
+                    return (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "gap-1.5 font-medium text-[11px]",
+                          status.className
+                        )}
+                        title={status.tooltip}
+                        style={{
+                          borderColor: "currentColor",
+                          backgroundColor: "color-mix(in oklch, currentColor 8%, transparent)",
+                        }}
+                      >
+                        <StatusIcon className="h-3 w-3" />
+                        {status.label}
+                      </Badge>
+                    );
+                  })()}
                 </div>
                 {theme.author && (
                   <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
