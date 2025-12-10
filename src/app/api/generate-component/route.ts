@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { createDraft } from "@/lib/storage";
 
 // Schema for a generated component
 const componentSchema = z.object({
@@ -114,7 +115,7 @@ If the user requests variants, use cva with meaningful variant names:
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { prompt, name, variants } = body;
+		const { prompt, name, variants, userId, paymentTxid } = body;
 
 		if (!prompt) {
 			return NextResponse.json(
@@ -158,10 +159,35 @@ export async function POST(request: NextRequest) {
 			],
 		};
 
+		// Save to cloud storage if userId provided (from paid generation)
+		let draftId: string | undefined;
+		if (userId) {
+			try {
+				const draft = await createDraft(userId, {
+					type: "registry",
+					name: component.name,
+					data: {
+						manifest,
+						paymentTxid,
+						status: "draft",
+					},
+					metadata: {
+						prompt,
+						sourceType: "ai",
+					},
+				});
+				draftId = draft.id;
+			} catch (storageError) {
+				console.error("Failed to save component to cloud storage:", storageError);
+				// Continue even if storage fails - user still gets the component
+			}
+		}
+
 		return NextResponse.json({
 			component: manifest,
 			// Include raw content for preview
 			content: component.content,
+			draftId,
 		});
 	} catch (error) {
 		console.error("Component generation error:", error);

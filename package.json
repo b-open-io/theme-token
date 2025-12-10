@@ -55,6 +55,7 @@
     "@vercel/blob": "^2.0.0",
     "@vercel/functions": "^3.3.4",
     "@vercel/kv": "^3.0.0",
+    "@vercel/sandbox": "^1.1.0",
     "@xyflow/react": "^12.10.0",
     "ai": "^6.0.0-beta.139",
     "better-color-tools": "^0.12.3",

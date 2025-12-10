@@ -38,6 +38,13 @@ export const featureFlags = {
 	 * Controls: /studio/wallpaper
 	 */
 	wallpapers: process.env.NEXT_PUBLIC_FEATURE_WALLPAPERS === "true" || isDev,
+
+	/**
+	 * Component Preview - Live preview of AI-generated components in sandbox
+	 * Controls: Preview button in block-preview.tsx
+	 */
+	componentPreview:
+		process.env.NEXT_PUBLIC_FEATURE_COMPONENT_PREVIEW === "true" || isDev,
 } as const;
 
 /**

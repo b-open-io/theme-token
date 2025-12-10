@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Code2, Copy, Check, FileCode, Package, Blocks, ChevronDown, ChevronRight, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Code2, Copy, Check, FileCode, Package, Blocks, ChevronDown, ChevronRight, CheckCircle2, Play, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSwatchyStore, type GeneratedRegistryItem } from "./swatchy-store";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { InscribeBundleDialog } from "@/components/inscribe-bundle-dialog";
 import { buildRegistryBundle, type RegistryManifest } from "@/lib/bundle-builder";
+import { featureFlags } from "@/lib/feature-flags";
 
 interface BlockPreviewProps {
 	item: GeneratedRegistryItem;
@@ -20,12 +21,17 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const [copiedFile, setCopiedFile] = useState<number | null>(null);
 	const [showInscribeDialog, setShowInscribeDialog] = useState(false);
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
+	const [showPreview, setShowPreview] = useState(false);
+	const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+	const [previewLoading, setPreviewLoading] = useState(false);
+	const [previewError, setPreviewError] = useState<string | null>(null);
 	const { clearGeneratedRegistryItem } = useSwatchyStore();
 	const { inscribeBundle, isInscribing, status: walletStatus } = useYoursWallet();
 
 	const isBlock = manifest.type === "registry:block";
 	const Icon = isBlock ? Blocks : FileCode;
 	const isWalletConnected = walletStatus === "connected";
+	const canPreview = featureFlags.componentPreview;
 
 	// Build bundle items for inscription
 	const bundleResult = buildRegistryBundle({
@@ -59,6 +65,52 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 		setExpandedFile(expandedFile === index ? null : index);
 	};
 
+	// Generate a live preview of the component
+	const handlePreview = useCallback(async () => {
+		if (previewHtml) {
+			// Already have preview, just show it
+			setShowPreview(true);
+			return;
+		}
+
+		setPreviewLoading(true);
+		setPreviewError(null);
+
+		try {
+			// Get the main component file (first .tsx file)
+			const mainFile = manifest.files.find(
+				(f) => f.path.endsWith(".tsx") || f.path.endsWith(".jsx"),
+			);
+
+			if (!mainFile) {
+				throw new Error("No component file found");
+			}
+
+			const response = await fetch("/api/preview-component", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					code: mainFile.content,
+				}),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok || !data.success) {
+				throw new Error(data.error || "Failed to generate preview");
+			}
+
+			setPreviewHtml(data.html);
+			setShowPreview(true);
+		} catch (error) {
+			setPreviewError(
+				error instanceof Error ? error.message : "Failed to generate preview",
+			);
+		} finally {
+			setPreviewLoading(false);
+		}
+	}, [manifest.files, previewHtml]);
+
 	return (
 		<motion.div
 			className="mt-3 rounded-lg border bg-card overflow-hidden"
@@ -75,20 +127,80 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 						{isBlock ? "block" : "component"}
 					</span>
 				</div>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-6 text-xs"
-					onClick={clearGeneratedRegistryItem}
-				>
-					Dismiss
-				</Button>
+				<div className="flex items-center gap-1">
+					{canPreview && (
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-6 text-xs gap-1"
+							onClick={handlePreview}
+							disabled={previewLoading}
+						>
+							{previewLoading ? (
+								<Loader2 className="h-3 w-3 animate-spin" />
+							) : (
+								<Play className="h-3 w-3" />
+							)}
+							Preview
+						</Button>
+					)}
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-6 text-xs"
+						onClick={clearGeneratedRegistryItem}
+					>
+						Dismiss
+					</Button>
+				</div>
 			</div>
 
 			{/* Description */}
 			<div className="px-3 py-2 border-b">
 				<p className="text-xs text-muted-foreground">{manifest.description}</p>
 			</div>
+
+			{/* Live Preview Panel */}
+			<AnimatePresence>
+				{showPreview && previewHtml && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.2 }}
+						className="border-b"
+					>
+						<div className="flex items-center justify-between bg-muted/50 px-3 py-1.5">
+							<span className="text-xs font-medium text-muted-foreground">
+								Live Preview
+							</span>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-5 w-5 p-0"
+								onClick={() => setShowPreview(false)}
+							>
+								<X className="h-3 w-3" />
+							</Button>
+						</div>
+						<div className="bg-background p-2">
+							<iframe
+								srcDoc={previewHtml}
+								title="Component Preview"
+								className="w-full h-64 rounded border bg-white"
+								sandbox="allow-scripts"
+							/>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			{/* Preview Error */}
+			{previewError && (
+				<div className="px-3 py-2 border-b bg-destructive/10">
+					<p className="text-xs text-destructive">{previewError}</p>
+				</div>
+			)}
 
 			{/* Dependencies */}
 			{(manifest.dependencies.length > 0 || manifest.registryDependencies.length > 0) && (
@@ -117,13 +229,13 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 			<div className="divide-y">
 				{manifest.files.map((file, index) => (
 					<div key={file.path} className="group">
-						{/* File header */}
-						<button
-							type="button"
-							onClick={() => toggleFile(index)}
-							className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/50 transition-colors"
-						>
-							<div className="flex items-center gap-2">
+						{/* File header - separate row button from copy button */}
+						<div className="flex items-center justify-between hover:bg-muted/50 transition-colors">
+							<Button
+								variant="ghost"
+								className="flex-1 justify-start gap-2 px-3 py-2 h-auto rounded-none"
+								onClick={() => toggleFile(index)}
+							>
 								{expandedFile === index ? (
 									<ChevronDown className="h-3 w-3 text-muted-foreground" />
 								) : (
@@ -131,18 +243,15 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 								)}
 								<Code2 className="h-3 w-3 text-muted-foreground" />
 								<span className="text-xs font-mono">{file.path}</span>
-							</div>
+							</Button>
 							<Button
 								variant="ghost"
 								size="sm"
 								className={cn(
-									"h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
+									"h-8 w-8 p-0 mr-1 opacity-0 group-hover:opacity-100 transition-opacity",
 									copiedFile === index && "opacity-100"
 								)}
-								onClick={(e) => {
-									e.stopPropagation();
-									copyToClipboard(file.content, index);
-								}}
+								onClick={() => copyToClipboard(file.content, index)}
 							>
 								{copiedFile === index ? (
 									<Check className="h-3 w-3 text-green-500" />
@@ -150,7 +259,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 									<Copy className="h-3 w-3" />
 								)}
 							</Button>
-						</button>
+						</div>
 
 						{/* File content */}
 						{expandedFile === index && (

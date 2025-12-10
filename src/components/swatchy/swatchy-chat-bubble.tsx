@@ -330,7 +330,7 @@ export function SwatchyChatBubble() {
 	return (
 		<motion.div
 			ref={chatContainerRef}
-			className="fixed right-4 top-32 z-[55] flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
+			className="fixed right-4 top-32 z-40 flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
 			initial={{ opacity: 0, scale: 0.9, x: 20 }}
 			animate={{ opacity: 1, scale: 1, x: 0 }}
 			exit={{ opacity: 0, scale: 0.9, x: 20 }}

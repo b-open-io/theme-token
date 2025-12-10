@@ -8,7 +8,7 @@
  * - Blockchain: Permanent inscriptions (1Sat Ordinals)
  */
 
-export type DraftType = "theme" | "wallpaper" | "pattern" | "font";
+export type DraftType = "theme" | "wallpaper" | "pattern" | "font" | "registry";
 export type StorageTier = "free" | "basic" | "pro" | "unlimited";
 
 /**
@@ -25,6 +25,7 @@ export interface UserStorageRecord {
 		wallpapers: number;
 		patterns: number;
 		fonts: number;
+		registries: number;
 	};
 	blobBytesUsed: number;
 
@@ -109,6 +110,7 @@ export interface StorageUsage {
 		wallpapers: { count: number; limit: number };
 		patterns: { count: number; limit: number };
 		fonts: { count: number; limit: number };
+		registries: { count: number; limit: number };
 		blob: { bytesUsed: number; bytesLimit: number };
 	};
 

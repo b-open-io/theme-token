@@ -276,7 +276,7 @@ export async function updateDraftMetadata(
  */
 export async function deleteExpiredDrafts(userId: string): Promise<number> {
 	let deletedCount = 0;
-	const types: DraftType[] = ["theme", "wallpaper", "pattern", "font"];
+	const types: DraftType[] = ["theme", "wallpaper", "pattern", "font", "registry"];
 
 	for (const type of types) {
 		const { drafts } = await listDrafts(userId, type, { limit: 100 });
@@ -300,7 +300,7 @@ export async function getAllDraftIds(
 	userId: string,
 ): Promise<{ type: DraftType; id: string }[]> {
 	const results: { type: DraftType; id: string }[] = [];
-	const types: DraftType[] = ["theme", "wallpaper", "pattern", "font"];
+	const types: DraftType[] = ["theme", "wallpaper", "pattern", "font", "registry"];
 
 	for (const type of types) {
 		const { drafts } = await listDrafts(userId, type, { limit: 100 });

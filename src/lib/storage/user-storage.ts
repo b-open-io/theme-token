@@ -27,6 +27,28 @@ export async function getUserStorageRecord(
 	const existing = await kv.get<UserStorageRecord>(key);
 
 	if (existing) {
+		// Migrate old records that don't have registries field
+		if (existing.draftsCount && !('registries' in existing.draftsCount)) {
+			// Type assertion for old record format
+			const oldDraftsCount = existing.draftsCount as unknown as {
+				themes: number;
+				wallpapers: number;
+				patterns: number;
+				fonts: number;
+			};
+			const migrated: UserStorageRecord = {
+				...existing,
+				draftsCount: {
+					themes: oldDraftsCount.themes || 0,
+					wallpapers: oldDraftsCount.wallpapers || 0,
+					patterns: oldDraftsCount.patterns || 0,
+					fonts: oldDraftsCount.fonts || 0,
+					registries: 0,
+				},
+			};
+			await kv.set(key, migrated);
+			return migrated;
+		}
 		return existing;
 	}
 
@@ -39,6 +61,7 @@ export async function getUserStorageRecord(
 			wallpapers: 0,
 			patterns: 0,
 			fonts: 0,
+			registries: 0,
 		},
 		blobBytesUsed: 0,
 		createdAt: Date.now(),
@@ -145,10 +168,11 @@ export async function getStorageUsage(userId: string): Promise<StorageUsage> {
 		record.draftsCount.themes +
 		record.draftsCount.wallpapers +
 		record.draftsCount.patterns +
-		record.draftsCount.fonts;
+		record.draftsCount.fonts +
+		record.draftsCount.registries;
 
 	const totalDraftLimit =
-		limits.draftsPerType === null ? Number.POSITIVE_INFINITY : limits.draftsPerType * 4;
+		limits.draftsPerType === null ? Number.POSITIVE_INFINITY : limits.draftsPerType * 5;
 
 	return {
 		tier: record.tier,
@@ -160,6 +184,7 @@ export async function getStorageUsage(userId: string): Promise<StorageUsage> {
 			wallpapers: { count: record.draftsCount.wallpapers, limit: draftsLimit },
 			patterns: { count: record.draftsCount.patterns, limit: draftsLimit },
 			fonts: { count: record.draftsCount.fonts, limit: draftsLimit },
+			registries: { count: record.draftsCount.registries, limit: draftsLimit },
 			blob: { bytesUsed: record.blobBytesUsed, bytesLimit },
 		},
 
@@ -217,6 +242,7 @@ export async function recalculateStorageUsage(
 		wallpapers: number;
 		patterns: number;
 		fonts: number;
+		registries: number;
 	},
 ): Promise<UserStorageRecord> {
 	return updateUserStorageRecord(userId, {

@@ -134,12 +134,13 @@ export async function GET(request: NextRequest) {
 		const tierLimits = getTierLimits(usage.tier);
 
 		// Override usage limits with tier-accurate values
-		// Map type to usage key (themes, wallpapers, patterns, fonts)
+		// Map type to usage key (themes, wallpapers, patterns, fonts, registries)
 		const typeUsageMap = {
 			theme: usage.usage.themes,
 			wallpaper: usage.usage.wallpapers,
 			pattern: usage.usage.patterns,
 			font: usage.usage.fonts,
+			registry: usage.usage.registries,
 		};
 		const typeUsage = typeUsageMap[type];
 		result.usage = {

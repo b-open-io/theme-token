@@ -22,7 +22,8 @@ export function useSwatchyChat() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { mode: themeMode } = useTheme();
-	const { sendPayment, status: walletStatus, balance } = useYoursWallet();
+	const { sendPayment, status: walletStatus, balance, addresses } = useYoursWallet();
+	const ordAddress = addresses?.ordAddress;
 	const {
 		paymentPending,
 		setPaymentPending,
@@ -460,6 +461,8 @@ export function useSwatchyChat() {
 								prompt: args.prompt,
 								name: args.name,
 								includeHook: args.includeHook,
+								userId: ordAddress,
+								paymentTxid: txid,
 							}),
 						});
 
@@ -479,7 +482,9 @@ export function useSwatchyChat() {
 							? ` Uses: ${data.block.registryDependencies.join(", ")}.`
 							: "";
 
-						return `Block "${data.block.name}" generated! ${fileCount} file(s).${deps} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
+						const savedMsg = data.draftId ? " Saved to your drafts." : "";
+
+						return `Block "${data.block.name}" generated!${savedMsg} ${fileCount} file(s).${deps} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
@@ -497,6 +502,8 @@ export function useSwatchyChat() {
 								prompt: args.prompt,
 								name: args.name,
 								variants: args.variants,
+								userId: ordAddress,
+								paymentTxid: txid,
 							}),
 						});
 
@@ -515,7 +522,9 @@ export function useSwatchyChat() {
 							? ` Based on: ${data.component.registryDependencies.join(", ")}.`
 							: "";
 
-						return `Component "${data.component.name}" generated!${deps} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
+						const savedMsg = data.draftId ? " Saved to your drafts." : "";
+
+						return `Component "${data.component.name}" generated!${savedMsg}${deps} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
