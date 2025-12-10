@@ -1,7 +1,8 @@
 "use client";
 
+import { isTextUIPart, isToolOrDynamicToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
-import { Loader2, X, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, X, CheckCircle2, XCircle, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,16 +30,22 @@ const SUGGESTIONS = [
 	"How do I mint a theme?",
 ];
 
-// Helper to extract text content from message parts
-function getMessageText(message: { role: string; parts?: Array<{ type: string; text?: string }> }): string {
-	if (!message.parts) return "";
-
-	const textParts = message.parts
-		.filter((part) => part.type === "text" && part.text)
-		.map((part) => part.text);
-
-	return textParts.join("\n");
-}
+// Tool name display mapping
+const TOOL_DISPLAY_NAMES: Record<string, string> = {
+	navigate: "Navigating",
+	generateTheme: "Generating theme",
+	generateFont: "Generating font",
+	generatePattern: "Generating pattern",
+	setThemeColor: "Setting color",
+	setThemeRadius: "Setting radius",
+	setThemeFont: "Setting font",
+	setPatternParams: "Updating pattern",
+	prepareInscribe: "Preparing inscription",
+	prepareListing: "Preparing listing",
+	browseThemes: "Browsing themes",
+	getWalletBalance: "Checking balance",
+	getExchangeRate: "Getting exchange rate",
+};
 
 export function SwatchyChatBubble() {
 	const { closeChat } = useSwatchyStore();
@@ -129,12 +136,68 @@ export function SwatchyChatBubble() {
 						) : (
 							<>
 								{messages.map((msg) => {
-									const text = getMessageText(msg as { role: string; parts?: Array<{ type: string; text?: string }> });
-									if (!text) return null;
+									const uiMessage = msg as UIMessage;
+									const hasContent = uiMessage.parts?.some(
+										(part) => isTextUIPart(part) || isToolOrDynamicToolUIPart(part)
+									);
+									if (!hasContent) return null;
 
 									return (
 										<Message key={msg.id} from={msg.role === "user" ? "user" : "assistant"}>
-											<MessageContent>{text}</MessageContent>
+											{uiMessage.parts?.map((part, index) => {
+												// Render text parts
+												if (isTextUIPart(part) && part.text) {
+													return (
+														<MessageContent key={index}>
+															{part.text}
+														</MessageContent>
+													);
+												}
+
+												// Render tool invocation parts
+												if (isToolOrDynamicToolUIPart(part)) {
+													const toolName = "toolName" in part ? part.toolName : part.type.replace("tool-", "");
+													const displayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
+
+													// Show different UI based on tool state
+													if (part.state === "input-streaming" || part.state === "input-available") {
+														return (
+															<div key={index} className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+																<Loader2 className="h-3 w-3 animate-spin" />
+																<span>{displayName}...</span>
+															</div>
+														);
+													}
+
+													if (part.state === "output-available") {
+														return (
+															<div key={index} className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+																<CheckCircle2 className="h-3 w-3 text-green-500" />
+																<span>{displayName}</span>
+															</div>
+														);
+													}
+
+													if (part.state === "output-error") {
+														return (
+															<div key={index} className="flex items-center gap-2 text-xs text-destructive py-1">
+																<XCircle className="h-3 w-3" />
+																<span>{displayName} failed</span>
+															</div>
+														);
+													}
+
+													// Default: show tool is being called
+													return (
+														<div key={index} className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+															<Wrench className="h-3 w-3" />
+															<span>{displayName}</span>
+														</div>
+													);
+												}
+
+												return null;
+											})}
 										</Message>
 									);
 								})}

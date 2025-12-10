@@ -39,9 +39,6 @@ export function useSwatchyChat() {
 	// In v6, input state is managed externally
 	const [input, setInput] = useState("");
 
-	// Store addToolOutput ref so we can call it after payment
-	const addToolOutputRef = useRef<((params: { tool: string; toolCallId: string; output: string }) => void) | null>(null);
-
 	const {
 		messages,
 		status,
@@ -89,7 +86,9 @@ export function useSwatchyChat() {
 		},
 	});
 
-	// Store ref so we can use it after payment
+	// Store addToolOutput in ref so we can call it after payment
+	// Using typeof to get the exact type from useChat return value
+	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
 	addToolOutputRef.current = addToolOutput;
 
 	// Compute loading state from status
@@ -310,14 +309,13 @@ export function useSwatchyChat() {
 			// Cancel payment on error
 			cancelPayment();
 
-			// Still need to provide output to unblock the AI
-			if (addToolOutputRef.current) {
-				addToolOutputRef.current({
-					tool: toolName,
-					toolCallId,
-					output: `Payment failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-				});
-			}
+			// Use output-error state per AI SDK v6 best practices
+			addToolOutputRef.current({
+				tool: toolName,
+				toolCallId,
+				state: "output-error",
+				errorText: error instanceof Error ? error.message : "Payment failed",
+			});
 		}
 	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, executePaidTool]);
 
