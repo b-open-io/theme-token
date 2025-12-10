@@ -82,7 +82,7 @@ export default function Home() {
 				<PageContainer className="relative pb-24 pt-32">
 					{/* Swatchy Mascot - Floating in background */}
 					<motion.div
-						className="pointer-events-none absolute left-1/2 top-10 -z-10 w-[300px] -translate-x-1/2 opacity-20 sm:opacity-30 lg:left-auto lg:right-0 lg:top-0 lg:w-[450px] lg:translate-x-1/4 lg:opacity-40"
+						className="pointer-events-none absolute left-1/2 top-10 z-0 w-[300px] -translate-x-1/2 opacity-20 sm:opacity-30 lg:left-auto lg:right-0 lg:top-0 lg:w-[450px] lg:translate-x-1/4 lg:opacity-40"
 						initial={{ y: 20, opacity: 0 }}
 						animate={{
 							y: [0, -20, 0],
