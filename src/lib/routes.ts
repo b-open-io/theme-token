@@ -6,7 +6,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { Bot, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
+import { Blocks, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
 import { featureFlags } from "./feature-flags";
 
 export type RouteCategory = "main" | "studio" | "market" | "user";
@@ -105,13 +105,13 @@ export const routes: RouteInfo[] = [
 		cost: 1_000_000,
 	},
 	{
-		path: "/studio/ai",
-		label: "AI",
-		description: "Chat with Swatchy to create themes conversationally",
+		path: "/studio/registry",
+		label: "Registry",
+		description: "Browse and manage shadcn blocks, components, and hooks",
 		category: "studio",
-		feature: "ai",
-		icon: Bot,
-		tools: [],
+		feature: "registry",
+		icon: Blocks,
+		tools: ["generateBlock", "generateComponent"],
 	},
 
 	// Market

@@ -22,10 +22,10 @@ export const featureFlags = {
 	images: process.env.NEXT_PUBLIC_FEATURE_IMAGES === "true" || isDev,
 
 	/**
-	 * AI Studio - Chat-based theme generation
-	 * Controls: /studio/ai
+	 * Registry Studio - Browse and manage shadcn registry items (blocks, components, hooks)
+	 * Controls: /studio/registry
 	 */
-	ai: process.env.NEXT_PUBLIC_FEATURE_AI === "true" || isDev,
+	registry: process.env.NEXT_PUBLIC_FEATURE_REGISTRY === "true" || isDev,
 
 	/**
 	 * Icon Studio - Custom icon generation for themes

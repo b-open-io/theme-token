@@ -169,7 +169,7 @@ function getSuggestions(): string[] {
 		featureSuggestions.push("Generate a geometric pattern");
 	}
 
-	if (featureFlags.ai) {
+	if (featureFlags.registry) {
 		featureSuggestions.push("Help me design a wellness app theme");
 	}
 
