@@ -532,6 +532,18 @@ export function ThemeStudio() {
 				},
 			},
 		}));
+
+		// If updating a font, load it immediately
+		if (key.startsWith("font-") && value) {
+			// Construct minimal theme object for loadThemeFonts
+			const tempTheme = {
+				styles: {
+					light: { [key]: value } as Record<string, string>,
+					dark: { [key]: value } as Record<string, string>,
+				},
+			};
+			loadThemeFonts(tempTheme);
+		}
 	};
 
 	return (
