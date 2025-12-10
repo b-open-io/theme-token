@@ -2,7 +2,8 @@
 
 import { isTextUIPart, isToolOrDynamicToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
-import { Loader2, X, CheckCircle2, XCircle, Wrench } from "lucide-react";
+import { Loader2, X, CheckCircle2, XCircle, Wrench, Sparkles, ArrowRight } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ import { useSwatchyStore } from "./swatchy-store";
 import { useSwatchyChat } from "./use-swatchy-chat";
 import { PaymentRequestCard } from "./payment-request";
 import { featureFlags } from "@/lib/feature-flags";
+import type { ThemeToken } from "@theme-token/sdk";
 
 /**
  * Get dynamic suggestions based on enabled feature flags
@@ -80,7 +82,9 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 };
 
 export function SwatchyChatBubble() {
-	const { closeChat } = useSwatchyStore();
+	const router = useRouter();
+	const pathname = usePathname();
+	const { closeChat, setNavigating, clearGeneration } = useSwatchyStore();
 	const {
 		messages,
 		input,
@@ -124,10 +128,15 @@ export function SwatchyChatBubble() {
 	return (
 		<motion.div
 			className="fixed right-4 top-32 z-[55] flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
-			initial={{ opacity: 0, scale: 0.9, y: -20 }}
-			animate={{ opacity: 1, scale: 1, y: 0 }}
-			exit={{ opacity: 0, scale: 0.9, y: -20 }}
-			transition={{ type: "spring", stiffness: 300, damping: 25 }}
+			initial={{ opacity: 0, scale: 0.9, x: 20 }}
+			animate={{ opacity: 1, scale: 1, x: 0 }}
+			exit={{ opacity: 0, scale: 0.9, x: 20 }}
+			transition={{
+				type: "spring",
+				stiffness: 300,
+				damping: 25,
+				delay: 0.1, // Wait for Swatchy to start moving
+			}}
 		>
 			{/* Speech bubble pointer - desktop only */}
 			<div className="absolute -top-3 right-8 hidden h-0 w-0 border-b-[12px] border-l-[12px] border-r-[12px] border-b-border border-l-transparent border-r-transparent sm:block" />
@@ -271,14 +280,54 @@ export function SwatchyChatBubble() {
 
 						{/* Generation success */}
 						{generation.status === "success" && (
-							<div className="mt-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+							<motion.div
+								className="mt-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3"
+								initial={{ scale: 0.9, opacity: 0 }}
+								animate={{ scale: 1, opacity: 1 }}
+								transition={{ type: "spring", stiffness: 300, damping: 20 }}
+							>
 								<div className="flex items-center gap-2">
-									<CheckCircle2 className="h-4 w-4 text-green-500" />
+									<motion.div
+										animate={{
+											rotate: [0, 10, -10, 0],
+											scale: [1, 1.2, 1]
+										}}
+										transition={{
+											duration: 0.5,
+											repeat: 2,
+											repeatDelay: 0.5
+										}}
+									>
+										<Sparkles className="h-4 w-4 text-green-500" />
+									</motion.div>
 									<span className="text-sm font-medium text-green-700 dark:text-green-300">
-										Generation complete!
+										{generation.toolName === "generateTheme" && generation.result
+											? `"${(generation.result as ThemeToken).name}" created!`
+											: "Generation complete!"}
 									</span>
 								</div>
-							</div>
+								{generation.toolName === "generateTheme" && (
+									<div className="mt-2 flex items-center justify-between">
+										<p className="text-xs text-green-600/70 dark:text-green-400/70">
+											Saved to drafts
+										</p>
+										{pathname !== "/studio/theme" && (
+											<button
+												type="button"
+												onClick={() => {
+													setNavigating(true);
+													clearGeneration();
+													router.push("/studio/theme");
+												}}
+												className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+											>
+												View in Studio
+												<ArrowRight className="h-3 w-3" />
+											</button>
+										)}
+									</div>
+								)}
+							</motion.div>
 						)}
 
 						{/* Generation error */}

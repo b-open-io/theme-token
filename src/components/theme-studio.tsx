@@ -75,6 +75,8 @@ import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { exampleThemes } from "@/lib/example-themes";
 import { FontSelector } from "@/components/font-selector";
 import { loadThemeFonts } from "@/lib/fonts";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
+import { ConfettiExplosion } from "@/components/ui/confetti";
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
 
@@ -242,6 +244,35 @@ export function ThemeStudio() {
 	} | null>(null);
 	const [showInscribeDialog, setShowInscribeDialog] = useState(false);
 
+	// Subscribe to Swatchy's AI-generated theme for success modal/confetti
+	const aiGeneratedTheme = useSwatchyStore((s) => s.aiGeneratedTheme);
+	const clearAIGeneratedTheme = useSwatchyStore((s) => s.clearAIGeneratedTheme);
+
+	// React to AI-generated theme from Swatchy store
+	useEffect(() => {
+		if (aiGeneratedTheme) {
+			const { theme, txid } = aiGeneratedTheme;
+
+			// Load theme into editor
+			loadThemeFonts(theme);
+			setSelectedTheme(theme);
+			setOriginalTheme(theme);
+			setCustomName(theme.name);
+
+			// Show success modal with confetti
+			setAiGenerationInfo({
+				txid,
+				themeName: theme.name,
+			});
+
+			// Refresh drafts to show the newly saved draft
+			setDrafts(loadDrafts());
+
+			// Clear the store state so it doesn't re-trigger
+			clearAIGeneratedTheme();
+		}
+	}, [aiGeneratedTheme, clearAIGeneratedTheme]);
+
 	// Load drafts on mount
 	useEffect(() => {
 		setDrafts(loadDrafts());
@@ -369,7 +400,8 @@ export function ThemeStudio() {
 		}
 	}, [searchParams]);
 
-	// Check for remix theme from gallery navigation or AI generation
+	// Check for remix theme from gallery navigation (purchase flow)
+	// Note: AI generation is now handled via Swatchy store subscription above
 	useEffect(() => {
 		const remixData = getAndClearRemixTheme();
 		if (remixData) {
@@ -377,25 +409,6 @@ export function ThemeStudio() {
 			setSelectedTheme(remixData.theme);
 			setOriginalTheme(remixData.theme);
 			setCustomName(remixData.theme.name);
-
-			// If from AI generation, show success dialog and auto-save draft
-			if (remixData.source === "ai-generate" && remixData.paymentTxid) {
-				setAiGenerationInfo({
-					txid: remixData.paymentTxid,
-					themeName: remixData.theme.name,
-				});
-
-				// Auto-save as draft
-				const draft: ThemeDraft = {
-					id: Date.now().toString(),
-					theme: remixData.theme,
-					savedAt: Date.now(),
-				};
-				const currentDrafts = loadDrafts();
-				const updated = [draft, ...currentDrafts];
-				setDrafts(updated);
-				saveDrafts(updated);
-			}
 		}
 	}, []);
 
@@ -562,7 +575,11 @@ export function ThemeStudio() {
 				open={aiGenerationInfo !== null}
 				onOpenChange={(open) => !open && setAiGenerationInfo(null)}
 			>
-				<DialogContent className="sm:max-w-md">
+				<DialogContent className="sm:max-w-md overflow-visible">
+					{/* Confetti celebration using theme colors */}
+					{aiGenerationInfo && (
+						<ConfettiExplosion styles={selectedTheme.styles} />
+					)}
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<Sparkles className="h-5 w-5 text-primary" />

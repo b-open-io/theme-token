@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
@@ -14,100 +15,87 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
 	const isLeft = side === "left";
 
-	// Position config - uses bottom/right for corner, top/right for expanded
-	// Separate corner positions so we don't animate across the screen
-	const getPositionStyle = () => {
+	// Position styles applied directly to style prop - layout animation handles the transition
+	// CSS cannot interpolate between numeric values and "auto", so we use layout animation
+	const getPositionStyle = (): React.CSSProperties => {
 		if (!isCorner) {
 			// Expanded - large avatar at top right, partially behind chat
 			return {
+				position: "fixed",
 				top: -75,
 				right: -20,
-				bottom: "auto" as const,
-				left: "auto" as const,
+				bottom: "auto",
+				left: "auto",
 				width: 280,
 				height: 280,
+				zIndex: 50,
 			};
 		}
 
-		// Corner positions - use bottom positioning for stability
-		if (isLeft) {
-			return {
-				top: "auto" as const,
-				right: "auto" as const,
-				bottom: 16,
-				left: 16,
-				width: 80,
-				height: 80,
-			};
-		}
-
-		// Right side corner (default)
+		// Corner state
 		return {
-			top: "auto" as const,
-			right: 16,
+			position: "fixed",
+			top: "auto",
 			bottom: 16,
-			left: "auto" as const,
+			left: isLeft ? 16 : "auto",
+			right: isLeft ? "auto" : 16,
 			width: 80,
 			height: 80,
+			zIndex: 60,
 		};
 	};
 
-	const positionStyle = getPositionStyle();
-
 	return (
 		<motion.button
-			// z-50 when expanded (behind chat at z-55), z-60 when in corner (above everything)
-			className={`fixed cursor-pointer overflow-visible rounded-full ${isCorner ? "z-[60]" : "z-[50]"}`}
-			// Start at target position to prevent weird initial animations
-			initial={positionStyle}
-			animate={positionStyle}
+			// layout prop is the key - it measures bounding box and uses transforms
+			// instead of trying to interpolate CSS position properties
+			layout
+			style={getPositionStyle()}
+			className="cursor-pointer overflow-visible rounded-full"
+			onClick={onClick}
+			// Smooth spring that feels "heavy" enough not to overshoot
 			transition={{
 				type: "spring",
-				stiffness: 80,
-				damping: 20,
-				mass: 1,
+				stiffness: 200,
+				damping: 25,
 			}}
-			onClick={onClick}
-			whileHover={isCorner ? { scale: 1.1 } : undefined}
+			whileHover={isCorner ? { scale: 1.05 } : undefined}
 			whileTap={isCorner ? { scale: 0.95 } : undefined}
 			aria-label={isCorner ? "Open Swatchy assistant" : "Close chat"}
 		>
-			{/* Floating animation wrapper - only when in corner */}
-			<motion.div
-				animate={
-					isCorner
-						? {
-								y: [0, -12, 0],
-								rotate: [0, 3, 0, -3, 0],
-							}
-						: { y: 0, rotate: 0 }
-				}
-				transition={
-					isCorner
-						? {
-								y: {
+			{/* Wrapper with layout="preserve-aspect" prevents distortion during size transition */}
+			<motion.div className="relative h-full w-full" layout="preserve-aspect">
+				{/* Floating animation wrapper - only when in corner */}
+				<motion.div
+					className="h-full w-full"
+					animate={
+						isCorner
+							? {
+									y: [0, -8, 0],
+									rotate: [0, 2, 0, -2, 0],
+								}
+							: { y: 0, rotate: 0 }
+					}
+					transition={
+						isCorner
+							? {
 									duration: 5,
 									repeat: Number.POSITIVE_INFINITY,
 									ease: "easeInOut",
-								},
-								rotate: {
-									duration: 7,
-									repeat: Number.POSITIVE_INFINITY,
-									ease: "easeInOut",
-								},
-							}
-						: { duration: 0.3 }
-				}
-				className="h-full w-full"
-			>
-				<Image
-					src="/swatchy-meditation.png"
-					alt="Swatchy Assistant"
-					width={80}
-					height={80}
-					className="h-full w-full object-contain"
-					priority
-				/>
+								}
+							: { duration: 0.5 }
+					}
+				>
+					<Image
+						src="/swatchy-meditation.png"
+						alt="Swatchy Assistant"
+						fill
+						sizes="(max-width: 768px) 100vw, 280px"
+						className="object-contain"
+						priority
+						draggable={false}
+					/>
+				</motion.div>
 			</motion.div>
 
 			{/* Notification pulse when idle in corner */}

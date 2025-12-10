@@ -33,6 +33,13 @@ export interface RemixContext {
 	origin?: string;
 }
 
+// AI-generated theme awaiting confirmation in studio
+export interface AIGeneratedTheme {
+	theme: ThemeToken;
+	txid: string;
+	timestamp: number;
+}
+
 interface SwatchyStore {
 	// UI State
 	position: SwatchyPosition;
@@ -46,6 +53,9 @@ interface SwatchyStore {
 
 	// Remix context - theme being remixed
 	remixContext: RemixContext | null;
+
+	// AI-generated theme (single source of truth for success modal/confetti)
+	aiGeneratedTheme: AIGeneratedTheme | null;
 
 	// Payment State
 	paymentPending: PaymentRequest | null;
@@ -70,6 +80,10 @@ interface SwatchyStore {
 	setContext: (context: SwatchyContext) => void;
 	openWithRemix: (theme: ThemeToken, origin?: string) => void;
 	clearRemixContext: () => void;
+
+	// AI Generation Actions
+	setAIGeneratedTheme: (theme: ThemeToken, txid: string) => void;
+	clearAIGeneratedTheme: () => void;
 
 	// Navigation Actions
 	setNavigating: (navigating: boolean) => void;
@@ -107,6 +121,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			isNavigating: false,
 			context: null,
 			remixContext: null,
+			aiGeneratedTheme: null,
 			paymentPending: null,
 			paymentTxid: null,
 			generation: initialGenerationState,
@@ -167,6 +182,17 @@ How would you like to modify this theme?`;
 			},
 
 			clearRemixContext: () => set({ remixContext: null }),
+
+			setAIGeneratedTheme: (theme, txid) =>
+				set({
+					aiGeneratedTheme: {
+						theme,
+						txid,
+						timestamp: Date.now(),
+					},
+				}),
+
+			clearAIGeneratedTheme: () => set({ aiGeneratedTheme: null }),
 
 			setNavigating: (isNavigating) => {
 				// When Swatchy triggers navigation, toggle which side he's on for fun

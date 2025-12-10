@@ -65,6 +65,84 @@ export function getAndClearRemixTheme(): StoredRemixTheme | null {
 	return null;
 }
 
+// Draft storage key (same as theme-studio.tsx)
+const DRAFTS_STORAGE_KEY = "theme-token-drafts";
+
+interface ThemeDraft {
+	id: string;
+	theme: ThemeToken;
+	savedAt: number;
+	source?: "ai-generate" | "remix" | "manual";
+	paymentTxid?: string;
+	stylesHash?: string; // Hash of styles for deduplication
+}
+
+/**
+ * Generate a simple hash of theme styles for deduplication.
+ * Only hashes the styles object, ignoring name/schema/author which can vary.
+ */
+function hashStyles(styles: ThemeToken["styles"]): string {
+	const str = JSON.stringify(styles);
+	// Simple hash function (djb2)
+	let hash = 5381;
+	for (let i = 0; i < str.length; i++) {
+		hash = (hash * 33) ^ str.charCodeAt(i);
+	}
+	return (hash >>> 0).toString(16);
+}
+
+/**
+ * Save an AI-generated theme to drafts immediately.
+ * Deduplicates based on styles hash - identical styles won't create duplicates.
+ * Returns the draft ID (existing or new).
+ */
+export function saveAIThemeToDrafts(theme: ThemeToken, txid: string): string {
+	// Load existing drafts
+	let drafts: ThemeDraft[] = [];
+	try {
+		const saved = localStorage.getItem(DRAFTS_STORAGE_KEY);
+		drafts = saved ? JSON.parse(saved) : [];
+	} catch {
+		drafts = [];
+	}
+
+	// Hash the styles for deduplication
+	const stylesHash = hashStyles(theme.styles);
+
+	// Check if a draft with identical styles already exists
+	const existingDraft = drafts.find((d) => d.stylesHash === stylesHash);
+	if (existingDraft) {
+		// Update the existing draft's metadata but don't create a duplicate
+		existingDraft.savedAt = Date.now();
+		existingDraft.theme.name = theme.name; // Update name in case it changed
+		if (txid) existingDraft.paymentTxid = txid;
+
+		// Move to front of array
+		drafts = [existingDraft, ...drafts.filter((d) => d.id !== existingDraft.id)];
+		localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+		return existingDraft.id;
+	}
+
+	// Create new draft with metadata
+	const draftId = `ai-${Date.now()}`;
+	const newDraft: ThemeDraft = {
+		id: draftId,
+		theme,
+		savedAt: Date.now(),
+		source: "ai-generate",
+		paymentTxid: txid,
+		stylesHash,
+	};
+
+	// Add to front of array (most recent first)
+	drafts.unshift(newDraft);
+
+	// Save back to localStorage
+	localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+
+	return draftId;
+}
+
 function ThemeCard({
 	theme,
 	origin,

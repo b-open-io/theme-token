@@ -15,7 +15,7 @@ import {
 import type { ToolName } from "@/lib/agent/tools";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
-import { storeRemixTheme, dispatchRemixTheme } from "@/components/theme-gallery";
+import { dispatchRemixTheme, saveAIThemeToDrafts } from "@/components/theme-gallery";
 import { useTheme } from "@/components/theme-provider";
 
 export function useSwatchyChat() {
@@ -41,6 +41,7 @@ export function useSwatchyChat() {
 		remixContext,
 		consumePendingMessage,
 		position,
+		setAIGeneratedTheme,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
@@ -363,15 +364,20 @@ export function useSwatchyChat() {
 
 						const data = await response.json();
 
+						// UNIFIED FLOW: Always save to drafts first (ensures persistence)
+						saveAIThemeToDrafts(data.theme, txid);
+
+						// Set in Swatchy store - theme-studio will react to this for modal/confetti
+						setAIGeneratedTheme(data.theme, txid);
+
 						// If already on theme studio, dispatch event to load theme directly
 						if (pathname === "/studio/theme") {
 							dispatchRemixTheme(data.theme);
 							setGenerationSuccess(data.theme);
-							return `Theme "${data.theme.name}" generated and applied!`;
+							return `Theme "${data.theme.name}" generated and saved to drafts!`;
 						}
 
-						// Otherwise store and navigate
-						storeRemixTheme(data.theme, { source: "ai-generate", paymentTxid: txid });
+						// Otherwise navigate to studio (it will pick up aiGeneratedTheme from store)
 						setNavigating(true);
 						router.push("/studio/theme");
 
@@ -442,7 +448,7 @@ export function useSwatchyChat() {
 					return `Unknown paid tool: ${toolName}`;
 			}
 		},
-		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, router, pathname],
+		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, setAIGeneratedTheme, router, pathname],
 	);
 
 	// Handle payment confirmation for paid tools
