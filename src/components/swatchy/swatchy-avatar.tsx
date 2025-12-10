@@ -36,16 +36,17 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 		if (isHero) {
 			// Hero pose - larger, positioned to the right side of the hero content
-			// Higher up and more towards center, but not blocking the main UI
+			// On mobile: push further right (partially off-screen) so text is readable
+			const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 			return {
 				position: "fixed",
 				top: "auto",
-				bottom: "25%",
+				bottom: isMobile ? "20%" : "25%",
 				left: "auto",
-				right: "15%",
-				width: 280,
-				height: 280,
-				zIndex: 40, // Below corner z-index so it doesn't feel too prominent
+				right: isMobile ? "-15%" : "15%", // Negative = partially off-screen on mobile
+				width: isMobile ? 200 : 280,
+				height: isMobile ? 200 : 280,
+				zIndex: 40,
 			};
 		}
 
