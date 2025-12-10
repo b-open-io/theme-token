@@ -3,15 +3,15 @@
 import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import {
 	createContext,
+	type ReactNode,
 	useCallback,
 	useContext,
 	useEffect,
 	useRef,
 	useState,
-	type ReactNode,
 } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { buildTileMetadata, buildThemeMetadata } from "@/lib/asset-metadata";
+import { buildThemeMetadata, buildTileMetadata } from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import {
 	type Addresses,
@@ -20,9 +20,9 @@ import {
 	type InscribeResponse,
 	isYoursWalletInstalled,
 	type Ordinal,
-	sendBsv,
 	type SendBsvResult,
 	type SocialProfile,
+	sendBsv,
 	submitToIndexer,
 	type YoursWallet,
 } from "@/lib/yours-wallet";
@@ -60,6 +60,42 @@ export interface OwnedPattern {
 		name?: string;
 		prompt?: string;
 	};
+}
+
+/** Asset types for bundle inscriptions */
+export type BundleAssetType =
+	| "font"
+	| "pattern"
+	| "wallpaper"
+	| "theme"
+	| "block"
+	| "component"
+	| "hook"
+	| "lib"
+	| "file";
+
+/** Single item in a bundle inscription */
+export interface BundleItem {
+	/** Type of asset - determines MAP metadata */
+	type: BundleAssetType;
+	/** Base64-encoded data */
+	base64Data: string;
+	/** MIME type of the data */
+	mimeType: string;
+	/** Optional name for the asset */
+	name?: string;
+	/** Optional additional MAP metadata */
+	metadata?: Record<string, string>;
+}
+
+/** Result of bundle inscription with typed origins */
+export interface BundleInscribeResult {
+	/** Transaction ID */
+	txid: string;
+	/** Raw transaction hex */
+	rawtx: string;
+	/** Origins for each item in order: [{txid}_0, {txid}_1, ...] */
+	origins: string[];
 }
 
 interface WalletContextValue {
@@ -114,6 +150,8 @@ interface WalletContextValue {
 	) => Promise<SendBsvResult | null>;
 	isSending: boolean;
 	addPendingTheme: (theme: ThemeToken, txid: string) => void;
+	/** Inscribe multiple items in a single transaction (multi-output bundle) */
+	inscribeBundle: (items: BundleItem[]) => Promise<BundleInscribeResult | null>;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -156,7 +194,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 			for (const ordinal of ordinals) {
 				try {
-					const mapData = ordinal?.origin?.data?.map as Record<string, string> | undefined;
+					const mapData = ordinal?.origin?.data?.map as
+						| Record<string, string>
+						| undefined;
 					const fileType = ordinal?.origin?.data?.insc?.file?.type;
 
 					// Check if it's a theme-token font
@@ -320,7 +360,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					}
 				})
 				.catch((err) => {
-					setError(err instanceof Error ? err.message : "Connection check failed");
+					setError(
+						err instanceof Error ? err.message : "Connection check failed",
+					);
 					setStatus("error");
 				});
 		};
@@ -665,6 +707,88 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		[availableThemes, setAvailableThemes],
 	);
 
+	/**
+	 * Inscribe multiple items in a single transaction (multi-output bundle)
+	 *
+	 * Items are inscribed in array order - first item becomes vout 0, second vout 1, etc.
+	 * For theme bundles, inscribe assets FIRST then theme LAST so theme can reference
+	 * sibling assets via {{vout:N}} placeholders.
+	 *
+	 * Example: [font, pattern, theme] → font at _0, pattern at _1, theme at _2
+	 */
+	const inscribeBundle = useCallback(
+		async (items: BundleItem[]): Promise<BundleInscribeResult | null> => {
+			const wallet = walletRef.current;
+			if (!wallet || !addresses) {
+				setError("Wallet not connected");
+				return null;
+			}
+
+			if (items.length === 0) {
+				setError("Bundle must contain at least one item");
+				return null;
+			}
+
+			setIsInscribing(true);
+			setError(null);
+
+			try {
+				// Convert BundleItems to InscribeRequests
+				const inscribeRequests = items.map((item) => {
+					// Build MAP metadata based on asset type
+					const mapData: Record<string, string> = {
+						app: "theme-token",
+						type: item.type,
+					};
+
+					// Add name if provided
+					if (item.name) {
+						mapData.name = item.name;
+					}
+
+					// Merge any additional metadata
+					if (item.metadata) {
+						Object.assign(mapData, item.metadata);
+					}
+
+					return {
+						address: addresses.ordAddress,
+						base64Data: item.base64Data,
+						mimeType: item.mimeType,
+						map: mapData,
+						satoshis: 1,
+					};
+				});
+
+				// Inscribe all items in a single transaction
+				const response = await wallet.inscribe(inscribeRequests);
+
+				// Submit to indexer
+				submitToIndexer(response.txid).catch(() => {});
+
+				// Generate origins for each vout
+				const origins = items.map((_, index) => `${response.txid}_${index}`);
+
+				await fetchThemeTokens();
+				await fetchWalletInfo();
+
+				return {
+					txid: response.txid,
+					rawtx: response.rawtx,
+					origins,
+				};
+			} catch (err) {
+				setError(
+					err instanceof Error ? err.message : "Bundle inscription failed",
+				);
+				return null;
+			} finally {
+				setIsInscribing(false);
+			}
+		},
+		[addresses, fetchThemeTokens, fetchWalletInfo],
+	);
+
 	return (
 		<WalletContext.Provider
 			value={{
@@ -691,6 +815,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				sendPayment,
 				isSending,
 				addPendingTheme,
+				inscribeBundle,
 			}}
 		>
 			{children}

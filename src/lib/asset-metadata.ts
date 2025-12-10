@@ -76,3 +76,51 @@ export function buildThemeMetadata(params?: {
 	return result;
 }
 
+export function buildWallpaperMetadata(params: {
+	name?: string;
+	prompt?: string;
+	provider?: string;
+	model?: string;
+	aspectRatio?: string;
+	style?: string;
+}): Record<string, string> {
+	const result: Record<string, string> = {
+		app: "theme-token",
+		type: "wallpaper",
+	};
+
+	if (params.name) result.name = params.name;
+	result.license = "CC0"; // Default to public domain
+	if (params.prompt) result.prompt = params.prompt;
+	if (params.provider) result.provider = params.provider;
+	if (params.model) result.model = params.model;
+	if (params.aspectRatio) result.aspectRatio = params.aspectRatio;
+	if (params.style) result.style = params.style;
+
+	return result;
+}
+
+/** Registry item types for blocks, components, hooks, etc. */
+export type RegistryItemType =
+	| "block"
+	| "component"
+	| "hook"
+	| "lib"
+	| "ui"
+	| "page";
+
+export function buildRegistryMetadata(params: {
+	name: string;
+	type: RegistryItemType;
+	description?: string;
+}): Record<string, string> {
+	const result: Record<string, string> = {
+		app: "theme-token",
+		type: `registry:${params.type}`,
+		name: params.name,
+	};
+
+	if (params.description) result.description = params.description;
+
+	return result;
+}
