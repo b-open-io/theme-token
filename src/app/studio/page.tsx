@@ -194,7 +194,7 @@ export default function StudioPage() {
 								className="h-full"
 							>
 								<Link href={tool.path} className="group block h-full">
-									<div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-card/50 hover:shadow-2xl hover:shadow-primary/5">
+									<div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-card/50 hover:shadow-2xl hover:shadow-primary/5">
 										{/* Visual Preview Area */}
 										<div className="relative h-40 w-full overflow-hidden border-b border-border/50 bg-muted/20">
 											<Preview />

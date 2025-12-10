@@ -127,7 +127,7 @@ export default function Home() {
 							animate={{ opacity: 0.6, y: 0, rotate: -2 }}
 							transition={{ duration: 0.6, delay: 0.3 }}
 							whileHover={{ opacity: 1, rotate: 0 }}
-							className="absolute top-0 w-full max-w-2xl scale-95 rounded-xl border border-border bg-card/50 p-1 shadow-xl backdrop-blur transition-all duration-500"
+							className="absolute top-0 w-full max-w-2xl scale-95 rounded-lg border border-border bg-card/50 p-1 shadow-xl backdrop-blur transition-all duration-500"
 						>
 							<div className="flex items-center gap-2 border-b border-border/50 px-4 py-2">
 								<div className="h-2.5 w-2.5 rounded-full bg-destructive/40" />
@@ -153,7 +153,7 @@ export default function Home() {
 							transition={{ duration: 0.6, delay: 0.2 }}
 							className="relative z-10 mt-32 w-full max-w-xl"
 						>
-							<div className="rounded-xl border border-primary/20 bg-background/90 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
+							<div className="rounded-lg border border-primary/20 bg-background/90 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
 								<div className="mb-2 flex items-center gap-2 px-2 pt-1">
 									<Terminal className="h-4 w-4 text-primary" />
 									<span className="text-xs font-medium text-muted-foreground">
@@ -243,7 +243,7 @@ export default function Home() {
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
 							transition={{ delay: 0.1 }}
-							className="rounded-xl border border-border bg-card p-6"
+							className="rounded-lg border border-border bg-card p-6"
 						>
 							<div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3">
 								<Palette className="h-6 w-6 text-primary" />
