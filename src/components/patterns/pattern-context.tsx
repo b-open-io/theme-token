@@ -8,8 +8,10 @@ import {
 	useMemo,
 	type ReactNode,
 	useEffect,
+	useRef,
 } from "react";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { usePatternDrafts, type PatternDraft } from "@/hooks/use-pattern-drafts";
 import { PATTERN_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import { toast } from "sonner";
 import {
@@ -27,6 +29,7 @@ import {
 
 // Re-export types for convenience
 export type { PatternParams, PatternSource, GeoGeneratorType, HeroPatternName, AnimationOptions };
+export type { PatternDraft };
 export { DEFAULT_PATTERN_PARAMS, DEFAULT_ANIMATION_OPTIONS };
 
 export interface PatternHistoryItem {
@@ -52,12 +55,22 @@ interface PatternContextType {
 	isGenerating: boolean;
 	uiState: UIState;
 	setUIState: (state: UIState | ((prev: UIState) => UIState)) => void;
-	
+
 	// Payment
 	requirePayment: boolean;
 	setRequirePayment: (required: boolean) => void;
 	isPaying: boolean;
-	
+
+	// Cloud Storage
+	cloudDrafts: PatternDraft[];
+	isLoadingCloud: boolean;
+	isCloudEnabled: boolean;
+	cloudUsage: { count: number; limit: number } | null;
+	saveDraft: (name?: string) => Promise<PatternDraft | null>;
+	deleteDraft: (id: string) => Promise<boolean>;
+	loadDraft: (draft: PatternDraft) => void;
+	refreshCloudDrafts: () => Promise<void>;
+
 	// Actions
 	regenerate: () => void;
 	updateParam: <K extends keyof PatternParams>(key: K, value: PatternParams[K]) => void;
@@ -68,7 +81,7 @@ interface PatternContextType {
 	randomize: () => void;
 	loadFromHistory: (item: PatternHistoryItem) => void;
 	generateAI: (prompt: string) => Promise<void>;
-	
+
 	// Derived
 	svgDataUrl: string;
 	cssSnippet: string;
@@ -94,6 +107,17 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 	const [isPaying, setIsPaying] = useState(false);
 	const { status, connect, balance, sendPayment } = useYoursWallet();
 	const isConnected = status === "connected";
+
+	// Cloud storage
+	const {
+		drafts: cloudDrafts,
+		loading: isLoadingCloud,
+		usage: cloudUsage,
+		isCloudEnabled,
+		fetchDrafts: fetchCloudDrafts,
+		saveDraft: saveCloudDraft,
+		deleteDraft: deleteCloudDraft,
+	} = usePatternDrafts();
 
 	// Generate pattern from current params
 	const regenerate = useCallback(() => {
@@ -202,6 +226,71 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 		setParams(item.params);
 	}, []);
 
+	// Cloud storage functions
+	const saveDraft = useCallback(
+		async (name?: string): Promise<PatternDraft | null> => {
+			if (!result?.svg) {
+				toast.error("No pattern to save");
+				return null;
+			}
+
+			const draftName =
+				name ||
+				(params.source === "ai"
+					? params.aiPrompt?.slice(0, 50) || "AI Pattern"
+					: `${params.source} pattern`);
+
+			const draft = await saveCloudDraft(
+				result.svg,
+				draftName,
+				params.source === "ai" ? params.aiPrompt : undefined,
+			);
+
+			if (draft) {
+				toast.success("Pattern saved to cloud");
+			} else {
+				toast.error("Failed to save pattern");
+			}
+
+			return draft;
+		},
+		[result?.svg, params.source, params.aiPrompt, saveCloudDraft],
+	);
+
+	const deleteDraft = useCallback(
+		async (id: string): Promise<boolean> => {
+			const success = await deleteCloudDraft(id);
+			if (success) {
+				toast.success("Pattern deleted");
+			} else {
+				toast.error("Failed to delete pattern");
+			}
+			return success;
+		},
+		[deleteCloudDraft],
+	);
+
+	const loadDraft = useCallback((draft: PatternDraft) => {
+		if (!draft.svg) {
+			toast.error("Pattern has no SVG data");
+			return;
+		}
+
+		// Load as AI-generated pattern with the saved SVG
+		setParams((prev) => ({
+			...prev,
+			source: "ai",
+			aiPrompt: draft.prompt || "",
+			aiSvg: draft.svg,
+		}));
+
+		toast.success("Pattern loaded");
+	}, []);
+
+	const refreshCloudDrafts = useCallback(async () => {
+		await fetchCloudDrafts();
+	}, [fetchCloudDrafts]);
+
 	// AI generation
 	const generateAI = useCallback(async (prompt: string) => {
 		if (!prompt.trim()) return;
@@ -307,6 +396,16 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 				requirePayment,
 				setRequirePayment,
 				isPaying,
+				// Cloud storage
+				cloudDrafts,
+				isLoadingCloud,
+				isCloudEnabled,
+				cloudUsage,
+				saveDraft,
+				deleteDraft,
+				loadDraft,
+				refreshCloudDrafts,
+				// Actions
 				regenerate,
 				updateParam,
 				updateAnimation,

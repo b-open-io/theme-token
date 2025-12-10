@@ -47,6 +47,12 @@ export const routes: RouteInfo[] = [
 		description: "Technical documentation for Theme Token format",
 		category: "main",
 	},
+	{
+		path: "/pricing",
+		label: "Pricing",
+		description: "Subscription tiers and pay-as-you-go options",
+		category: "main",
+	},
 
 	// Studios
 	{
@@ -149,6 +155,20 @@ export const routes: RouteInfo[] = [
 		description: "View your owned font ordinals",
 		category: "user",
 		feature: "fonts",
+	},
+	{
+		path: "/market/my-wallpapers",
+		label: "My Wallpapers",
+		description: "Manage your wallpaper drafts in cloud storage",
+		category: "user",
+		feature: "wallpapers",
+	},
+	{
+		path: "/market/my-patterns",
+		label: "My Patterns",
+		description: "Manage your pattern drafts in cloud storage",
+		category: "user",
+		feature: "images",
 	},
 	{
 		path: "/market/sell",

@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye, Loader2, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, ViewTransition } from "react";
+import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { PageContainer } from "@/components/page-container";
@@ -15,6 +15,14 @@ import { Button } from "@/components/ui/button";
 import { type CachedTheme } from "@/lib/themes-cache";
 import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
 import type { ThemeToken } from "@theme-token/sdk";
+
+interface ThemesPageResponse {
+	themes: CachedTheme[];
+	nextCursor: number | null;
+	total: number;
+	cached: boolean;
+	lastSynced: number;
+}
 
 function formatPrice(satoshis: number): string {
 	const bsv = satoshis / 100_000_000;
@@ -144,22 +152,59 @@ function ThemeCard({
 	);
 }
 
+const PAGE_SIZE = 12;
+
 export default function ThemesPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+	const loadMoreRef = useRef<HTMLDivElement>(null);
 
-	// Fetch themes with TanStack Query
-	const { data: themes = [], isLoading: themesLoading } = useQuery({
+	// Fetch themes with infinite query for pagination
+	const {
+		data,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		isLoading: themesLoading,
+		refetch,
+	} = useInfiniteQuery({
 		queryKey: ["themes"],
-		queryFn: async () => {
-			const res = await fetch("/api/themes/cache");
+		queryFn: async ({ pageParam = 0 }) => {
+			const res = await fetch(`/api/themes/cache?cursor=${pageParam}&limit=${PAGE_SIZE}`);
 			const data = await res.json();
-			return (data.themes || []) as CachedTheme[];
+			return data as ThemesPageResponse;
 		},
+		getNextPageParam: (lastPage) => lastPage.nextCursor,
+		initialPageParam: 0,
 		staleTime: 5 * 60 * 1000, // 5 minutes
 	});
+
+	// Flatten all pages into a single array
+	const themes = useMemo(() => {
+		return data?.pages.flatMap((page) => page.themes) || [];
+	}, [data]);
+
+	const totalCount = data?.pages[0]?.total || 0;
+
+	// Infinite scroll observer
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+					fetchNextPage();
+				}
+			},
+			{ threshold: 0.1 }
+		);
+
+		if (loadMoreRef.current) {
+			observer.observe(loadMoreRef.current);
+		}
+
+		return () => observer.disconnect();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	// Fetch listings with TanStack Query
 	const { data: listings = [], refetch: refetchListings } = useQuery({
@@ -182,11 +227,9 @@ export default function ThemesPage() {
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
 		try {
-			// Force refresh from server and get fresh data
-			const res = await fetch("/api/themes/cache?refresh=true");
-			const data = await res.json();
-			// Manually update the query cache with fresh data
-			queryClient.setQueryData(["themes"], data.themes || []);
+			// Force refresh from server - invalidate and refetch
+			await queryClient.invalidateQueries({ queryKey: ["themes"] });
+			await refetch();
 			refetchListings();
 		} finally {
 			setIsRefreshing(false);
@@ -241,7 +284,10 @@ export default function ThemesPage() {
 				{/* Stats */}
 				<div className="mb-8 flex items-center gap-6 text-sm text-muted-foreground">
 					<span>
-						<strong className="text-foreground">{themes.length}</strong> themes inscribed
+						<strong className="text-foreground">{totalCount}</strong> themes inscribed
+						{themes.length < totalCount && (
+							<span className="text-muted-foreground"> (showing {themes.length})</span>
+						)}
 					</span>
 					{forSaleCount > 0 && (
 						<span className="flex items-center gap-1 text-primary">
@@ -270,20 +316,44 @@ export default function ThemesPage() {
 						</Button>
 					</div>
 				) : (
-					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{themes.map((cached) => {
-							const listing = listingsByOrigin.get(cached.origin);
-							return (
-								<ThemeCard
-									key={cached.origin}
-									cached={cached}
-									listing={listing}
-									onRemix={() => handleRemix(cached)}
-									onBuy={() => listing && setBuyListing({ ...listing, origin: cached.origin })}
-								/>
-							);
-						})}
-					</div>
+					<>
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+							{themes.map((cached) => {
+								const listing = listingsByOrigin.get(cached.origin);
+								return (
+									<ThemeCard
+										key={cached.origin}
+										cached={cached}
+										listing={listing}
+										onRemix={() => handleRemix(cached)}
+										onBuy={() => listing && setBuyListing({ ...listing, origin: cached.origin })}
+									/>
+								);
+							})}
+						</div>
+
+						{/* Infinite scroll trigger */}
+						<div ref={loadMoreRef} className="flex justify-center py-8">
+							{isFetchingNextPage ? (
+								<div className="flex items-center gap-2 text-muted-foreground">
+									<Loader2 className="h-5 w-5 animate-spin" />
+									<span>Loading more themes...</span>
+								</div>
+							) : hasNextPage ? (
+								<Button
+									variant="outline"
+									onClick={() => fetchNextPage()}
+									className="px-8"
+								>
+									Load More
+								</Button>
+							) : themes.length > 0 ? (
+								<p className="text-sm text-muted-foreground">
+									You&apos;ve seen all {totalCount} themes
+								</p>
+							) : null}
+						</div>
+					</>
 				)}
 			</PageContainer>
 

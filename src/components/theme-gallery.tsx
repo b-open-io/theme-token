@@ -148,11 +148,13 @@ function ThemeCard({
 	origin,
 	listing,
 	onBuy,
+	index = 0,
 }: {
 	theme: ThemeToken;
 	origin: string;
 	listing?: ThemeMarketListing;
 	onBuy?: () => void;
+	index?: number;
 }) {
 	const { mode } = useTheme();
 	const [isHovered, setIsHovered] = useState(false);
@@ -181,7 +183,8 @@ function ThemeCard({
 	);
 
 	// Only assign the real ViewTransition name on hover to avoid duplicates
-	const viewTransitionName = isHovered ? `theme-stripe-${origin}` : undefined;
+	// Include index to ensure uniqueness in marquee (same origin appears twice)
+	const viewTransitionName = isHovered ? `theme-stripe-${origin}-${index}` : undefined;
 
 	return (
 		<Link
@@ -328,7 +331,7 @@ export function ThemeGallery() {
 									animationPlayState: isHovered ? "paused" : "running",
 								}}
 							>
-								{publishedThemes.map((published) => {
+								{publishedThemes.map((published, i) => {
 									const listing = listingsByOrigin.get(published.origin);
 									return (
 										<ThemeCard
@@ -337,6 +340,7 @@ export function ThemeGallery() {
 											origin={published.origin}
 											listing={listing}
 											onBuy={() => listing && setBuyListing({ ...listing, origin: published.origin })}
+											index={setIndex * publishedThemes.length + i}
 										/>
 									);
 								})}

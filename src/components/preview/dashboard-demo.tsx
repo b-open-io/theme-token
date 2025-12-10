@@ -331,7 +331,7 @@ export function DashboardDemo() {
 							{/* Control Card 1 */}
 							<Card className="p-4 shadow-sm hover:shadow-md transition-shadow">
 								<div className="flex items-center justify-between mb-3">
-									<div className="p-2 rounded-lg bg-orange-500/10 text-orange-500">
+									<div className="p-2 rounded-lg bg-chart-4/10 text-chart-4">
 										<Sun className="h-4 w-4" />
 									</div>
 									<Switch checked id="light-switch" />
@@ -354,7 +354,7 @@ export function DashboardDemo() {
 							{/* Control Card 2 */}
 							<Card className="p-4 shadow-sm hover:shadow-md transition-shadow">
 								<div className="flex items-center justify-between mb-3">
-									<div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+									<div className="p-2 rounded-lg bg-chart-2/10 text-chart-2">
 										<Sparkles className="h-4 w-4" />
 									</div>
 									<Switch id="ambiance-switch" />

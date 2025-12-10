@@ -18,17 +18,23 @@ interface ThemesCache {
 }
 
 // GET - Fetch cached themes (with fallback to live API)
+// Supports pagination via ?cursor=<index>&limit=<number>
 export async function GET(request: Request) {
 	try {
 		const url = new URL(request.url);
 		const forceRefresh = url.searchParams.get("refresh") === "true";
+		const cursor = Number.parseInt(url.searchParams.get("cursor") || "0", 10);
+		const limit = Math.min(Number.parseInt(url.searchParams.get("limit") || "12", 10), 50);
 
 		// Check if KV is configured
 		if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
 			console.warn("[Themes Cache] KV not configured, fetching from chain directly");
 			const freshThemes = await fetchFromChain();
+			const paginated = freshThemes.slice(cursor, cursor + limit);
 			return NextResponse.json({
-				themes: freshThemes,
+				themes: paginated,
+				nextCursor: cursor + limit < freshThemes.length ? cursor + limit : null,
+				total: freshThemes.length,
 				cached: false,
 				lastSynced: Date.now(),
 			});
@@ -37,10 +43,14 @@ export async function GET(request: Request) {
 		// Always fetch existing cache for merging (even on force refresh)
 		const existingCache: ThemesCache | null = await kv.get(THEMES_CACHE_KEY);
 
-		// If cache exists, is fresh (< 5 min old), and not force refreshing, return it
+		// If cache exists, is fresh (< 5 min old), and not force refreshing, use it
 		if (!forceRefresh && existingCache && Date.now() - existingCache.lastSynced < 5 * 60 * 1000) {
+			const allThemes = existingCache.themes;
+			const paginated = allThemes.slice(cursor, cursor + limit);
 			return NextResponse.json({
-				themes: existingCache.themes,
+				themes: paginated,
+				nextCursor: cursor + limit < allThemes.length ? cursor + limit : null,
+				total: allThemes.length,
 				cached: true,
 				lastSynced: existingCache.lastSynced,
 			});
@@ -65,8 +75,11 @@ export async function GET(request: Request) {
 		};
 		await kv.set(THEMES_CACHE_KEY, newCache, { ex: CACHE_TTL_SECONDS });
 
+		const paginated = mergedThemes.slice(cursor, cursor + limit);
 		return NextResponse.json({
-			themes: mergedThemes,
+			themes: paginated,
+			nextCursor: cursor + limit < mergedThemes.length ? cursor + limit : null,
+			total: mergedThemes.length,
 			cached: false,
 			lastSynced: newCache.lastSynced,
 		});
@@ -75,8 +88,14 @@ export async function GET(request: Request) {
 		// On KV failure, try to fetch directly from chain as fallback
 		try {
 			const freshThemes = await fetchFromChain();
+			const url = new URL(request.url);
+			const cursor = Number.parseInt(url.searchParams.get("cursor") || "0", 10);
+			const limit = Math.min(Number.parseInt(url.searchParams.get("limit") || "12", 10), 50);
+			const paginated = freshThemes.slice(cursor, cursor + limit);
 			return NextResponse.json({
-				themes: freshThemes,
+				themes: paginated,
+				nextCursor: cursor + limit < freshThemes.length ? cursor + limit : null,
+				total: freshThemes.length,
 				cached: false,
 				lastSynced: Date.now(),
 				kvError: true,

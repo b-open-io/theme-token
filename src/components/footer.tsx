@@ -170,7 +170,7 @@ export function Footer() {
 							className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group"
 						>
 							<div className="flex items-start gap-3">
-								<div className="bg-orange-500/10 p-2 rounded-md text-orange-500">
+								<div className="bg-chart-4/10 p-2 rounded-md text-chart-4">
 									<Box className="w-4 h-4" />
 								</div>
 								<div className="flex-1">
@@ -194,7 +194,7 @@ export function Footer() {
 							className="bg-card border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group"
 						>
 							<div className="flex items-start gap-3">
-								<div className="bg-blue-500/10 p-2 rounded-md text-blue-500">
+								<div className="bg-chart-2/10 p-2 rounded-md text-chart-2">
 									<Cpu className="w-4 h-4" />
 								</div>
 								<div className="flex-1">

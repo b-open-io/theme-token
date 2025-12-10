@@ -603,13 +603,13 @@ export function ThemeDemo() {
 				<div className="flex flex-wrap gap-4">
 					<div className="flex items-center gap-2">
 						<span className="relative flex h-3 w-3">
-							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-							<span className="relative inline-flex h-3 w-3 rounded-full bg-green-500"></span>
+							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-chart-3 opacity-75"></span>
+							<span className="relative inline-flex h-3 w-3 rounded-full bg-chart-3"></span>
 						</span>
 						<span className="text-sm">Online</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<span className="h-3 w-3 rounded-full bg-yellow-500"></span>
+						<span className="h-3 w-3 rounded-full bg-chart-4"></span>
 						<span className="text-sm">Away</span>
 					</div>
 					<div className="flex items-center gap-2">
@@ -627,16 +627,16 @@ export function ThemeDemo() {
 
 			{/* Success State */}
 			<DemoSection title="Success State">
-				<Card className="border-green-500/50 bg-green-500/10">
+				<Card className="border-chart-3/50 bg-chart-3/10">
 					<CardContent className="flex items-center gap-4 p-6">
-						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500">
-							<Check className="h-6 w-6 text-white" />
+						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-chart-3">
+							<Check className="h-6 w-6 text-primary-foreground" />
 						</div>
 						<div>
-							<h4 className="font-semibold text-green-700 dark:text-green-300">
+							<h4 className="font-semibold text-chart-3">
 								Payment Successful
 							</h4>
-							<p className="text-sm text-green-600/80 dark:text-green-400/80">
+							<p className="text-sm text-chart-3/80">
 								Your transaction has been completed.
 							</p>
 						</div>

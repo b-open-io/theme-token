@@ -7,6 +7,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { toast } from "sonner";
@@ -27,11 +28,13 @@ import {
 	FEE_ADDRESS,
 	WALLPAPER_GENERATION_COST_SATS,
 } from "@/lib/yours-wallet";
+import type { DraftMetadata } from "@/lib/storage/types";
 
 const WALLPAPER_DRAFTS_KEY = "theme-token-wallpaper-drafts";
-const MAX_DRAFTS = 20;
+const MAX_LOCAL_DRAFTS = 20;
 
-function loadWallpaperDrafts(): GeneratedWallpaper[] {
+// localStorage helpers for anonymous users / offline cache
+function loadLocalWallpaperDrafts(): GeneratedWallpaper[] {
 	if (typeof window === "undefined") return [];
 	try {
 		const saved = localStorage.getItem(WALLPAPER_DRAFTS_KEY);
@@ -41,12 +44,11 @@ function loadWallpaperDrafts(): GeneratedWallpaper[] {
 	}
 }
 
-function saveWallpaperDrafts(drafts: GeneratedWallpaper[]): void {
+function saveLocalWallpaperDrafts(drafts: GeneratedWallpaper[]): void {
 	try {
-		localStorage.setItem(WALLPAPER_DRAFTS_KEY, JSON.stringify(drafts.slice(0, MAX_DRAFTS)));
+		localStorage.setItem(WALLPAPER_DRAFTS_KEY, JSON.stringify(drafts.slice(0, MAX_LOCAL_DRAFTS)));
 	} catch (e) {
-		// localStorage might be full - try to save without base64 data
-		console.warn("Failed to save wallpaper drafts:", e);
+		console.warn("Failed to save wallpaper drafts to localStorage:", e);
 	}
 }
 
@@ -69,8 +71,8 @@ interface WallpaperContextType {
 	generatedWallpapers: GeneratedWallpaper[];
 	selectedWallpaper: GeneratedWallpaper | null;
 	isGenerating: boolean;
-	generationProgress: number; // 0-100 for loading animation
-	ambientColors: string[]; // For ambient bleed effect
+	generationProgress: number;
+	ambientColors: string[];
 
 	// Payment
 	requirePayment: boolean;
@@ -80,6 +82,11 @@ interface WallpaperContextType {
 	// UI State
 	isGalleryCollapsed: boolean;
 	setGalleryCollapsed: (collapsed: boolean) => void;
+
+	// Cloud storage state
+	isCloudEnabled: boolean;
+	isLoadingCloud: boolean;
+	cloudUsage: { count: number; limit: number } | null;
 
 	// Actions
 	generate: () => Promise<void>;
@@ -92,6 +99,7 @@ interface WallpaperContextType {
 	) => void;
 	setSourcePattern: (svg: string) => void;
 	setSourceWallpaper: (wallpaper: GeneratedWallpaper) => void;
+	refreshFromCloud: () => Promise<void>;
 
 	// Derived
 	selectedImageDataUrl: string | null;
@@ -121,23 +129,10 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 	]);
 	const [hasLoadedDrafts, setHasLoadedDrafts] = useState(false);
 
-	// Load drafts from localStorage on mount
-	useEffect(() => {
-		const drafts = loadWallpaperDrafts();
-		if (drafts.length > 0) {
-			setGeneratedWallpapers(drafts);
-			// Select the most recent one
-			setSelectedWallpaperId(drafts[0].id);
-		}
-		setHasLoadedDrafts(true);
-	}, []);
-
-	// Save drafts to localStorage when they change
-	useEffect(() => {
-		if (hasLoadedDrafts) {
-			saveWallpaperDrafts(generatedWallpapers);
-		}
-	}, [generatedWallpapers, hasLoadedDrafts]);
+	// Cloud storage state
+	const [isLoadingCloud, setIsLoadingCloud] = useState(false);
+	const [cloudUsage, setCloudUsage] = useState<{ count: number; limit: number } | null>(null);
+	const hasFetchedCloud = useRef(false);
 
 	// Payment state
 	const [requirePayment, setRequirePayment] = useState(true);
@@ -147,8 +142,116 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 	const [isGalleryCollapsed, setGalleryCollapsed] = useState(false);
 
 	// Wallet
-	const { status, connect, balance, sendPayment } = useYoursWallet();
+	const { status, connect, balance, sendPayment, addresses } = useYoursWallet();
 	const isConnected = status === "connected";
+	const ordAddress = addresses?.ordAddress;
+	const isCloudEnabled = isConnected && !!ordAddress;
+
+	// Load local drafts on mount (for anonymous users / offline cache)
+	useEffect(() => {
+		const drafts = loadLocalWallpaperDrafts();
+		if (drafts.length > 0) {
+			setGeneratedWallpapers(drafts);
+			setSelectedWallpaperId(drafts[0].id);
+		}
+		setHasLoadedDrafts(true);
+	}, []);
+
+	// Fetch from cloud when wallet connects
+	const fetchFromCloud = useCallback(async () => {
+		if (!ordAddress) return;
+
+		setIsLoadingCloud(true);
+		try {
+			const params = new URLSearchParams({
+				userId: ordAddress,
+				type: "wallpaper",
+			});
+
+			const response = await fetch(`/api/drafts?${params}`);
+			if (!response.ok) {
+				throw new Error("Failed to fetch cloud drafts");
+			}
+
+			const data = await response.json();
+			setCloudUsage(data.usage);
+
+			// Convert cloud drafts to GeneratedWallpaper format
+			if (data.drafts && data.drafts.length > 0) {
+				const cloudWallpapers: GeneratedWallpaper[] = await Promise.all(
+					data.drafts.map(async (draft: DraftMetadata) => {
+						// Fetch the actual image data from blob URL
+						let imageBase64 = "";
+						if (draft.blobUrl) {
+							try {
+								const imgResponse = await fetch(draft.blobUrl);
+								const blob = await imgResponse.blob();
+								const buffer = await blob.arrayBuffer();
+								imageBase64 = btoa(
+									new Uint8Array(buffer).reduce(
+										(data, byte) => data + String.fromCharCode(byte),
+										"",
+									),
+								);
+							} catch (e) {
+								console.warn("Failed to fetch blob for draft:", draft.id, e);
+							}
+						}
+
+						return {
+							id: draft.id,
+							timestamp: draft.createdAt,
+							imageBase64,
+							mimeType: draft.mimeType,
+							prompt: draft.prompt || "",
+							aspectRatio: (draft.aspectRatio || "16:9") as AspectRatio,
+							style: draft.style as WallpaperStyle | undefined,
+							sourceType: "prompt" as SourceType, // Default for cloud-loaded drafts
+							dimensions: { width: 1920, height: 1080 }, // Default, could store in metadata
+						} satisfies GeneratedWallpaper;
+					}),
+				);
+
+				// Merge with local drafts (cloud takes precedence)
+				const localDrafts = loadLocalWallpaperDrafts();
+				const cloudIds = new Set(cloudWallpapers.map((w) => w.id));
+				const uniqueLocalDrafts = localDrafts.filter((d) => !cloudIds.has(d.id));
+
+				const merged = [...cloudWallpapers, ...uniqueLocalDrafts];
+				setGeneratedWallpapers(merged);
+
+				if (merged.length > 0 && !selectedWallpaperId) {
+					setSelectedWallpaperId(merged[0].id);
+				}
+			}
+		} catch (error) {
+			console.error("Failed to fetch cloud drafts:", error);
+		} finally {
+			setIsLoadingCloud(false);
+		}
+	}, [ordAddress, selectedWallpaperId]);
+
+	// Reset fetch flag when wallet disconnects
+	useEffect(() => {
+		if (!isCloudEnabled) {
+			hasFetchedCloud.current = false;
+		}
+	}, [isCloudEnabled]);
+
+	// Fetch from cloud when wallet connects (once per session)
+	useEffect(() => {
+		if (isCloudEnabled && !hasFetchedCloud.current) {
+			hasFetchedCloud.current = true;
+			fetchFromCloud();
+		}
+	}, [isCloudEnabled, fetchFromCloud]);
+
+	// Save to localStorage when drafts change (for offline cache)
+	useEffect(() => {
+		if (hasLoadedDrafts) {
+			saveLocalWallpaperDrafts(generatedWallpapers);
+		}
+	}, [generatedWallpapers, hasLoadedDrafts]);
 
 	// Derived: selected wallpaper
 	const selectedWallpaper = useMemo(
@@ -220,11 +323,81 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 		}));
 	}, []);
 
+	// Save to cloud storage
+	const saveToCloud = useCallback(async (wallpaper: GeneratedWallpaper): Promise<boolean> => {
+		if (!ordAddress) return false;
+
+		try {
+			const response = await fetch("/api/drafts", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					userId: ordAddress,
+					type: "wallpaper",
+					name: wallpaper.prompt.slice(0, 50) || "Untitled Wallpaper",
+					base64: wallpaper.imageBase64,
+					mimeType: wallpaper.mimeType,
+					metadata: {
+						prompt: wallpaper.prompt,
+						style: wallpaper.style,
+						aspectRatio: wallpaper.aspectRatio,
+						sourceType: "ai",
+					},
+				}),
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				console.warn("Failed to save to cloud:", data.error);
+				return false;
+			}
+
+			const { draft } = await response.json();
+			const oldId = wallpaper.id;
+			const newId = draft.id;
+
+			// Update the wallpaper with the cloud ID
+			setGeneratedWallpapers((prev) =>
+				prev.map((w) => (w.id === oldId ? { ...w, id: newId } : w)),
+			);
+
+			// Update selectedWallpaperId if it was pointing to the old ID
+			setSelectedWallpaperId((prev) => (prev === oldId ? newId : prev));
+
+			// Update usage
+			if (cloudUsage) {
+				setCloudUsage({ ...cloudUsage, count: cloudUsage.count + 1 });
+			}
+
+			return true;
+		} catch (error) {
+			console.error("Failed to save to cloud:", error);
+			return false;
+		}
+	}, [ordAddress, cloudUsage]);
+
 	// Remove a single wallpaper
-	const removeWallpaper = useCallback((id: string) => {
+	const removeWallpaper = useCallback(async (id: string) => {
+		// Remove from cloud if connected
+		if (ordAddress) {
+			try {
+				const params = new URLSearchParams({
+					userId: ordAddress,
+					type: "wallpaper",
+				});
+				await fetch(`/api/drafts/${id}?${params}`, { method: "DELETE" });
+
+				// Update usage
+				if (cloudUsage) {
+					setCloudUsage({ ...cloudUsage, count: Math.max(0, cloudUsage.count - 1) });
+				}
+			} catch (error) {
+				console.error("Failed to delete from cloud:", error);
+			}
+		}
+
 		setGeneratedWallpapers((prev) => {
 			const newWallpapers = prev.filter((w) => w.id !== id);
-			// If we removed the selected one, select the next one (or none)
 			if (selectedWallpaperId === id) {
 				const removedIndex = prev.findIndex((w) => w.id === id);
 				const nextWallpaper = newWallpapers[removedIndex] || newWallpapers[removedIndex - 1] || null;
@@ -237,7 +410,7 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 			}
 			return newWallpapers;
 		});
-	}, [selectedWallpaperId, updateAmbientColors]);
+	}, [selectedWallpaperId, updateAmbientColors, ordAddress, cloudUsage]);
 
 	// Clear gallery
 	const clearGallery = useCallback(() => {
@@ -332,9 +505,10 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 
 			const data = (await response.json()) as WallpaperGenerationResponse;
 
-			// Create wallpaper record
+			// Create wallpaper record with temporary ID
+			const tempId = generateWallpaperId();
 			const newWallpaper: GeneratedWallpaper = {
-				id: generateWallpaperId(),
+				id: tempId,
 				timestamp: Date.now(),
 				imageBase64: data.image,
 				mimeType: data.mimeType,
@@ -349,8 +523,13 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 			setGeneratedWallpapers((prev) => [newWallpaper, ...prev.slice(0, 19)]);
 
 			// Select the new wallpaper
-			setSelectedWallpaperId(newWallpaper.id);
+			setSelectedWallpaperId(tempId);
 			updateAmbientColors(newWallpaper);
+
+			// Save to cloud if connected (async, don't block)
+			if (isCloudEnabled) {
+				saveToCloud(newWallpaper).catch(console.error);
+			}
 
 			setGenerationProgress(100);
 			toast.success("Wallpaper generated!");
@@ -371,6 +550,8 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 		balance,
 		sendPayment,
 		updateAmbientColors,
+		isCloudEnabled,
+		saveToCloud,
 	]);
 
 	return (
@@ -388,6 +569,9 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 				isPaying,
 				isGalleryCollapsed,
 				setGalleryCollapsed,
+				isCloudEnabled,
+				isLoadingCloud,
+				cloudUsage,
 				generate,
 				selectWallpaper,
 				removeWallpaper,
@@ -395,6 +579,7 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 				updateParam,
 				setSourcePattern,
 				setSourceWallpaper,
+				refreshFromCloud: fetchFromCloud,
 				selectedImageDataUrl,
 			}}
 		>

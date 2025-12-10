@@ -18,6 +18,10 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Loader2,
+	Cloud,
+	Save,
+	Trash2,
+	RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -36,6 +40,7 @@ import {
 export function PatternSidebar() {
 	const {
 		params,
+		result,
 		setSource,
 		setGeoGenerator,
 		setHeroPattern,
@@ -44,6 +49,15 @@ export function PatternSidebar() {
 		generateAI,
 		isGenerating,
 		uiState,
+		// Cloud storage
+		cloudDrafts,
+		isLoadingCloud,
+		isCloudEnabled,
+		cloudUsage,
+		saveDraft,
+		deleteDraft,
+		loadDraft,
+		refreshCloudDrafts,
 	} = usePatternContext();
 
 	const [aiPrompt, setAiPrompt] = useState("");
@@ -51,6 +65,14 @@ export function PatternSidebar() {
 	const [showAllHero, setShowAllHero] = useState(false);
 	const [appearanceOpen, setAppearanceOpen] = useState(true);
 	const [animationOpen, setAnimationOpen] = useState(false);
+	const [draftsOpen, setDraftsOpen] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+
+	const handleSaveDraft = async () => {
+		setIsSaving(true);
+		await saveDraft();
+		setIsSaving(false);
+	};
 
 	// Filter hero patterns
 	const filteredHeroPatterns = heroSearch
@@ -376,6 +398,136 @@ export function PatternSidebar() {
 									}
 								/>
 							</div>
+						</CollapsibleContent>
+					</Collapsible>
+
+					<Separator className="my-2" />
+
+					{/* Cloud Drafts Section */}
+					<Collapsible
+						open={draftsOpen}
+						onOpenChange={setDraftsOpen}
+						className="px-4 pb-4"
+					>
+						<CollapsibleTrigger className="flex items-center justify-between w-full py-2">
+							<div className="flex items-center gap-2">
+								<Cloud className="h-4 w-4" />
+								<span className="text-sm font-medium">My Drafts</span>
+								{isCloudEnabled && cloudUsage && (
+									<span className="text-xs text-muted-foreground">
+										({cloudUsage.count}/{cloudUsage.limit})
+									</span>
+								)}
+							</div>
+							{draftsOpen ? (
+								<ChevronUp className="h-4 w-4" />
+							) : (
+								<ChevronDown className="h-4 w-4" />
+							)}
+						</CollapsibleTrigger>
+						<CollapsibleContent className="space-y-3 pb-4">
+							{/* Save Button */}
+							{result?.svg && (
+								<Button
+									variant="outline"
+									size="sm"
+									className="w-full"
+									onClick={handleSaveDraft}
+									disabled={isSaving || !isCloudEnabled}
+								>
+									{isSaving ? (
+										<>
+											<Loader2 className="mr-2 h-3 w-3 animate-spin" />
+											Saving...
+										</>
+									) : (
+										<>
+											<Save className="mr-2 h-3 w-3" />
+											Save to Cloud
+										</>
+									)}
+								</Button>
+							)}
+
+							{!isCloudEnabled && (
+								<p className="text-xs text-muted-foreground text-center py-2">
+									Connect wallet to save drafts
+								</p>
+							)}
+
+							{isCloudEnabled && isLoadingCloud && (
+								<div className="flex items-center justify-center py-4">
+									<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+								</div>
+							)}
+
+							{isCloudEnabled && !isLoadingCloud && cloudDrafts.length === 0 && (
+								<p className="text-xs text-muted-foreground text-center py-2">
+									No saved patterns yet
+								</p>
+							)}
+
+							{isCloudEnabled && cloudDrafts.length > 0 && (
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="text-xs text-muted-foreground">
+											{cloudDrafts.length} saved pattern{cloudDrafts.length !== 1 ? "s" : ""}
+										</span>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="h-6 w-6 p-0"
+											onClick={refreshCloudDrafts}
+										>
+											<RefreshCw className="h-3 w-3" />
+										</Button>
+									</div>
+									<div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+										{cloudDrafts.map((draft) => (
+											<div
+												key={draft.id}
+												className="group relative aspect-square rounded-md border bg-muted/50 cursor-pointer hover:border-primary transition-colors overflow-hidden"
+												onClick={() => loadDraft(draft)}
+											>
+												{draft.svg && (
+													<div
+														className="absolute inset-0"
+														style={{
+															backgroundColor: params.backgroundColor,
+														}}
+													>
+														<div
+															className="absolute inset-0"
+															style={{
+																backgroundColor: params.foregroundColor,
+																opacity: 0.5,
+																maskImage: `url("data:image/svg+xml,${encodeURIComponent(draft.svg.replace(/currentColor/gi, "#ffffff"))}")`,
+																WebkitMaskImage: `url("data:image/svg+xml,${encodeURIComponent(draft.svg.replace(/currentColor/gi, "#ffffff"))}")`,
+																maskSize: "40px 40px",
+																WebkitMaskSize: "40px 40px",
+																maskRepeat: "repeat",
+																WebkitMaskRepeat: "repeat",
+															}}
+														/>
+													</div>
+												)}
+												<button
+													onClick={(e) => {
+														e.stopPropagation();
+														deleteDraft(draft.id);
+													}}
+													className="absolute top-1 right-1 p-1 rounded bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+												>
+													<Trash2 className="h-3 w-3 text-destructive" />
+												</button>
+												<div className="absolute bottom-0 left-0 right-0 px-1 py-0.5 bg-background/80 text-[9px] truncate">
+													{draft.name}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</CollapsibleContent>
 					</Collapsible>
 				</ScrollArea>

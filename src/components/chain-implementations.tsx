@@ -170,9 +170,9 @@ export function ChainImplementations() {
 			>
 				<div className="flex items-center justify-between border-b border-border px-4 py-3">
 					<div className="flex items-center gap-2">
-						<div className="h-3 w-3 rounded-full bg-destructive/60" />
-						<div className="h-3 w-3 rounded-full bg-yellow-500/60" />
-						<div className="h-3 w-3 rounded-full bg-green-500/60" />
+						<div className="traffic-close h-3 w-3 rounded-full" />
+						<div className="traffic-minimize h-3 w-3 rounded-full" />
+						<div className="traffic-maximize h-3 w-3 rounded-full" />
 						<span className="ml-2 font-mono text-xs text-muted-foreground">
 							{chain.filename}
 						</span>
