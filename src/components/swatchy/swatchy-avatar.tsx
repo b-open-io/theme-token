@@ -21,10 +21,10 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			return {
 				left: "auto",
 				bottom: "auto",
-				right: -20,  // Partially off-screen
-				top: 100,    // Position at top (below header)
-				width: 180,
-				height: 180,
+				right: -20,
+				top: -75,
+				width: 280,
+				height: 280,
 			};
 		}
 
