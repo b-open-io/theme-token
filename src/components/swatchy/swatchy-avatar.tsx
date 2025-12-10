@@ -123,7 +123,7 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			// instead of trying to interpolate CSS position properties
 			layout
 			style={getPositionStyle()}
-			className="cursor-pointer overflow-visible rounded-full"
+			className="cursor-pointer overflow-visible rounded-full focus:outline-none focus-visible:outline-none"
 			onClick={onClick}
 			// Smooth spring - slightly softer for hero transitions
 			transition={{
