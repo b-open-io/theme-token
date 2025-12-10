@@ -4,7 +4,7 @@ import { isTextUIPart, isToolOrDynamicToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
 import { Loader2, X, CheckCircle2, XCircle, Wrench, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Conversation,
@@ -146,44 +146,92 @@ function getRandomPopCultureTheme(): string {
 	return POP_CULTURE_THEMES[randomIndex];
 }
 
-function getSuggestions(): string[] {
+// Page-specific suggestions for contextual relevance
+const PAGE_SUGGESTIONS: Record<string, string[]> = {
+	"/studio/theme": [
+		"Make this theme darker",
+		"Increase the border radius",
+		"Switch to a warmer palette",
+		"Add more contrast",
+		"Make it more vibrant",
+	],
+	"/studio/font": [
+		"Create a futuristic display font",
+		"Generate a handwritten script",
+		"Make a bold geometric sans-serif",
+		"Design a pixel art font",
+		"Create an elegant serif font",
+	],
+	"/studio/patterns": [
+		"Create a subtle dot grid",
+		"Make an organic wave pattern",
+		"Design a geometric hexagon pattern",
+		"Generate a minimalist line pattern",
+	],
+	"/studio/registry": [
+		"Generate a pricing table block",
+		"Create a hero section",
+		"Design a login form component",
+		"Make a stats dashboard block",
+		"Generate a testimonial carousel",
+	],
+	"/studio/wallpaper": [
+		"Create a cyberpunk cityscape",
+		"Generate an abstract gradient",
+		"Make a serene mountain landscape",
+		"Design a geometric desktop wallpaper",
+	],
+	"/market": [
+		"Show me popular themes",
+		"Find dark mode themes",
+		"Take me to my collection",
+		"How do I list a theme for sale?",
+	],
+	"/themes": [
+		"Show me cyberpunk themes",
+		"Find minimalist designs",
+		"Browse colorful themes",
+		"Filter by warm colors",
+	],
+};
+
+function getSuggestions(pathname: string): string[] {
 	// First suggestion is a random pop culture theme
 	const firstSuggestion = `Create a ${getRandomPopCultureTheme()} theme`;
 
-	const otherSuggestions = [
-		"Create a dark cyberpunk theme",
-		"Make my theme more accessible",
-		"Show me warm color palettes",
+	// Get page-specific suggestions based on current path
+	const pageKey = Object.keys(PAGE_SUGGESTIONS).find(key => pathname.startsWith(key));
+	const pageSuggestions = pageKey ? PAGE_SUGGESTIONS[pageKey] : [];
+
+	// Global suggestions (always available as fallback)
+	const globalSuggestions = [
 		"Take me to the marketplace",
-		"Generate a minimalist theme",
 		"Browse popular themes",
-		"How do I mint a theme?",
+		"How do themes work?",
 	];
 
+	// Feature-gated suggestions (exclude if already on that studio)
 	const featureSuggestions: string[] = [];
 
-	if (featureFlags.fonts) {
-		featureSuggestions.push("Create a custom display font");
+	if (featureFlags.fonts && !pathname.includes("/studio/font")) {
+		featureSuggestions.push("Create a custom font");
 	}
 
-	if (featureFlags.images) {
-		featureSuggestions.push("Generate a geometric pattern");
+	if (featureFlags.images && !pathname.includes("/studio/pattern")) {
+		featureSuggestions.push("Generate a pattern");
 	}
 
-	if (featureFlags.registry) {
-		featureSuggestions.push("Help me design a wellness app theme");
+	if (featureFlags.registry && !pathname.includes("/studio/registry")) {
+		featureSuggestions.push("Generate a UI block");
 	}
 
-	// Combine other suggestions with feature-specific ones and shuffle
-	const shuffledOthers = [...otherSuggestions, ...featureSuggestions]
-		.sort(() => Math.random() - 0.5)
-		.slice(0, 3);
+	// Blend: prioritize page-specific, then feature-gated, then global
+	const pool = [...pageSuggestions, ...featureSuggestions, ...globalSuggestions];
+	const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, 3);
 
-	// Return first suggestion followed by 3 random others
-	return [firstSuggestion, ...shuffledOthers];
+	// Return first suggestion followed by 3 contextual others
+	return [firstSuggestion, ...shuffled];
 }
-
-const SUGGESTIONS = getSuggestions();
 
 // Tool name display mapping
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -224,6 +272,9 @@ export function SwatchyChatBubble() {
 	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
+
+	// Generate context-aware suggestions based on current page
+	const suggestions = useMemo(() => getSuggestions(pathname), [pathname]);
 
 	// Close on Escape (only when textarea not focused)
 	useEffect(() => {
@@ -316,7 +367,7 @@ export function SwatchyChatBubble() {
 									today?
 								</p>
 								<Suggestions className="flex-wrap justify-center gap-2">
-									{SUGGESTIONS.map((suggestion) => (
+									{suggestions.map((suggestion) => (
 										<Suggestion
 											key={suggestion}
 											suggestion={suggestion}
