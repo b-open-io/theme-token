@@ -13,6 +13,7 @@ import {
 	getCachedFont,
 	clearFontCache,
 	getContentUrl,
+	getOrdfsUrl,
 	type LoadedFont,
 } from "@theme-token/sdk";
 
@@ -29,8 +30,6 @@ export {
 export const isOnChainFont = isOnChainPath;
 export const extractOriginFromPath = extractOrigin;
 export const getFontContentUrl = getContentUrl;
-
-const ORDFS_BASE = "https://ordfs.network";
 
 // Website-specific: Font metadata from MAP protocol
 export interface FontMetadata {
@@ -52,7 +51,7 @@ export async function fetchFontMetadata(
 ): Promise<FontMetadata | null> {
 	try {
 		// Fetch the ordinal data which includes MAP metadata
-		const response = await fetch(`${ORDFS_BASE}/${origin}`);
+		const response = await fetch(getOrdfsUrl(origin));
 		if (!response.ok) return null;
 
 		// For fonts, the response might be binary, so we need to check content-type
@@ -88,10 +87,9 @@ export async function fetchFontMetadata(
 
 /**
  * Get ORDFS metadata URL for a font origin
+ * Re-exports SDK function for backwards compatibility
  */
-export function getFontMetadataUrl(origin: string): string {
-	return `${ORDFS_BASE}/${origin}`;
-}
+export const getFontMetadataUrl = getOrdfsUrl;
 
 /**
  * Load fonts for a theme's style mode

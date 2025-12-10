@@ -1,5 +1,6 @@
 "use client";
 
+import { getOrdfsUrl } from "@theme-token/sdk";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FontFile } from "@/app/studio/font/page";
@@ -162,7 +163,7 @@ export function TransactionTerminal({
 			await new Promise((r) => setTimeout(r, 400));
 
 			// Build ORDFS URL - for fonts, we use the txid_0 format
-			const ordfsUrl = `https://ordfs.network/${response.txid}_0`;
+			const ordfsUrl = getOrdfsUrl(`${response.txid}_0`);
 
 			addLog("SUCCESS.", "success");
 			setIsProcessing(false);

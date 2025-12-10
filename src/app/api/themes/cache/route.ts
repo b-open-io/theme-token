@@ -1,5 +1,5 @@
 import { kv } from "@vercel/kv";
-import { validateThemeToken, type ThemeToken } from "@theme-token/sdk";
+import { validateThemeToken, getOrdfsUrl, type ThemeToken } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 
 const THEMES_CACHE_KEY = "themes:published";
@@ -180,7 +180,7 @@ async function fetchFromChain(): Promise<CachedTheme[]> {
 			seenOrigins.add(originOutpoint);
 
 			const contentResponse = await fetch(
-				`https://ordfs.network/${originOutpoint}`,
+				getOrdfsUrl(originOutpoint),
 				{ next: { revalidate: 3600 } }
 			);
 			

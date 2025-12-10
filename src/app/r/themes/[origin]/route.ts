@@ -1,4 +1,4 @@
-import { toShadcnRegistry, validateThemeToken } from "@theme-token/sdk";
+import { toShadcnRegistry, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 	try {
 		const { origin } = await params;
 
-		const response = await fetch(`https://ordfs.network/${origin}`);
+		const response = await fetch(getOrdfsUrl(origin));
 		if (!response.ok) {
 			return NextResponse.json({ error: "Theme not found" }, { status: 404 });
 		}

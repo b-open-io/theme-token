@@ -15,23 +15,11 @@
  * - Result: 100% theme-reactive patterns
  */
 
-const ORDFS_BASE = "https://ordfs.network";
+import { isOnChainPath, extractOrigin, getContentUrl } from "@theme-token/sdk";
 
-/**
- * Check if an image value is an on-chain path
- */
-export function isOnChainImage(imageValue: string): boolean {
-	return imageValue.startsWith("/content/");
-}
-
-/**
- * Extract the outpoint/origin from an on-chain path
- * e.g., "/content/abc123_0" -> "abc123_0"
- */
-export function extractOriginFromPath(imagePath: string): string | null {
-	if (!imagePath.startsWith("/content/")) return null;
-	return imagePath.slice("/content/".length);
-}
+// Re-export SDK functions with image-specific names for backwards compatibility
+export const isOnChainImage = isOnChainPath;
+export const extractOriginFromPath = extractOrigin;
 
 export interface LoadedImage {
 	origin: string;
@@ -112,8 +100,8 @@ export async function loadImageByOrigin(origin: string): Promise<string> {
 	// Create loading promise
 	const loadPromise = (async () => {
 		try {
-			// Fetch image from ORDFS
-			const response = await fetch(`${ORDFS_BASE}/content/${origin}`);
+			// Fetch image from ORDFS using SDK URL builder
+			const response = await fetch(getContentUrl(origin));
 			if (!response.ok) {
 				throw new Error(`Failed to fetch image: ${response.status}`);
 			}
@@ -247,10 +235,9 @@ export async function loadThemeBackgrounds(styles: {
 
 /**
  * Get ORDFS content URL for an image origin
+ * Re-exports SDK function for backwards compatibility
  */
-export function getImageContentUrl(origin: string): string {
-	return `${ORDFS_BASE}/content/${origin}`;
-}
+export const getImageContentUrl = getContentUrl;
 
 /**
  * Preload an image by origin (useful for preview)

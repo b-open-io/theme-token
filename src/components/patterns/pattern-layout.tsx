@@ -1,5 +1,6 @@
 "use client";
 
+import { getContentUrl } from "@theme-token/sdk";
 import { PatternSidebar } from "@/components/patterns/pattern-sidebar";
 import { usePatternContext } from "@/components/patterns/pattern-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -98,7 +99,7 @@ export function PatternLayout() {
 							<div className="flex items-center gap-2 rounded-full bg-background/80 px-3 py-1.5 backdrop-blur border shadow-sm">
 								<Check className="h-3 w-3 text-green-500" />
 								<a
-									href={`https://ordfs.network/content/${inscribedOrigin}`}
+									href={getContentUrl(inscribedOrigin)}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="text-xs hover:underline flex items-center gap-1"

@@ -192,7 +192,8 @@ export async function fetchOrdinalContent<T = unknown>(
 	outpoint: string,
 ): Promise<T | null> {
 	try {
-		const response = await fetch(`https://ordfs.network/content/${outpoint}`);
+		const { getContentUrl } = await import("@theme-token/sdk");
+		const response = await fetch(getContentUrl(outpoint));
 		if (!response.ok) return null;
 		return await response.json();
 	} catch {
@@ -693,7 +694,7 @@ export async function fetchImageMarketListings(): Promise<ImageMarketListing[]> 
 								size: inscData?.file?.size,
 								assetType,
 							},
-							previewUrl: `https://ordfs.network/content/${origin}`,
+							previewUrl: `/content/${origin}`, // Will use SDK's getContentUrl at runtime
 						};
 					},
 				);

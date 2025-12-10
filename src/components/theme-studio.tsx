@@ -3,6 +3,7 @@
 import {
 	applyTheme as applyThemeToDOM,
 	parseCss,
+	getOrdfsUrl,
 	type ThemeToken,
 } from "@theme-token/sdk";
 import { useQuery } from "@tanstack/react-query";
@@ -323,7 +324,7 @@ export function ThemeStudio() {
 
 		// Handle remix by origin - fetch theme from blockchain
 		if (remixParam) {
-			fetch(`https://ordfs.network/${remixParam}`)
+			fetch(getOrdfsUrl(remixParam))
 				.then((res) => res.json())
 				.then((data) => {
 					if (data.styles && (data.styles.light || data.styles.dark)) {

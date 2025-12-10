@@ -1,4 +1,4 @@
-import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
+import { type ThemeToken, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import { notFound } from "next/navigation";
 import { PreviewClient } from "./preview-client";
@@ -62,7 +62,7 @@ async function getTheme(origin: string): Promise<GetThemeResult | null> {
 
   // Fall back to ORDFS (direct inscription fetch)
   try {
-    const response = await fetch(`https://ordfs.network/${origin}`, {
+    const response = await fetch(getOrdfsUrl(origin), {
       next: { revalidate: 3600 }, // Cache for 1 hour
     });
 
