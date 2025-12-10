@@ -145,7 +145,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 
 			toggleChat: () => {
 				const { position } = get();
-				if (position === "corner") {
+				if (position === "corner" || position === "hero") {
 					get().openChat();
 				} else {
 					get().closeChat();
