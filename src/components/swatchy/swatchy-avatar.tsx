@@ -59,8 +59,9 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			animate={getAnimateProps()}
 			transition={{
 				type: "spring",
-				stiffness: 200,
-				damping: 25,
+				stiffness: 80,
+				damping: 20,
+				mass: 1,
 			}}
 			onClick={onClick}
 			whileHover={isCorner ? { scale: 1.1 } : undefined}
