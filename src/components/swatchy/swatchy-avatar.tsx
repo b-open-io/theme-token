@@ -13,12 +13,14 @@ interface SwatchyAvatarProps {
 
 export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
+	const isHero = position === "hero";
+	const isExpanded = position === "expanded";
 	const isLeft = side === "left";
 
 	// Position styles applied directly to style prop - layout animation handles the transition
 	// CSS cannot interpolate between numeric values and "auto", so we use layout animation
 	const getPositionStyle = (): React.CSSProperties => {
-		if (!isCorner) {
+		if (isExpanded) {
 			// Expanded - large avatar at top right, partially behind chat
 			return {
 				position: "fixed",
@@ -29,6 +31,21 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 				width: 280,
 				height: 280,
 				zIndex: 50,
+			};
+		}
+
+		if (isHero) {
+			// Hero pose - larger, positioned to the right side of the hero content
+			// Positioned lower-right of the hero section, not blocking centered UI
+			return {
+				position: "fixed",
+				top: "auto",
+				bottom: "18%",
+				left: "auto",
+				right: "8%",
+				width: 200,
+				height: 200,
+				zIndex: 40, // Below corner z-index so it doesn't feel too prominent
 			};
 		}
 
@@ -45,6 +62,44 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 		};
 	};
 
+	// Floating animation - more pronounced in hero mode, subtle in corner
+	const getFloatAnimation = () => {
+		if (isExpanded) {
+			return { y: 0, rotate: 0 };
+		}
+		if (isHero) {
+			// Larger, slower, more majestic float for hero pose
+			return {
+				y: [0, -12, 0],
+				rotate: [0, 3, 0, -3, 0],
+			};
+		}
+		// Standard corner float
+		return {
+			y: [0, -8, 0],
+			rotate: [0, 2, 0, -2, 0],
+		};
+	};
+
+	const getFloatTransition = () => {
+		if (isExpanded) {
+			return { duration: 0.5 };
+		}
+		if (isHero) {
+			// Slower, more elegant for hero
+			return {
+				duration: 6,
+				repeat: Number.POSITIVE_INFINITY,
+				ease: "easeInOut" as const,
+			};
+		}
+		return {
+			duration: 5,
+			repeat: Number.POSITIVE_INFINITY,
+			ease: "easeInOut" as const,
+		};
+	};
+
 	return (
 		<motion.button
 			// layout prop is the key - it measures bounding box and uses transforms
@@ -53,38 +108,24 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			style={getPositionStyle()}
 			className="cursor-pointer overflow-visible rounded-full"
 			onClick={onClick}
-			// Smooth spring that feels "heavy" enough not to overshoot
+			// Smooth spring - slightly softer for hero transitions
 			transition={{
 				type: "spring",
-				stiffness: 200,
-				damping: 25,
+				stiffness: isHero ? 120 : 200,
+				damping: isHero ? 20 : 25,
+				mass: 1,
 			}}
-			whileHover={isCorner ? { scale: 1.05 } : undefined}
-			whileTap={isCorner ? { scale: 0.95 } : undefined}
-			aria-label={isCorner ? "Open Swatchy assistant" : "Close chat"}
+			whileHover={isCorner || isHero ? { scale: 1.05 } : undefined}
+			whileTap={isCorner || isHero ? { scale: 0.95 } : undefined}
+			aria-label={isCorner || isHero ? "Open Swatchy assistant" : "Close chat"}
 		>
 			{/* Wrapper with layout="preserve-aspect" prevents distortion during size transition */}
 			<motion.div className="relative h-full w-full" layout="preserve-aspect">
-				{/* Floating animation wrapper - only when in corner */}
+				{/* Floating animation wrapper */}
 				<motion.div
 					className="h-full w-full"
-					animate={
-						isCorner
-							? {
-									y: [0, -8, 0],
-									rotate: [0, 2, 0, -2, 0],
-								}
-							: { y: 0, rotate: 0 }
-					}
-					transition={
-						isCorner
-							? {
-									duration: 5,
-									repeat: Number.POSITIVE_INFINITY,
-									ease: "easeInOut",
-								}
-							: { duration: 0.5 }
-					}
+					animate={getFloatAnimation()}
+					transition={getFloatTransition()}
 				>
 					<Image
 						src="/swatchy-meditation.png"
@@ -98,7 +139,7 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 				</motion.div>
 			</motion.div>
 
-			{/* Notification pulse when idle in corner */}
+			{/* Notification pulse when idle in corner (not in hero) */}
 			{isCorner && (
 				<motion.span
 					className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-primary"

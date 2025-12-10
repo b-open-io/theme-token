@@ -236,7 +236,7 @@ export function TransactionTerminal({
 				{/* Header */}
 				<div className="flex items-center justify-between border-b border-border px-4 py-3">
 					<span className="font-mono text-sm text-muted-foreground">
-						// TRANSACTION_TERMINAL
+						{"// TRANSACTION_TERMINAL"}
 					</span>
 					{!isProcessing && (
 						<button

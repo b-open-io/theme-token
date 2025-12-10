@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, ChevronDown, Link as LinkIcon, Type, Wallet } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Check, ChevronDown, Link as LinkIcon, Type, Upload, Wallet } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -16,8 +16,15 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useYoursWallet, type OwnedFont } from "@/hooks/use-yours-wallet";
 import { loadFontByOrigin, getCachedFont, isOnChainFont, extractOriginFromPath } from "@/lib/font-loader";
+import {
+	useFontUploadStore,
+	createUploadedFontFromFile,
+	isUploadedFontPath,
+	extractUploadedFontId,
+	createUploadedFontPath,
+} from "@/lib/stores/font-upload-store";
 
-type FontSource = "google" | "onchain" | "custom";
+type FontSource = "google" | "onchain" | "uploaded" | "custom";
 
 interface FontSelectorProps {
 	slot: "sans" | "serif" | "mono";
@@ -36,10 +43,15 @@ const SUGGESTED_FONTS: Record<string, string[]> = {
 export function FontSelector({ slot, value, onChange, label }: FontSelectorProps) {
 	const { ownedFonts, status: walletStatus, connect } = useYoursWallet();
 	const isConnected = walletStatus === "connected";
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	// Font upload store
+	const { uploadedFonts, addFont, loadFontForPreview, getFont } = useFontUploadStore();
 
 	// Determine current source based on value
 	const getCurrentSource = (): FontSource => {
 		if (!value) return "google";
+		if (isUploadedFontPath(value)) return "uploaded";
 		if (isOnChainFont(value)) return "onchain";
 		// If it looks like a txid_vout pattern (for manual entry), treat as custom
 		if (/^[a-f0-9]{64}_\d+$/i.test(value)) return "custom";
@@ -49,17 +61,34 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 	const [source, setSource] = useState<FontSource>(getCurrentSource);
 	const [customOrigin, setCustomOrigin] = useState("");
 	const [loadedFontFamily, setLoadedFontFamily] = useState<string | null>(null);
+	const [isUploading, setIsUploading] = useState(false);
 
 	// Get current on-chain origin if applicable
 	const currentOrigin = isOnChainFont(value) ? extractOriginFromPath(value) : null;
+
+	// Get current uploaded font ID if applicable
+	const currentUploadedId = isUploadedFontPath(value) ? extractUploadedFontId(value) : null;
+	const currentUploadedFont = currentUploadedId ? getFont(currentUploadedId) : null;
 
 	// Find the owned font matching current value
 	const currentOwnedFont = currentOrigin
 		? ownedFonts.find((f) => f.origin === currentOrigin)
 		: null;
 
-	// Load font preview for current on-chain font
+	// Load font preview for current on-chain or uploaded font
 	const loadCurrentFont = useCallback(async () => {
+		// Handle uploaded fonts
+		if (currentUploadedId) {
+			try {
+				const family = await loadFontForPreview(currentUploadedId);
+				setLoadedFontFamily(family);
+			} catch {
+				setLoadedFontFamily(null);
+			}
+			return;
+		}
+
+		// Handle on-chain fonts
 		if (!currentOrigin) {
 			setLoadedFontFamily(null);
 			return;
@@ -77,11 +106,47 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 		} catch {
 			setLoadedFontFamily(null);
 		}
-	}, [currentOrigin]);
+	}, [currentOrigin, currentUploadedId, loadFontForPreview]);
 
 	useEffect(() => {
 		loadCurrentFont();
 	}, [loadCurrentFont]);
+
+	// Handle file upload
+	const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setIsUploading(true);
+		try {
+			const fontData = await createUploadedFontFromFile(file);
+			const id = addFont(fontData);
+
+			// Load the font for preview
+			await loadFontForPreview(id);
+
+			// Set the value to the uploaded font path
+			onChange(createUploadedFontPath(id));
+		} catch (err) {
+			console.error("[FontSelector] Upload error:", err);
+		} finally {
+			setIsUploading(false);
+			// Reset file input
+			if (fileInputRef.current) {
+				fileInputRef.current.value = "";
+			}
+		}
+	}, [addFont, loadFontForPreview, onChange]);
+
+	// Handle selecting an already-uploaded font
+	const handleUploadedFontSelect = useCallback(async (id: string) => {
+		try {
+			await loadFontForPreview(id);
+			onChange(createUploadedFontPath(id));
+		} catch (err) {
+			console.error("[FontSelector] Error loading uploaded font:", err);
+		}
+	}, [loadFontForPreview, onChange]);
 
 	// Handle source change
 	const handleSourceChange = (newSource: FontSource) => {
@@ -118,6 +183,7 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 	// Display label for current value
 	const getDisplayLabel = (): string => {
 		if (!value) return "Select font...";
+		if (currentUploadedFont) return `${currentUploadedFont.familyName} (uploaded)`;
 		if (currentOwnedFont) return currentOwnedFont.metadata.name;
 		if (isOnChainFont(value)) return `On-chain: ${currentOrigin?.slice(0, 8)}...`;
 		// Extract primary font name from font stack (e.g., '"Space Grotesk", "Inter", ...' -> 'Space Grotesk')
@@ -135,12 +201,18 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 			<RadioGroup
 				value={source}
 				onValueChange={(v) => handleSourceChange(v as FontSource)}
-				className="flex gap-4"
+				className="flex flex-wrap gap-x-4 gap-y-2"
 			>
 				<div className="flex items-center space-x-2">
 					<RadioGroupItem value="google" id={`${slot}-google`} />
 					<Label htmlFor={`${slot}-google`} className="text-xs cursor-pointer">
 						Google
+					</Label>
+				</div>
+				<div className="flex items-center space-x-2">
+					<RadioGroupItem value="uploaded" id={`${slot}-uploaded`} />
+					<Label htmlFor={`${slot}-uploaded`} className="text-xs cursor-pointer">
+						Upload
 					</Label>
 				</div>
 				<div className="flex items-center space-x-2">
@@ -185,6 +257,79 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 						))}
 					</DropdownMenuContent>
 				</DropdownMenu>
+			)}
+
+			{/* Uploaded Fonts */}
+			{source === "uploaded" && (
+				<>
+					{/* Hidden file input */}
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept=".woff2,.woff,.ttf,.otf"
+						onChange={handleFileUpload}
+						className="hidden"
+					/>
+
+					{/* Upload button or dropdown if fonts exist */}
+					{uploadedFonts.length === 0 ? (
+						<Button
+							variant="outline"
+							className="w-full"
+							onClick={() => fileInputRef.current?.click()}
+							disabled={isUploading}
+						>
+							<Upload className="mr-2 h-4 w-4" />
+							{isUploading ? "Uploading..." : "Upload Font File"}
+						</Button>
+					) : (
+						<div className="space-y-2">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										className="w-full justify-between font-normal"
+										style={{ fontFamily: loadedFontFamily || undefined }}
+									>
+										<span className="truncate">{getDisplayLabel()}</span>
+										<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent className="w-64 max-h-64 overflow-y-auto">
+									<DropdownMenuLabel>Uploaded Fonts</DropdownMenuLabel>
+									<DropdownMenuSeparator />
+									{uploadedFonts.map((font) => (
+										<DropdownMenuItem
+											key={font.id}
+											onClick={() => handleUploadedFontSelect(font.id)}
+											className="justify-between"
+										>
+											<div className="flex flex-col">
+												<span>{font.familyName}</span>
+												<span className="text-[10px] text-muted-foreground">
+													{(font.sizeBytes / 1024).toFixed(1)} KB
+												</span>
+											</div>
+											{currentUploadedId === font.id && <Check className="h-4 w-4" />}
+										</DropdownMenuItem>
+									))}
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() => fileInputRef.current?.click()}
+										className="text-muted-foreground"
+									>
+										<Upload className="mr-2 h-4 w-4" />
+										Upload another...
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					)}
+
+					<p className="text-[10px] text-muted-foreground">
+						Upload .woff2, .woff, .ttf, or .otf files for preview
+					</p>
+				</>
 			)}
 
 			{/* On-Chain Fonts (Owned) */}

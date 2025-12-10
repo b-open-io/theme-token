@@ -21,6 +21,7 @@ import { PageContainer } from "@/components/page-container";
 import { ThemeGallery } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SwatchyHeroController } from "@/components/swatchy/swatchy-hero-controller";
 
 const fadeIn = {
 	initial: { opacity: 0, y: 20 },
@@ -73,6 +74,9 @@ export default function Home() {
 
 	return (
 		<div className="min-h-screen">
+			{/* Swatchy Hero Controller - manages scroll-based hero pose */}
+			<SwatchyHeroController />
+
 			{/* Hero Section */}
 			<section className="relative overflow-hidden">
 				<div className="grid-background absolute inset-0 opacity-50" />

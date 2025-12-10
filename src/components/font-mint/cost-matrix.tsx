@@ -37,7 +37,7 @@ export function CostMatrix({ totalBytes, metadataBytes, previewBytes = 0 }: Cost
 		<div className="rounded border border-border bg-background font-mono text-xs">
 			{/* Header */}
 			<div className="border-b border-border px-3 py-2">
-				<span className="text-muted-foreground">// ESTIMATED_COST_BREAKDOWN</span>
+				<span className="text-muted-foreground">{"// ESTIMATED_COST_BREAKDOWN"}</span>
 			</div>
 
 			{/* Cost Lines */}

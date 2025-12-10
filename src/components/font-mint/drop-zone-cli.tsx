@@ -12,6 +12,10 @@ import {
 	type ExtractedFontFile,
 	type ZipFontMetadata,
 } from "@/lib/zip-font-loader";
+import {
+	useFontUploadStore,
+	createUploadedFontFromFile,
+} from "@/lib/stores/font-upload-store";
 
 export interface FontFileWithValidation extends FontFile {
 	validation?: FontValidationResult;
@@ -57,12 +61,28 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 	const [isLoadingZip, setIsLoadingZip] = useState(false);
 	const [zipPackage, setZipPackage] = useState<ZipFontPackage | null>(null);
 
+	// Font upload store for cross-studio sharing
+	const addFontToStore = useFontUploadStore((state) => state.addFont);
+	const loadFontForPreview = useFontUploadStore((state) => state.loadFontForPreview);
+
 	// Use ref to always have current files without causing re-renders
 	// This fixes stale closure issues in async callbacks
 	const filesRef = useRef(files);
 	useEffect(() => {
 		filesRef.current = files;
 	}, [files]);
+
+	// Add font to shared store for cross-studio preview
+	const syncToUploadStore = useCallback(async (file: File, familyName?: string) => {
+		try {
+			const fontData = await createUploadedFontFromFile(file, familyName);
+			const id = addFontToStore(fontData);
+			// Load it for immediate preview
+			await loadFontForPreview(id);
+		} catch (err) {
+			console.warn("[DropZone] Failed to sync font to upload store:", err);
+		}
+	}, [addFontToStore, loadFontForPreview]);
 
 	// Validate a single font file via API
 	const validateFont = useCallback(
@@ -141,10 +161,14 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 			// Validate the new file
 			validateFont(fontFile, currentFiles.length);
 
+			// Sync to upload store for cross-studio sharing
+			const familyName = zipPackage?.metadata?.name || font.name.replace(/\.(woff2?|ttf|otf)$/i, "");
+			syncToUploadStore(file, familyName);
+
 			// Clear zip picker
 			setZipPackage(null);
 		},
-		[onFilesChange, validateFont, zipPackage, onZipMetadataDetected],
+		[onFilesChange, validateFont, zipPackage, syncToUploadStore],
 	);
 
 	const handleFiles = useCallback(
@@ -217,14 +241,16 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 				const newFilesList = [...currentFiles, ...validFiles];
 				onFilesChange(newFilesList);
 
-				// Validate each new file
+				// Validate each new file and sync to upload store
 				const startIndex = currentFiles.length;
 				for (let i = 0; i < validFiles.length; i++) {
 					validateFont(validFiles[i], startIndex + i);
+					// Sync to upload store for cross-studio sharing
+					syncToUploadStore(validFiles[i].file);
 				}
 			}
 		},
-		[onFilesChange, validateFont, handleSelectFromZip],
+		[onFilesChange, validateFont, handleSelectFromZip, syncToUploadStore, onZipMetadataDetected],
 	);
 
 	const handleDrop = useCallback(
@@ -345,7 +371,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 			<div className="rounded border border-border bg-background">
 				<div className="border-b border-border px-3 py-2">
 					<span className="font-mono text-xs text-muted-foreground">
-						// DROP_ZONE
+						{"// DROP_ZONE"}
 					</span>
 				</div>
 				<div className="flex min-h-[120px] items-center justify-center p-4">
@@ -365,7 +391,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 			{/* Header */}
 			<div className="border-b border-border px-3 py-2">
 				<span className="font-mono text-xs text-muted-foreground">
-					// DROP_ZONE
+					{"// DROP_ZONE"}
 				</span>
 			</div>
 

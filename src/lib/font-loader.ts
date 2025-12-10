@@ -16,6 +16,12 @@ import {
 	type LoadedFont,
 } from "@theme-token/sdk";
 
+import {
+	isUploadedFontPath,
+	extractUploadedFontId,
+	useFontUploadStore,
+} from "@/lib/stores/font-upload-store";
+
 // Re-export SDK functions with legacy names for backward compatibility
 export {
 	loadFontByOrigin,
@@ -93,6 +99,7 @@ export const getFontMetadataUrl = getOrdfsUrl;
 /**
  * Load fonts for a theme's style mode
  * Uses SDK's loadFontByOrigin for on-chain fonts
+ * Also handles uploaded fonts from the font upload store
  */
 export async function loadThemeFonts(styles: {
 	"font-sans"?: string;
@@ -108,8 +115,34 @@ export async function loadThemeFonts(styles: {
 		const fontKey = `font-${slot}` as keyof typeof styles;
 		const fontValue = styles[fontKey];
 
-		if (fontValue && typeof fontValue === "string" && isOnChainPath(fontValue)) {
-			// Extract origin from path like "/content/abc123_0"
+		if (!fontValue || typeof fontValue !== "string") continue;
+
+		// Handle uploaded fonts (not yet inscribed)
+		if (isUploadedFontPath(fontValue)) {
+			const fontId = extractUploadedFontId(fontValue);
+			if (fontId) {
+				loads.push(
+					(async () => {
+						try {
+							const store = useFontUploadStore.getState();
+							const familyName = await store.loadFontForPreview(fontId);
+							// Update CSS custom property
+							document.documentElement.style.setProperty(
+								`--font-${slot}`,
+								`"${familyName}", system-ui, sans-serif`,
+							);
+							return { slot, familyName };
+						} catch {
+							return null;
+						}
+					})(),
+				);
+			}
+			continue;
+		}
+
+		// Handle on-chain fonts
+		if (isOnChainPath(fontValue)) {
 			const origin = extractOrigin(fontValue);
 			if (origin) {
 				loads.push(
@@ -124,7 +157,7 @@ export async function loadThemeFonts(styles: {
 				);
 			}
 		}
-		// If not an on-chain path, the existing Google Font handling in fonts.ts applies
+		// If not an on-chain or uploaded path, the existing Google Font handling in fonts.ts applies
 	}
 
 	const results = await Promise.all(loads);
