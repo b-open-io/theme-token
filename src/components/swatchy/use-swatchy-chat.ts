@@ -15,7 +15,7 @@ import {
 import type { ToolName } from "@/lib/agent/tools";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
-import { storeRemixTheme } from "@/components/theme-gallery";
+import { storeRemixTheme, dispatchRemixTheme } from "@/components/theme-gallery";
 import { useTheme } from "@/components/theme-provider";
 
 export function useSwatchyChat() {
@@ -277,6 +277,7 @@ export function useSwatchyChat() {
 					const colorKey = args.colorKey as ThemeColorKey;
 					const value = args.value as string;
 					const mode = (args.mode as ThemeMode) || "both";
+					// Use the store - theme-studio subscribes to pending changes
 					setThemeColor(colorKey, value, mode);
 					return `Set ${colorKey} to ${value} in ${mode} mode`;
 				}
@@ -362,10 +363,15 @@ export function useSwatchyChat() {
 
 						const data = await response.json();
 
-						// Store theme for studio to pick up (triggers success modal)
-						storeRemixTheme(data.theme, { source: "ai-generate", paymentTxid: txid });
+						// If already on theme studio, dispatch event to load theme directly
+						if (pathname === "/studio/theme") {
+							dispatchRemixTheme(data.theme);
+							setGenerationSuccess(data.theme);
+							return `Theme "${data.theme.name}" generated and applied!`;
+						}
 
-						// Navigate to studio - this loads the theme and shows the success modal
+						// Otherwise store and navigate
+						storeRemixTheme(data.theme, { source: "ai-generate", paymentTxid: txid });
 						setNavigating(true);
 						router.push("/studio/theme");
 
@@ -436,7 +442,7 @@ export function useSwatchyChat() {
 					return `Unknown paid tool: ${toolName}`;
 			}
 		},
-		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, router],
+		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, router, pathname],
 	);
 
 	// Handle payment confirmation for paid tools

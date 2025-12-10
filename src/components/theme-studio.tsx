@@ -42,6 +42,12 @@ import {
 	getAndClearRemixTheme,
 	REMIX_THEME_EVENT,
 } from "@/components/theme-gallery";
+import {
+	useStudioStore,
+	selectPendingColorChange,
+	selectPendingRadiusChange,
+	selectPendingFontChange,
+} from "@/lib/stores/studio-store";
 import { ThemePreviewPanel } from "@/components/theme-preview-panel";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
@@ -429,6 +435,43 @@ export function ThemeStudio() {
 		window.addEventListener(REMIX_THEME_EVENT, handleRemix);
 		return () => window.removeEventListener(REMIX_THEME_EVENT, handleRemix);
 	}, []);
+
+	// Subscribe to Swatchy's pending color changes via store
+	const pendingColorChange = useStudioStore(selectPendingColorChange);
+	const pendingRadiusChange = useStudioStore(selectPendingRadiusChange);
+	const consumePendingColorChange = useStudioStore((s) => s.consumePendingColorChange);
+	const consumePendingRadiusChange = useStudioStore((s) => s.consumePendingRadiusChange);
+
+	useEffect(() => {
+		if (pendingColorChange) {
+			const { colorKey, value, mode: updateMode } = pendingColorChange;
+			setSelectedTheme((prev: ThemeToken) => {
+				const updated = { ...prev, styles: { ...prev.styles } };
+				if (updateMode === "light" || updateMode === "both") {
+					updated.styles.light = { ...updated.styles.light, [colorKey]: value };
+				}
+				if (updateMode === "dark" || updateMode === "both") {
+					updated.styles.dark = { ...updated.styles.dark, [colorKey]: value };
+				}
+				return updated;
+			});
+			consumePendingColorChange();
+		}
+	}, [pendingColorChange, consumePendingColorChange]);
+
+	useEffect(() => {
+		if (pendingRadiusChange) {
+			setSelectedTheme((prev: ThemeToken) => ({
+				...prev,
+				styles: {
+					...prev.styles,
+					light: { ...prev.styles.light, radius: pendingRadiusChange },
+					dark: { ...prev.styles.dark, radius: pendingRadiusChange },
+				},
+			}));
+			consumePendingRadiusChange();
+		}
+	}, [pendingRadiusChange, consumePendingRadiusChange]);
 
 	// Update theme name when customName changes
 	useEffect(() => {
