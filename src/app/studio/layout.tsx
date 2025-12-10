@@ -6,20 +6,10 @@ import {
 	useSpring,
 	useTransform,
 } from "framer-motion";
-import { Bot, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useMemo } from "react";
-import { featureFlags } from "@/lib/feature-flags";
-
-const allTabs = [
-	{ href: "/studio/theme", label: "Theme", icon: Palette, feature: null },
-	{ href: "/studio/font", label: "Font", icon: Type, feature: "fonts" as const },
-	{ href: "/studio/patterns", label: "Pattern", icon: Grid3X3, feature: "images" as const },
-	{ href: "/studio/icon", label: "Icon", icon: Shapes, feature: "icons" as const },
-	{ href: "/studio/wallpaper", label: "Wallpaper", icon: Image, feature: "wallpapers" as const },
-	{ href: "/studio/ai", label: "AI", icon: Bot, feature: "ai" as const },
-];
+import { getStudioTabs } from "@/lib/routes";
 
 export default function StudioLayout({
 	children,
@@ -29,14 +19,8 @@ export default function StudioLayout({
 	const pathname = usePathname();
 	const barRef = useRef<HTMLDivElement>(null);
 
-	// Filter tabs based on feature flags
-	const tabs = useMemo(
-		() =>
-			allTabs.filter(
-				(tab) => tab.feature === null || featureFlags[tab.feature],
-			),
-		[],
-	);
+	// Get studio tabs from route registry (already filtered by feature flags)
+	const tabs = useMemo(() => getStudioTabs(), []);
 
 	// Only show header on subroutes, not on /studio landing
 	const isSubroute = pathname !== "/studio";
@@ -82,11 +66,11 @@ export default function StudioLayout({
 						<nav className="flex items-center gap-0.5 sm:gap-1">
 							{tabs.map((tab) => {
 								const Icon = tab.icon;
-								const isActive = pathname?.startsWith(tab.href);
+								const isActive = pathname?.startsWith(tab.path);
 								return (
 									<Link
-										key={tab.href}
-										href={tab.href}
+										key={tab.path}
+										href={tab.path}
 										className={`relative flex items-center gap-1 rounded-md px-2 py-1.5 font-mono text-xs transition-colors sm:gap-1.5 sm:px-3 ${
 											isActive
 												? "text-foreground"
@@ -100,7 +84,7 @@ export default function StudioLayout({
 												transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
 											/>
 										)}
-										<Icon className="relative z-10 h-3.5 w-3.5" />
+										{Icon && <Icon className="relative z-10 h-3.5 w-3.5" />}
 										<span className="relative z-10 hidden sm:inline">
 											{tab.label}
 										</span>

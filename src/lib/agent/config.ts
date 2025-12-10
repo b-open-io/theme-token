@@ -1,4 +1,5 @@
 import { featureFlags } from "@/lib/feature-flags";
+import { generateRouteDocumentation } from "@/lib/routes";
 
 // Model IDs for AI Gateway (Vercel AI SDK v6 gateway format)
 // Free model for conversation - fast and cost-effective
@@ -112,26 +113,8 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 		`${capabilityNumber + 2}. **Marketplace** - Help list ordinals for sale`,
 	);
 
-	// Build navigation hints based on enabled features
-	const studios: string[] = ["theme studio (/studio/theme)"];
-
-	if (featureFlags.fonts) {
-		studios.push("font studio (/studio/font)");
-	}
-
-	if (featureFlags.images) {
-		studios.push("pattern studio (/studio/patterns)");
-	}
-
-	if (featureFlags.icons) {
-		studios.push("icon studio (/studio/icon)");
-	}
-
-	if (featureFlags.wallpapers) {
-		studios.push("wallpaper studio (/studio/wallpaper)");
-	}
-
-	const studiosList = studios.join(", ");
+	// Generate dynamic route documentation
+	const routeDocs = generateRouteDocumentation();
 
 	// Build current state section
 	let currentStateSection = "";
@@ -195,20 +178,9 @@ ${capabilities.join("\n")}
 - **CONTEXT AWARE**: Use the current application state to provide relevant assistance. If user is in theme studio, you can modify colors directly.
 - Use OKLCH color format (e.g., "oklch(0.7 0.15 250)")
 ${currentStateSection}
-## Available Pages & Studios
+## Available Pages & Navigation
 
-**Main Pages:**
-- Homepage (/)
-- Themes Gallery (/themes) - Browse all published themes
-- Marketplace (/market) - Buy/sell themes
-- Specification (/spec) - Technical docs
-
-**Creative Studios:** ${studiosList}
-
-**User Pages:**
-- My Themes (/market/my-themes)
-- My Fonts (/market/my-fonts)
-- Sell/List (/market/sell)
+${routeDocs}
 
 ## Theme Token Knowledge Base
 

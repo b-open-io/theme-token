@@ -1,9 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Grid3X3, Palette, Terminal, Type } from "lucide-react";
+import {
+	ArrowRight,
+	Bot,
+	Grid3X3,
+	Image,
+	Palette,
+	Shapes,
+	Terminal,
+	Type,
+} from "lucide-react";
 import Link from "next/link";
-import { featureFlags } from "@/lib/feature-flags";
+import { useMemo } from "react";
+import { getStudioTabs } from "@/lib/routes";
 
 // Visual Preview Components
 const ThemePreview = () => (
@@ -68,36 +78,65 @@ const PatternPreview = () => (
 	</div>
 );
 
-// Tool Definition
-const allTools = [
-	{
-		href: "/studio/theme",
-		label: "Theme",
-		icon: Palette,
-		description:
-			"Design and export ShadCN UI themes. Customize colors, radius, and typography with real-time preview.",
-		feature: null, // Always available
-		preview: ThemePreview,
-	},
-	{
-		href: "/studio/font",
-		label: "Font",
-		icon: Type,
-		description:
-			"Mint exclusive typefaces to the Bitcoin blockchain. Preserve typography history permanently.",
-		feature: "fonts" as const,
-		preview: FontPreview,
-	},
-	{
-		href: "/studio/patterns",
-		label: "Pattern",
-		icon: Grid3X3,
-		description:
-			"Generate infinite SVG patterns using AI. Create seamless backgrounds for your next project.",
-		feature: "images" as const,
-		preview: PatternPreview,
-	},
-];
+const IconPreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-tr from-primary/5 to-transparent">
+		<div className="relative z-10 grid grid-cols-3 gap-2">
+			{[Shapes, Palette, Type].map((Icon, i) => (
+				<div
+					key={i}
+					className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/50"
+				>
+					<Icon className="h-5 w-5 text-primary/60" />
+				</div>
+			))}
+		</div>
+		<div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,hsl(var(--background))_70%)]" />
+	</div>
+);
+
+const WallpaperPreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+		<div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20" />
+		<div className="absolute inset-0 opacity-30">
+			<div className="absolute left-1/4 top-1/4 h-32 w-32 rounded-full bg-primary/30 blur-3xl" />
+			<div className="absolute bottom-1/4 right-1/4 h-24 w-24 rounded-full bg-accent/40 blur-2xl" />
+		</div>
+		<div className="relative z-10 h-16 w-24 rounded-lg border border-white/20 bg-white/10 shadow-2xl backdrop-blur-sm" />
+	</div>
+);
+
+const AIPreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-bl from-primary/5 to-transparent">
+		<div className="relative z-10 flex flex-col items-center gap-2">
+			<div className="flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10">
+				<Bot className="h-7 w-7 text-primary" />
+			</div>
+			<div className="flex gap-1">
+				<div className="h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+				<div className="h-2 w-2 animate-pulse rounded-full bg-primary/60 delay-100" />
+				<div className="h-2 w-2 animate-pulse rounded-full bg-primary/60 delay-200" />
+			</div>
+		</div>
+		<div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,hsl(var(--background))_80%)]" />
+	</div>
+);
+
+// Preview component mapping by path
+const previewComponents: Record<string, React.FC> = {
+	"/studio/theme": ThemePreview,
+	"/studio/font": FontPreview,
+	"/studio/patterns": PatternPreview,
+	"/studio/icon": IconPreview,
+	"/studio/wallpaper": WallpaperPreview,
+	"/studio/ai": AIPreview,
+};
+
+// Default preview for any new studios
+const DefaultPreview = () => (
+	<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-transparent">
+		<div className="h-16 w-16 rounded-xl border border-primary/30 bg-primary/10" />
+	</div>
+);
 
 // Animation Variants
 const containerVariants = {
@@ -116,10 +155,8 @@ const itemVariants = {
 };
 
 export default function StudioPage() {
-	// Filter tools based on feature flags
-	const availableTools = allTools.filter(
-		(tool) => !tool.feature || featureFlags[tool.feature],
-	);
+	// Get studio tools from route registry (already filtered by feature flags)
+	const studioTools = useMemo(() => getStudioTabs(), []);
 
 	return (
 		<div className="min-h-[80vh] w-full bg-background py-12">
@@ -146,9 +183,9 @@ export default function StudioPage() {
 					animate="show"
 					className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
 				>
-					{availableTools.map((tool) => {
+					{studioTools.map((tool) => {
 						const Icon = tool.icon;
-						const Preview = tool.preview;
+						const Preview = previewComponents[tool.path] || DefaultPreview;
 
 						return (
 							<motion.div
@@ -156,7 +193,7 @@ export default function StudioPage() {
 								variants={itemVariants}
 								className="h-full"
 							>
-								<Link href={tool.href} className="group block h-full">
+								<Link href={tool.path} className="group block h-full">
 									<div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-card/50 hover:shadow-2xl hover:shadow-primary/5">
 										{/* Visual Preview Area */}
 										<div className="relative h-40 w-full overflow-hidden border-b border-border/50 bg-muted/20">
@@ -168,7 +205,7 @@ export default function StudioPage() {
 											<div className="mb-3 flex items-center justify-between">
 												<div className="flex items-center gap-3">
 													<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-														<Icon className="h-4 w-4" />
+														{Icon && <Icon className="h-4 w-4" />}
 													</div>
 													<h2 className="font-mono text-lg font-semibold">
 														{tool.label}
