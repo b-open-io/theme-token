@@ -449,6 +449,12 @@ export function ThemeStudio() {
 
 		const result = await inscribeTheme(themeToMint);
 		if (result) {
+			// Cache theme for immediate preview (before ORDFS indexes it)
+			fetch("/api/themes/cache", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ txid: result.txid, theme: themeToMint }),
+			}).catch(() => {});
 			setTxid(result.txid);
 			setShowInscribeDialog(false);
 		}
