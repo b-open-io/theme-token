@@ -29,9 +29,125 @@ import type { ThemeToken } from "@theme-token/sdk";
 /**
  * Get dynamic suggestions based on enabled feature flags
  */
+// Pop culture theme ideas - movies, games, anime, brands, iconic aesthetics
+const POP_CULTURE_THEMES = [
+	// Movies & TV
+	"Barbie",
+	"The Matrix",
+	"Blade Runner",
+	"Tron",
+	"Star Wars",
+	"Stranger Things",
+	"Wes Anderson",
+	"Studio Ghibli",
+	"Mad Max",
+	"The Grand Budapest Hotel",
+	"Kill Bill",
+	"Beetlejuice",
+	"Avatar",
+	"Dune",
+	"The Godfather",
+	"Pulp Fiction",
+	"Drive",
+	"Akira",
+	"Ghost in the Shell",
+	"Spirited Away",
+	"Her",
+	"Interstellar",
+	"The Shining",
+	"Midsommar",
+	"Black Panther",
+	"Spider-Verse",
+	"Arcane",
+	"Squid Game",
+	"Wednesday",
+	"Euphoria",
+	// Video Games
+	"Cyberpunk 2077",
+	"The Last of Us",
+	"Zelda",
+	"Mario",
+	"Minecraft",
+	"Portal",
+	"Hades",
+	"Hollow Knight",
+	"Elden Ring",
+	"Final Fantasy",
+	"Pokemon",
+	"Animal Crossing",
+	"Stardew Valley",
+	"Celeste",
+	"Undertale",
+	"Bioshock",
+	"Mass Effect",
+	"God of War",
+	"Horizon Zero Dawn",
+	"Death Stranding",
+	"Persona 5",
+	"NieR Automata",
+	"Disco Elysium",
+	"Outer Wilds",
+	"Splatoon",
+	// Anime & Manga
+	"Evangelion",
+	"Sailor Moon",
+	"Dragon Ball",
+	"Naruto",
+	"One Piece",
+	"Attack on Titan",
+	"Jujutsu Kaisen",
+	"Demon Slayer",
+	"Cowboy Bebop",
+	"Death Note",
+	// Music & Artists
+	"Vaporwave",
+	"Synthwave",
+	"Lo-fi",
+	"K-pop",
+	"Taylor Swift Eras",
+	"Beyoncé",
+	"Daft Punk",
+	"Prince",
+	"David Bowie",
+	"The Weeknd",
+	// Brands & Aesthetics
+	"Y2K",
+	"90s Nickelodeon",
+	"MTV 80s",
+	"Bauhaus",
+	"Memphis Design",
+	"Art Deco",
+	"Cottagecore",
+	"Dark Academia",
+	"Cyberpunk",
+	"Solarpunk",
+	"Steampunk",
+	"Witchy",
+	"Miami Vice",
+	"Outrun",
+	"Retrowave",
+	"Liminal Space",
+	// Global Pop Culture
+	"Bollywood",
+	"Día de los Muertos",
+	"Cherry Blossom",
+	"Northern Lights",
+	"Moroccan",
+	"Greek Mythology",
+	"Egyptian",
+	"Nordic",
+	"Brazilian Carnival",
+	"Japanese Zen",
+];
+
+function getRandomPopCultureTheme(): string {
+	const randomIndex = Math.floor(Math.random() * POP_CULTURE_THEMES.length);
+	return POP_CULTURE_THEMES[randomIndex];
+}
+
 function getSuggestions(): string[] {
-	// First suggestion is always "Create a Barbie theme"
-	const firstSuggestion = "Create a Barbie theme";
+	// First suggestion is a random pop culture theme
+	const firstSuggestion = `Create a ${getRandomPopCultureTheme()} theme`;
 
 	const otherSuggestions = [
 		"Create a dark cyberpunk theme",
