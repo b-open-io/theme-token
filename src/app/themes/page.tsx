@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -146,11 +146,12 @@ function ThemeCard({
 
 export default function ThemesPage() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 
 	// Fetch themes with TanStack Query
-	const { data: themes = [], isLoading: themesLoading, refetch: refetchThemes } = useQuery({
+	const { data: themes = [], isLoading: themesLoading } = useQuery({
 		queryKey: ["themes"],
 		queryFn: async () => {
 			const res = await fetch("/api/themes/cache");
@@ -176,11 +177,20 @@ export default function ThemesPage() {
 		return map;
 	}, [listings]);
 
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
 	const handleRefresh = async () => {
-		// Force refresh from server
-		await fetch("/api/themes/cache?refresh=true");
-		refetchThemes();
-		refetchListings();
+		setIsRefreshing(true);
+		try {
+			// Force refresh from server and get fresh data
+			const res = await fetch("/api/themes/cache?refresh=true");
+			const data = await res.json();
+			// Manually update the query cache with fresh data
+			queryClient.setQueryData(["themes"], data.themes || []);
+			refetchListings();
+		} finally {
+			setIsRefreshing(false);
+		}
 	};
 
 	const handleRemix = (cached: CachedTheme) => {
@@ -214,9 +224,9 @@ export default function ThemesPage() {
 							variant="outline"
 							size="sm"
 							onClick={handleRefresh}
-							disabled={themesLoading}
+							disabled={isRefreshing}
 						>
-							<RefreshCw className={`mr-2 h-4 w-4 ${themesLoading ? "animate-spin" : ""}`} />
+							<RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
 							Refresh
 						</Button>
 						<Button size="sm" asChild>
