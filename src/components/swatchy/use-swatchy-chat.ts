@@ -530,6 +530,30 @@ export function useSwatchyChat() {
 		[setGenerating, setGenerationSuccess, setGenerationError, setNavigating, setAIGeneratedTheme, setGeneratedRegistryItem, router, pathname],
 	);
 
+	// Safely add tool error output, only if the tool call still exists in messages
+	const safeAddToolError = useCallback((toolName: ToolName, toolCallId: string, errorText: string) => {
+		if (!addToolOutputRef.current || messages.length === 0) return;
+
+		// Check if the tool call actually exists in the messages
+		// Parts with tool-* type have toolCallId directly on the part
+		const hasToolCall = messages.some(
+			(m) => m.parts?.some((p) => p.type?.startsWith("tool-") && "toolCallId" in p && p.toolCallId === toolCallId)
+		);
+
+		if (hasToolCall) {
+			try {
+				addToolOutputRef.current({
+					tool: toolName,
+					toolCallId,
+					state: "output-error",
+					errorText,
+				});
+			} catch (err) {
+				console.warn("[Swatchy] Failed to add tool error output:", err);
+			}
+		}
+	}, [messages]);
+
 	// Handle payment confirmation for paid tools
 	const handlePaymentConfirmed = useCallback(async () => {
 		if (!paymentPending || !addToolOutputRef.current) return;
@@ -559,13 +583,8 @@ export function useSwatchyChat() {
 				cancelPayment();
 				clearGeneration();
 
-				// Inform the AI that payment was cancelled
-				addToolOutputRef.current({
-					tool: toolName,
-					toolCallId,
-					state: "output-error",
-					errorText: "Payment was cancelled by user",
-				});
+				// Only inform the AI if tool call still exists in messages
+				safeAddToolError(toolName, toolCallId, "Payment was cancelled by user");
 			}
 		} catch (error) {
 			console.error("[Payment Error]", error);
@@ -573,19 +592,14 @@ export function useSwatchyChat() {
 			cancelPayment();
 			clearGeneration();
 
-			// Use output-error state per AI SDK v6 best practices
-			addToolOutputRef.current({
-				tool: toolName,
-				toolCallId,
-				state: "output-error",
-				errorText: error instanceof Error ? error.message : "Payment failed",
-			});
+			// Only inform the AI if tool call still exists in messages
+			safeAddToolError(toolName, toolCallId, error instanceof Error ? error.message : "Payment failed");
 		}
-	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, clearGeneration, executePaidTool]);
+	}, [paymentPending, sendPayment, confirmPayment, cancelPayment, clearGeneration, executePaidTool, safeAddToolError]);
 
 	// Handle explicit cancel button click
 	const handlePaymentCancelled = useCallback(() => {
-		if (!paymentPending || !addToolOutputRef.current) return;
+		if (!paymentPending) return;
 
 		const { toolName, toolCallId } = paymentPending;
 
@@ -593,14 +607,9 @@ export function useSwatchyChat() {
 		cancelPayment();
 		clearGeneration();
 
-		// Inform the AI that payment was cancelled
-		addToolOutputRef.current({
-			tool: toolName,
-			toolCallId,
-			state: "output-error",
-			errorText: "Payment was cancelled by user",
-		});
-	}, [paymentPending, cancelPayment, clearGeneration]);
+		// Use the safe helper to inform the AI that payment was cancelled
+		safeAddToolError(toolName, toolCallId, "Payment was cancelled by user");
+	}, [paymentPending, cancelPayment, clearGeneration, safeAddToolError]);
 
 	// Form submission handler
 	const handleSubmit = useCallback(
