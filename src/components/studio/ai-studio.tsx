@@ -276,7 +276,7 @@ export function AiStudio() {
 	};
 
 	return (
-		<div className="flex h-[calc(100vh-4rem)] flex-col bg-background">
+		<div className="flex h-[calc(100vh-6.375rem)] flex-col overflow-hidden bg-background">
 			<div className="flex-1 overflow-y-auto p-4">
 				<div className="mx-auto max-w-3xl space-y-6">
 					{messages.map((msg) => (

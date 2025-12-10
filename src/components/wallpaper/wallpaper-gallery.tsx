@@ -42,6 +42,7 @@ export function WallpaperGallery() {
 						variant="outline"
 						className="h-6 w-6 rounded-full bg-background/90 backdrop-blur border-white/10 hover:bg-background"
 						onClick={() => setGalleryCollapsed(!isGalleryCollapsed)}
+						type="button"
 					>
 						{isGalleryCollapsed ? (
 							<ChevronUp className="h-3 w-3" />
@@ -136,6 +137,7 @@ export function WallpaperGallery() {
 										variant="ghost"
 										className="h-6 text-xs text-muted-foreground hover:text-destructive"
 										onClick={clearGallery}
+										type="button"
 									>
 										<Trash2 className="h-3 w-3 mr-1" />
 										Clear

@@ -51,7 +51,7 @@ export const routes: RouteInfo[] = [
 	// Studios
 	{
 		path: "/studio/theme",
-		label: "Theme Studio",
+		label: "Theme",
 		description: "Create and edit shadcn themes with live preview",
 		category: "studio",
 		icon: Palette,
@@ -60,7 +60,7 @@ export const routes: RouteInfo[] = [
 	},
 	{
 		path: "/studio/font",
-		label: "Font Studio",
+		label: "Font",
 		description: "Generate custom AI fonts from descriptions",
 		category: "studio",
 		feature: "fonts",
@@ -70,7 +70,7 @@ export const routes: RouteInfo[] = [
 	},
 	{
 		path: "/studio/patterns",
-		label: "Pattern Studio",
+		label: "Pattern",
 		description: "Create AI SVG patterns and tiles",
 		category: "studio",
 		feature: "images",
@@ -80,7 +80,7 @@ export const routes: RouteInfo[] = [
 	},
 	{
 		path: "/studio/icon",
-		label: "Icon Studio",
+		label: "Icon",
 		description: "Generate custom icons for themes",
 		category: "studio",
 		feature: "icons",
@@ -89,7 +89,7 @@ export const routes: RouteInfo[] = [
 	},
 	{
 		path: "/studio/wallpaper",
-		label: "Wallpaper Studio",
+		label: "Wallpaper",
 		description:
 			"Generate AI wallpapers for desktop (16:9) and mobile (9:16)",
 		category: "studio",
@@ -100,7 +100,7 @@ export const routes: RouteInfo[] = [
 	},
 	{
 		path: "/studio/ai",
-		label: "AI Studio",
+		label: "AI",
 		description: "Chat with Swatchy to create themes conversationally",
 		category: "studio",
 		feature: "ai",
@@ -213,7 +213,9 @@ export function generateRouteDocumentation(): string {
 	const studioRoutes = enabledRoutes.filter((r) => r.category === "studio");
 	if (studioRoutes.length > 0) {
 		const lines = studioRoutes.map((r) => {
-			let line = `- **${r.label}** (${r.path}) - ${r.description}`;
+			// Use full name "X Studio" for Swatchy documentation
+			const fullName = `${r.label} Studio`;
+			let line = `- **${fullName}** (${r.path}) - ${r.description}`;
 			if (r.cost) {
 				line += ` [${formatCost(r.cost)}]`;
 			}

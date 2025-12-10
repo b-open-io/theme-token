@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import { Footer } from "@/components/footer";
+import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
@@ -71,7 +71,7 @@ export default function RootLayout({
 					<div className="flex min-h-full flex-col">
 						<Header />
 						<main className="flex min-h-0 flex-1 flex-col">{children}</main>
-						<Footer />
+						<ConditionalFooter />
 					</div>
 					<Toaster position="bottom-right" richColors closeButton />
 					<SwatchyAssistant />

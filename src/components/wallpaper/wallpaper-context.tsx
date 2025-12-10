@@ -5,6 +5,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 	useState,
 } from "react";
@@ -26,6 +27,28 @@ import {
 	FEE_ADDRESS,
 	WALLPAPER_GENERATION_COST_SATS,
 } from "@/lib/yours-wallet";
+
+const WALLPAPER_DRAFTS_KEY = "theme-token-wallpaper-drafts";
+const MAX_DRAFTS = 20;
+
+function loadWallpaperDrafts(): GeneratedWallpaper[] {
+	if (typeof window === "undefined") return [];
+	try {
+		const saved = localStorage.getItem(WALLPAPER_DRAFTS_KEY);
+		return saved ? JSON.parse(saved) : [];
+	} catch {
+		return [];
+	}
+}
+
+function saveWallpaperDrafts(drafts: GeneratedWallpaper[]): void {
+	try {
+		localStorage.setItem(WALLPAPER_DRAFTS_KEY, JSON.stringify(drafts.slice(0, MAX_DRAFTS)));
+	} catch (e) {
+		// localStorage might be full - try to save without base64 data
+		console.warn("Failed to save wallpaper drafts:", e);
+	}
+}
 
 // Re-export types for convenience
 export type {
@@ -61,6 +84,7 @@ interface WallpaperContextType {
 	// Actions
 	generate: () => Promise<void>;
 	selectWallpaper: (id: string) => void;
+	removeWallpaper: (id: string) => void;
 	clearGallery: () => void;
 	updateParam: <K extends keyof WallpaperParams>(
 		key: K,
@@ -95,6 +119,25 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 		"#333333",
 		"#666666",
 	]);
+	const [hasLoadedDrafts, setHasLoadedDrafts] = useState(false);
+
+	// Load drafts from localStorage on mount
+	useEffect(() => {
+		const drafts = loadWallpaperDrafts();
+		if (drafts.length > 0) {
+			setGeneratedWallpapers(drafts);
+			// Select the most recent one
+			setSelectedWallpaperId(drafts[0].id);
+		}
+		setHasLoadedDrafts(true);
+	}, []);
+
+	// Save drafts to localStorage when they change
+	useEffect(() => {
+		if (hasLoadedDrafts) {
+			saveWallpaperDrafts(generatedWallpapers);
+		}
+	}, [generatedWallpapers, hasLoadedDrafts]);
 
 	// Payment state
 	const [requirePayment, setRequirePayment] = useState(true);
@@ -176,6 +219,25 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 			sourcePatternSvg: undefined,
 		}));
 	}, []);
+
+	// Remove a single wallpaper
+	const removeWallpaper = useCallback((id: string) => {
+		setGeneratedWallpapers((prev) => {
+			const newWallpapers = prev.filter((w) => w.id !== id);
+			// If we removed the selected one, select the next one (or none)
+			if (selectedWallpaperId === id) {
+				const removedIndex = prev.findIndex((w) => w.id === id);
+				const nextWallpaper = newWallpapers[removedIndex] || newWallpapers[removedIndex - 1] || null;
+				setSelectedWallpaperId(nextWallpaper?.id || null);
+				if (nextWallpaper) {
+					updateAmbientColors(nextWallpaper);
+				} else {
+					setAmbientColors(["#1a1a1a", "#333333", "#666666"]);
+				}
+			}
+			return newWallpapers;
+		});
+	}, [selectedWallpaperId, updateAmbientColors]);
 
 	// Clear gallery
 	const clearGallery = useCallback(() => {
@@ -328,6 +390,7 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 				setGalleryCollapsed,
 				generate,
 				selectWallpaper,
+				removeWallpaper,
 				clearGallery,
 				updateParam,
 				setSourcePattern,
