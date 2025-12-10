@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ToolName } from "@/lib/agent/tools";
 
 export type SwatchyPosition = "corner" | "expanded";
+export type SwatchySide = "left" | "right";
 
 // Payment request for paid tools
 export interface PaymentRequest {
@@ -25,6 +26,7 @@ export interface GenerationState {
 interface SwatchyStore {
 	// UI State
 	position: SwatchyPosition;
+	side: SwatchySide;
 
 	// Navigation tracking - when Swatchy triggers navigation, we don't reset position
 	isNavigating: boolean;
@@ -65,6 +67,7 @@ const initialGenerationState: GenerationState = {
 
 export const useSwatchyStore = create<SwatchyStore>()((set, get) => ({
 	position: "corner",
+	side: "left",
 	isNavigating: false,
 	paymentPending: null,
 	paymentTxid: null,
@@ -89,12 +92,23 @@ export const useSwatchyStore = create<SwatchyStore>()((set, get) => ({
 		}
 	},
 
-	setNavigating: (isNavigating) => set({ isNavigating }),
+	setNavigating: (isNavigating) => {
+		// When Swatchy triggers navigation, toggle which side he's on for fun
+		if (isNavigating) {
+			const currentSide = get().side;
+			set({
+				isNavigating: true,
+				side: currentSide === "left" ? "right" : "left",
+			});
+		} else {
+			set({ isNavigating: false });
+		}
+	},
 
 	handleExternalNavigation: () => {
 		const { isNavigating } = get();
 		if (isNavigating) {
-			// Navigation was triggered by Swatchy, just reset the flag
+			// Navigation was triggered by Swatchy, just reset the flag but keep chat open
 			set({ isNavigating: false });
 		} else {
 			// External navigation - close chat and return to corner

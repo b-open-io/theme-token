@@ -23,7 +23,6 @@ export function useSwatchyChat() {
 		setPaymentPending,
 		confirmPayment,
 		cancelPayment,
-		closeChat,
 		setNavigating,
 		setGenerating,
 		setGenerationSuccess,
@@ -94,20 +93,74 @@ export function useSwatchyChat() {
 	// Compute loading state from status
 	const isLoading = status === "submitted" || status === "streaming";
 
+	// Resolve natural language destination to actual path
+	const resolveDestination = useCallback((destination: string): { path: string; label: string } => {
+		const d = destination.toLowerCase().trim();
+
+		// Direct paths
+		if (d.startsWith("/")) {
+			return { path: d, label: d };
+		}
+
+		// Natural language mappings
+		if (d === "home" || d === "homepage") {
+			return { path: "/", label: "home" };
+		}
+		if (d.includes("theme") && (d.includes("browse") || d.includes("gallery") || d.includes("all"))) {
+			return { path: "/themes", label: "themes gallery" };
+		}
+		if (d === "themes" || d === "browse" || d === "browse themes") {
+			return { path: "/themes", label: "themes gallery" };
+		}
+		if (d.includes("theme") && d.includes("studio")) {
+			return { path: "/studio/theme", label: "theme studio" };
+		}
+		if (d.includes("font") && d.includes("studio")) {
+			return { path: "/studio/font", label: "font studio" };
+		}
+		if (d.includes("pattern") && d.includes("studio")) {
+			return { path: "/studio/patterns", label: "pattern studio" };
+		}
+		if (d.includes("icon") && d.includes("studio")) {
+			return { path: "/studio/icon", label: "icon studio" };
+		}
+		if (d.includes("wallpaper") && d.includes("studio")) {
+			return { path: "/studio/wallpaper", label: "wallpaper studio" };
+		}
+		if (d === "studio" || d === "studios") {
+			return { path: "/studio", label: "studios" };
+		}
+		if (d.includes("my") && d.includes("theme")) {
+			return { path: "/market/my-themes", label: "your themes" };
+		}
+		if (d.includes("my") && d.includes("font")) {
+			return { path: "/market/my-fonts", label: "your fonts" };
+		}
+		if (d === "sell" || d.includes("list") || d.includes("listing")) {
+			return { path: "/market/sell", label: "sell page" };
+		}
+		if (d.includes("market") || d.includes("marketplace")) {
+			return { path: "/market", label: "marketplace" };
+		}
+		if (d === "spec" || d === "docs" || d.includes("specification") || d.includes("documentation")) {
+			return { path: "/spec", label: "specification" };
+		}
+
+		// Default fallback - try to use as path or go home
+		return { path: "/themes", label: "themes gallery" };
+	}, []);
+
 	// Handle non-paid tool execution (client-side)
 	const handleToolExecution = useCallback(
 		(toolName: ToolName, args: Record<string, unknown>): string => {
 			switch (toolName) {
 				case "navigate": {
-					const path = args.path as string;
-					const params = args.params as Record<string, string> | undefined;
-					const url = params
-						? `${path}?${new URLSearchParams(params).toString()}`
-						: path;
+					const destination = args.destination as string;
+					const { path, label } = resolveDestination(destination);
 					setNavigating(true);
-					router.push(url);
-					closeChat();
-					return `Navigating to ${path}`;
+					router.push(path);
+					// Don't close chat - let Swatchy stay open and animate
+					return `Navigating to ${label}`;
 				}
 
 				case "setThemeColor": {
@@ -157,12 +210,6 @@ export function useSwatchyChat() {
 					router.push(`/market/sell?origin=${encodeURIComponent(args.origin as string)}&price=${args.priceSatoshis}`);
 					return "Opening marketplace listing page";
 
-				case "browseThemes":
-					setNavigating(true);
-					router.push("/themes");
-					closeChat();
-					return "Opening themes gallery";
-
 				case "getWalletBalance":
 					if (walletStatus !== "connected") {
 						return "Wallet not connected. Please connect your Yours Wallet to check balance.";
@@ -177,7 +224,7 @@ export function useSwatchyChat() {
 					return `Unknown tool: ${toolName}`;
 			}
 		},
-		[router, closeChat, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors],
+		[router, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors, resolveDestination],
 	);
 
 	// Execute paid tool after payment is confirmed

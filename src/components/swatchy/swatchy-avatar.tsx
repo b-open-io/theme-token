@@ -2,39 +2,60 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import type { SwatchyPosition } from "./swatchy-store";
+import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
 
 interface SwatchyAvatarProps {
 	position: SwatchyPosition;
+	side: SwatchySide;
 	onClick: () => void;
 }
 
-export function SwatchyAvatar({ position, onClick }: SwatchyAvatarProps) {
+export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
+	const isLeft = side === "left";
+
+	// Calculate positions based on state
+	const getAnimateProps = () => {
+		if (!isCorner) {
+			// Expanded - small avatar near chat bubble (always top right)
+			return {
+				left: "auto",
+				bottom: "auto",
+				right: 16,
+				top: 72,
+				width: 48,
+				height: 48,
+			};
+		}
+
+		// Corner position - depends on side
+		if (isLeft) {
+			return {
+				left: 16,
+				bottom: 16,
+				right: "auto",
+				top: "auto",
+				width: 80,
+				height: 80,
+			};
+		}
+
+		// Right side
+		return {
+			left: "auto",
+			bottom: 16,
+			right: 16,
+			top: "auto",
+			width: 80,
+			height: 80,
+		};
+	};
 
 	return (
 		<motion.button
 			className="fixed z-[60] cursor-pointer overflow-visible rounded-full"
 			initial={false}
-			animate={
-				isCorner
-					? {
-							left: 16,
-							bottom: 16,
-							right: "auto",
-							top: "auto",
-							width: 80,
-							height: 80,
-						}
-					: {
-							left: "auto",
-							bottom: "auto",
-							right: 16,
-							top: 72,
-							width: 48,
-							height: 48,
-						}
-			}
+			animate={getAnimateProps()}
 			transition={{
 				type: "spring",
 				stiffness: 200,

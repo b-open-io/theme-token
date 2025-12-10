@@ -2,33 +2,32 @@ import { tool } from "ai";
 import { z } from "zod";
 
 // ============================================================================
-// Navigation Tools (Free)
+// Navigation Tool (Free)
 // ============================================================================
 
 export const navigate = tool({
-	description:
-		"Navigate the user to a specific page in Theme Token. Use this when users want to browse themes, go to a studio, or visit other pages.",
+	description: `Navigate the user to any page in Theme Token. This is the main navigation tool.
+
+Available pages:
+- "/" or "home" - Homepage
+- "/themes" or "themes" or "browse" - Browse all published themes
+- "/studio/theme" or "theme studio" - Create/edit themes
+- "/studio/font" or "font studio" - Create/edit fonts
+- "/studio/patterns" or "pattern studio" - Create/edit patterns
+- "/studio/icon" or "icon studio" - Create icons
+- "/studio/wallpaper" or "wallpaper studio" - Create wallpapers
+- "/market" or "market" or "marketplace" - Main marketplace
+- "/market/browse" - Browse marketplace listings
+- "/market/my-themes" or "my themes" - User's owned themes
+- "/market/my-fonts" or "my fonts" - User's owned fonts
+- "/market/sell" or "sell" - Create a listing
+- "/spec" or "docs" or "specification" - Theme specification docs
+
+Use natural language intent to pick the right destination.`,
 	inputSchema: z.object({
-		path: z
-			.enum([
-				"/",
-				"/themes",
-				"/studio/theme",
-				"/studio/font",
-				"/studio/patterns",
-				"/studio/icon",
-				"/studio/wallpaper",
-				"/market",
-				"/market/browse",
-				"/market/my-themes",
-				"/market/sell",
-				"/spec",
-			])
-			.describe("The page path to navigate to"),
-		params: z
-			.record(z.string(), z.string())
-			.optional()
-			.describe("Optional URL query parameters"),
+		destination: z
+			.string()
+			.describe("Where to navigate - can be a path like '/themes' or natural language like 'theme studio', 'browse themes', 'my collection'"),
 	}),
 });
 
@@ -225,29 +224,6 @@ export const prepareListing = tool({
 // Information Tools (Free)
 // ============================================================================
 
-export const browseThemes = tool({
-	description:
-		"Browse and search themes from the gallery or marketplace. Returns a list of available themes.",
-	inputSchema: z.object({
-		filter: z
-			.enum(["all", "popular", "recent", "forSale"])
-			.optional()
-			.default("all")
-			.describe("How to filter the results"),
-		limit: z
-			.number()
-			.min(1)
-			.max(20)
-			.optional()
-			.default(5)
-			.describe("Maximum number of results to return"),
-		search: z
-			.string()
-			.optional()
-			.describe("Optional search query to filter by name or description"),
-	}),
-});
-
 export const getWalletBalance = tool({
 	description:
 		"Get the connected wallet's current BSV balance. Requires wallet connection.",
@@ -275,7 +251,6 @@ export const allTools = {
 	setPatternParams,
 	prepareInscribe,
 	prepareListing,
-	browseThemes,
 	getWalletBalance,
 	getExchangeRate,
 };

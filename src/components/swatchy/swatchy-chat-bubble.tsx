@@ -42,7 +42,6 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	setPatternParams: "Updating pattern",
 	prepareInscribe: "Preparing inscription",
 	prepareListing: "Preparing listing",
-	browseThemes: "Browsing themes",
 	getWalletBalance: "Checking balance",
 	getExchangeRate: "Getting exchange rate",
 };

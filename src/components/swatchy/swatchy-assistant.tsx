@@ -8,7 +8,7 @@ import { SwatchyAvatar } from "./swatchy-avatar";
 import { SwatchyChatBubble } from "./swatchy-chat-bubble";
 
 export function SwatchyAssistant() {
-	const { position, toggleChat, handleExternalNavigation } = useSwatchyStore();
+	const { position, side, toggleChat, handleExternalNavigation } = useSwatchyStore();
 	const pathname = usePathname();
 	const previousPathname = useRef(pathname);
 
@@ -22,8 +22,8 @@ export function SwatchyAssistant() {
 
 	return (
 		<>
-			{/* Swatchy Avatar - Always visible */}
-			<SwatchyAvatar position={position} onClick={toggleChat} />
+			{/* Swatchy Avatar - Always visible, animates between corners */}
+			<SwatchyAvatar position={position} side={side} onClick={toggleChat} />
 
 			{/* Chat Bubble - Conditional */}
 			<AnimatePresence>
