@@ -34,11 +34,12 @@ export type WalletStatus =
 	| "connected"
 	| "error";
 
-// Re-export pricing constants for convenience
-export {
+// Import and re-export pricing constants
+import {
 	PRISM_PASS_COLLECTION_ID,
 	PRISM_PASS_DISCOUNT,
 } from "@/lib/pricing";
+export { PRISM_PASS_COLLECTION_ID, PRISM_PASS_DISCOUNT };
 
 export interface OwnedTheme {
 	theme: ThemeToken;

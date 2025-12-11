@@ -3,7 +3,7 @@
 import { getOrdfsUrl } from "@theme-token/sdk";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FontFile } from "@/app/studio/font/page";
+import type { FontFile } from "@/app/studio/font/font-mint-client";
 import type { FontMetadata } from "./metadata-form";
 import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";

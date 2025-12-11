@@ -2,7 +2,7 @@
 
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { FontFile } from "@/app/studio/font/page";
+import type { FontFile } from "@/app/studio/font/font-mint-client";
 
 interface LiveTypeCanvasProps {
 	files: FontFile[];

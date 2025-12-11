@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Archive, CheckCircle, Loader2, Upload, X } from "lucide-react";
 import { useCallback, useRef, useState, useEffect } from "react";
-import type { FontFile } from "@/app/studio/font/page";
+import type { FontFile } from "@/app/studio/font/font-mint-client";
 import type { FontValidationResult } from "@/lib/font-validation";
 import {
 	isZipFile,
