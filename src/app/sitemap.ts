@@ -17,6 +17,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.9,
 		},
 		{
+			url: `${baseUrl}/pricing`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.8,
+		},
+		{
+			url: `${baseUrl}/themes`,
+			lastModified: new Date(),
+			changeFrequency: "daily",
+			priority: 0.8,
+		},
+		{
 			url: `${baseUrl}/market`,
 			lastModified: new Date(),
 			changeFrequency: "daily",
@@ -27,6 +39,42 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			lastModified: new Date(),
 			changeFrequency: "daily",
 			priority: 0.8,
+		},
+		{
+			url: `${baseUrl}/market/fonts`,
+			lastModified: new Date(),
+			changeFrequency: "daily",
+			priority: 0.8,
+		},
+		{
+			url: `${baseUrl}/studio/theme`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/studio/font`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/studio/wallpaper`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/studio/icon`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.7,
+		},
+		{
+			url: `${baseUrl}/studio/patterns`,
+			lastModified: new Date(),
+			changeFrequency: "weekly",
+			priority: 0.7,
 		},
 		{
 			url: `${baseUrl}/spec`,

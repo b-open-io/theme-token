@@ -1,6 +1,7 @@
 import { type ThemeToken, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { PreviewClient } from "./preview-client";
 import type { CachedTheme } from "@/app/api/themes/cache/route";
 
@@ -84,6 +85,37 @@ async function getTheme(origin: string): Promise<GetThemeResult | null> {
   } catch {
     return null;
   }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { origin } = await params;
+  const result = await getTheme(origin);
+
+  if (!result) {
+    return {
+      title: "Theme Not Found | Theme Token",
+    };
+  }
+
+  const title = `${result.theme.name} | Theme Token`;
+  const description = `Preview ${result.theme.name} by ${result.theme.author || "Unknown"}. Install this theme directly with the ShadCN CLI.`;
+  const imageUrl = `/og/${origin}.png`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [imageUrl],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
+  };
 }
 
 export default async function PreviewPage({ params, searchParams }: Props) {

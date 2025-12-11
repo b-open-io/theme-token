@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Check, Copy, FileCode, Image, Palette, Shapes, Type } from "lucide-react";
 import { useCallback, useState } from "react";
+import { CodeBlock } from "@/components/code-block";
 
 type AssetType = "theme" | "font" | "tile" | "wallpaper" | "icon";
 
@@ -203,8 +204,8 @@ export function OnChainProtocol() {
 					</div>
 
 					{/* Right: JSON Preview */}
-					<div className="lg:col-span-7">
-						<div className="flex items-center justify-between border-b border-border px-4 py-2">
+					<div className="flex flex-col lg:col-span-7 bg-muted/10">
+						<div className="flex items-center justify-between border-b border-border px-4 py-2 bg-muted/30">
 							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
 								MAP_DATA
 							</span>
@@ -222,27 +223,20 @@ export function OnChainProtocol() {
 								</button>
 							</div>
 						</div>
-						<motion.pre
+						<motion.div
 							key={active}
 							initial={{ opacity: 0, filter: "blur(2px)" }}
 							animate={{ opacity: 1, filter: "blur(0px)" }}
 							transition={{ duration: 0.2 }}
-							className="overflow-auto p-4 font-mono text-xs leading-relaxed"
+							className="flex-1"
 						>
-							{JSON_DATA[active].split("\n").map((line, i) => {
-								const fieldMatch = line.match(/"(\w+)":/);
-								const fieldName = fieldMatch?.[1];
-								const isHighlighted = hoveredField && fieldName === hoveredField;
-								return (
-									<div
-										key={i}
-										className={`transition-colors ${isHighlighted ? "bg-primary/10 -mx-4 px-4" : ""}`}
-									>
-										<span className="text-muted-foreground">{line}</span>
-									</div>
-								);
-							})}
-						</motion.pre>
+							<CodeBlock
+								code={JSON_DATA[active]}
+								language="json"
+								className="h-full min-h-[350px] border-none rounded-none bg-transparent"
+								showCopy={false}
+							/>
+						</motion.div>
 					</div>
 				</div>
 			</div>

@@ -307,3 +307,33 @@
 	mix-blend-mode: normal;
 }
 
+@layer base {
+  :root {
+    --shiki-foreground: var(--foreground);
+    --shiki-background: transparent; /* Handled by container */
+    --shiki-token-constant: var(--chart-4);
+    --shiki-token-string: var(--chart-3);
+    --shiki-token-comment: var(--muted-foreground);
+    --shiki-token-keyword: var(--primary);
+    --shiki-token-parameter: var(--foreground);
+    --shiki-token-function: var(--secondary-foreground);
+    --shiki-token-string-expression: var(--chart-3);
+    --shiki-token-punctuation: var(--muted-foreground);
+    --shiki-token-link: var(--primary);
+  }
+
+  .dark {
+    --shiki-foreground: var(--foreground);
+    --shiki-background: transparent;
+    --shiki-token-constant: var(--chart-4);
+    --shiki-token-string: var(--chart-3);
+    --shiki-token-comment: var(--muted-foreground);
+    --shiki-token-keyword: var(--primary);
+    --shiki-token-parameter: var(--foreground);
+    --shiki-token-function: var(--secondary-foreground);
+    --shiki-token-string-expression: var(--chart-3);
+    --shiki-token-punctuation: var(--muted-foreground);
+    --shiki-token-link: var(--primary);
+  }
+}
+

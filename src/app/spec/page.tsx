@@ -1,12 +1,32 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Metadata } from "next";
 import { Bot, Check, Copy, FileText, Package, Terminal } from "lucide-react";
 import { useCallback, useState } from "react";
 import { ChainImplementations } from "@/components/chain-implementations";
-import { JsonSyntax } from "@/components/json-syntax";
+import { CodeBlock } from "@/components/code-block";
 import { OnChainProtocol } from "@/components/on-chain-protocol";
 import { PageContainer } from "@/components/page-container";
+
+export const metadata: Metadata = {
+	title: "Theme Token Specification | ShadCN Registry Format",
+	description:
+		"Technical specification for Theme Token. Learn about the JSON schema, on-chain metadata protocol, and cross-chain implementations.",
+	openGraph: {
+		title: "Theme Token Specification | ShadCN Registry Format",
+		description:
+			"Technical specification for Theme Token. Learn about the JSON schema, on-chain metadata protocol, and cross-chain implementations.",
+		images: ["/og/default.png"],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Theme Token Specification | ShadCN Registry Format",
+		description:
+			"Technical specification for Theme Token. Learn about the JSON schema, on-chain metadata protocol, and cross-chain implementations.",
+		images: ["/og/default.png"],
+	},
+};
 
 const fadeIn = {
 	initial: { opacity: 0, y: 20 },
@@ -297,9 +317,8 @@ export default function SpecPage() {
 							className="flex flex-col min-w-0"
 						>
 							<h3 className="mb-4 font-semibold">Full Schema Structure</h3>
-							<div className="max-h-[500px] overflow-auto rounded-lg border border-border max-w-full">
-							<JsonSyntax
-								json={{
+							<CodeBlock
+								code={JSON.stringify({
 									$schema: "https://themetoken.dev/v1/schema.json",
 									name: "My Theme",
 									author: "Name (https://github.com/username)",
@@ -353,10 +372,10 @@ export default function SpecPage() {
 											"font-mono": "/content/abc123_0",
 										},
 									},
-								}}
-								className="text-xs"
+								}, null, 2)}
+								language="json"
+								className="h-[500px]"
 							/>
-							</div>
 							<p className="mt-3 text-xs text-muted-foreground">
 								Our{" "}
 								<code className="rounded bg-muted px-1">

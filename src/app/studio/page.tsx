@@ -14,6 +14,35 @@ import {
 import Link from "next/link";
 import { useMemo } from "react";
 import { getStudioTabs } from "@/lib/routes";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Creator Studio | Theme Token",
+	description:
+		"Initialize your creative suite. Visual editors for themes, fonts, wallpapers, and icons. Inscribe directly to blockchain.",
+	keywords: [
+		"Creator Studio",
+		"Theme Editor",
+		"Font Generator",
+		"Wallpaper AI",
+		"SVG Patterns",
+		"On-Chain Creation",
+		"Design Tools",
+	],
+	openGraph: {
+		title: "Creator Studio | Theme Token",
+		description:
+			"Initialize your creative suite. Visual editors for themes, fonts, wallpapers, and icons. Inscribe directly to blockchain.",
+		images: ["/og/studio.png"],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Creator Studio | Theme Token",
+		description:
+			"Initialize your creative suite. Visual editors for themes, fonts, wallpapers, and icons. Inscribe directly to blockchain.",
+		images: ["/og/studio.png"],
+	},
+};
 
 // Visual Preview Components
 const ThemePreview = () => (

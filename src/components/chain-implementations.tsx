@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { CodeBlock } from "@/components/code-block";
 
 type Chain = "bsv" | "btc" | "sol" | "bch";
 
@@ -166,9 +167,9 @@ export function ChainImplementations() {
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.2 }}
-				className="rounded-xl border border-border bg-card"
+				className="rounded-xl border border-border bg-card overflow-hidden"
 			>
-				<div className="flex items-center justify-between border-b border-border px-4 py-3">
+				<div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
 					<div className="flex items-center gap-2">
 						<div className="traffic-close h-3 w-3 rounded-full" />
 						<div className="traffic-minimize h-3 w-3 rounded-full" />
@@ -187,9 +188,12 @@ export function ChainImplementations() {
 						<ExternalLink className="h-3 w-3" />
 					</a>
 				</div>
-				<pre className="overflow-x-auto p-4 font-mono text-sm">
-					<code>{chain.code}</code>
-				</pre>
+				<CodeBlock
+					code={chain.code}
+					language="typescript"
+					className="h-[320px] border-none rounded-none bg-transparent"
+					showCopy={true}
+				/>
 			</motion.div>
 
 			{/* Stats */}

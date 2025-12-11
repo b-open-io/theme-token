@@ -13,6 +13,35 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { fetchThemeMarketListings, fetchFontMarketListings, type ThemeMarketListing, type FontMarketListing } from "@/lib/yours-wallet";
 import { featureFlags } from "@/lib/feature-flags";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Marketplace | Buy & Sell On-Chain Themes",
+	description:
+		"Decentralized marketplace for ShadCN themes, fonts, and assets. Buy, sell, and trade immutable design tokens.",
+	keywords: [
+		"Theme Marketplace",
+		"Buy Themes",
+		"Sell Themes",
+		"On-Chain Assets",
+		"ShadCN UI",
+		"Bitcoin SV",
+		"Digital Artifacts",
+	],
+	openGraph: {
+		title: "Marketplace | Buy & Sell On-Chain Themes",
+		description:
+			"Decentralized marketplace for ShadCN themes, fonts, and assets. Buy, sell, and trade immutable design tokens.",
+		images: ["/og/market.png"],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Marketplace | Buy & Sell On-Chain Themes",
+		description:
+			"Decentralized marketplace for ShadCN themes, fonts, and assets. Buy, sell, and trade immutable design tokens.",
+		images: ["/og/market.png"],
+	},
+};
 
 const allTabs = [
 	{ href: "/market/browse", label: "Themes", icon: ShoppingCart, feature: null },

@@ -15,6 +15,26 @@ import { Button } from "@/components/ui/button";
 import { type CachedTheme } from "@/lib/themes-cache";
 import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
 import type { ThemeToken } from "@theme-token/sdk";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Browse On-Chain Themes | Theme Token",
+	description:
+		"Discover, collect, and remix themes inscribed on the blockchain. Browse the decentralized registry of ShadCN UI themes.",
+	openGraph: {
+		title: "Browse On-Chain Themes | Theme Token",
+		description:
+			"Discover, collect, and remix themes inscribed on the blockchain. Browse the decentralized registry of ShadCN UI themes.",
+		images: ["/og/default.png"],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Browse On-Chain Themes | Theme Token",
+		description:
+			"Discover, collect, and remix themes inscribed on the blockchain. Browse the decentralized registry of ShadCN UI themes.",
+		images: ["/og/default.png"],
+	},
+};
 
 interface ThemesPageResponse {
 	themes: CachedTheme[];

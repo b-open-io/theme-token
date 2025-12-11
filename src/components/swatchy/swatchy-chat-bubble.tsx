@@ -320,6 +320,11 @@ export function SwatchyChatBubble() {
 		}
 	};
 
+	const onPaymentCancel = () => {
+		setIsPaymentProcessing(false);
+		handlePaymentCancelled();
+	};
+
 	// Auto-scroll to bottom when messages change
 	useEffect(() => {
 		if (scrollContainerRef.current) {
@@ -463,7 +468,7 @@ export function SwatchyChatBubble() {
 								<PaymentRequestCard
 									payment={paymentPending}
 									onConfirm={onPaymentConfirm}
-									onCancel={handlePaymentCancelled}
+									onCancel={onPaymentCancel}
 									isProcessing={isPaymentProcessing}
 								/>
 							</div>

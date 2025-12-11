@@ -1,28 +1,22 @@
-"use client";
+import { Metadata } from "next";
+import PatternGeneratorPage from "./pattern-client";
 
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
-import { PatternProvider } from "@/components/patterns/pattern-context";
-import { PatternLayout } from "@/components/patterns/pattern-layout";
+export const metadata: Metadata = {
+	title: "Pattern Studio | AI SVG Patterns",
+	description: "Generate seamless SVG vector patterns. Customize colors, geometry, and complexity. Inscribe as on-chain assets.",
+	openGraph: {
+		title: "Pattern Studio | AI SVG Patterns",
+		description: "Generate seamless SVG vector patterns. Customize colors, geometry, and complexity. Inscribe as on-chain assets.",
+		images: ["/og/studio.png"],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Pattern Studio | AI SVG Patterns",
+		description: "Generate seamless SVG vector patterns. Customize colors, geometry, and complexity. Inscribe as on-chain assets.",
+		images: ["/og/studio.png"],
+	},
+};
 
-function PatternContent() {
-	return (
-		<PatternProvider>
-			<PatternLayout />
-		</PatternProvider>
-	);
-}
-
-export default function PatternGeneratorPage() {
-	return (
-		<Suspense
-			fallback={
-				<div className="flex h-full items-center justify-center">
-					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-				</div>
-			}
-		>
-			<PatternContent />
-		</Suspense>
-	);
+export default function Page() {
+	return <PatternGeneratorPage />;
 }
