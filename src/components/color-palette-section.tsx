@@ -164,7 +164,7 @@ function PaletteSwatch({
 	const buttonContent = (
 		<button
 			onClick={handleCopy}
-			className="group relative flex h-7 flex-1 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
+			className="group relative inline-flex size-7 shrink-0 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
 			style={{ backgroundColor: color }}
 			title={`${label}: ${color}`}
 		>
@@ -245,7 +245,7 @@ function ThemeSwatch({
 	const buttonContent = (
 		<button
 			onClick={handleCopy}
-			className="group relative flex h-7 flex-1 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
+			className="group relative inline-flex size-7 shrink-0 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
 			style={color ? { backgroundColor: color } : undefined}
 			title={color ? `${label}: ${color}` : `Copy var(--${cssVar})`}
 		>
