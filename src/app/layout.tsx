@@ -1,23 +1,10 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-
-const spaceGrotesk = Space_Grotesk({
-	variable: "--font-display",
-	subsets: ["latin"],
-	weight: ["400", "500", "600", "700"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-	variable: "--font-mono",
-	subsets: ["latin"],
-	weight: ["400", "500", "600"],
-});
 
 export const metadata: Metadata = {
 	title: "Theme Token | On-Chain Themes for ShadCN UI",
@@ -65,7 +52,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+				className="font-sans antialiased"
 			>
 				<Providers>
 					<div className="flex min-h-full flex-col">

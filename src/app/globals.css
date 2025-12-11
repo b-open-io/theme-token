@@ -48,6 +48,9 @@
 
 :root {
 	--radius: 0.5rem;
+	--font-display: ui-sans-serif, system-ui, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+		"Courier New", monospace;
 
 	/* Blueprint Design System - Light Mode */
 	--background: oklch(0.98 0.005 240);
@@ -336,4 +339,3 @@
     --shiki-token-link: var(--primary);
   }
 }
-

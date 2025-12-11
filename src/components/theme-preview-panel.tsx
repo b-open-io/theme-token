@@ -174,7 +174,15 @@ function RevenueChart() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip
+              content={(props) => {
+                const { content: _content, ...rest } = props as Record<
+                  string,
+                  unknown
+                >;
+                return <ChartTooltipContent {...(rest as any)} />;
+              }}
+            />
             <Line
               type="monotone"
               dataKey="revenue"
@@ -242,7 +250,15 @@ function ActivityChart() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip
+              content={(props) => {
+                const { content: _content, ...rest } = props as Record<
+                  string,
+                  unknown
+                >;
+                return <ChartTooltipContent {...(rest as any)} />;
+              }}
+            />
             <Bar
               dataKey="desktop"
               fill="var(--color-desktop)"
@@ -287,7 +303,15 @@ function ExerciseChart() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip
+              content={(props) => {
+                const { content: _content, ...rest } = props as Record<
+                  string,
+                  unknown
+                >;
+                return <ChartTooltipContent {...(rest as any)} />;
+              }}
+            />
             <defs>
               <linearGradient id="fillMinutes" x1="0" y1="0" x2="0" y2="1">
                 <stop
