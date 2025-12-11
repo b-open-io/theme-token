@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { UIMessage } from "ai";
 import type { ToolName } from "@/lib/agent/tools";
 import type { ThemeToken } from "@theme-token/sdk";
@@ -48,6 +48,13 @@ export interface AIGeneratedTheme {
 	timestamp: number;
 }
 
+// Validation metadata from code generation
+export interface ValidationInfo {
+	valid: boolean;
+	attempts: number;
+	warnings: string[];
+}
+
 // Generated registry item (block or component)
 export interface GeneratedRegistryItem {
 	manifest: {
@@ -65,6 +72,7 @@ export interface GeneratedRegistryItem {
 	};
 	txid: string;
 	timestamp: number;
+	validation?: ValidationInfo;
 }
 
 interface SwatchyStore {
@@ -101,6 +109,9 @@ interface SwatchyStore {
 	chatMessages: UIMessage[];
 	chatInput: string;
 
+	// Hydration state - true when store has loaded from localStorage
+	hasHydrated: boolean;
+
 	// Pending initial message to send on next chat open
 	pendingMessage: string | null;
 
@@ -119,7 +130,7 @@ interface SwatchyStore {
 	clearAIGeneratedTheme: () => void;
 
 	// Registry Item Generation Actions
-	setGeneratedRegistryItem: (manifest: GeneratedRegistryItem["manifest"], txid: string) => void;
+	setGeneratedRegistryItem: (manifest: GeneratedRegistryItem["manifest"], txid: string, validation?: ValidationInfo) => void;
 	clearGeneratedRegistryItem: () => void;
 
 	// Navigation Actions
@@ -150,6 +161,9 @@ interface SwatchyStore {
 	setChatInput: (input: string) => void;
 	setPendingMessage: (message: string | null) => void;
 	consumePendingMessage: () => string | null;
+
+	// Hydration Actions
+	setHasHydrated: (hydrated: boolean) => void;
 }
 
 const initialGenerationState: GenerationState = {
@@ -173,6 +187,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			failedRequest: null,
 			chatMessages: [],
 			chatInput: "",
+			hasHydrated: false,
 			pendingMessage: null,
 
 			openChat: () =>
@@ -246,12 +261,13 @@ How would you like to modify this theme?`;
 
 			clearAIGeneratedTheme: () => set({ aiGeneratedTheme: null }),
 
-			setGeneratedRegistryItem: (manifest, txid) =>
+			setGeneratedRegistryItem: (manifest, txid, validation) =>
 				set({
 					generatedRegistryItem: {
 						manifest,
 						txid,
 						timestamp: Date.now(),
+						validation,
 					},
 				}),
 
@@ -358,14 +374,22 @@ How would you like to modify this theme?`;
 				}
 				return pendingMessage;
 			},
+
+			setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 		}),
 		{
 			name: "swatchy-state",
+			storage: createJSONStorage(() => localStorage),
 			partialize: (state) => ({
 				chatMessages: state.chatMessages,
 				chatInput: state.chatInput,
 				side: state.side,
+				generatedRegistryItem: state.generatedRegistryItem,
 			}),
+			onRehydrateStorage: () => (state) => {
+				// Called when hydration is complete
+				state?.setHasHydrated(true);
+			},
 		}
 	)
 );

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Code2, Copy, Check, FileCode, Package, Blocks, ChevronDown, ChevronRight, CheckCircle2, Play, X, Loader2 } from "lucide-react";
+import { Code2, Copy, Check, FileCode, Package, Blocks, ChevronDown, ChevronRight, CheckCircle2, Play, X, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSwatchyStore, type GeneratedRegistryItem } from "./swatchy-store";
@@ -16,7 +16,7 @@ interface BlockPreviewProps {
 }
 
 export function BlockPreview({ item }: BlockPreviewProps) {
-	const { manifest } = item;
+	const { manifest, validation } = item;
 	const [expandedFile, setExpandedFile] = useState<number | null>(0); // First file expanded by default
 	const [copiedFile, setCopiedFile] = useState<number | null>(null);
 	const [showInscribeDialog, setShowInscribeDialog] = useState(false);
@@ -32,6 +32,11 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const Icon = isBlock ? Blocks : FileCode;
 	const isWalletConnected = walletStatus === "connected";
 	const canPreview = featureFlags.componentPreview;
+
+	// Validation info
+	const validationAttempts = validation?.attempts || 1;
+	const hadRetries = validationAttempts > 1;
+	const hasWarnings = validation?.warnings && validation.warnings.length > 0;
 
 	// Build bundle items for inscription
 	const bundleResult = buildRegistryBundle({
@@ -126,6 +131,12 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 					<span className="text-xs text-muted-foreground">
 						{isBlock ? "block" : "component"}
 					</span>
+					{hadRetries && (
+						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400">
+							<RefreshCw className="h-2.5 w-2.5" />
+							{validationAttempts} tries
+						</span>
+					)}
 				</div>
 				<div className="flex items-center gap-1">
 					{canPreview && (
@@ -159,6 +170,22 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 			<div className="px-3 py-2 border-b">
 				<p className="text-xs text-muted-foreground">{manifest.description}</p>
 			</div>
+
+			{/* Validation Warnings */}
+			{hasWarnings && (
+				<div className="px-3 py-2 border-b bg-amber-500/5">
+					<div className="flex items-start gap-2">
+						<AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
+						<div className="space-y-0.5">
+							{validation?.warnings.map((warning, idx) => (
+								<p key={idx} className="text-[10px] text-amber-600 dark:text-amber-400">
+									{warning}
+								</p>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Live Preview Panel */}
 			<AnimatePresence>

@@ -46,6 +46,7 @@ export function useSwatchyChat() {
 		position,
 		setAIGeneratedTheme,
 		setGeneratedRegistryItem,
+		hasHydrated,
 	} = useSwatchyStore();
 
 	// Studio stores for tool execution
@@ -172,21 +173,28 @@ export function useSwatchyChat() {
 	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
 	addToolOutputRef.current = addToolOutput;
 
-	// Restore messages from store on mount
+	// Restore messages from store after hydration completes
 	const hasRestoredRef = useRef(false);
 	useEffect(() => {
+		// Wait for store to hydrate from localStorage before restoring
+		if (!hasHydrated) return;
+
 		if (!hasRestoredRef.current && chatMessages.length > 0) {
+			console.log("[Swatchy] Restoring", chatMessages.length, "messages from storage");
 			setMessages(chatMessages);
 			hasRestoredRef.current = true;
+		} else if (!hasRestoredRef.current) {
+			// Mark as restored even if no messages, so sync can start
+			hasRestoredRef.current = true;
 		}
-	}, [chatMessages, setMessages]);
+	}, [hasHydrated, chatMessages, setMessages]);
 
-	// Sync messages to store when they change
+	// Sync messages to store when they change (only after initial restore)
 	useEffect(() => {
-		if (hasRestoredRef.current) {
+		if (hasRestoredRef.current && hasHydrated) {
 			setChatMessages(messages);
 		}
-	}, [messages, setChatMessages]);
+	}, [messages, setChatMessages, hasHydrated]);
 
 	// Handle pending message when chat opens (e.g., from remix button)
 	const hasSentPendingRef = useRef(false);
@@ -466,16 +474,32 @@ export function useSwatchyChat() {
 							}),
 						});
 
-						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate block");
-						}
-
 						const data = await response.json();
 
+						// Handle validation failure (422)
+						if (response.status === 422) {
+							const errors = data.validation?.errors || [];
+							const attempts = data.attempts || 1;
+							const errorMsg = `Code validation failed after ${attempts} attempt(s): ${errors.join("; ")}`;
+							setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+							return `Error generating block: ${errorMsg}. You can retry for free using the Retry button.`;
+						}
+
+						if (!response.ok) {
+							throw new Error(data.error || "Failed to generate block");
+						}
+
+						console.log("[Swatchy] Block generated:", data.block?.name, "draftId:", data.draftId);
+
 						// Store the generated block for preview
-						setGeneratedRegistryItem(data.block, txid);
-						setGenerationSuccess(data.block);
+						if (data.block) {
+							console.log("[Swatchy] Setting generated registry item");
+							setGeneratedRegistryItem(data.block, txid, data.validation);
+							setGenerationSuccess(data.block);
+						} else {
+							console.error("[Swatchy] No block in response:", data);
+							throw new Error("No block returned from API");
+						}
 
 						const fileCount = data.block.files.length;
 						const deps = data.block.registryDependencies.length > 0
@@ -483,8 +507,11 @@ export function useSwatchyChat() {
 							: "";
 
 						const savedMsg = data.draftId ? " Saved to your drafts." : "";
+						const attemptsMsg = data.validation?.attempts > 1
+							? ` (validated after ${data.validation.attempts} attempts)`
+							: "";
 
-						return `Block "${data.block.name}" generated!${savedMsg} ${fileCount} file(s).${deps} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
+						return `Block "${data.block.name}" generated!${savedMsg} ${fileCount} file(s).${deps}${attemptsMsg} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
@@ -507,15 +534,23 @@ export function useSwatchyChat() {
 							}),
 						});
 
-						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate component");
-						}
-
 						const data = await response.json();
 
+						// Handle validation failure (422)
+						if (response.status === 422) {
+							const errors = data.validation?.errors || [];
+							const attempts = data.attempts || 1;
+							const errorMsg = `Code validation failed after ${attempts} attempt(s): ${errors.join("; ")}`;
+							setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+							return `Error generating component: ${errorMsg}. You can retry for free using the Retry button.`;
+						}
+
+						if (!response.ok) {
+							throw new Error(data.error || "Failed to generate component");
+						}
+
 						// Store the generated component for preview
-						setGeneratedRegistryItem(data.component, txid);
+						setGeneratedRegistryItem(data.component, txid, data.validation);
 						setGenerationSuccess(data.component);
 
 						const deps = data.component.registryDependencies.length > 0
@@ -523,8 +558,11 @@ export function useSwatchyChat() {
 							: "";
 
 						const savedMsg = data.draftId ? " Saved to your drafts." : "";
+						const attemptsMsg = data.validation?.attempts > 1
+							? ` (validated after ${data.validation.attempts} attempts)`
+							: "";
 
-						return `Component "${data.component.name}" generated!${savedMsg}${deps} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
+						return `Component "${data.component.name}" generated!${savedMsg}${deps}${attemptsMsg} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });

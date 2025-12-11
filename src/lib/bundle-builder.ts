@@ -1,5 +1,11 @@
 import type { ThemeStyleProps, ThemeToken, ThemeBundle } from "@theme-token/sdk";
 import type { BundleAssetType, BundleItem } from "@/hooks/use-yours-wallet";
+import { Utils } from "@bsv/sdk";
+
+/** Unicode-safe base64 encoding using @bsv/sdk */
+function toBase64(str: string): string {
+	return Utils.toBase64(Utils.toArray(str, "utf8"));
+}
 
 /**
  * Bundle Builder - Helpers for creating multi-output inscriptions
@@ -143,7 +149,7 @@ export function buildThemeBundle(
 
 	// Convert theme to base64 for inscription
 	const themeJson = JSON.stringify(finalTheme);
-	const themeBase64 = btoa(themeJson);
+	const themeBase64 = toBase64(themeJson);
 
 	// Add theme as last item
 	items.push({
@@ -342,7 +348,7 @@ export function buildRegistryBundle(
 
 	// First item: Manifest JSON at vout 0
 	const manifestJson = JSON.stringify(manifestWithRefs, null, 2);
-	const manifestBase64 = btoa(manifestJson);
+	const manifestBase64 = toBase64(manifestJson);
 
 	items.push({
 		type: manifest.type === "registry:block" ? "block" : "component",
@@ -357,7 +363,7 @@ export function buildRegistryBundle(
 
 	// Remaining items: Code files at vout 1, 2, 3...
 	for (const file of manifest.files) {
-		const fileBase64 = btoa(file.content);
+		const fileBase64 = toBase64(file.content);
 		items.push({
 			type: "file",
 			base64Data: fileBase64,

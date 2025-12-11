@@ -1,7 +1,7 @@
-import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createDraft } from "@/lib/storage";
+import { generateWithValidation } from "@/lib/validated-generation";
 
 // Schema for a generated component
 const componentSchema = z.object({
@@ -11,6 +11,8 @@ const componentSchema = z.object({
 	registryDependencies: z.array(z.string()).describe("shadcn components used as base (e.g., ['button', 'badge'])"),
 	content: z.string().describe("The complete component file content - React/TypeScript code"),
 });
+
+type ComponentSchema = z.infer<typeof componentSchema>;
 
 // System prompt for component generation
 const COMPONENT_SYSTEM_PROMPT = `You are a shadcn UI Component Architect. You generate production-ready React components that follow shadcn patterns exactly.
@@ -23,13 +25,27 @@ Generate components that:
 3. Are fully theme-aware (CSS variables only)
 4. Are highly reusable with sensible props
 
-## Import Conventions (CRITICAL)
+## CRITICAL: JavaScript Import Syntax
 
-Always use these exact import paths:
-- Base components: import { Button } from "@/components/ui/button"
-- Icons: import { ChevronRight, Star } from "lucide-react"
-- Utils: import { cn } from "@/lib/utils"
-- Variants: import { cva, type VariantProps } from "class-variance-authority"
+You MUST use valid JavaScript import syntax. These are the ONLY valid patterns:
+
+CORRECT imports:
+- import React from "react"
+- import * as React from "react"
+- import { useState, useEffect, useRef } from "react"
+- import { Button } from "@/components/ui/button"
+- import { ChevronRight, Star } from "lucide-react"
+- import { cn } from "@/lib/utils"
+- import { cva, type VariantProps } from "class-variance-authority"
+- import { motion } from "framer-motion"
+
+INVALID imports (will cause syntax errors):
+- import * from "react"           // WRONG - missing "as X"
+- import * from "lucide-react"    // WRONG - missing "as X"
+- import * from "framer-motion"   // WRONG - missing "as X"
+
+The pattern "import * from" WITHOUT "as" is INVALID JavaScript and WILL CRASH.
+If you need all exports, use: import * as ModuleName from "module"
 
 ## Component Pattern
 
@@ -135,12 +151,27 @@ export async function POST(request: NextRequest) {
 			userPrompt += `\n\nInclude these variants: ${variants.join(", ")}`;
 		}
 
-		const { object: component } = await generateObject({
-			model: "google/gemini-3-pro-preview",
+		// Generate with validation and automatic retry
+		const result = await generateWithValidation<ComponentSchema>({
 			schema: componentSchema,
-			system: COMPONENT_SYSTEM_PROMPT,
-			prompt: userPrompt,
+			systemPrompt: COMPONENT_SYSTEM_PROMPT,
+			userPrompt,
+			maxRetries: 3,
+			codeExtractor: (comp) => comp.content,
 		});
+
+		if (!result.success || !result.data) {
+			return NextResponse.json(
+				{
+					error: "Code validation failed after multiple attempts",
+					validation: result.validation,
+					attempts: result.attempts,
+				},
+				{ status: 422 },
+			);
+		}
+
+		const component = result.data;
 
 		// Transform to manifest format compatible with our registry gateway
 		const manifest = {
@@ -187,6 +218,11 @@ export async function POST(request: NextRequest) {
 			component: manifest,
 			// Include raw content for preview
 			content: component.content,
+			validation: {
+				valid: true,
+				attempts: result.attempts,
+				warnings: result.validation.warnings,
+			},
 			draftId,
 		});
 	} catch (error) {

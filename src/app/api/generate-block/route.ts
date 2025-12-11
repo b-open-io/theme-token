@@ -1,24 +1,47 @@
-import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createDraft } from "@/lib/storage";
+import { generateWithValidation } from "@/lib/validated-generation";
 
 // Schema for a generated file in a block
 const fileSchema = z.object({
-	path: z.string().describe("File path relative to block root, e.g., 'pricing-table.tsx' or 'hooks/use-pricing.ts'"),
-	type: z.enum(["registry:block", "registry:component", "registry:hook", "registry:lib", "registry:ui"])
+	path: z
+		.string()
+		.describe(
+			"File path relative to block root, e.g., 'pricing-table.tsx' or 'hooks/use-pricing.ts'",
+		),
+	type: z
+		.enum([
+			"registry:block",
+			"registry:component",
+			"registry:hook",
+			"registry:lib",
+			"registry:ui",
+		])
 		.describe("The registry type for this file"),
-	content: z.string().describe("The complete file content - React/TypeScript code"),
+	content: z
+		.string()
+		.describe("The complete file content - React/TypeScript code"),
 });
 
 // Schema for a complete block
 const blockSchema = z.object({
-	name: z.string().describe("Block name in kebab-case, e.g., 'pricing-table' or 'stats-dashboard'"),
+	name: z
+		.string()
+		.describe(
+			"Block name in kebab-case, e.g., 'pricing-table' or 'stats-dashboard'",
+		),
 	description: z.string().describe("Short description of what the block does"),
-	dependencies: z.array(z.string()).describe("NPM packages required (e.g., ['lucide-react', 'date-fns'])"),
-	registryDependencies: z.array(z.string()).describe("shadcn components used (e.g., ['button', 'card', 'badge'])"),
+	dependencies: z
+		.array(z.string())
+		.describe("NPM packages required (e.g., ['lucide-react', 'date-fns'])"),
+	registryDependencies: z
+		.array(z.string())
+		.describe("shadcn components used (e.g., ['button', 'card', 'badge'])"),
 	files: z.array(fileSchema).describe("Array of files that make up this block"),
 });
+
+type BlockSchema = z.infer<typeof blockSchema>;
 
 // System prompt for block generation
 const BLOCK_SYSTEM_PROMPT = `You are a shadcn UI Block Architect. You generate production-ready React blocks that follow shadcn patterns exactly.
@@ -30,13 +53,26 @@ Generate blocks that:
 2. Follow shadcn component patterns
 3. Are fully theme-aware (CSS variables only)
 
-## Import Conventions (CRITICAL)
+## CRITICAL: JavaScript Import Syntax
 
-Always use these exact import paths:
-- Components: import { Button } from "@/components/ui/button"
-- Icons: import { ChevronRight, Star } from "lucide-react"
-- Utils: import { cn } from "@/lib/utils"
-- Hooks (custom): import { useMyHook } from "./hooks/use-my-hook"
+You MUST use valid JavaScript import syntax. These are the ONLY valid patterns:
+
+CORRECT imports:
+- import React from "react"
+- import * as React from "react"
+- import { useState, useEffect, useRef } from "react"
+- import { Button } from "@/components/ui/button"
+- import { ChevronRight, Star } from "lucide-react"
+- import { cn } from "@/lib/utils"
+- import { motion } from "framer-motion"
+
+INVALID imports (will cause syntax errors):
+- import * from "react"           // WRONG - missing "as X"
+- import * from "lucide-react"    // WRONG - missing "as X"
+- import * from "framer-motion"   // WRONG - missing "as X"
+
+The pattern "import * from" WITHOUT "as" is INVALID JavaScript and WILL CRASH.
+If you need all exports, use: import * as ModuleName from "module"
 
 ## Styling Rules (CRITICAL)
 
@@ -86,10 +122,7 @@ export async function POST(request: NextRequest) {
 		const { prompt, name, includeHook, userId, paymentTxid } = body;
 
 		if (!prompt) {
-			return NextResponse.json(
-				{ error: "Prompt is required" },
-				{ status: 400 }
-			);
+			return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
 		}
 
 		// Build the user prompt with optional constraints
@@ -103,12 +136,28 @@ export async function POST(request: NextRequest) {
 			userPrompt += `\n\nInclude a companion React hook to manage state/logic.`;
 		}
 
-		const { object: block } = await generateObject({
-			model: "google/gemini-3-pro-preview",
+		// Generate with validation and automatic retry
+		const result = await generateWithValidation<BlockSchema>({
 			schema: blockSchema,
-			system: BLOCK_SYSTEM_PROMPT,
-			prompt: userPrompt,
+			systemPrompt: BLOCK_SYSTEM_PROMPT,
+			userPrompt,
+			maxRetries: 3,
+			codeExtractor: (block) =>
+				block.files.map((f) => ({ content: f.content, filename: f.path })),
 		});
+
+		if (!result.success || !result.data) {
+			return NextResponse.json(
+				{
+					error: "Code validation failed after multiple attempts",
+					validation: result.validation,
+					attempts: result.attempts,
+				},
+				{ status: 422 },
+			);
+		}
+
+		const block = result.data;
 
 		// Transform to manifest format compatible with our registry gateway
 		const manifest = {
@@ -120,10 +169,7 @@ export async function POST(request: NextRequest) {
 			files: block.files.map((file, index) => ({
 				path: file.path,
 				type: file.type,
-				// For inscription, files go into separate vouts
-				// For now, we include content directly for preview
 				content: file.content,
-				// Vout index will be assigned during inscription (vout 0 = manifest)
 				vout: index + 1,
 			})),
 		};
@@ -154,17 +200,22 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({
 			block: manifest,
-			// Include raw files for preview
 			files: block.files,
+			validation: {
+				valid: true,
+				attempts: result.attempts,
+				warnings: result.validation.warnings,
+			},
 			draftId,
 		});
 	} catch (error) {
 		console.error("Block generation error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to generate block",
+				error:
+					error instanceof Error ? error.message : "Failed to generate block",
 			},
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
