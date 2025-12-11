@@ -34,6 +34,12 @@ export type WalletStatus =
 	| "connected"
 	| "error";
 
+// Re-export pricing constants for convenience
+export {
+	PRISM_PASS_COLLECTION_ID,
+	PRISM_PASS_DISCOUNT,
+} from "@/lib/pricing";
+
 export interface OwnedTheme {
 	theme: ThemeToken;
 	outpoint: string;
@@ -127,6 +133,8 @@ interface WalletContextValue {
 	ownedFonts: OwnedFont[];
 	ownedPatterns: OwnedPattern[];
 	pendingThemes: OwnedTheme[];
+	/** Whether user owns a Prism Pass membership NFT */
+	hasPrismPass: boolean;
 	isLoading: boolean;
 	refresh: () => Promise<void>;
 	addresses: Addresses | null;
@@ -182,6 +190,7 @@ const WalletContext = createContext<WalletContextValue | null>(null);
 export function WalletProvider({ children }: { children: ReactNode }) {
 	const [status, setStatus] = useState<WalletStatus>("disconnected");
 	const [error, setError] = useState<string | null>(null);
+	const [hasPrismPass, setHasPrismPass] = useState(false);
 	const [themeTokens, setThemeTokens] = useState<ThemeToken[]>([]);
 	const [ownedThemes, setOwnedThemes] = useState<OwnedTheme[]>([]);
 	const [ownedFonts, setOwnedFonts] = useState<OwnedFont[]>([]);
@@ -277,6 +286,21 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					// Skip invalid ordinals
 				}
 			}
+
+			// Check for Prism Pass ownership
+			// A Prism Pass is a collection item with collectionId matching PRISM_PASS_COLLECTION_ID
+			const ownsPrismPass = ordinals.some((ordinal) => {
+				try {
+					const content = ordinal?.origin?.data?.insc?.file?.json as
+						| { collectionId?: string }
+						| undefined;
+					return content?.collectionId === PRISM_PASS_COLLECTION_ID;
+				} catch {
+					return false;
+				}
+			});
+
+			setHasPrismPass(ownsPrismPass);
 			setThemeTokens(tokens);
 			setOwnedThemes(owned);
 			setOwnedFonts(fonts);
@@ -336,6 +360,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		setOwnedThemes([]);
 		setOwnedFonts([]);
 		setOwnedPatterns([]);
+		setHasPrismPass(false);
 		setAddresses(null);
 		setBalance(null);
 		setProfile(null);
@@ -433,6 +458,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setOwnedThemes([]);
 			setOwnedFonts([]);
 			setOwnedPatterns([]);
+			setHasPrismPass(false);
 			setAddresses(null);
 			setBalance(null);
 			setProfile(null);
@@ -885,6 +911,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				ownedFonts,
 				ownedPatterns,
 				pendingThemes,
+				hasPrismPass,
 				isLoading,
 				refresh,
 				addresses,

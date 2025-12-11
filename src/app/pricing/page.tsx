@@ -8,6 +8,7 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { Metadata } from "next";
 import {
 	Bitcoin,
 	Sparkles,
@@ -26,10 +27,36 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/page-container";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { PRISM_PASS_COLLECTION_ID } from "@/lib/pricing";
 
-// Prism Pass Collection ID (the parent collection inscription)
-const PRISM_PASS_COLLECTION_ID =
-	"b21570b4d31da8875c79c9feeaf600204cad5f9819f23ae4c1eb12ba05dfc822_0";
+export const metadata: Metadata = {
+	title: "Prism Pass | Theme Token Membership",
+	description:
+		"Unlock creative superpowers with Prism Pass. 50% off AI generations, extended storage, and NFT membership benefits.",
+	keywords: [
+		"Prism Pass",
+		"Theme Token Subscription",
+		"1Sat Ordinals",
+		"NFT Membership",
+		"BSV",
+		"ShadCN Themes",
+		"AI Generation Discount",
+	],
+	openGraph: {
+		title: "Prism Pass | Unlock Creative Superpowers",
+		description:
+			"Unlock creative superpowers with Prism Pass. 50% off AI generations, extended storage, and NFT membership benefits.",
+		images: ["/og/pricing.png"],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Prism Pass | Unlock Creative Superpowers",
+		description:
+			"Unlock creative superpowers with Prism Pass. 50% off AI generations, extended storage, and NFT membership benefits.",
+		images: ["/og/pricing.png"],
+	},
+};
+
 
 function PerkRow({ icon, text, delay = 0 }: { icon: React.ReactNode; text: string; delay?: number }) {
 	return (
@@ -53,12 +80,14 @@ function TheArtifact({
 	isMinting,
 	isConnected,
 	onConnect,
+	alreadyOwned,
 }: {
 	active: boolean;
 	onMint: () => void;
 	isMinting: boolean;
 	isConnected: boolean;
 	onConnect: () => void;
+	alreadyOwned: boolean;
 }) {
 	return (
 		<div className="perspective-[1000px]">
@@ -200,7 +229,23 @@ function TheArtifact({
 
 						{/* CTA */}
 						<div>
-							{isConnected ? (
+							{alreadyOwned ? (
+								<>
+									<div className="w-full rounded-lg border border-green-500/30 bg-green-500/10 py-3 text-center">
+										<div className="flex items-center justify-center gap-2 text-green-400">
+											<Sparkles className="h-4 w-4" />
+											<span className="font-medium">Prism Pass Active</span>
+										</div>
+									</div>
+									<Link
+										href="/studio/theme"
+										className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+									>
+										Start Creating
+										<ChevronRight className="h-4 w-4" />
+									</Link>
+								</>
+							) : isConnected ? (
 								<Button
 									size="lg"
 									onClick={onMint}
@@ -231,7 +276,7 @@ function TheArtifact({
 								</Button>
 							)}
 							<p className="mt-3 text-center text-xs text-muted-foreground">
-								Tradeable NFT on Bitcoin SV
+								{alreadyOwned ? "Your benefits are active" : "Tradeable NFT on Bitcoin SV"}
 							</p>
 						</div>
 					</div>
@@ -362,9 +407,13 @@ export default function PricingPage() {
 		connect,
 		mintCollectionItem,
 		isInscribing,
+		hasPrismPass,
 	} = useYoursWallet();
 
 	const isConnected = status === "connected";
+
+	// If user already has a pass, auto-switch to member view and show success
+	const showOwned = isConnected && hasPrismPass && !mintedTxid;
 
 	const handleMint = async () => {
 		if (!isConnected) {
@@ -460,11 +509,12 @@ export default function PricingPage() {
 
 				{/* The Artifact */}
 				<TheArtifact
-					active={active}
+					active={active || showOwned}
 					onMint={handleMint}
 					isMinting={isInscribing}
 					isConnected={isConnected}
 					onConnect={handleConnect}
+					alreadyOwned={showOwned}
 				/>
 
 				{/* Success Message */}

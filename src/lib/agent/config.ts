@@ -1,4 +1,10 @@
 import { featureFlags } from "@/lib/feature-flags";
+import {
+	BASE_PRICES,
+	PAID_TOOLS as PAID_TOOLS_SET,
+	getPrice,
+	formatSatoshis,
+} from "@/lib/pricing";
 import { generateRouteDocumentation } from "@/lib/routes";
 
 // Model IDs for AI Gateway (Vercel AI SDK v6 gateway format)
@@ -8,25 +14,11 @@ export const conversationModel = "google/gemini-2.0-flash" as const;
 // Paid model for expensive generation operations
 export const generationModel = "google/gemini-3-pro-preview" as const;
 
-// Tool cost configuration (in satoshis)
-export const TOOL_COSTS = {
-	generateTheme: 1_000_000, // 1M sats (~$0.01 BSV)
-	generateFont: 10_000_000, // 10M sats (~$0.10 BSV)
-	generatePattern: 1_000_000, // 1M sats (~$0.01 BSV)
-	generateWallpaper: 1_000_000, // 1M sats (~$0.01 BSV)
-	generateBlock: 1_000_000, // 1M sats (~$0.01 BSV)
-	generateComponent: 500_000, // 500K sats (~$0.005 BSV)
-} as const;
+// Re-export from centralized pricing for backward compatibility
+export const TOOL_COSTS = BASE_PRICES;
 
 // Tools that require payment before execution
-export const PAID_TOOLS = new Set([
-	"generateTheme",
-	"generateFont",
-	"generatePattern",
-	"generateWallpaper",
-	"generateBlock",
-	"generateComponent",
-]);
+export const PAID_TOOLS = PAID_TOOLS_SET;
 
 // Tools that require wallet connection
 export const WALLET_REQUIRED_TOOLS = new Set([

@@ -1,9 +1,10 @@
 "use client";
 
-import { Loader2, Wallet, AlertCircle, Sparkles } from "lucide-react";
+import { Loader2, Wallet, AlertCircle, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import type { PaymentRequest as PaymentRequestType } from "./swatchy-store";
+import { BASE_PRICES, type PricingTool } from "@/lib/pricing";
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	generateTheme: "Theme Generation",
@@ -30,12 +31,16 @@ export function PaymentRequestCard({
 	onCancel,
 	isProcessing = false,
 }: PaymentRequestProps) {
-	const { status, balance, connect } = useYoursWallet();
+	const { status, balance, connect, hasPrismPass } = useYoursWallet();
 
 	const displayName = TOOL_DISPLAY_NAMES[payment.toolName] ?? payment.toolName;
 	const description = TOOL_DESCRIPTIONS[payment.toolName] ?? "";
 	const hasBalance = (balance?.satoshis ?? 0) >= payment.cost;
 	const isConnected = status === "connected";
+
+	// Check if discount was applied by comparing to base price
+	const baseCost = BASE_PRICES[payment.toolName as PricingTool] ?? payment.cost;
+	const hasDiscount = hasPrismPass && payment.cost < baseCost;
 
 	// Format satoshis to BSV with proper decimals
 	const formatBsv = (sats: number) => {
@@ -61,9 +66,20 @@ export function PaymentRequestCard({
 			</div>
 
 			<div className="mb-4 rounded-md bg-background/50 px-3 py-2">
+				{hasDiscount && (
+					<div className="mb-2 flex items-center gap-1.5 text-xs text-green-500">
+						<Zap className="h-3 w-3" />
+						<span>Prism Pass: 50% off!</span>
+					</div>
+				)}
 				<div className="flex items-center justify-between">
 					<span className="text-xs text-muted-foreground">Cost</span>
 					<div className="text-right">
+						{hasDiscount && (
+							<span className="mr-1.5 font-mono text-xs text-muted-foreground line-through">
+								{baseCost.toLocaleString()}
+							</span>
+						)}
 						<span className="font-mono text-sm font-medium">
 							{payment.cost.toLocaleString()} sats
 						</span>
@@ -104,7 +120,6 @@ export function PaymentRequestCard({
 					variant="outline"
 					size="sm"
 					onClick={onCancel}
-					disabled={isProcessing}
 					className="flex-1"
 				>
 					Cancel

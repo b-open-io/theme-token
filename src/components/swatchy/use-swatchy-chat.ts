@@ -7,11 +7,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSwatchyStore } from "./swatchy-store";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
-	PAID_TOOLS,
-	TOOL_COSTS,
 	FEE_ADDRESS,
 	type SwatchyContext,
 } from "@/lib/agent/config";
+import { PAID_TOOLS, getPrice, type PricingTool } from "@/lib/pricing";
 import type { ToolName } from "@/lib/agent/tools";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
@@ -22,7 +21,7 @@ export function useSwatchyChat() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { mode: themeMode } = useTheme();
-	const { sendPayment, status: walletStatus, balance, addresses } = useYoursWallet();
+	const { sendPayment, status: walletStatus, balance, addresses, hasPrismPass } = useYoursWallet();
 	const ordAddress = addresses?.ordAddress;
 	const {
 		paymentPending,
@@ -137,8 +136,9 @@ export function useSwatchyChat() {
 			const toolName = toolCall.toolName as ToolName;
 
 			// Check if this is a paid tool
-			if (PAID_TOOLS.has(toolName)) {
-				const cost = TOOL_COSTS[toolName as keyof typeof TOOL_COSTS];
+			if (PAID_TOOLS.has(toolName as PricingTool)) {
+				// Get price with Prism Pass discount if applicable
+				const cost = getPrice(toolName as PricingTool, hasPrismPass);
 
 				// Set payment pending with toolCallId - UI will show payment request
 				setPaymentPending({
