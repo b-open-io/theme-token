@@ -98,6 +98,25 @@ export interface BundleInscribeResult {
 	origins: string[];
 }
 
+/** Configuration for minting a collection item */
+export interface MintCollectionItemConfig {
+	/** Collection ID (origin outpoint of the collection inscription) */
+	collectionId: string;
+	/** Name for this specific item */
+	name: string;
+	/** Optional mint number */
+	mintNumber?: number;
+	/** Optional traits for this item */
+	traits?: Array<{
+		name: string;
+		value: string;
+		rarityLabel?: string;
+		occurancePercentage?: string;
+	}>;
+	/** Optional rarity label */
+	rarityLabel?: string;
+}
+
 interface WalletContextValue {
 	status: WalletStatus;
 	error: string | null;
@@ -152,6 +171,10 @@ interface WalletContextValue {
 	addPendingTheme: (theme: ThemeToken, txid: string) => void;
 	/** Inscribe multiple items in a single transaction (multi-output bundle) */
 	inscribeBundle: (items: BundleItem[]) => Promise<BundleInscribeResult | null>;
+	/** Mint a collection item (e.g., Prism Pass) */
+	mintCollectionItem: (
+		config: MintCollectionItemConfig,
+	) => Promise<InscribeResponse | null>;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -789,6 +812,67 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		[addresses, fetchThemeTokens, fetchWalletInfo],
 	);
 
+	/**
+	 * Mint a collection item (e.g., Prism Pass membership NFT)
+	 *
+	 * Uses server-side transaction building with platform AIP signature:
+	 * - Server builds tx and signs with platform Sigma key
+	 * - Client signs payment inputs and broadcasts
+	 * - Inscription proves it was authorized by themetoken.dev
+	 */
+	const mintCollectionItem = useCallback(
+		async (
+			config: MintCollectionItemConfig,
+		): Promise<InscribeResponse | null> => {
+			const wallet = walletRef.current;
+			if (!wallet || !addresses) {
+				setError("Wallet not connected");
+				return null;
+			}
+
+			setIsInscribing(true);
+			setError(null);
+
+			try {
+				// Import the platform-signed minting helper
+				const { mintCollectionItemWithPlatformSig } = await import(
+					"@/lib/mint-collection-item"
+				);
+
+				const result = await mintCollectionItemWithPlatformSig(
+					wallet,
+					{
+						collectionId: config.collectionId,
+						name: config.name,
+						mintNumber: config.mintNumber,
+						traits: config.traits,
+						rarityLabel: config.rarityLabel,
+					},
+					addresses.ordAddress,
+				);
+
+				// Submit to indexer
+				submitToIndexer(result.txid).catch(() => {});
+
+				await fetchThemeTokens();
+				await fetchWalletInfo();
+
+				return {
+					txid: result.txid,
+					rawtx: result.rawtx,
+				};
+			} catch (err) {
+				setError(
+					err instanceof Error ? err.message : "Collection item mint failed",
+				);
+				return null;
+			} finally {
+				setIsInscribing(false);
+			}
+		},
+		[addresses, fetchThemeTokens, fetchWalletInfo],
+	);
+
 	return (
 		<WalletContext.Provider
 			value={{
@@ -816,6 +900,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				isSending,
 				addPendingTheme,
 				inscribeBundle,
+				mintCollectionItem,
 			}}
 		>
 			{children}

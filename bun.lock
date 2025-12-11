@@ -53,7 +53,7 @@
         "framer-motion": "^12.23.25",
         "geopattern": "^1.2.3",
         "hero-patterns": "^2.1.0",
-        "js-1sat-ord": "^0.1.88",
+        "js-1sat-ord": "0.1.90",
         "jszip": "^3.10.1",
         "lucide-react": "^0.556.0",
         "motion": "^12.23.25",
@@ -1300,7 +1300,7 @@
 
     "jose": ["jose@6.1.3", "", {}, "sha512-0TpaTfihd4QMNwrz/ob2Bp7X04yuxJkjRGi4aKmOqwhov54i6u79oCv7T+C7lo70MKH6BesI3vscD1yb/yzKXQ=="],
 
-    "js-1sat-ord": ["js-1sat-ord@0.1.88", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-U3n+5SEe9LyxuB0OaSU4fIywxBz3pvoxuJvaxQ741qiutYhC3v1rCEzVdEjSOn/sWi0xiFh8C75U8vMd18fZhw=="],
+    "js-1sat-ord": ["js-1sat-ord@0.1.90", "", { "dependencies": { "image-meta": "^0.2.2", "satoshi-token": "^0.0.4", "sigma-protocol": "^0.1.6" } }, "sha512-6eqV7EU+i+t/si2xqHt+sh039UblKfxAT0VYizYycLnAcgGEhWo2VLfD27yF2WgFSv8MyYxyhqDD4jVAPiFEww=="],
 
     "js-tokens": ["js-tokens@4.0.0", "", {}, "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="],
 

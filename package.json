@@ -6,7 +6,7 @@
   "homepage": "https://themetoken.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/b-open-io/theme-token.git"
+    "url": "git+https://github.com/b-open-io/theme-token.git"
   },
   "private": true,
   "scripts": {
@@ -66,7 +66,7 @@
     "framer-motion": "^12.23.25",
     "geopattern": "^1.2.3",
     "hero-patterns": "^2.1.0",
-    "js-1sat-ord": "^0.1.88",
+    "js-1sat-ord": "0.1.90",
     "jszip": "^3.10.1",
     "lucide-react": "^0.556.0",
     "motion": "^12.23.25",

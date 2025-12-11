@@ -16,12 +16,20 @@ import {
 	Clock,
 	Infinity,
 	ChevronRight,
+	Loader2,
+	ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/page-container";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+
+// Prism Pass Collection ID (the parent collection inscription)
+const PRISM_PASS_COLLECTION_ID =
+	"b21570b4d31da8875c79c9feeaf600204cad5f9819f23ae4c1eb12ba05dfc822_0";
 
 function PerkRow({ icon, text, delay = 0 }: { icon: React.ReactNode; text: string; delay?: number }) {
 	return (
@@ -39,7 +47,19 @@ function PerkRow({ icon, text, delay = 0 }: { icon: React.ReactNode; text: strin
 	);
 }
 
-function TheArtifact({ active }: { active: boolean }) {
+function TheArtifact({
+	active,
+	onMint,
+	isMinting,
+	isConnected,
+	onConnect,
+}: {
+	active: boolean;
+	onMint: () => void;
+	isMinting: boolean;
+	isConnected: boolean;
+	onConnect: () => void;
+}) {
 	return (
 		<div className="perspective-[1000px]">
 			<motion.div
@@ -180,14 +200,36 @@ function TheArtifact({ active }: { active: boolean }) {
 
 						{/* CTA */}
 						<div>
-							<Button
-								size="lg"
-								className="w-full gap-2 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.02]"
-							>
-								<Sparkles className="h-4 w-4" />
-								Mint Pass
-								<span className="ml-1 text-xs opacity-80">~$4</span>
-							</Button>
+							{isConnected ? (
+								<Button
+									size="lg"
+									onClick={onMint}
+									disabled={isMinting}
+									className="w-full gap-2 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.02] disabled:opacity-50"
+								>
+									{isMinting ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Minting...
+										</>
+									) : (
+										<>
+											<Sparkles className="h-4 w-4" />
+											Mint Pass
+											<span className="ml-1 text-xs opacity-80">~$0.01</span>
+										</>
+									)}
+								</Button>
+							) : (
+								<Button
+									size="lg"
+									onClick={onConnect}
+									className="w-full gap-2 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.02]"
+								>
+									<Bitcoin className="h-4 w-4" />
+									Connect Wallet to Mint
+								</Button>
+							)}
 							<p className="mt-3 text-center text-xs text-muted-foreground">
 								Tradeable NFT on Bitcoin SV
 							</p>
@@ -314,6 +356,54 @@ function AmbientBackground({ active }: { active: boolean }) {
 
 export default function PricingPage() {
 	const [active, setActive] = useState(false);
+	const [mintedTxid, setMintedTxid] = useState<string | null>(null);
+	const {
+		status,
+		connect,
+		mintCollectionItem,
+		isInscribing,
+	} = useYoursWallet();
+
+	const isConnected = status === "connected";
+
+	const handleMint = async () => {
+		if (!isConnected) {
+			toast.error("Please connect your wallet first");
+			return;
+		}
+
+		try {
+			const result = await mintCollectionItem({
+				collectionId: PRISM_PASS_COLLECTION_ID,
+				name: "Prism Pass",
+				traits: [
+					{
+						name: "Duration",
+						value: "Monthly",
+					},
+				],
+			});
+
+			if (result) {
+				setMintedTxid(result.txid);
+				toast.success("Prism Pass minted! Your membership is now active.");
+			}
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to mint Prism Pass",
+			);
+		}
+	};
+
+	const handleConnect = async () => {
+		try {
+			await connect();
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to connect wallet",
+			);
+		}
+	};
 
 	return (
 		<div className="relative min-h-screen overflow-hidden">
@@ -369,7 +459,62 @@ export default function PricingPage() {
 				</motion.div>
 
 				{/* The Artifact */}
-				<TheArtifact active={active} />
+				<TheArtifact
+					active={active}
+					onMint={handleMint}
+					isMinting={isInscribing}
+					isConnected={isConnected}
+					onConnect={handleConnect}
+				/>
+
+				{/* Success Message */}
+				<AnimatePresence>
+					{mintedTxid && (
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -20 }}
+							className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 p-6 text-center"
+						>
+							<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
+								<Sparkles className="h-6 w-6 text-green-400" />
+							</div>
+							<h3 className="text-lg font-semibold text-green-400">
+								Prism Pass Activated!
+							</h3>
+							<p className="mt-2 text-sm text-muted-foreground">
+								Your membership benefits are now active. Enjoy 50% off AI generations
+								and expanded draft storage.
+							</p>
+							<div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+								<a
+									href={`https://1satordinals.com/outpoint/${mintedTxid}_0`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+								>
+									View your Pass <ExternalLink className="h-3 w-3" />
+								</a>
+								<span className="hidden text-muted-foreground sm:inline">•</span>
+								<a
+									href={`https://whatsonchain.com/tx/${mintedTxid}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+								>
+									Transaction details <ExternalLink className="h-3 w-3" />
+								</a>
+							</div>
+							<Link
+								href="/studio/theme"
+								className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+							>
+								Start Creating
+								<ChevronRight className="h-4 w-4" />
+							</Link>
+						</motion.div>
+					)}
+				</AnimatePresence>
 
 				{/* Reality Slider */}
 				<div className="mt-12">
