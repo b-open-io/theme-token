@@ -180,10 +180,21 @@ export function ThemeCard({
 						</div>
 					</div>
 
-					{/* Hover overlay */}
+					{/* Hover overlay - uses theme colors */}
 					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20 overflow-hidden">
-						<div className="flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs sm:text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100 max-w-[90%]">
-							<Sparkles className="h-3.5 w-3.5 shrink-0" />
+						<div
+							className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium opacity-0 transition-all group-hover:opacity-100 max-w-[90%] border shadow-lg"
+							style={{
+								backgroundColor: "var(--card)",
+								color: "var(--card-foreground)",
+								borderColor: "var(--border)",
+								borderRadius: "var(--radius)",
+							}}
+						>
+							<Sparkles
+								className="h-3.5 w-3.5 shrink-0"
+								style={{ color: "var(--primary)" }}
+							/>
 							<span className="truncate">Apply Theme</span>
 						</div>
 					</div>
