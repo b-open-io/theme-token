@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Copy, FileCode, Image, Palette, Shapes, Type } from "lucide-react";
+import { Check, Copy, FileCode, FolderKanban, Image, Palette, Shapes, Type } from "lucide-react";
 import { useCallback, useState } from "react";
 import { CodeBlock } from "@/components/code-block";
 
-type AssetType = "theme" | "font" | "tile" | "wallpaper" | "icon";
+type AssetType = "theme" | "font" | "tile" | "wallpaper" | "icon" | "project";
 
 interface FieldDef {
 	key: string;
@@ -43,6 +43,10 @@ const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 	},
 	icon: {
 		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
+		required: ["app", "type"],
+	},
+	project: {
+		active: ["app", "type", "name", "author"],
 		required: ["app", "type"],
 	},
 };
@@ -94,6 +98,12 @@ const JSON_DATA: Record<AssetType, string> = {
   "provider": "google",
   "model": "gemini-2.5-flash"
 }`,
+	project: `{
+  "app": "theme-token",
+  "type": "project",
+  "name": "My Project",
+  "author": "John Doe"
+}`,
 };
 
 const ASSET_META: Record<AssetType, { icon: typeof Palette; label: string; format: string }> = {
@@ -102,6 +112,7 @@ const ASSET_META: Record<AssetType, { icon: typeof Palette; label: string; forma
 	tile: { icon: Palette, label: "Tile", format: "SVG" },
 	wallpaper: { icon: Image, label: "Wallpaper", format: "PNG/WebP" },
 	icon: { icon: Shapes, label: "Icon", format: "SVG" },
+	project: { icon: FolderKanban, label: "Project", format: "JSON" },
 };
 
 export function OnChainProtocol() {
@@ -124,7 +135,7 @@ export function OnChainProtocol() {
 			{/* Compact Tab Strip */}
 			<div className="flex justify-center">
 				<div className="inline-flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
-					{(["theme", "font", "tile", "wallpaper", "icon"] as AssetType[]).map((tab) => {
+					{(["theme", "font", "tile", "wallpaper", "icon", "project"] as AssetType[]).map((tab) => {
 						const meta = ASSET_META[tab];
 						const Icon = meta.icon;
 						return (

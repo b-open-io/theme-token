@@ -174,7 +174,7 @@ export function buildProjectBundle(
 	const manifestBase64 = toBase64(manifestJson);
 
 	items.push({
-		type: "file",
+		type: "project",
 		base64Data: manifestBase64,
 		mimeType: "application/json",
 		name: manifest.name,

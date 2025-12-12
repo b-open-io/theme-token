@@ -79,6 +79,7 @@ export type BundleAssetType =
 	| "component"
 	| "hook"
 	| "lib"
+	| "project"
 	| "file";
 
 /** Single item in a bundle inscription */
