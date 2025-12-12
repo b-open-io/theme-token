@@ -7,13 +7,14 @@ import {
 	Eye,
 	Grid3X3,
 	Loader2,
+	MessageCircle,
 	PenLine,
 	RefreshCw,
 	Trash2,
 	Wallet,
 } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -22,6 +23,12 @@ import { toast } from "sonner";
 
 export default function MyPatternsPage() {
 	const { status, connect, inscribePattern, isInscribing } = useYoursWallet();
+	const { openChat, setPendingMessage } = useSwatchyStore();
+
+	const handleCreateWithSwatchy = useCallback(() => {
+		setPendingMessage("I want to create a seamless pattern. Can you help me design something?");
+		openChat();
+	}, [openChat, setPendingMessage]);
 	const {
 		drafts,
 		loading,
@@ -130,9 +137,10 @@ export default function MyPatternsPage() {
 					<p className="mb-4 text-muted-foreground">
 						Generate some patterns in the studio
 					</p>
-					<Link href="/studio/patterns">
-						<Button>Create Pattern</Button>
-					</Link>
+					<Button onClick={handleCreateWithSwatchy}>
+					<MessageCircle className="mr-2 h-4 w-4" />
+					Create Pattern
+				</Button>
 				</div>
 			);
 		}

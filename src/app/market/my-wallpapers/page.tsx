@@ -7,13 +7,14 @@ import {
 	Eye,
 	ImageIcon,
 	Loader2,
+	MessageCircle,
 	PenLine,
 	RefreshCw,
 	Trash2,
 	Wallet,
 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -34,8 +35,14 @@ interface WallpaperDraft {
 
 export default function MyWallpapersPage() {
 	const { status, connect, addresses, inscribeImage, isInscribing } = useYoursWallet();
+	const { openChat, setPendingMessage } = useSwatchyStore();
 	const ordAddress = addresses?.ordAddress;
 	const isConnected = status === "connected";
+
+	const handleCreateWithSwatchy = useCallback(() => {
+		setPendingMessage("I want to create a wallpaper. Can you help me generate something?");
+		openChat();
+	}, [openChat, setPendingMessage]);
 
 	const [drafts, setDrafts] = useState<WallpaperDraft[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -214,9 +221,10 @@ export default function MyWallpapersPage() {
 					<p className="mb-4 text-muted-foreground">
 						Generate some wallpapers in the studio
 					</p>
-					<Link href="/studio/wallpaper">
-						<Button>Create Wallpaper</Button>
-					</Link>
+					<Button onClick={handleCreateWithSwatchy}>
+					<MessageCircle className="mr-2 h-4 w-4" />
+					Create Wallpaper
+				</Button>
 				</div>
 			);
 		}

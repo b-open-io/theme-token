@@ -5,6 +5,7 @@ import {
 	AlertCircle,
 	Filter,
 	Loader2,
+	MessageCircle,
 	RefreshCw,
 	Sparkles,
 	Type,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,
@@ -32,6 +34,12 @@ import { DEFAULT_FONT_FILTERS } from "@/lib/font-market";
 
 export default function FontBrowsePage() {
 	const { status, connect } = useYoursWallet();
+	const { openChat, setPendingMessage } = useSwatchyStore();
+
+	const handleCreateWithSwatchy = useCallback(() => {
+		setPendingMessage("I want to create a custom font. Can you help me design something?");
+		openChat();
+	}, [openChat, setPendingMessage]);
 	const [listings, setListings] = useState<FontMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -285,12 +293,10 @@ export default function FontBrowsePage() {
 											<p className="mb-4 text-muted-foreground">
 												Be the first to create and list an AI-generated font!
 											</p>
-											<Button asChild>
-												<Link href="/studio/font">
-													<Sparkles className="mr-2 h-4 w-4" />
-													Create Font
-												</Link>
-											</Button>
+											<Button onClick={handleCreateWithSwatchy}>
+											<MessageCircle className="mr-2 h-4 w-4" />
+											Create Font
+										</Button>
 										</div>
 									</motion.div>
 								</div>

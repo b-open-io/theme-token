@@ -65,7 +65,12 @@ const exampleOrigin =
 
 export default function Home() {
 	const [copied, setCopied] = useState(false);
-	const openChat = useSwatchyStore((state) => state.openChat);
+	const { openChat, setPendingMessage } = useSwatchyStore();
+
+	const handleCreateWithSwatchy = useCallback(() => {
+		setPendingMessage("I want to create a new theme. Can you help me design something?");
+		openChat();
+	}, [openChat, setPendingMessage]);
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}`;
 
 	const copyCommand = useCallback(() => {
@@ -112,7 +117,7 @@ export default function Home() {
 									Browse Themes
 								</Link>
 							</Button>
-							<Button size="lg" variant="outline" className="gap-2" onClick={openChat}>
+							<Button size="lg" variant="outline" className="gap-2" onClick={handleCreateWithSwatchy}>
 								<Wand2 className="h-5 w-5" />
 								Create Theme
 							</Button>

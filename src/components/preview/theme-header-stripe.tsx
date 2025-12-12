@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ViewTransition } from "react";
+import { useEffect, useState, ViewTransition } from "react";
 import { toast } from "sonner";
 import type { ThemeToken } from "@theme-token/sdk";
 
@@ -16,6 +16,12 @@ export function ThemeHeaderStripe({
 	origin,
 }: ThemeHeaderStripeProps) {
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+	// Delay setting viewTransitionName until after initial mount to avoid conflict with source page
+	const [canTransition, setCanTransition] = useState(false);
+	useEffect(() => {
+		const timer = setTimeout(() => setCanTransition(true), 100);
+		return () => clearTimeout(timer);
+	}, []);
 	const styles = theme.styles[mode];
 
 	const colorEntries = [
@@ -44,7 +50,7 @@ export function ThemeHeaderStripe({
 	return (
 		<div className="relative h-8 w-full border-b border-border">
 			{/* Color stripes with hover interaction - wrapped in ViewTransition for shared element */}
-			<ViewTransition name={`theme-stripe-${origin}`}>
+			<ViewTransition name={canTransition ? `theme-stripe-${origin}` : undefined}>
 				<div className="absolute inset-0 flex">
 					{colorEntries.map(({ key, value }, index) => (
 						<div

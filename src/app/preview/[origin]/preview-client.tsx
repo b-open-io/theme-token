@@ -243,26 +243,9 @@ export function PreviewClient({ theme, origin, initialTab, source, owner }: Prev
     });
   }, [theme, previewMode]);
 
-  // Track if this is the initial mount (for delaying theme application during view transition)
-  const isInitialMount = useRef(true);
-
   // Apply theme styles to the preview container
-  // Delay initial application to let view transition complete
   useEffect(() => {
     if (!containerRef.current) return;
-
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      // Delay initial theme application to allow view transition to complete
-      const timeout = setTimeout(() => {
-        if (containerRef.current) {
-          applyStylesToElement(containerRef.current, theme.styles[previewMode]);
-        }
-      }, 550); // Slightly longer than the 500ms view transition
-      return () => clearTimeout(timeout);
-    }
-
-    // Subsequent changes (like mode toggle) apply immediately
     applyStylesToElement(containerRef.current, theme.styles[previewMode]);
   }, [theme, previewMode]);
 

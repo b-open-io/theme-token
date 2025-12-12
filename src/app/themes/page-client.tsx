@@ -1,13 +1,14 @@
 "use client";
 
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, Loader2, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
+import { Eye, Loader2, MessageCircle, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { PageContainer } from "@/components/page-container";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { useTheme } from "@/components/theme-provider";
 import { storeRemixTheme } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
@@ -157,9 +158,15 @@ const PAGE_SIZE = 12;
 export function ThemesPageClient() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const { openChat, setPendingMessage } = useSwatchyStore();
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
 	const loadMoreRef = useRef<HTMLDivElement>(null);
+
+	const handleCreateWithSwatchy = () => {
+		setPendingMessage("I want to create a new theme. Can you help me design something?");
+		openChat();
+	};
 
 	// Fetch themes with infinite query for pagination
 	const {
@@ -272,11 +279,9 @@ export function ThemesPageClient() {
 							<RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
 							Refresh
 						</Button>
-						<Button size="sm" asChild>
-							<Link href="/studio/theme">
-								<Sparkles className="mr-2 h-4 w-4" />
-								Create Theme
-							</Link>
+						<Button size="sm" onClick={handleCreateWithSwatchy}>
+							<MessageCircle className="mr-2 h-4 w-4" />
+							Create Theme
 						</Button>
 					</div>
 				</div>
@@ -311,9 +316,10 @@ export function ThemesPageClient() {
 						<p className="mb-4 text-muted-foreground">
 							Be the first to inscribe a theme on the blockchain
 						</p>
-						<Button asChild>
-							<Link href="/studio/theme">Create Theme</Link>
-						</Button>
+						<Button onClick={handleCreateWithSwatchy}>
+						<MessageCircle className="mr-2 h-4 w-4" />
+						Create Theme
+					</Button>
 					</div>
 				) : (
 					<>
