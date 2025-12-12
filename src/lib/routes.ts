@@ -106,8 +106,8 @@ export const routes: RouteInfo[] = [
 	},
 	{
 		path: "/studio/registry",
-		label: "Registry",
-		description: "Browse and manage shadcn blocks, components, and hooks",
+		label: "Component",
+		description: "Create shadcn blocks, components, and hooks for on-chain publishing",
 		category: "studio",
 		feature: "registry",
 		icon: Blocks,

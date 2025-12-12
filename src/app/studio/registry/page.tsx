@@ -30,10 +30,10 @@ export default function RegistryStudioPage() {
 						<div className="p-4 space-y-6">
 							<div>
 								<h3 className="text-sm font-medium text-foreground mb-2">
-									Registry Studio
+									Component Studio
 								</h3>
 								<p className="text-xs text-muted-foreground">
-									Create and manage shadcn registry items on the blockchain.
+									Create shadcn blocks, components, and hooks for on-chain publishing.
 								</p>
 							</div>
 
@@ -91,10 +91,10 @@ export default function RegistryStudioPage() {
 						<EmptyMedia variant="icon">
 							<Blocks />
 						</EmptyMedia>
-						<EmptyTitle>Registry Studio</EmptyTitle>
+						<EmptyTitle>Component Studio</EmptyTitle>
 						<EmptyDescription className="max-w-md">
 							Create shadcn blocks, components, and hooks that live forever on the blockchain.
-							All registry items are theme-aware and installable via the shadcn CLI.
+							All items are theme-aware and installable via the shadcn CLI.
 						</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent className="flex gap-3">
