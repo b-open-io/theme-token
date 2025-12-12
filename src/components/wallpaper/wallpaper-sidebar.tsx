@@ -5,6 +5,7 @@ import {
 	Image,
 	Loader2,
 	Monitor,
+	Palette,
 	Smartphone,
 	Sparkles,
 	Square,
@@ -12,7 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import {
 	ASPECT_RATIOS,
@@ -39,10 +49,27 @@ export function WallpaperSidebar() {
 		isPaying,
 		generatedWallpapers,
 		setSourceWallpaper,
+		useThemeContext,
+		setUseThemeContext,
+		selectedTheme,
+		setSelectedTheme,
+		availableThemes,
 	} = useWallpaperContext();
+
+	const { activeTheme, mode } = useTheme();
 
 	// Segmented control for source type
 	const sourceMode = params.sourceType === "prompt" ? "prompt" : "remix";
+
+	// Handle theme selection
+	const handleThemeSelect = (themeName: string) => {
+		if (themeName === "__active__") {
+			setSelectedTheme(activeTheme);
+		} else {
+			const theme = availableThemes.find((t) => t.name === themeName);
+			if (theme) setSelectedTheme(theme);
+		}
+	};
 
 	const handleSourceModeChange = (mode: "prompt" | "remix") => {
 		if (mode === "prompt") {
@@ -219,6 +246,91 @@ export function WallpaperSidebar() {
 						<p className="text-[10px] text-muted-foreground mt-2">
 							Optional: Leave unselected for AI to decide
 						</p>
+					</div>
+
+					<Separator />
+
+					{/* Theme Context */}
+					<div className="space-y-3">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<Palette className="h-4 w-4 text-muted-foreground" />
+								<Label className="text-xs text-muted-foreground">
+									Match Theme Colors
+								</Label>
+							</div>
+							<Switch
+								checked={useThemeContext}
+								onCheckedChange={setUseThemeContext}
+							/>
+						</div>
+
+						<AnimatePresence mode="wait">
+							{useThemeContext && (
+								<motion.div
+									initial={{ opacity: 0, height: 0 }}
+									animate={{ opacity: 1, height: "auto" }}
+									exit={{ opacity: 0, height: 0 }}
+									className="space-y-2"
+								>
+									<Select
+										value={selectedTheme?.name || (activeTheme ? "__active__" : "")}
+										onValueChange={handleThemeSelect}
+									>
+										<SelectTrigger className="w-full h-9">
+											<SelectValue placeholder="Select a theme" />
+										</SelectTrigger>
+										<SelectContent>
+											{activeTheme && (
+												<SelectItem value="__active__">
+													<div className="flex items-center gap-2">
+														<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+															{[
+																activeTheme.styles[mode].primary,
+																activeTheme.styles[mode].secondary,
+																activeTheme.styles[mode].accent,
+															].map((color, i) => (
+																<div
+																	key={i}
+																	className="flex-1"
+																	style={{ backgroundColor: color }}
+																/>
+															))}
+														</div>
+														<span>{activeTheme.name} (Current)</span>
+													</div>
+												</SelectItem>
+											)}
+											{availableThemes
+												.filter((t) => t.name !== activeTheme?.name)
+												.map((theme) => (
+													<SelectItem key={theme.name} value={theme.name}>
+														<div className="flex items-center gap-2">
+															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+																{[
+																	theme.styles[mode].primary,
+																	theme.styles[mode].secondary,
+																	theme.styles[mode].accent,
+																].map((color, i) => (
+																	<div
+																		key={i}
+																		className="flex-1"
+																		style={{ backgroundColor: color }}
+																	/>
+																))}
+															</div>
+															<span>{theme.name}</span>
+														</div>
+													</SelectItem>
+												))}
+										</SelectContent>
+									</Select>
+									<p className="text-[10px] text-muted-foreground">
+										AI will use these colors as inspiration
+									</p>
+								</motion.div>
+							)}
+						</AnimatePresence>
 					</div>
 				</div>
 			</ScrollArea>

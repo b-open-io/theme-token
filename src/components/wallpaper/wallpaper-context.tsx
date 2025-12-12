@@ -1,5 +1,6 @@
 "use client";
 
+import { type ThemeToken } from "@theme-token/sdk";
 import {
 	createContext,
 	type ReactNode,
@@ -11,6 +12,7 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
+import { useTheme } from "@/components/theme-provider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
 	type AspectRatio,
@@ -74,6 +76,13 @@ interface WallpaperContextType {
 	generationProgress: number;
 	ambientColors: string[];
 
+	// Theme context for generation
+	useThemeContext: boolean;
+	setUseThemeContext: (use: boolean) => void;
+	selectedTheme: ThemeToken | null;
+	setSelectedTheme: (theme: ThemeToken | null) => void;
+	availableThemes: ThemeToken[];
+
 	// Payment
 	requirePayment: boolean;
 	setRequirePayment: (required: boolean) => void;
@@ -128,6 +137,18 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 		"#666666",
 	]);
 	const [hasLoadedDrafts, setHasLoadedDrafts] = useState(false);
+
+	// Theme context state
+	const { activeTheme, availableThemes, mode } = useTheme();
+	const [useThemeContext, setUseThemeContext] = useState(false);
+	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(null);
+
+	// Sync selectedTheme with activeTheme when enabled and no selection made
+	useEffect(() => {
+		if (useThemeContext && !selectedTheme && activeTheme) {
+			setSelectedTheme(activeTheme);
+		}
+	}, [useThemeContext, selectedTheme, activeTheme]);
 
 	// Cloud storage state
 	const [isLoadingCloud, setIsLoadingCloud] = useState(false);
@@ -486,6 +507,13 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 				sourceImage = params.sourceWallpaperBase64;
 			}
 
+			// Prepare theme context if enabled
+			const themeContext = useThemeContext && selectedTheme ? {
+				name: selectedTheme.name,
+				mode,
+				colors: selectedTheme.styles[mode],
+			} : undefined;
+
 			const response = await fetch("/api/generate-wallpaper", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -495,6 +523,7 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 					aspectRatio: params.aspectRatio,
 					style: params.style,
 					paymentTxid,
+					themeContext,
 				}),
 			});
 
@@ -552,6 +581,9 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 		updateAmbientColors,
 		isCloudEnabled,
 		saveToCloud,
+		useThemeContext,
+		selectedTheme,
+		mode,
 	]);
 
 	return (
@@ -564,6 +596,11 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 				isGenerating,
 				generationProgress,
 				ambientColors,
+				useThemeContext,
+				setUseThemeContext,
+				selectedTheme,
+				setSelectedTheme,
+				availableThemes,
 				requirePayment,
 				setRequirePayment,
 				isPaying,

@@ -32,9 +32,6 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  type NameType,
-  type TooltipContentProps,
-  type ValueType,
   XAxis,
   YAxis,
 } from "recharts";
@@ -152,25 +149,6 @@ const exerciseConfig = {
   },
 } satisfies ChartConfig;
 
-const renderChartTooltip = ({
-  active,
-  payload,
-  label,
-  labelFormatter,
-  labelClassName,
-  formatter,
-  color,
-}: TooltipContentProps<ValueType, NameType>) => (
-  <ChartTooltipContent
-    active={active}
-    payload={payload}
-    label={label}
-    labelFormatter={labelFormatter}
-    labelClassName={labelClassName}
-    formatter={formatter}
-    color={color}
-  />
-);
 
 // Revenue Line Chart - showcases all 5 chart colors
 function RevenueChart() {
@@ -197,7 +175,7 @@ function RevenueChart() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={renderChartTooltip} />
+            <ChartTooltip content={<ChartTooltipContent />} />
             <Line
               type="monotone"
               dataKey="revenue"
@@ -265,7 +243,7 @@ function ActivityChart() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={renderChartTooltip} />
+            <ChartTooltip content={<ChartTooltipContent />} />
             <Bar
               dataKey="desktop"
               fill="var(--color-desktop)"
@@ -310,7 +288,7 @@ function ExerciseChart() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={renderChartTooltip} />
+            <ChartTooltip content={<ChartTooltipContent />} />
             <defs>
               <linearGradient id="fillMinutes" x1="0" y1="0" x2="0" y2="1">
                 <stop

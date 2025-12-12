@@ -11,6 +11,12 @@ type WallpaperStyle =
 	| "minimal"
 	| "3d-render";
 
+interface ThemeContext {
+	name: string;
+	mode: "light" | "dark";
+	colors: Record<string, string>;
+}
+
 interface WallpaperRequest {
 	prompt: string;
 	// Optional source image for remix/transformation (base64)
@@ -21,6 +27,8 @@ interface WallpaperRequest {
 	style?: WallpaperStyle;
 	// Payment transaction ID (for verification)
 	paymentTxid?: string;
+	// Optional theme context for color-aware generation
+	themeContext?: ThemeContext;
 }
 
 interface GeneratedFile {
@@ -54,18 +62,47 @@ const STYLE_PROMPTS: Record<WallpaperStyle, string> = {
 		"3D rendered, volumetric lighting, cinema 4D style, octane render",
 };
 
+function buildThemeColorContext(themeContext: ThemeContext): string {
+	const { name, mode, colors } = themeContext;
+
+	// Extract key colors for the prompt
+	const colorPairs = [
+		["primary", colors.primary],
+		["secondary", colors.secondary],
+		["accent", colors.accent],
+		["background", colors.background],
+		["foreground", colors.foreground],
+		["muted", colors.muted],
+		["card", colors.card],
+	].filter(([, value]) => value);
+
+	const colorList = colorPairs
+		.map(([name, value]) => `  - ${name}: ${value}`)
+		.join("\n");
+
+	return `
+Theme Color Palette (${mode} mode - "${name}"):
+${colorList}
+
+IMPORTANT: Use these exact colors or harmonious variations as the primary color palette for the wallpaper.
+The wallpaper should feel cohesive with this theme when used as a background.`;
+}
+
 function buildWallpaperPrompt(
 	prompt: string,
 	aspectRatio: AspectRatio,
 	style?: WallpaperStyle,
 	hasSourceImage?: boolean,
+	themeContext?: ThemeContext,
 ): string {
 	const dimensions = ASPECT_DIMENSIONS[aspectRatio];
 	const styleHint = style ? STYLE_PROMPTS[style] : "";
+	const themeHint = themeContext ? buildThemeColorContext(themeContext) : "";
 
 	const baseInstructions = `Create a beautiful, high-quality wallpaper image.
 Resolution: ${dimensions.width}x${dimensions.height} (${aspectRatio} aspect ratio)
 ${styleHint ? `Style: ${styleHint}` : ""}
+${themeHint}
 
 Requirements:
 - High resolution and crisp details
@@ -90,7 +127,7 @@ Description: ${prompt}`;
 export async function POST(request: NextRequest) {
 	try {
 		const body = (await request.json()) as WallpaperRequest;
-		const { prompt, sourceImage, aspectRatio = "16:9", style } = body;
+		const { prompt, sourceImage, aspectRatio = "16:9", style, themeContext } = body;
 
 		if (!prompt?.trim()) {
 			return NextResponse.json(
@@ -104,6 +141,7 @@ export async function POST(request: NextRequest) {
 			aspectRatio,
 			style,
 			!!sourceImage,
+			themeContext,
 		);
 
 		// Build messages for the API

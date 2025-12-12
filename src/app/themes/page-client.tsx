@@ -1,19 +1,385 @@
 "use client";
 
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye, Loader2, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import { BuyThemeModal } from "@/components/market/buy-theme-modal";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
+import { PageContainer } from "@/components/page-container";
+import { useTheme } from "@/components/theme-provider";
+import { storeRemixTheme } from "@/components/theme-gallery";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { type CachedTheme } from "@/lib/themes-cache";
+import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+import type { ThemeToken } from "@theme-token/sdk";
 
-// Redirect to marketplace browse - this route is deprecated in favor of /market/browse
-export function ThemesPageClient() {
-	const router = useRouter();
+interface ThemesPageResponse {
+	themes: CachedTheme[];
+	nextCursor: number | null;
+	total: number;
+	cached: boolean;
+	lastSynced: number;
+}
 
-	useEffect(() => {
-		router.replace("/market/browse");
-	}, [router]);
+function formatPrice(satoshis: number): string {
+	const bsv = satoshis / 100_000_000;
+	if (bsv >= 1) return `${bsv.toFixed(2)} BSV`;
+	if (bsv >= 0.01) return `${(bsv * 1000).toFixed(1)}m BSV`;
+	return `${satoshis.toLocaleString()} sats`;
+}
+
+function ThemeCardSkeleton() {
+	return (
+		<div className="rounded-xl border border-border bg-card overflow-hidden">
+			<div className="h-32 bg-muted animate-pulse" />
+			<div className="p-4 space-y-3">
+				<div className="flex items-start justify-between gap-2">
+					<div className="space-y-2 flex-1">
+						<div className="h-5 w-32 bg-muted animate-pulse rounded" />
+						<div className="h-4 w-20 bg-muted animate-pulse rounded" />
+					</div>
+					<div className="h-7 w-16 bg-muted animate-pulse rounded" />
+				</div>
+				<div className="h-4 w-40 bg-muted animate-pulse rounded" />
+			</div>
+		</div>
+	);
+}
+
+function ThemeCard({
+	cached,
+	listing,
+	onRemix,
+	onBuy,
+}: {
+	cached: CachedTheme;
+	listing?: ThemeMarketListing;
+	onRemix: () => void;
+	onBuy?: () => void;
+}) {
+	const { mode } = useTheme();
+	const [isHovered, setIsHovered] = useState(false);
+	const { theme, origin } = cached;
+	const colors = [
+		theme.styles[mode].background,
+		theme.styles[mode].card,
+		theme.styles[mode].popover,
+		theme.styles[mode].muted,
+		theme.styles[mode].accent,
+		theme.styles[mode].secondary,
+		theme.styles[mode].primary,
+		theme.styles[mode].destructive,
+	];
+
+	// Only assign the real ViewTransition name on hover to avoid duplicates
+	const viewTransitionName = isHovered ? `theme-stripe-${origin}` : undefined;
 
 	return (
-		<div className="flex h-[50vh] items-center justify-center">
-			<p className="text-muted-foreground">Redirecting to marketplace...</p>
+		<div
+			className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg animate-in fade-in duration-300"
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
+		>
+			{/* Color Preview */}
+			<Link href={`/preview/${origin}`}>
+				<div className="relative h-32 cursor-pointer overflow-hidden">
+					{/* Color stripes - only hovered card gets the real ViewTransition name */}
+					<ViewTransition name={viewTransitionName}>
+						<div className="absolute inset-0 flex">
+							{colors.map((color, i) => (
+								<div key={i} className="flex-1" style={{ backgroundColor: color }} />
+							))}
+						</div>
+					</ViewTransition>
+					{/* For Sale Badge - clickable */}
+					{listing && (
+						<button
+							type="button"
+							className="absolute top-2 right-2 z-10"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onBuy?.();
+							}}
+						>
+							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 hover:bg-primary/90 cursor-pointer">
+								<ShoppingCart className="h-3 w-3" fill="currentColor" />
+								{formatPrice(listing.price)}
+							</Badge>
+						</button>
+					)}
+					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/40">
+						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+					</div>
+				</div>
+			</Link>
+
+			{/* Info */}
+			<div className="p-4">
+				<div className="flex items-start justify-between gap-2">
+					<div className="min-w-0">
+						<Link
+							href={`/preview/${origin}`}
+							className="block truncate font-semibold hover:text-primary"
+						>
+							{theme.name}
+						</Link>
+						{theme.author && (
+							<p className="truncate text-sm text-muted-foreground">
+								by {theme.author}
+							</p>
+						)}
+					</div>
+					<button
+						type="button"
+						onClick={onRemix}
+						className="shrink-0 flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+					>
+						<Sparkles className="h-3 w-3" />
+						Remix
+					</button>
+				</div>
+
+				{/* Origin */}
+				<p className="mt-2 truncate font-mono text-xs text-muted-foreground">
+					{origin.slice(0, 12)}...{origin.slice(-6)}
+				</p>
+			</div>
+		</div>
+	);
+}
+
+const PAGE_SIZE = 12;
+
+export function ThemesPageClient() {
+	const router = useRouter();
+	const queryClient = useQueryClient();
+	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
+	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+	const loadMoreRef = useRef<HTMLDivElement>(null);
+
+	// Fetch themes with infinite query for pagination
+	const {
+		data,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		isLoading: themesLoading,
+		refetch,
+	} = useInfiniteQuery({
+		queryKey: ["themes"],
+		queryFn: async ({ pageParam = 0 }) => {
+			const res = await fetch(`/api/themes/cache?cursor=${pageParam}&limit=${PAGE_SIZE}`);
+			const data = await res.json();
+			return data as ThemesPageResponse;
+		},
+		getNextPageParam: (lastPage) => lastPage.nextCursor,
+		initialPageParam: 0,
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
+
+	// Flatten all pages into a single array
+	const themes = useMemo(() => {
+		return data?.pages.flatMap((page) => page.themes) || [];
+	}, [data]);
+
+	const totalCount = data?.pages[0]?.total || 0;
+
+	// Infinite scroll observer
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+					fetchNextPage();
+				}
+			},
+			{ threshold: 0.1 }
+		);
+
+		if (loadMoreRef.current) {
+			observer.observe(loadMoreRef.current);
+		}
+
+		return () => observer.disconnect();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+	// Fetch listings with TanStack Query
+	const { data: listings = [], refetch: refetchListings } = useQuery({
+		queryKey: ["theme-listings"],
+		queryFn: fetchThemeMarketListings,
+		staleTime: 2 * 60 * 1000, // 2 minutes
+	});
+
+	// Map of origin -> listing for quick lookup
+	const listingsByOrigin = useMemo(() => {
+		const map = new Map<string, ThemeMarketListing>();
+		for (const listing of listings) {
+			map.set(listing.origin, listing);
+		}
+		return map;
+	}, [listings]);
+
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	const handleRefresh = async () => {
+		setIsRefreshing(true);
+		try {
+			// Force refresh from server - invalidate and refetch
+			await queryClient.invalidateQueries({ queryKey: ["themes"] });
+			await refetch();
+			refetchListings();
+		} finally {
+			setIsRefreshing(false);
+		}
+	};
+
+	const handleRemix = (cached: CachedTheme) => {
+		storeRemixTheme(cached.theme, { source: "remix" });
+		router.push("/studio/theme");
+	};
+
+	const handlePurchaseComplete = (txid: string) => {
+		if (buyListing) {
+			setSuccessModal({ theme: buyListing.theme, txid });
+			refetchListings();
+		}
+	};
+
+	// Count how many are for sale
+	const forSaleCount = themes.filter(t => listingsByOrigin.has(t.origin)).length;
+
+	return (
+		<div className="min-h-screen">
+			<PageContainer className="py-12">
+				{/* Header */}
+				<div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<h1 className="text-3xl font-bold tracking-tight">Browse Themes</h1>
+						<p className="mt-1 text-muted-foreground">
+							All themes inscribed on the blockchain
+						</p>
+					</div>
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleRefresh}
+							disabled={isRefreshing}
+						>
+							<RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+							Refresh
+						</Button>
+						<Button size="sm" asChild>
+							<Link href="/studio/theme">
+								<Sparkles className="mr-2 h-4 w-4" />
+								Create Theme
+							</Link>
+						</Button>
+					</div>
+				</div>
+
+				{/* Stats */}
+				<div className="mb-8 flex items-center gap-6 text-sm text-muted-foreground">
+					<span>
+						<strong className="text-foreground">{totalCount}</strong> themes inscribed
+						{themes.length < totalCount && (
+							<span className="text-muted-foreground"> (showing {themes.length})</span>
+						)}
+					</span>
+					{forSaleCount > 0 && (
+						<span className="flex items-center gap-1 text-primary">
+							<ShoppingCart className="h-3.5 w-3.5" fill="currentColor" />
+							<strong>{forSaleCount}</strong> for sale
+						</span>
+					)}
+				</div>
+
+				{/* Grid */}
+				{themesLoading ? (
+					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{Array.from({ length: 8 }).map((_, i) => (
+							<ThemeCardSkeleton key={i} />
+						))}
+					</div>
+				) : themes.length === 0 ? (
+					<div className="rounded-xl border border-dashed border-border py-20 text-center">
+						<Sparkles className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+						<h3 className="mb-2 text-lg font-semibold">No themes yet</h3>
+						<p className="mb-4 text-muted-foreground">
+							Be the first to inscribe a theme on the blockchain
+						</p>
+						<Button asChild>
+							<Link href="/studio/theme">Create Theme</Link>
+						</Button>
+					</div>
+				) : (
+					<>
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+							{themes.map((cached) => {
+								const listing = listingsByOrigin.get(cached.origin);
+								return (
+									<ThemeCard
+										key={cached.origin}
+										cached={cached}
+										listing={listing}
+										onRemix={() => handleRemix(cached)}
+										onBuy={() => listing && setBuyListing({ ...listing, origin: cached.origin })}
+									/>
+								);
+							})}
+						</div>
+
+						{/* Infinite scroll trigger */}
+						<div ref={loadMoreRef} className="flex justify-center py-8">
+							{isFetchingNextPage ? (
+								<div className="flex items-center gap-2 text-muted-foreground">
+									<Loader2 className="h-5 w-5 animate-spin" />
+									<span>Loading more themes...</span>
+								</div>
+							) : hasNextPage ? (
+								<Button
+									variant="outline"
+									onClick={() => fetchNextPage()}
+									className="px-8"
+								>
+									Load More
+								</Button>
+							) : themes.length > 0 ? (
+								<p className="text-sm text-muted-foreground">
+									You&apos;ve seen all {totalCount} themes
+								</p>
+							) : null}
+						</div>
+					</>
+				)}
+			</PageContainer>
+
+			{/* Buy Modal */}
+			{buyListing && (
+				<BuyThemeModal
+					isOpen={true}
+					onClose={() => setBuyListing(null)}
+					listing={buyListing}
+					onPurchaseComplete={handlePurchaseComplete}
+				/>
+			)}
+
+			{/* Success Modal */}
+			{successModal && (
+				<PurchaseSuccessModal
+					isOpen={true}
+					onClose={() => setSuccessModal(null)}
+					theme={successModal.theme}
+					txid={successModal.txid}
+					onApplyNow={() => {
+						storeRemixTheme(successModal.theme);
+						router.push("/studio/theme");
+					}}
+				/>
+			)}
 		</div>
 	);
 }
