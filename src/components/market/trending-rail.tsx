@@ -121,11 +121,11 @@ export function TrendingRailSkeleton() {
 				<Skeleton className="h-4 w-8" />
 			</div>
 
-			<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+			<div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5 xl:grid-cols-6">
 				{Array.from({ length: 6 }).map((_, index) => (
 					<div
 						key={index}
-						className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card p-3"
+						className="flex w-40 shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 md:w-auto"
 					>
 						{/* Top row: swatch + name + change */}
 						<div className="mb-2 flex items-start gap-2">
@@ -164,14 +164,15 @@ export function TrendingRail({ items, mode }: TrendingRailProps) {
 				<span className="text-sm text-muted-foreground">24h</span>
 			</div>
 
-			<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+			<div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5 xl:grid-cols-6">
 				{items.map((item, index) => (
-					<TrendingCard
-						key={item.origin}
-						item={item}
-						mode={mode}
-						index={index}
-					/>
+					<div key={item.origin} className="w-40 shrink-0 md:w-auto">
+						<TrendingCard
+							item={item}
+							mode={mode}
+							index={index}
+						/>
+					</div>
 				))}
 			</div>
 		</section>
