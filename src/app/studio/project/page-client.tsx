@@ -227,14 +227,14 @@ export function ProjectStudioPageClient() {
 										</SelectTrigger>
 										<SelectContent>
 											{themesLoading ? (
-												<SelectItem value="" disabled>
+												<SelectItem value="__loading__" disabled>
 													<span className="flex items-center gap-2">
 														<Loader2 className="h-3 w-3 animate-spin" />
 														Loading themes...
 													</span>
 												</SelectItem>
 											) : themes.length === 0 ? (
-												<SelectItem value="" disabled>
+												<SelectItem value="__empty__" disabled>
 													No themes available
 												</SelectItem>
 											) : (

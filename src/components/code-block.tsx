@@ -3,14 +3,23 @@
 import { Check, Copy } from "lucide-react";
 import * as React from "react";
 import { type Highlighter, createHighlighter } from "shiki";
+import { createCssVariablesTheme } from "shiki/core";
 import { cn } from "@/lib/utils";
+
+// Create a CSS variables theme that adapts to our dynamic theming
+const cssVarsTheme = createCssVariablesTheme({
+	name: "css-variables",
+	variablePrefix: "--shiki-",
+	variableDefaults: {},
+	fontStyle: true,
+});
 
 let highlighterPromise: Promise<Highlighter> | null = null;
 
 async function getHighlighter() {
 	if (!highlighterPromise) {
 		highlighterPromise = createHighlighter({
-			themes: ["css-variables"],
+			themes: [cssVarsTheme],
 			langs: ["json", "typescript", "bash", "css", "html"],
 		});
 	}
@@ -111,7 +120,7 @@ export function CodeBlock({
 					{isLoaded && html ? (
 						<div dangerouslySetInnerHTML={{ __html: html }} />
 					) : (
-						<pre className="shiki css-variables" style={{ backgroundColor: 'transparent' }}>
+						<pre style={{ backgroundColor: 'transparent' }}>
 							<code>{code}</code>
 						</pre>
 					)}
