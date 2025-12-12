@@ -1,8 +1,9 @@
 "use client";
 
 import type React from "react";
-import { motion } from "framer-motion";
+import { motion, type PanInfo } from "framer-motion";
 import Image from "next/image";
+import { useRef, useState, useEffect, useCallback } from "react";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
 
 interface SwatchyAvatarProps {
@@ -11,11 +12,67 @@ interface SwatchyAvatarProps {
 	onClick: () => void;
 }
 
+interface DragPosition {
+	x: number;
+	y: number;
+}
+
 export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
 	const isHero = position === "hero";
 	const isExpanded = position === "expanded";
 	const isLeft = side === "left";
+
+	// Drag state - only active in corner mode
+	const [dragPosition, setDragPosition] = useState<DragPosition | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
+	const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+	const constraintsRef = useRef<{ top: number; left: number; right: number; bottom: number } | null>(null);
+
+	// Reset drag position when leaving corner mode
+	useEffect(() => {
+		if (!isCorner) {
+			setDragPosition(null);
+		}
+	}, [isCorner]);
+
+	// Calculate constraints on mount and resize
+	useEffect(() => {
+		const updateConstraints = () => {
+			constraintsRef.current = {
+				top: 16,
+				left: 16,
+				right: window.innerWidth - 96, // 80px avatar + 16px margin
+				bottom: window.innerHeight - 96,
+			};
+		};
+		updateConstraints();
+		window.addEventListener("resize", updateConstraints);
+		return () => window.removeEventListener("resize", updateConstraints);
+	}, []);
+
+	const handleDragStart = useCallback(() => {
+		setIsDragging(true);
+	}, []);
+
+	const handleDragEnd = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+		setIsDragging(false);
+		// Save the final position
+		if (constraintsRef.current) {
+			const constraints = constraintsRef.current;
+			// Clamp to constraints
+			const newX = Math.max(constraints.left, Math.min(constraints.right, info.point.x - 40));
+			const newY = Math.max(constraints.top, Math.min(constraints.bottom, info.point.y - 40));
+			setDragPosition({ x: newX, y: newY });
+		}
+	}, []);
+
+	const handleClick = useCallback(() => {
+		// Only trigger click if we weren't dragging
+		if (!isDragging) {
+			onClick();
+		}
+	}, [isDragging, onClick]);
 
 	// Position styles applied directly to style prop - layout animation handles the transition
 	// CSS cannot interpolate between numeric values and "auto", so we use layout animation
@@ -66,7 +123,20 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			};
 		}
 
-		// Corner state
+		// Corner state - use drag position if available
+		if (dragPosition) {
+			return {
+				position: "fixed",
+				top: dragPosition.y,
+				left: dragPosition.x,
+				bottom: "auto",
+				right: "auto",
+				width: 80,
+				height: 80,
+				zIndex: 60,
+			};
+		}
+
 		return {
 			position: "fixed",
 			top: "auto",
@@ -123,8 +193,16 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			// instead of trying to interpolate CSS position properties
 			layout
 			style={getPositionStyle()}
-			className="cursor-pointer overflow-visible rounded-full focus:outline-none focus-visible:outline-none"
-			onClick={onClick}
+			className={`overflow-visible rounded-full focus:outline-none focus-visible:outline-none ${
+				isCorner ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+			}`}
+			onClick={handleClick}
+			// Enable drag only in corner mode
+			drag={isCorner}
+			dragMomentum={false}
+			dragElastic={0.1}
+			onDragStart={handleDragStart}
+			onDragEnd={handleDragEnd}
 			// Smooth spring - slightly softer for hero transitions
 			transition={{
 				type: "spring",

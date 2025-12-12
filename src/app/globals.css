@@ -171,6 +171,24 @@
 	body {
 		@apply bg-background text-foreground overflow-x-hidden;
 	}
+
+	/* Smooth theme transitions when colors change */
+	:root {
+		--theme-transition-duration: 400ms;
+	}
+
+	html.theme-transitioning,
+	html.theme-transitioning *,
+	html.theme-transitioning *::before,
+	html.theme-transitioning *::after {
+		transition:
+			background-color var(--theme-transition-duration) ease-out,
+			border-color var(--theme-transition-duration) ease-out,
+			color var(--theme-transition-duration) ease-out,
+			fill var(--theme-transition-duration) ease-out,
+			stroke var(--theme-transition-duration) ease-out,
+			box-shadow var(--theme-transition-duration) ease-out !important;
+	}
 }
 
 /* Semantic color utilities using theme chart colors */

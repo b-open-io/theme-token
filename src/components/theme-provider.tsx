@@ -31,8 +31,8 @@ interface ThemeContextValue {
 	availableThemes: ThemeToken[];
 	/** Set available themes (called by wallet hook) */
 	setAvailableThemes: (themes: ThemeToken[]) => void;
-	/** Apply a theme token */
-	applyTheme: (theme: ThemeToken | null) => void;
+	/** Apply a theme token (optionally with smooth color transition) */
+	applyTheme: (theme: ThemeToken | null, animate?: boolean) => void;
 	/** Apply a theme token with splash animation from click position */
 	applyThemeAnimated: (theme: ThemeToken | null, e?: MouseEvent) => void;
 	/** Toggle light/dark mode with optional click event for animation */
@@ -192,12 +192,33 @@ interface StoredThemeSelection {
 	themeName?: string;
 }
 
-function applyThemeToDocument(styles: ThemeStyleProps | null): void {
-	if (!styles) {
-		clearThemeStyles();
-		return;
+/** Duration must match --theme-transition-duration in globals.css */
+const THEME_TRANSITION_DURATION = 400;
+
+function applyThemeToDocument(styles: ThemeStyleProps | null, animate = false): void {
+	if (animate && typeof document !== "undefined") {
+		// Add transition class before changing styles
+		document.documentElement.classList.add("theme-transitioning");
+
+		// Apply the styles
+		if (!styles) {
+			clearThemeStyles();
+		} else {
+			applyThemeStyles(styles);
+		}
+
+		// Remove transition class after animation completes
+		setTimeout(() => {
+			document.documentElement.classList.remove("theme-transitioning");
+		}, THEME_TRANSITION_DURATION);
+	} else {
+		// No animation - apply immediately
+		if (!styles) {
+			clearThemeStyles();
+			return;
+		}
+		applyThemeStyles(styles);
 	}
-	applyThemeStyles(styles);
 }
 
 export function ThemeProvider({
@@ -256,19 +277,19 @@ export function ThemeProvider({
 	}, [activeTheme, mode]);
 
 	const applyTheme = useCallback(
-		(theme: ThemeToken | null) => {
+		(theme: ThemeToken | null, animate = false) => {
 			setActiveTheme(theme);
 
 			if (theme) {
 				loadThemeFonts(theme);
-				applyThemeToDocument(theme.styles[mode]);
+				applyThemeToDocument(theme.styles[mode], animate);
 				// Save selection
 				localStorage.setItem(
 					STORAGE_KEY,
 					JSON.stringify({ themeName: theme.name }),
 				);
 			} else {
-				applyThemeToDocument(null);
+				applyThemeToDocument(null, animate);
 				localStorage.removeItem(STORAGE_KEY);
 			}
 		},
@@ -352,7 +373,7 @@ export function ThemeProvider({
 		[mode, setMode],
 	);
 
-	// Try to restore saved theme when availableThemes changes
+	// Try to restore saved theme when availableThemes changes (e.g., wallet connects)
 	useEffect(() => {
 		if (availableThemes.length === 0) return;
 
@@ -365,7 +386,8 @@ export function ThemeProvider({
 				const found = availableThemes.find((t) => t.name === themeName);
 				if (found) {
 					setActiveTheme(found);
-					applyThemeToDocument(found.styles[mode]);
+					// Animate the transition when wallet connects and applies user's theme
+					applyThemeToDocument(found.styles[mode], true);
 				}
 			}
 		} catch {
