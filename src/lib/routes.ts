@@ -6,7 +6,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { Blocks, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
+import { Blocks, FolderKanban, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
 import { featureFlags } from "./feature-flags";
 
 export type RouteCategory = "main" | "studio" | "market" | "user";
@@ -112,6 +112,14 @@ export const routes: RouteInfo[] = [
 		feature: "registry",
 		icon: Blocks,
 		tools: ["generateBlock", "generateComponent"],
+	},
+	{
+		path: "/studio/project",
+		label: "Project",
+		description: "Compose themes, fonts, icons into complete shadcn/create presets",
+		category: "studio",
+		icon: FolderKanban,
+		tools: ["createProject"],
 	},
 
 	// Market

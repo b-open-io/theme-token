@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import { useRef } from "react";
 
 interface Chip {
@@ -37,7 +37,7 @@ function Chip({
 	progress,
 }: {
 	data: Chip;
-	progress: ReturnType<typeof useTransform>;
+	progress: MotionValue<number>;
 }) {
 	const y = useTransform(progress, [0, 1], [0, -600 * data.speed]);
 	const opacity = useTransform(progress, [0, 0.3, 0.7, 1], [0, 0.9, 0.9, 0]);
