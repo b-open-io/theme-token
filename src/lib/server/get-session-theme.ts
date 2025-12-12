@@ -2,48 +2,77 @@
  * Server-side theme fetching utilities
  *
  * Used by the root layout to fetch theme data for SSR injection.
+ * Accesses KV cache directly - no HTTP calls.
  */
 
-import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
+import { kv } from "@vercel/kv";
+import { fetchThemeByOrigin, type ThemeToken, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
 import type { CachedTheme } from "@/lib/themes-cache";
 import { DEFAULT_THEME_ORIGIN, fetchDefaultTheme } from "@/lib/default-theme";
 
 /** Cookie name for theme session */
 export const THEME_SESSION_COOKIE = "theme-session";
 
-// Production URL constant - no env var needed
-const BASE_URL = process.env.NODE_ENV === "production"
-	? "https://themetoken.dev"
-	: "http://localhost:3033";
-const CACHE_API_URL = `${BASE_URL}/api/themes/cache`;
+/** KV cache key for published themes */
+const THEMES_CACHE_KEY = "themes:published";
+const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
-interface CacheResponse {
+interface ThemesCache {
 	themes: CachedTheme[];
-	cached: boolean;
 	lastSynced: number;
 }
 
 /**
- * Fetch cached themes server-side
- *
- * Uses absolute URL since this runs on the server.
+ * Get cached themes directly from KV (no HTTP)
  */
-export async function fetchCachedThemesServer(): Promise<CachedTheme[]> {
+async function getCachedThemesFromKV(): Promise<CachedTheme[]> {
 	try {
-		const response = await fetch(CACHE_API_URL, {
-			next: { revalidate: 60 }, // ISR: revalidate every 60s
-		});
-
-		if (!response.ok) {
-			console.error("[server] Cache API error:", response.status);
+		// Check if KV is configured
+		if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+			console.warn("[SSR] KV not configured");
 			return [];
 		}
 
-		const data: CacheResponse = await response.json();
-		return data.themes;
+		const cache: ThemesCache | null = await kv.get(THEMES_CACHE_KEY);
+		return cache?.themes ?? [];
 	} catch (error) {
-		console.error("[server] Failed to fetch cached themes:", error);
+		console.error("[SSR] Failed to read KV cache:", error);
 		return [];
+	}
+}
+
+/**
+ * Add a theme to KV cache directly
+ */
+async function addThemeToKVCache(origin: string, theme: ThemeToken, owner?: string): Promise<void> {
+	try {
+		if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+			return;
+		}
+
+		const cache: ThemesCache | null = await kv.get(THEMES_CACHE_KEY);
+		const existingThemes = cache?.themes ?? [];
+
+		// Check if already exists
+		if (existingThemes.some((t) => t.origin === origin)) {
+			return;
+		}
+
+		const newTheme: CachedTheme = {
+			origin,
+			theme,
+			inscribedAt: Date.now(),
+			owner,
+		};
+
+		const updatedCache: ThemesCache = {
+			themes: [newTheme, ...existingThemes],
+			lastSynced: cache?.lastSynced ?? Date.now(),
+		};
+
+		await kv.set(THEMES_CACHE_KEY, updatedCache, { ex: CACHE_TTL_SECONDS });
+	} catch (error) {
+		console.error("[SSR] Failed to add theme to KV cache:", error);
 	}
 }
 
@@ -53,14 +82,13 @@ export async function fetchCachedThemesServer(): Promise<CachedTheme[]> {
  * If cache is empty, fetches the default theme from chain and caches it.
  */
 export async function getRandomCachedTheme(): Promise<CachedTheme | null> {
-	const themes = await fetchCachedThemesServer();
+	const themes = await getCachedThemesFromKV();
 
 	if (themes.length === 0) {
 		// Cache is empty - fetch default theme from chain and cache it
 		const defaultTheme = await fetchDefaultTheme();
 		if (defaultTheme) {
-			// Add to cache for future requests
-			await addThemeToCache(DEFAULT_THEME_ORIGIN, defaultTheme);
+			await addThemeToKVCache(DEFAULT_THEME_ORIGIN, defaultTheme);
 			return {
 				origin: DEFAULT_THEME_ORIGIN,
 				theme: defaultTheme,
@@ -75,29 +103,14 @@ export async function getRandomCachedTheme(): Promise<CachedTheme | null> {
 }
 
 /**
- * Add a theme to the server-side cache
- */
-async function addThemeToCache(origin: string, theme: ThemeToken): Promise<void> {
-	try {
-		await fetch(CACHE_API_URL, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ origin, theme }),
-		});
-	} catch (error) {
-		console.error("[server] Failed to add theme to cache:", error);
-	}
-}
-
-/**
  * Fetch a specific theme by origin
  *
- * First checks cache, then falls back to direct fetch from chain.
+ * First checks KV cache directly, then falls back to direct fetch from chain.
  * Caches the result if fetched from chain.
  */
 export async function getThemeByOrigin(origin: string): Promise<ThemeToken | null> {
-	// Try cache first
-	const cachedThemes = await fetchCachedThemesServer();
+	// Try KV cache first
+	const cachedThemes = await getCachedThemesFromKV();
 	const cached = cachedThemes.find((t) => t.origin === origin);
 	if (cached) {
 		return cached.theme;
@@ -107,7 +120,7 @@ export async function getThemeByOrigin(origin: string): Promise<ThemeToken | nul
 	const published = await fetchThemeByOrigin(origin);
 	if (published?.theme) {
 		// Cache it for future requests
-		await addThemeToCache(origin, published.theme);
+		await addThemeToKVCache(origin, published.theme);
 		return published.theme;
 	}
 
