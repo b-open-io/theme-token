@@ -7,6 +7,7 @@ import {
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { AlertCircle, Check, Moon, Sun } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -19,7 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { exampleThemes } from "@/lib/example-themes";
+import { fetchCachedThemes } from "@/lib/themes-cache";
 import { JsonSyntax } from "./json-syntax";
 
 interface ThemePreviewProps {
@@ -27,9 +28,14 @@ interface ThemePreviewProps {
 }
 
 export function ThemePreview({ className = "" }: ThemePreviewProps) {
-	const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
-		exampleThemes[0],
-	);
+	// Fetch on-chain themes
+	const { data: cachedThemes = [] } = useQuery({
+		queryKey: ["cached-themes"],
+		queryFn: fetchCachedThemes,
+		staleTime: 5 * 60 * 1000,
+	});
+
+	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(null);
 	const [mode, setMode] = useState<"light" | "dark">("dark");
 	const [customJson, setCustomJson] = useState("");
 	const [customCss, setCustomCss] = useState("");
@@ -41,16 +47,19 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 		null,
 	);
 
+	// Current theme: selected or first cached theme
+	const currentTheme = selectedTheme ?? cachedThemes[0]?.theme ?? null;
+
 	useEffect(() => {
 		const previewEl = document.getElementById("theme-preview-container");
-		if (!previewEl) return;
+		if (!previewEl || !currentTheme) return;
 
-		const styles = selectedTheme.styles[mode];
+		const styles = currentTheme.styles[mode];
 		for (const [key, value] of Object.entries(styles)) {
 			if (typeof value !== "string") continue;
 			previewEl.style.setProperty(`--${key}`, value);
 		}
-	}, [selectedTheme, mode]);
+	}, [currentTheme, mode]);
 
 	const handleCustomJsonChange = (value: string) => {
 		setCustomJson(value);
@@ -139,15 +148,15 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 
 				{activeTab === "presets" && (
 					<div className="space-y-3">
-						{exampleThemes.map((theme, i) => (
+						{cachedThemes.map((cached, i) => (
 							<motion.button
-								key={theme.name}
+								key={cached.origin}
 								initial={{ opacity: 0, x: -20 }}
 								animate={{ opacity: 1, x: 0 }}
 								transition={{ delay: i * 0.1 }}
-								onClick={() => setSelectedTheme(theme)}
+								onClick={() => setSelectedTheme(cached.theme)}
 								className={`w-full rounded-lg border p-4 text-left transition-all ${
-									selectedTheme.name === theme.name
+									currentTheme?.name === cached.theme.name
 										? "border-primary bg-primary/5"
 										: "border-border hover:border-primary/50 hover:bg-muted/50"
 								}`}
@@ -158,18 +167,18 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 										<div className="flex -space-x-1">
 											<div
 												className="h-6 w-6 rounded-full border-2 border-background"
-												style={{ backgroundColor: theme.styles[mode].primary }}
+												style={{ backgroundColor: cached.theme.styles[mode].primary }}
 											/>
 											<div
 												className="h-6 w-6 rounded-full border-2 border-background"
 												style={{
-													backgroundColor: theme.styles[mode].background,
+													backgroundColor: cached.theme.styles[mode].background,
 												}}
 											/>
 										</div>
-										<h4 className="font-semibold">{theme.name}</h4>
+										<h4 className="font-semibold">{cached.theme.name}</h4>
 									</div>
-									{selectedTheme.name === theme.name && (
+									{currentTheme?.name === cached.theme.name && (
 										<Check className="h-5 w-5 text-primary" />
 									)}
 								</div>
@@ -273,15 +282,17 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 				</div>
 
 				{/* Current Theme JSON */}
-				<div>
-					<h4 className="mb-2 font-mono text-sm text-muted-foreground">
-						// Current Theme Token
-					</h4>
-					<JsonSyntax
-						json={selectedTheme}
-						className="max-h-64 overflow-auto text-xs"
-					/>
-				</div>
+				{currentTheme && (
+					<div>
+						<h4 className="mb-2 font-mono text-sm text-muted-foreground">
+							// Current Theme Token
+						</h4>
+						<JsonSyntax
+							json={currentTheme}
+							className="max-h-64 overflow-auto text-xs"
+						/>
+					</div>
+				)}
 			</div>
 
 			{/* Preview Panel */}
@@ -311,7 +322,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 							className="ml-4 font-mono text-sm"
 							style={{ color: "var(--muted-foreground)" }}
 						>
-							{selectedTheme.name}
+							{currentTheme?.name ?? "Select a theme"}
 						</span>
 					</div>
 				</div>

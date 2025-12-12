@@ -22,7 +22,6 @@ import { HeroOrbs } from "@/components/hero-orbs";
 import { JsonSyntax } from "@/components/json-syntax";
 import { PageContainer } from "@/components/page-container";
 import { ParallaxChips } from "@/components/parallax-chips";
-import { PresetShowcase } from "@/components/preset-showcase";
 import { StatsBar } from "@/components/stats-bar";
 import { Testimonials } from "@/components/testimonials";
 import { ThemeGallery } from "@/components/theme-gallery";
@@ -238,9 +237,6 @@ export default function Home() {
 
 			{/* Section Divider */}
 			<ColorSectionDivider color="chart-2" intensity="medium" direction="both" />
-
-			{/* Preset Showcase - Interactive theme preview */}
-			<PresetShowcase />
 
 			{/* Why On-Chain Themes Section */}
 			<section className="relative border-t border-border/50 py-24 overflow-hidden">

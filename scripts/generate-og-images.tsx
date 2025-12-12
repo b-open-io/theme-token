@@ -10,7 +10,58 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import better from "better-color-tools";
 import { fetchPublishedThemes, type ThemeToken } from "@theme-token/sdk";
-import { exampleThemes } from "../src/lib/example-themes";
+
+// Fallback theme for when no published themes exist
+const FALLBACK_THEME: ThemeToken = {
+  $schema: "https://themetoken.dev/schema/theme-token.json",
+  name: "Default",
+  styles: {
+    light: {
+      background: "oklch(0.98 0 0)",
+      foreground: "oklch(0.15 0 0)",
+      primary: "oklch(0.25 0 0)",
+      "primary-foreground": "oklch(0.98 0 0)",
+      secondary: "oklch(0.92 0 0)",
+      "secondary-foreground": "oklch(0.25 0 0)",
+      muted: "oklch(0.92 0 0)",
+      "muted-foreground": "oklch(0.45 0 0)",
+      accent: "oklch(0.92 0 0)",
+      "accent-foreground": "oklch(0.25 0 0)",
+      destructive: "oklch(0.55 0.2 25)",
+      "destructive-foreground": "oklch(0.98 0 0)",
+      border: "oklch(0.88 0 0)",
+      input: "oklch(0.88 0 0)",
+      ring: "oklch(0.25 0 0)",
+      card: "oklch(0.98 0 0)",
+      "card-foreground": "oklch(0.15 0 0)",
+      popover: "oklch(0.98 0 0)",
+      "popover-foreground": "oklch(0.15 0 0)",
+      radius: "0.5rem",
+    },
+    dark: {
+      background: "oklch(0.15 0 0)",
+      foreground: "oklch(0.98 0 0)",
+      primary: "oklch(0.98 0 0)",
+      "primary-foreground": "oklch(0.15 0 0)",
+      secondary: "oklch(0.22 0 0)",
+      "secondary-foreground": "oklch(0.98 0 0)",
+      muted: "oklch(0.22 0 0)",
+      "muted-foreground": "oklch(0.65 0 0)",
+      accent: "oklch(0.22 0 0)",
+      "accent-foreground": "oklch(0.98 0 0)",
+      destructive: "oklch(0.55 0.2 25)",
+      "destructive-foreground": "oklch(0.98 0 0)",
+      border: "oklch(0.22 0 0)",
+      input: "oklch(0.22 0 0)",
+      ring: "oklch(0.88 0 0)",
+      card: "oklch(0.15 0 0)",
+      "card-foreground": "oklch(0.98 0 0)",
+      popover: "oklch(0.15 0 0)",
+      "popover-foreground": "oklch(0.98 0 0)",
+      radius: "0.5rem",
+    },
+  },
+};
 
 const OUTPUT_DIR = join(process.cwd(), "public/og");
 const FONT_PATH = join(process.cwd(), "public/fonts/space-grotesk-latin-700-normal.woff");
@@ -517,8 +568,8 @@ async function main() {
     await generateOgImage(theme, outputPath);
   }
 
-  // Generate default homepage OG (using first theme or example)
-  const defaultTheme = publishedThemes[0]?.theme ?? exampleThemes[0];
+  // Generate default homepage OG (using first theme or fallback)
+  const defaultTheme = publishedThemes[0]?.theme ?? FALLBACK_THEME;
   const defaultPath = join(OUTPUT_DIR, "default.png");
   await generateOgImage(defaultTheme, defaultPath);
 

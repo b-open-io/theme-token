@@ -6,6 +6,7 @@ import {
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -20,7 +21,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { exampleThemes } from "@/lib/example-themes";
+import { fetchCachedThemes } from "@/lib/themes-cache";
 
 interface MintThemeProps {
 	className?: string;
@@ -37,9 +38,14 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 	} = useYoursWallet();
 	const { mode } = useTheme();
 
-	const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
-		exampleThemes[0],
-	);
+	// Fetch on-chain themes
+	const { data: cachedThemes = [] } = useQuery({
+		queryKey: ["cached-themes"],
+		queryFn: fetchCachedThemes,
+		staleTime: 5 * 60 * 1000,
+	});
+
+	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(null);
 	const [customJson, setCustomJson] = useState("");
 	const [customCss, setCustomCss] = useState("");
 	const [validationError, setValidationError] = useState<string | null>(null);
@@ -51,6 +57,9 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 	const [parseMetadata, setParseMetadata] = useState<ParseMetadata | null>(
 		null,
 	);
+
+	// Select first cached theme when available
+	const currentTheme = selectedTheme ?? cachedThemes[0]?.theme ?? null;
 
 	const handleCustomJsonChange = (value: string) => {
 		setCustomJson(value);
@@ -92,10 +101,11 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 	};
 
 	const handleMint = async () => {
+		if (!currentTheme) return;
 		// Use custom name if provided, otherwise use theme's name
 		const themeToMint: ThemeToken = {
-			...selectedTheme,
-			name: customLabel.trim() || selectedTheme.name,
+			...currentTheme,
+			name: customLabel.trim() || currentTheme.name,
 		};
 
 		const result = await inscribeTheme(themeToMint);
@@ -211,13 +221,13 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			{/* Theme Selection */}
 			{activeTab === "presets" && (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{exampleThemes.map((theme) => (
+					{cachedThemes.map((cached) => (
 						<button
 							type="button"
-							key={theme.name}
-							onClick={() => setSelectedTheme(theme)}
+							key={cached.origin}
+							onClick={() => setSelectedTheme(cached.theme)}
 							className={`relative rounded-lg border p-4 text-left transition-all ${
-								selectedTheme.name === theme.name
+								currentTheme?.name === cached.theme.name
 									? "border-primary bg-primary/5"
 									: "border-border hover:border-primary/50 hover:bg-muted/50"
 							}`}
@@ -226,18 +236,18 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 								<div className="flex -space-x-1">
 									<div
 										className="h-6 w-6 rounded-full border-2 border-background"
-										style={{ backgroundColor: theme.styles[mode].primary }}
+										style={{ backgroundColor: cached.theme.styles[mode].primary }}
 									/>
 									<div
 										className="h-6 w-6 rounded-full border-2 border-background"
-										style={{ backgroundColor: theme.styles[mode].background }}
+										style={{ backgroundColor: cached.theme.styles[mode].background }}
 									/>
 								</div>
 								<div>
-									<h4 className="font-semibold">{theme.name}</h4>
+									<h4 className="font-semibold">{cached.theme.name}</h4>
 								</div>
 							</div>
-							{selectedTheme.name === theme.name && (
+							{currentTheme?.name === cached.theme.name && (
 								<Check className="absolute right-3 top-3 h-5 w-5 text-primary" />
 							)}
 						</button>
@@ -326,7 +336,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 					type="text"
 					value={customLabel}
 					onChange={(e) => setCustomLabel(e.target.value)}
-					placeholder={selectedTheme.name}
+					placeholder={currentTheme?.name ?? "Theme Name"}
 					className="w-full rounded-lg border border-border bg-muted/30 px-4 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 				/>
 				<p className="mt-1 text-xs text-muted-foreground">
@@ -335,18 +345,20 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			</div>
 
 			{/* Preview */}
-			<div>
-				<h4 className="mb-2 font-mono text-sm text-muted-foreground">
-					// Theme Token Preview
-				</h4>
-				<JsonSyntax
-					json={{
-						name: customLabel.trim() || selectedTheme.name,
-						styles: selectedTheme.styles,
-					}}
-					className="max-h-48 overflow-auto text-xs"
-				/>
-			</div>
+			{currentTheme && (
+				<div>
+					<h4 className="mb-2 font-mono text-sm text-muted-foreground">
+						// Theme Token Preview
+					</h4>
+					<JsonSyntax
+						json={{
+							name: customLabel.trim() || currentTheme.name,
+							styles: currentTheme.styles,
+						}}
+						className="max-h-48 overflow-auto text-xs"
+					/>
+				</div>
+			)}
 
 			{/* Error Display */}
 			{walletError && (
@@ -360,7 +372,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			<Button
 				size="lg"
 				className="w-full gap-2"
-				disabled={isInscribing || (isConnected && validationError !== null)}
+				disabled={isInscribing || !currentTheme || (isConnected && validationError !== null)}
 				onClick={isConnected ? handleMint : connect}
 			>
 				{isInscribing ? (

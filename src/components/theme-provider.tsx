@@ -8,6 +8,7 @@ import {
 	validateThemeToken,
 } from "@theme-token/sdk";
 import { loadThemeFonts } from "@/lib/fonts";
+import { setSessionTheme } from "@/app/actions/theme-session";
 import {
 	createContext,
 	type MouseEvent,
@@ -16,6 +17,7 @@ import {
 	useContext,
 	useEffect,
 	useState,
+	useRef,
 } from "react";
 
 interface ThemeContextValue {
@@ -23,6 +25,8 @@ interface ThemeContextValue {
 	activeTheme: ThemeToken | null;
 	/** Current mode (light/dark) */
 	mode: "light" | "dark";
+	/** Session theme origin (from SSR) */
+	sessionThemeOrigin: string | null;
 	/** List of available theme tokens from wallet */
 	availableThemes: ThemeToken[];
 	/** Set available themes (called by wallet hook) */
@@ -37,6 +41,14 @@ interface ThemeContextValue {
 	setMode: (mode: "light" | "dark") => void;
 	/** Reset to default site theme */
 	resetTheme: () => void;
+}
+
+interface ThemeProviderProps {
+	children: ReactNode;
+	/** Theme origin from SSR session */
+	initialThemeOrigin?: string | null;
+	/** Whether user already has a session cookie */
+	hasExistingSession?: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -188,10 +200,29 @@ function applyThemeToDocument(styles: ThemeStyleProps | null): void {
 	applyThemeStyles(styles);
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({
+	children,
+	initialThemeOrigin,
+	hasExistingSession,
+}: ThemeProviderProps) {
 	const [activeTheme, setActiveTheme] = useState<ThemeToken | null>(null);
 	const [availableThemes, setAvailableThemes] = useState<ThemeToken[]>([]);
 	const [mode, setModeState] = useState<"light" | "dark">("light");
+	const [sessionThemeOrigin] = useState<string | null>(initialThemeOrigin ?? null);
+	const sessionPersisted = useRef(false);
+
+	// Persist session theme on first visit (when SSR picked a random theme)
+	useEffect(() => {
+		if (
+			initialThemeOrigin &&
+			!hasExistingSession &&
+			!sessionPersisted.current
+		) {
+			sessionPersisted.current = true;
+			// Fire and forget - persist the random theme selection
+			setSessionTheme(initialThemeOrigin).catch(console.error);
+		}
+	}, [initialThemeOrigin, hasExistingSession]);
 
 	// Load saved mode preference on mount
 	useEffect(() => {
@@ -347,6 +378,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 			value={{
 				activeTheme,
 				mode,
+				sessionThemeOrigin,
 				availableThemes,
 				setAvailableThemes,
 				applyTheme,

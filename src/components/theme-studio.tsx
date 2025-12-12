@@ -72,13 +72,64 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { exampleThemes } from "@/lib/example-themes";
 import { FontSelector } from "@/components/font-selector";
 import { loadThemeFonts } from "@/lib/fonts";
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { ConfettiExplosion } from "@/components/ui/confetti";
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
+
+// Default fallback theme used when no themes are available
+const DEFAULT_THEME: ThemeToken = {
+	$schema: "https://themetoken.dev/schema/theme-token.json",
+	name: "Default",
+	styles: {
+		light: {
+			background: "oklch(0.98 0 0)",
+			foreground: "oklch(0.15 0 0)",
+			card: "oklch(0.98 0 0)",
+			"card-foreground": "oklch(0.15 0 0)",
+			popover: "oklch(0.98 0 0)",
+			"popover-foreground": "oklch(0.15 0 0)",
+			primary: "oklch(0.25 0 0)",
+			"primary-foreground": "oklch(0.98 0 0)",
+			secondary: "oklch(0.92 0 0)",
+			"secondary-foreground": "oklch(0.25 0 0)",
+			muted: "oklch(0.92 0 0)",
+			"muted-foreground": "oklch(0.45 0 0)",
+			accent: "oklch(0.92 0 0)",
+			"accent-foreground": "oklch(0.25 0 0)",
+			destructive: "oklch(0.55 0.2 25)",
+			"destructive-foreground": "oklch(0.98 0 0)",
+			border: "oklch(0.88 0 0)",
+			input: "oklch(0.88 0 0)",
+			ring: "oklch(0.25 0 0)",
+			radius: "0.5rem",
+		},
+		dark: {
+			background: "oklch(0.15 0 0)",
+			foreground: "oklch(0.98 0 0)",
+			card: "oklch(0.15 0 0)",
+			"card-foreground": "oklch(0.98 0 0)",
+			popover: "oklch(0.15 0 0)",
+			"popover-foreground": "oklch(0.98 0 0)",
+			primary: "oklch(0.98 0 0)",
+			"primary-foreground": "oklch(0.15 0 0)",
+			secondary: "oklch(0.22 0 0)",
+			"secondary-foreground": "oklch(0.98 0 0)",
+			muted: "oklch(0.22 0 0)",
+			"muted-foreground": "oklch(0.65 0 0)",
+			accent: "oklch(0.22 0 0)",
+			"accent-foreground": "oklch(0.98 0 0)",
+			destructive: "oklch(0.55 0.2 25)",
+			"destructive-foreground": "oklch(0.98 0 0)",
+			border: "oklch(0.22 0 0)",
+			input: "oklch(0.22 0 0)",
+			ring: "oklch(0.88 0 0)",
+			radius: "0.5rem",
+		},
+	},
+};
 
 interface ThemeDraft {
 	id: string;
@@ -190,13 +241,13 @@ export function ThemeStudio() {
 	const { mode, toggleMode, activeTheme, applyThemeAnimated, availableThemes } =
 		useTheme();
 
-	// Use wallet's active theme as default if available, otherwise use first preset
+	// Use wallet's active theme as default if available, otherwise use fallback
 	const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
-		activeTheme || exampleThemes[0],
+		activeTheme || DEFAULT_THEME,
 	);
 	// Track the original theme for dirty detection and reset
 	const [originalTheme, setOriginalTheme] = useState<ThemeToken>(
-		activeTheme || exampleThemes[0],
+		activeTheme || DEFAULT_THEME,
 	);
 	const [txid, setTxid] = useState<string | null>(null);
 	const [customName, setCustomName] = useState("");
@@ -657,9 +708,8 @@ export function ThemeStudio() {
 									);
 									const wallet = availableThemes.find((t) => t.name === value);
 									const draft = drafts.find((d) => d.theme.name === value);
-									const example = exampleThemes.find((t) => t.name === value);
 									const theme =
-										onChain?.theme || wallet || draft?.theme || example;
+										onChain?.theme || wallet || draft?.theme;
 									if (theme) {
 										loadThemeFonts(theme);
 										isAnimatingRef.current = true;
@@ -792,32 +842,6 @@ export function ThemeStudio() {
 											))}
 										</SelectGroup>
 									)}
-									{/* Example Themes */}
-									<SelectGroup>
-										<SelectLabel className="text-xs text-muted-foreground">
-											Examples
-										</SelectLabel>
-										{exampleThemes.map((theme) => (
-											<SelectItem key={theme.name} value={theme.name}>
-												<div className="flex items-center gap-2">
-													<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
-														{[
-															theme.styles[mode].primary,
-															theme.styles[mode].secondary,
-															theme.styles[mode].accent,
-														].map((color, i) => (
-															<div
-																key={i}
-																className="flex-1"
-																style={{ backgroundColor: color }}
-															/>
-														))}
-													</div>
-													<span>{theme.name}</span>
-												</div>
-											</SelectItem>
-										))}
-									</SelectGroup>
 								</SelectContent>
 							</Select>
 

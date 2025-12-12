@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
+import {
+	THEME_SESSION_COOKIE,
+	parseThemeSession,
+	getThemeByOrigin,
+	getRandomCachedTheme,
+} from "@/lib/server/get-session-theme";
+import { generateInlineThemeCss } from "@/lib/server/generate-theme-css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -44,17 +52,51 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	// Read theme session from cookies
+	const cookieStore = await cookies();
+	const sessionCookie = cookieStore.get(THEME_SESSION_COOKIE);
+	const session = parseThemeSession(sessionCookie?.value);
+
+	let inlineThemeCss = "";
+	let sessionThemeOrigin: string | null = null;
+
+	if (session) {
+		// User has existing session - fetch their theme
+		const theme = await getThemeByOrigin(session.origin);
+		if (theme) {
+			inlineThemeCss = generateInlineThemeCss(theme);
+			sessionThemeOrigin = session.origin;
+		}
+	} else {
+		// First visit - pick a random theme for SSR
+		// The client will persist this via Server Action
+		const randomTheme = await getRandomCachedTheme();
+		if (randomTheme) {
+			inlineThemeCss = generateInlineThemeCss(randomTheme.theme);
+			sessionThemeOrigin = randomTheme.origin;
+		}
+	}
+
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body
-				className="font-sans antialiased"
-			>
-				<Providers>
+			<head>
+				{inlineThemeCss && (
+					<style
+						id="ssr-theme"
+						dangerouslySetInnerHTML={{ __html: inlineThemeCss }}
+					/>
+				)}
+			</head>
+			<body className="font-sans antialiased">
+				<Providers
+					initialThemeOrigin={sessionThemeOrigin}
+					hasExistingSession={!!session}
+				>
 					<div className="flex min-h-full flex-col">
 						<Header />
 						<main className="flex min-h-0 flex-1 flex-col">{children}</main>
