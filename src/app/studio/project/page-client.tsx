@@ -15,6 +15,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
 	Copy,
 	ExternalLink,
 	FolderKanban,
@@ -33,6 +40,7 @@ import { useStudioThemes, getThemePreviewColors } from "@/hooks/use-studio-theme
 import type { CachedTheme } from "@/lib/themes-cache";
 import type { IconLibrary, BaseColor, MenuColor, MenuAccent } from "@/lib/project-types";
 import { ICON_LIBRARY_PACKAGES } from "@/lib/project-types";
+import { buildProjectBundle } from "@/lib/project-builder";
 import { cn } from "@/lib/utils";
 
 interface ProjectConfig {
@@ -47,7 +55,7 @@ interface ProjectConfig {
 }
 
 export function ProjectStudioPageClient() {
-	const { status, connect, isInscribing } = useYoursWallet();
+	const { status, connect, isInscribing, inscribeBundle } = useYoursWallet();
 	const { presets, presetsByBase, isLoading: presetsLoading } = useShadcnPresets();
 	const { themes, mode, isLoading: themesLoading } = useStudioThemes();
 	const [copied, setCopied] = useState(false);
@@ -67,6 +75,11 @@ export function ProjectStudioPageClient() {
 	// Selected on-chain theme for the project
 	const [selectedTheme, setSelectedTheme] = useState<CachedTheme | null>(null);
 	const [selectedWallpaper, setSelectedWallpaper] = useState<string | null>(null);
+
+	// Success dialog state
+	const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
+	const [commandCopied, setCommandCopied] = useState(false);
 
 	// Get preview colors for the selected theme
 	const themeColors = selectedTheme
@@ -99,6 +112,38 @@ export function ProjectStudioPageClient() {
 		navigator.clipboard.writeText(cliCommand);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
+	};
+
+	const handleInscribe = async () => {
+		if (!selectedTheme) return;
+
+		// Update theme name if custom name provided
+		const projectTheme = {
+			...selectedTheme.theme,
+			name: config.name || selectedTheme.theme.name,
+		};
+
+		// Build the project bundle
+		const { items, manifest } = buildProjectBundle({
+			theme: projectTheme,
+			config: {
+				style: config.style,
+				tailwind: { baseColor: config.baseColor },
+				iconLibrary: config.iconLibrary,
+				menuColor: config.menuColor,
+				menuAccent: config.menuAccent,
+			},
+			assets: [],
+		});
+
+		// Inscribe the bundle
+		const result = await inscribeBundle(items);
+		if (result) {
+			// The last item in the bundle is the project manifest
+			const projectOrigin = result.origins[result.origins.length - 1];
+			setInscribedOrigin(projectOrigin);
+			setShowSuccessDialog(true);
+		}
 	};
 
 	const isConnected = status === "connected";
@@ -419,7 +464,7 @@ export function ProjectStudioPageClient() {
 				<Button
 					size="lg"
 					disabled={!canInscribe}
-					onClick={isConnected ? () => {} : connect}
+					onClick={isConnected ? handleInscribe : connect}
 					className="gap-2"
 				>
 					{isConnected ? (
@@ -609,6 +654,70 @@ export function ProjectStudioPageClient() {
 					</div>
 				</div>
 			</div>
+
+			{/* Success Dialog */}
+			<Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+				<DialogContent className="sm:max-w-lg">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<Check className="h-5 w-5 text-green-500" />
+							Project Inscribed
+						</DialogTitle>
+						<DialogDescription>
+							Your project has been inscribed on-chain. Use the command below to create a new project from this preset.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div>
+							<Label className="text-xs text-muted-foreground">Origin</Label>
+							<code className="block mt-1 p-2 bg-muted rounded-md text-xs font-mono break-all">
+								{inscribedOrigin}
+							</code>
+						</div>
+						<div>
+							<Label className="text-xs text-muted-foreground">CLI Command</Label>
+							<div className="relative mt-1">
+								<pre className="p-3 bg-muted rounded-md text-xs overflow-x-auto font-mono">
+									{`bunx shadcn@latest create --preset "https://themetoken.dev/init?project=${inscribedOrigin}"`}
+								</pre>
+								<Button
+									variant="ghost"
+									size="sm"
+									className="absolute top-1.5 right-1.5 h-7 px-2"
+									onClick={() => {
+										navigator.clipboard.writeText(
+											`bunx shadcn@latest create --preset "https://themetoken.dev/init?project=${inscribedOrigin}"`
+										);
+										setCommandCopied(true);
+										setTimeout(() => setCommandCopied(false), 2000);
+									}}
+								>
+									{commandCopied ? (
+										<Check className="h-3.5 w-3.5 text-green-500" />
+									) : (
+										<Copy className="h-3.5 w-3.5" />
+									)}
+								</Button>
+							</div>
+						</div>
+						<div className="flex justify-end gap-2">
+							<Button variant="outline" onClick={() => setShowSuccessDialog(false)}>
+								Close
+							</Button>
+							<Button asChild>
+								<a
+									href={`https://whatsonchain.com/tx/${inscribedOrigin?.split("_")[0]}`}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<ExternalLink className="h-4 w-4 mr-2" />
+									View on Chain
+								</a>
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</StudioDashboard>
 	);
 }
