@@ -10,11 +10,11 @@ import type { CachedTheme } from "@/lib/themes-cache";
 /** Cookie name for theme session */
 export const THEME_SESSION_COOKIE = "theme-session";
 
-const CACHE_API_URL = process.env.VERCEL_URL
-	? `https://${process.env.VERCEL_URL}/api/themes/cache`
-	: process.env.NEXT_PUBLIC_BASE_URL
-		? `${process.env.NEXT_PUBLIC_BASE_URL}/api/themes/cache`
-		: "http://localhost:3033/api/themes/cache";
+// Use the public base URL for server-side fetches
+// VERCEL_URL is a preview/build URL, not the production domain
+const CACHE_API_URL = process.env.NEXT_PUBLIC_BASE_URL
+	? `${process.env.NEXT_PUBLIC_BASE_URL}/api/themes/cache`
+	: "http://localhost:3033/api/themes/cache";
 
 interface CacheResponse {
 	themes: CachedTheme[];
