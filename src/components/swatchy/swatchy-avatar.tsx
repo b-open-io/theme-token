@@ -17,39 +17,68 @@ interface DragPosition {
 	y: number;
 }
 
+interface StoredPositions {
+	corner?: DragPosition;
+	expanded?: DragPosition;
+}
+
+const STORAGE_KEY = "swatchy-positions";
+
+function loadStoredPositions(): StoredPositions {
+	if (typeof window === "undefined") return {};
+	try {
+		const stored = localStorage.getItem(STORAGE_KEY);
+		return stored ? JSON.parse(stored) : {};
+	} catch {
+		return {};
+	}
+}
+
+function saveStoredPositions(positions: StoredPositions): void {
+	if (typeof window === "undefined") return;
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
+	} catch {
+		// Ignore storage errors
+	}
+}
+
 export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
 	const isHero = position === "hero";
 	const isExpanded = position === "expanded";
 	const isLeft = side === "left";
+	const isDraggable = isCorner || isExpanded;
 
-	// Drag state - only active in corner mode
-	const [dragPosition, setDragPosition] = useState<DragPosition | null>(null);
+	// Separate stored positions for corner and expanded modes
+	const [cornerPosition, setCornerPosition] = useState<DragPosition | null>(null);
+	const [expandedPosition, setExpandedPosition] = useState<DragPosition | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
-	const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 	const constraintsRef = useRef<{ top: number; left: number; right: number; bottom: number } | null>(null);
 
-	// Reset drag position when leaving corner mode
+	// Load stored positions on mount
 	useEffect(() => {
-		if (!isCorner) {
-			setDragPosition(null);
-		}
-	}, [isCorner]);
+		const stored = loadStoredPositions();
+		if (stored.corner) setCornerPosition(stored.corner);
+		if (stored.expanded) setExpandedPosition(stored.expanded);
+	}, []);
 
 	// Calculate constraints on mount and resize
 	useEffect(() => {
 		const updateConstraints = () => {
+			const avatarSize = isExpanded ? 280 : 80;
+			const margin = 16;
 			constraintsRef.current = {
-				top: 16,
-				left: 16,
-				right: window.innerWidth - 96, // 80px avatar + 16px margin
-				bottom: window.innerHeight - 96,
+				top: margin,
+				left: margin,
+				right: window.innerWidth - avatarSize - margin,
+				bottom: window.innerHeight - avatarSize - margin,
 			};
 		};
 		updateConstraints();
 		window.addEventListener("resize", updateConstraints);
 		return () => window.removeEventListener("resize", updateConstraints);
-	}, []);
+	}, [isExpanded]);
 
 	const handleDragStart = useCallback(() => {
 		setIsDragging(true);
@@ -57,15 +86,25 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 	const handleDragEnd = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
 		setIsDragging(false);
-		// Save the final position
-		if (constraintsRef.current) {
-			const constraints = constraintsRef.current;
-			// Clamp to constraints
-			const newX = Math.max(constraints.left, Math.min(constraints.right, info.point.x - 40));
-			const newY = Math.max(constraints.top, Math.min(constraints.bottom, info.point.y - 40));
-			setDragPosition({ x: newX, y: newY });
+		if (!constraintsRef.current) return;
+
+		const constraints = constraintsRef.current;
+		const avatarSize = isExpanded ? 280 : 80;
+		// Calculate position from pointer, accounting for avatar center
+		const newX = Math.max(constraints.left, Math.min(constraints.right, info.point.x - avatarSize / 2));
+		const newY = Math.max(constraints.top, Math.min(constraints.bottom, info.point.y - avatarSize / 2));
+		const newPos = { x: newX, y: newY };
+
+		// Update the appropriate position and persist
+		const stored = loadStoredPositions();
+		if (isExpanded) {
+			setExpandedPosition(newPos);
+			saveStoredPositions({ ...stored, expanded: newPos });
+		} else if (isCorner) {
+			setCornerPosition(newPos);
+			saveStoredPositions({ ...stored, corner: newPos });
 		}
-	}, []);
+	}, [isExpanded, isCorner]);
 
 	const handleClick = useCallback(() => {
 		// Only trigger click if we weren't dragging
@@ -81,13 +120,25 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 	const getPositionStyle = (): React.CSSProperties => {
 		if (isExpanded) {
-			// Expanded - large avatar partially behind chat
-			// On mobile: position just above the chat bubble (which is at bottom)
+			// Expanded mode - use stored position if available
+			if (expandedPosition) {
+				return {
+					position: "fixed",
+					top: expandedPosition.y,
+					left: expandedPosition.x,
+					bottom: "auto",
+					right: "auto",
+					width: isMobile ? 140 : 280,
+					height: isMobile ? 140 : 280,
+					zIndex: 50,
+				};
+			}
+			// Default expanded position
 			if (isMobile) {
 				return {
 					position: "fixed",
 					top: "auto",
-					bottom: "calc(70vh - 40px)", // Chat is 70vh tall, position just above it
+					bottom: "calc(70vh - 40px)",
 					right: -20,
 					left: "auto",
 					width: 140,
@@ -95,7 +146,6 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 					zIndex: 50,
 				};
 			}
-			// Desktop: at top right, partially behind chat
 			return {
 				position: "fixed",
 				top: -75,
@@ -109,26 +159,25 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 		}
 
 		if (isHero) {
-			// Hero pose - larger, positioned to the right side of the hero content
-			// On mobile: push further right (partially off-screen) so text is readable
+			// Hero pose - NOT draggable, click only
 			return {
 				position: "fixed",
 				top: "auto",
 				bottom: isMobile ? "20%" : "25%",
 				left: "auto",
-				right: isMobile ? "-15%" : "15%", // Negative = partially off-screen on mobile
+				right: isMobile ? "-15%" : "15%",
 				width: isMobile ? 200 : 280,
 				height: isMobile ? 200 : 280,
 				zIndex: 40,
 			};
 		}
 
-		// Corner state - use drag position if available
-		if (dragPosition) {
+		// Corner state - use stored position if available
+		if (cornerPosition) {
 			return {
 				position: "fixed",
-				top: dragPosition.y,
-				left: dragPosition.x,
+				top: cornerPosition.y,
+				left: cornerPosition.x,
 				bottom: "auto",
 				right: "auto",
 				width: 80,
@@ -137,6 +186,7 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			};
 		}
 
+		// Default corner position
 		return {
 			position: "fixed",
 			top: "auto",
@@ -194,11 +244,11 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			layout
 			style={getPositionStyle()}
 			className={`overflow-visible rounded-full focus:outline-none focus-visible:outline-none ${
-				isCorner ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+				isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
 			}`}
 			onClick={handleClick}
-			// Enable drag only in corner mode
-			drag={isCorner}
+			// Enable drag for corner and expanded modes (not hero)
+			drag={isDraggable}
 			dragMomentum={false}
 			dragElastic={0.1}
 			onDragStart={handleDragStart}
@@ -210,9 +260,9 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 				damping: isHero ? 20 : 25,
 				mass: 1,
 			}}
-			whileHover={isCorner || isHero ? { scale: 1.05 } : undefined}
-			whileTap={isCorner || isHero ? { scale: 0.95 } : undefined}
-			aria-label={isCorner || isHero ? "Open Swatchy assistant" : "Close chat"}
+			whileHover={isDraggable || isHero ? { scale: 1.05 } : undefined}
+			whileTap={isDraggable || isHero ? { scale: 0.95 } : undefined}
+			aria-label={isCorner || isHero ? "Open Swatchy assistant" : "Drag to reposition or click to close chat"}
 		>
 			{/* Wrapper with layout="preserve-aspect" prevents distortion during size transition */}
 			<motion.div className="relative h-full w-full" layout="preserve-aspect">
