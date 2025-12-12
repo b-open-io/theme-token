@@ -404,6 +404,218 @@ export function SpecPageClient() {
 				</PageContainer>
 			</section>
 
+			{/* Project Presets - registry:base */}
+			<section className="border-t border-border py-16">
+				<PageContainer>
+					<motion.div
+						initial="initial"
+						whileInView="animate"
+						viewport={{ once: true }}
+						variants={stagger}
+					>
+						<motion.p
+							variants={fadeIn}
+							className="font-mono text-sm text-primary"
+						>
+							{"// Project Presets"}
+						</motion.p>
+						<motion.h2
+							variants={fadeIn}
+							className="mb-4 text-3xl font-bold sm:text-4xl"
+						>
+							Complete Project Bundles
+						</motion.h2>
+						<motion.p
+							variants={fadeIn}
+							className="mb-12 max-w-2xl text-muted-foreground"
+						>
+							Project presets bundle themes, fonts, icons, and configuration
+							into complete shadcn/create bases. Create entire projects with one command.
+						</motion.p>
+					</motion.div>
+
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						viewport={{ once: true }}
+						className="mx-auto max-w-2xl mb-12"
+					>
+						<div className="rounded-xl border border-primary/20 bg-card p-6">
+							<div className="mb-4 flex items-center gap-2">
+								<Terminal className="h-5 w-5 text-primary" />
+								<span className="font-semibold">Create Project from Preset</span>
+							</div>
+							<div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 font-mono text-sm">
+								<code className="flex-1 overflow-x-auto text-muted-foreground">
+									<span className="text-primary">bunx</span> shadcn@latest create{" "}
+									<span className="text-foreground">
+										--preset &quot;https://themetoken.dev/init?project=[origin]&quot;
+									</span>
+								</code>
+								<button
+									type="button"
+									onClick={() => copyToClipboard(
+										'bunx shadcn@latest create --preset "https://themetoken.dev/init?project=[origin]"',
+										"project-cli"
+									)}
+									className="flex-shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									title="Copy command"
+								>
+									{copied === "project-cli" ? (
+										<Check className="h-4 w-4 text-green-500" />
+									) : (
+										<Copy className="h-4 w-4" />
+									)}
+								</button>
+							</div>
+							<p className="mt-3 text-center text-xs text-muted-foreground">
+								Replace <code className="rounded bg-muted px-1">[origin]</code>{" "}
+								with the project inscription origin
+							</p>
+						</div>
+					</motion.div>
+
+					<div className="grid gap-8 lg:grid-cols-2 lg:items-start overflow-hidden">
+						{/* Project Features */}
+						<motion.div
+							initial={{ opacity: 0, x: -20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							className="space-y-4"
+						>
+							<h3 className="font-semibold">Project Bundle Contents</h3>
+
+							<div className="space-y-3">
+								<div className="rounded-lg border border-border bg-card p-4">
+									<div className="flex items-center gap-2 mb-2">
+										<div className="h-2 w-2 rounded-full bg-primary" />
+										<span className="font-medium text-sm">Theme Styles</span>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										Complete light/dark CSS variables including sidebar and chart colors
+									</p>
+								</div>
+
+								<div className="rounded-lg border border-border bg-card p-4">
+									<div className="flex items-center gap-2 mb-2">
+										<div className="h-2 w-2 rounded-full bg-primary" />
+										<span className="font-medium text-sm">Dependencies</span>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										shadcn, CVA, animations, icon library packages
+									</p>
+								</div>
+
+								<div className="rounded-lg border border-border bg-card p-4">
+									<div className="flex items-center gap-2 mb-2">
+										<div className="h-2 w-2 rounded-full bg-primary" />
+										<span className="font-medium text-sm">CLI Configuration</span>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										Base color, menu style, icon library, font settings
+									</p>
+								</div>
+
+								<div className="rounded-lg border border-border bg-card p-4">
+									<div className="flex items-center gap-2 mb-2">
+										<div className="h-2 w-2 rounded-full bg-primary" />
+										<span className="font-medium text-sm">On-Chain Assets</span>
+										<span className="text-[10px] text-muted-foreground">(optional)</span>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										Bundled fonts, patterns, or wallpapers via vout references
+									</p>
+								</div>
+							</div>
+
+							<div className="pt-2">
+								<p className="text-xs text-muted-foreground mb-2">
+									Query parameter overrides:
+								</p>
+								<div className="flex flex-wrap gap-1 font-mono text-xs">
+									{["iconLibrary", "baseColor", "menuColor", "menuAccent"].map((param) => (
+										<div
+											key={param}
+											className="rounded border border-border bg-muted/30 px-2 py-1"
+										>
+											{param}
+										</div>
+									))}
+								</div>
+							</div>
+						</motion.div>
+
+						{/* Project Schema */}
+						<motion.div
+							initial={{ opacity: 0, x: 20 }}
+							whileInView={{ opacity: 1, x: 0 }}
+							viewport={{ once: true }}
+							className="flex flex-col min-w-0"
+						>
+							<h3 className="mb-4 font-semibold">registry:base Schema</h3>
+							<CodeBlock
+								code={JSON.stringify({
+									type: "registry:base",
+									name: "My Project",
+									extends: "none",
+									dependencies: [
+										"shadcn@latest",
+										"class-variance-authority",
+										"tw-animate-css",
+										"lucide-react"
+									],
+									registryDependencies: ["utils"],
+									cssVars: {
+										light: {
+											background: "oklch(...)",
+											primary: "oklch(...)",
+											sidebar: "oklch(...)",
+											"chart-1": "oklch(...)"
+										},
+										dark: {
+											background: "oklch(...)",
+											primary: "oklch(...)",
+											sidebar: "oklch(...)",
+											"chart-1": "oklch(...)"
+										}
+									},
+									css: {
+										"@import \"tw-animate-css\"": {},
+										"@import \"shadcn/tailwind.css\"": {},
+										"@layer base": {
+											"*": { "@apply border-border outline-ring/50": "" },
+											body: { "@apply bg-background text-foreground": "" }
+										}
+									},
+									config: {
+										style: "my-style",
+										tailwind: { baseColor: "zinc" },
+										iconLibrary: "lucide",
+										menuColor: "default",
+										menuAccent: "subtle"
+									},
+									bundle: {
+										version: 2,
+										assets: [
+											{ vout: 0, type: "font", slot: "sans" }
+										]
+									}
+								}, null, 2)}
+								language="json"
+								className="h-[500px]"
+							/>
+							<p className="mt-3 text-xs text-muted-foreground">
+								Served via{" "}
+								<code className="rounded bg-muted px-1">/init?project=[origin]</code>{" "}
+								for <code className="rounded bg-muted px-1">shadcn create --preset</code>.
+								Bundle assets use <code className="rounded bg-muted px-1">{"{{vout:N}}"}</code>{" "}
+								references resolved to ORDFS URLs.
+							</p>
+						</motion.div>
+					</div>
+				</PageContainer>
+			</section>
+
 			{/* On-Chain Protocol / MAP Metadata */}
 			<section className="border-t border-border bg-muted/30 py-16">
 				<PageContainer>

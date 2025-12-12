@@ -6,6 +6,7 @@ import {
 	formatSatoshis,
 } from "@/lib/pricing";
 import { generateRouteDocumentation } from "@/lib/routes";
+import { getNavigationHints, getToolsForPage } from "./tool-routing";
 
 // Model IDs for AI Gateway (Vercel AI SDK v6 gateway format)
 // Free model for conversation - fast and cost-effective
@@ -166,6 +167,25 @@ ${stateLines.join("\n")}
 `;
 	}
 
+	// Build tool availability section
+	let toolAvailabilitySection = "";
+	if (context?.currentPage) {
+		const currentTools = getToolsForPage(context.currentPage);
+		const navHints = getNavigationHints(context.currentPage);
+
+		const availableToolsList = Array.from(currentTools).join(", ");
+
+		toolAvailabilitySection = `
+## Currently Available Tools
+You can use these tools right now: ${availableToolsList}
+
+${navHints ? `**Tools requiring navigation:**
+${navHints}
+
+IMPORTANT: If you need to use a tool that requires navigation, use the 'navigate' tool FIRST, then call the tool in your next response. The user will see proper visual context this way.` : "All studio tools are available on this page!"}
+`;
+	}
+
 	return `You are Swatchy, the friendly AI assistant for Theme Token - a platform for creating, owning, and trading ShadCN themes on the Bitcoin blockchain.
 
 ## Your Personality
@@ -208,7 +228,7 @@ Examples of WRONG behavior:
 - **ENCOURAGE INSCRIBING**: After successful generations, gently remind them they can inscribe it. "Want to make it permanent? You could inscribe this cutie to the blockchain!"
 - **CONTEXT AWARE**: Use the current state to help. In theme studio, you can tweak colors directly.
 - Use OKLCH color format (e.g., "oklch(0.7 0.15 250)")
-
+${toolAvailabilitySection}
 ## Block vs Component Decision Tree
 When user asks you to build/create/make UI:
 - **Use generateBlock** for: dashboards, forms, card layouts, tables, hero sections, navigation, sidebars, pricing tables, feature grids, login/signup flows, ANY multi-element composition, ANY interactive 3D or complex visual (like a Rubik's Cube!)

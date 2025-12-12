@@ -185,6 +185,51 @@ All components use CSS variables for theme-awareness.`,
 });
 
 // ============================================================================
+// Project Composition Tool (Paid - assemble complete presets)
+// ============================================================================
+
+export const createProject = tool({
+	description: `Create a complete shadcn/create project preset by composing available on-chain assets. This costs 1,000,000 satoshis (~0.01 BSV).
+
+The AI will:
+1. Look at available themes, fonts, icons, and patterns the user owns or has access to
+2. Based on the prompt, select and combine appropriate assets
+3. Generate a complete preset configuration ready for shadcn/create
+
+Projects can include:
+- A theme (colors, typography, radius)
+- Custom fonts (sans, serif, mono)
+- Icon sets
+- Background patterns or wallpapers
+- Additional configuration
+
+Use this when users want to assemble multiple assets into a cohesive project.`,
+	inputSchema: z.object({
+		prompt: z
+			.string()
+			.describe(
+				"Description of the desired project (e.g., 'a dark cyberpunk portfolio site with my neon theme and pixel font', 'clean minimal blog using my earthy theme')",
+			),
+		themeName: z
+			.string()
+			.optional()
+			.describe("Optional: specific theme name or origin to use"),
+		fontSans: z
+			.string()
+			.optional()
+			.describe("Optional: specific sans font to use"),
+		fontMono: z
+			.string()
+			.optional()
+			.describe("Optional: specific mono font to use"),
+		includePatterns: z
+			.boolean()
+			.optional()
+			.describe("Whether to include background patterns"),
+	}),
+});
+
+// ============================================================================
 // Studio Control Tools (Free - manipulate current studio state)
 // ============================================================================
 
@@ -325,6 +370,7 @@ export const getExchangeRate = tool({
 // ============================================================================
 
 import { featureFlags } from "@/lib/feature-flags";
+import { getToolsForPage, type ToolName } from "./tool-routing";
 
 /**
  * Get all available tools based on feature flags
@@ -363,9 +409,32 @@ export function getAvailableTools() {
 	if (featureFlags.registry) {
 		tools.generateBlock = generateBlock;
 		tools.generateComponent = generateComponent;
+		tools.createProject = createProject;
 	}
 
 	return tools;
+}
+
+/**
+ * Get tools filtered by current page context
+ *
+ * This ensures only relevant tools are exposed to the model.
+ * Studio-specific tools only appear when on that studio page.
+ */
+export function getPageAwareTools(pathname: string) {
+	const allAvailableTools = getAvailableTools();
+	const allowedTools = getToolsForPage(pathname);
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const filteredTools: Record<string, any> = {};
+
+	for (const [name, tool] of Object.entries(allAvailableTools)) {
+		if (allowedTools.has(name as ToolName)) {
+			filteredTools[name] = tool;
+		}
+	}
+
+	return filteredTools;
 }
 
 export const allTools = {
@@ -376,6 +445,7 @@ export const allTools = {
 	generateWallpaper,
 	generateBlock,
 	generateComponent,
+	createProject,
 	setThemeColor,
 	setThemeRadius,
 	setThemeFont,
@@ -386,4 +456,5 @@ export const allTools = {
 	getExchangeRate,
 };
 
-export type ToolName = keyof typeof allTools;
+// Re-export ToolName from tool-routing for backwards compatibility
+export type { ToolName } from "./tool-routing";

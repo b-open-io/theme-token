@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { useShadcnPresets, type ShadcnPreset } from "@/hooks/use-shadcn-presets";
+import { useStudioThemes, getThemePreviewColors } from "@/hooks/use-studio-themes";
+import type { CachedTheme } from "@/lib/themes-cache";
 import type { IconLibrary, BaseColor, MenuColor, MenuAccent } from "@/lib/project-types";
 import { ICON_LIBRARY_PACKAGES } from "@/lib/project-types";
 import { cn } from "@/lib/utils";
@@ -47,6 +49,7 @@ interface ProjectConfig {
 export function ProjectStudioPageClient() {
 	const { status, connect, isInscribing } = useYoursWallet();
 	const { presets, presetsByBase, isLoading: presetsLoading } = useShadcnPresets();
+	const { themes, mode, isLoading: themesLoading } = useStudioThemes();
 	const [copied, setCopied] = useState(false);
 	const [selectedPreset, setSelectedPreset] = useState<ShadcnPreset | null>(null);
 
@@ -61,9 +64,14 @@ export function ProjectStudioPageClient() {
 		menuAccent: "subtle",
 	});
 
-	// Placeholder states for asset selection
-	const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+	// Selected on-chain theme for the project
+	const [selectedTheme, setSelectedTheme] = useState<CachedTheme | null>(null);
 	const [selectedWallpaper, setSelectedWallpaper] = useState<string | null>(null);
+
+	// Get preview colors for the selected theme
+	const themeColors = selectedTheme
+		? getThemePreviewColors(selectedTheme.theme, mode)
+		: null;
 
 	// Get unique styles for the selected base
 	const availablePresets = config.base === "radix" ? presetsByBase.radix : presetsByBase.base;
@@ -94,7 +102,7 @@ export function ProjectStudioPageClient() {
 	};
 
 	const isConnected = status === "connected";
-	const canInscribe = isConnected && !isInscribing && selectedTheme;
+	const canInscribe = isConnected && !isInscribing && selectedTheme !== null;
 
 	// Estimate bundle size (placeholder)
 	const estimatedSize = "~50 KB";
@@ -207,13 +215,44 @@ export function ProjectStudioPageClient() {
 									<Label className="text-xs font-medium">Theme</Label>
 								</div>
 								<div className="flex gap-2">
-									<Select value={selectedTheme ?? ""} onValueChange={setSelectedTheme}>
+									<Select
+										value={selectedTheme?.origin ?? ""}
+										onValueChange={(origin) => {
+											const theme = themes.find((t) => t.origin === origin);
+											setSelectedTheme(theme ?? null);
+										}}
+									>
 										<SelectTrigger className="flex-1 h-9">
-											<SelectValue placeholder="Select theme..." />
+											<SelectValue placeholder={themesLoading ? "Loading..." : "Select theme..."} />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="current">Current Theme</SelectItem>
-											<SelectItem value="new">Create New...</SelectItem>
+											{themesLoading ? (
+												<SelectItem value="" disabled>
+													<span className="flex items-center gap-2">
+														<Loader2 className="h-3 w-3 animate-spin" />
+														Loading themes...
+													</span>
+												</SelectItem>
+											) : themes.length === 0 ? (
+												<SelectItem value="" disabled>
+													No themes available
+												</SelectItem>
+											) : (
+												themes.map((cached) => {
+													const colors = getThemePreviewColors(cached.theme, mode);
+													return (
+														<SelectItem key={cached.origin} value={cached.origin}>
+															<span className="flex items-center gap-2">
+																<span
+																	className="h-3 w-3 rounded-full border border-border"
+																	style={{ backgroundColor: colors.primary }}
+																/>
+																{cached.theme.name}
+															</span>
+														</SelectItem>
+													);
+												})
+											)}
 										</SelectContent>
 									</Select>
 									<Button variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
@@ -429,15 +468,24 @@ export function ProjectStudioPageClient() {
 									<div>
 										<h3 className="font-medium text-sm">Theme</h3>
 										<p className="text-xs text-muted-foreground">
-											{selectedTheme ? "Selected" : "Not selected"}
+											{selectedTheme ? selectedTheme.theme.name : "Not selected"}
 										</p>
 									</div>
 								</div>
-								{selectedTheme ? (
+								{selectedTheme && themeColors ? (
 									<div className="flex h-8 rounded-md overflow-hidden border border-border">
-										<div className="flex-1 bg-primary" />
-										<div className="flex-1 bg-secondary" />
-										<div className="flex-1 bg-accent" />
+										<div
+											className="flex-1"
+											style={{ backgroundColor: themeColors.primary }}
+										/>
+										<div
+											className="flex-1"
+											style={{ backgroundColor: themeColors.secondary }}
+										/>
+										<div
+											className="flex-1"
+											style={{ backgroundColor: themeColors.accent }}
+										/>
 									</div>
 								) : (
 									<div className="flex items-center justify-center h-8 rounded-md border border-dashed border-border text-xs text-muted-foreground">

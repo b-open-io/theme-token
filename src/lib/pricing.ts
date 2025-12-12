@@ -50,6 +50,7 @@ export const BASE_PRICES = {
 	generateWallpaper: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateBlock: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateComponent: 500_000, // 500K sats (~$0.005 BSV)
+	createProject: 1_000_000, // 1M sats (~$0.01 BSV) - compose assets into preset
 
 	// Inscription fees (approximate, actual may vary by size)
 	inscriptionBase: 1_000, // Base inscription fee
@@ -71,6 +72,7 @@ export const PAID_TOOLS = new Set<PricingTool>([
 	"generateWallpaper",
 	"generateBlock",
 	"generateComponent",
+	"createProject",
 ]);
 
 /**

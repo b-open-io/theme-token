@@ -76,60 +76,9 @@ import { FontSelector } from "@/components/font-selector";
 import { loadThemeFonts } from "@/lib/fonts";
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { ConfettiExplosion } from "@/components/ui/confetti";
+// No hardcoded fallback - use activeTheme from SSR or first cached theme
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
-
-// Default fallback theme used when no themes are available
-const DEFAULT_THEME: ThemeToken = {
-	$schema: "https://themetoken.dev/schema/theme-token.json",
-	name: "Default",
-	styles: {
-		light: {
-			background: "oklch(0.98 0 0)",
-			foreground: "oklch(0.15 0 0)",
-			card: "oklch(0.98 0 0)",
-			"card-foreground": "oklch(0.15 0 0)",
-			popover: "oklch(0.98 0 0)",
-			"popover-foreground": "oklch(0.15 0 0)",
-			primary: "oklch(0.25 0 0)",
-			"primary-foreground": "oklch(0.98 0 0)",
-			secondary: "oklch(0.92 0 0)",
-			"secondary-foreground": "oklch(0.25 0 0)",
-			muted: "oklch(0.92 0 0)",
-			"muted-foreground": "oklch(0.45 0 0)",
-			accent: "oklch(0.92 0 0)",
-			"accent-foreground": "oklch(0.25 0 0)",
-			destructive: "oklch(0.55 0.2 25)",
-			"destructive-foreground": "oklch(0.98 0 0)",
-			border: "oklch(0.88 0 0)",
-			input: "oklch(0.88 0 0)",
-			ring: "oklch(0.25 0 0)",
-			radius: "0.5rem",
-		},
-		dark: {
-			background: "oklch(0.15 0 0)",
-			foreground: "oklch(0.98 0 0)",
-			card: "oklch(0.15 0 0)",
-			"card-foreground": "oklch(0.98 0 0)",
-			popover: "oklch(0.15 0 0)",
-			"popover-foreground": "oklch(0.98 0 0)",
-			primary: "oklch(0.98 0 0)",
-			"primary-foreground": "oklch(0.15 0 0)",
-			secondary: "oklch(0.22 0 0)",
-			"secondary-foreground": "oklch(0.98 0 0)",
-			muted: "oklch(0.22 0 0)",
-			"muted-foreground": "oklch(0.65 0 0)",
-			accent: "oklch(0.22 0 0)",
-			"accent-foreground": "oklch(0.98 0 0)",
-			destructive: "oklch(0.55 0.2 25)",
-			"destructive-foreground": "oklch(0.98 0 0)",
-			border: "oklch(0.22 0 0)",
-			input: "oklch(0.22 0 0)",
-			ring: "oklch(0.88 0 0)",
-			radius: "0.5rem",
-		},
-	},
-};
 
 interface ThemeDraft {
 	id: string;
@@ -241,14 +190,10 @@ export function ThemeStudio() {
 	const { mode, toggleMode, activeTheme, applyThemeAnimated, availableThemes } =
 		useTheme();
 
-	// Use wallet's active theme as default if available, otherwise use fallback
-	const [selectedTheme, setSelectedTheme] = useState<ThemeToken>(
-		activeTheme || DEFAULT_THEME,
-	);
+	// Use wallet's active theme as default - will be set from SSR or first cached theme
+	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(activeTheme);
 	// Track the original theme for dirty detection and reset
-	const [originalTheme, setOriginalTheme] = useState<ThemeToken>(
-		activeTheme || DEFAULT_THEME,
-	);
+	const [originalTheme, setOriginalTheme] = useState<ThemeToken | null>(activeTheme);
 	const [txid, setTxid] = useState<string | null>(null);
 	const [customName, setCustomName] = useState("");
 	
@@ -257,7 +202,9 @@ export function ThemeStudio() {
 	const urlSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// Dirty state detection - compare selectedTheme styles with originalTheme styles
-	const isDirty = JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles);
+	const isDirty = selectedTheme && originalTheme
+		? JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles)
+		: false;
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
 	const [selectedThemeOrigin, setSelectedThemeOrigin] = useState<string | null>(null);
@@ -276,6 +223,15 @@ export function ThemeStudio() {
 		queryFn: fetchThemeMarketListings,
 		staleTime: 5 * 60 * 1000,
 	});
+
+	// Initialize from cached themes if no active theme from SSR
+	useEffect(() => {
+		if (!selectedTheme && onChainThemes.length > 0) {
+			const firstTheme = onChainThemes[0].theme;
+			setSelectedTheme(firstTheme);
+			setOriginalTheme(firstTheme);
+		}
+	}, [selectedTheme, onChainThemes]);
 
 	// Map of origin -> listing for quick lookup
 	const listingsByOrigin = new Map<string, ThemeMarketListing>();
@@ -361,19 +317,19 @@ export function ThemeStudio() {
 
 	// Sync state to URL (debounced)
 	const syncToUrl = useCallback(() => {
-		if (!isInitialized.current) return;
+		if (!isInitialized.current || !selectedTheme) return;
 		if (urlSyncTimeout.current) clearTimeout(urlSyncTimeout.current);
-		
+
 		urlSyncTimeout.current = setTimeout(() => {
 			const params = new URLSearchParams();
-			
+
 			// Encode current styles
 			const encoded = encodeStyles(selectedTheme.styles);
 			if (encoded) params.set("styles", encoded);
-			
+
 			// Add name if custom
 			if (customName.trim()) params.set("name", customName.trim());
-			
+
 			// Add tab if not default
 			if (editorSubTab !== "colors") params.set("tab", editorSubTab);
 
@@ -381,7 +337,7 @@ export function ThemeStudio() {
 			const url = queryString ? `${pathname}?${queryString}` : pathname;
 			router.replace(url, { scroll: false });
 		}, 500); // 500ms debounce
-	}, [selectedTheme.styles, customName, editorSubTab, pathname, router]);
+	}, [selectedTheme, customName, editorSubTab, pathname, router]);
 
 	// Trigger URL sync when relevant state changes
 	useEffect(() => {
@@ -464,6 +420,7 @@ export function ThemeStudio() {
 	}, []);
 
 	const handleSaveDraft = () => {
+		if (!selectedTheme) return;
 		const draft: ThemeDraft = {
 			id: Date.now().toString(),
 			theme: {
@@ -484,7 +441,7 @@ export function ThemeStudio() {
 
 	// Apply theme to DOM directly for preview (skip during animated transitions)
 	useEffect(() => {
-		if (isAnimatingRef.current) return;
+		if (isAnimatingRef.current || !selectedTheme) return;
 		applyThemeToDOM(selectedTheme.styles[mode]);
 	}, [selectedTheme, mode]);
 
@@ -508,9 +465,10 @@ export function ThemeStudio() {
 	const consumePendingRadiusChange = useStudioStore((s) => s.consumePendingRadiusChange);
 
 	useEffect(() => {
-		if (pendingColorChange) {
+		if (pendingColorChange && selectedTheme) {
 			const { colorKey, value, mode: updateMode } = pendingColorChange;
-			setSelectedTheme((prev: ThemeToken) => {
+			setSelectedTheme((prev) => {
+				if (!prev) return prev;
 				const updated = { ...prev, styles: { ...prev.styles } };
 				if (updateMode === "light" || updateMode === "both") {
 					updated.styles.light = { ...updated.styles.light, [colorKey]: value };
@@ -522,33 +480,37 @@ export function ThemeStudio() {
 			});
 			consumePendingColorChange();
 		}
-	}, [pendingColorChange, consumePendingColorChange]);
+	}, [pendingColorChange, selectedTheme, consumePendingColorChange]);
 
 	useEffect(() => {
-		if (pendingRadiusChange) {
-			setSelectedTheme((prev: ThemeToken) => ({
-				...prev,
-				styles: {
-					...prev.styles,
-					light: { ...prev.styles.light, radius: pendingRadiusChange },
-					dark: { ...prev.styles.dark, radius: pendingRadiusChange },
-				},
-			}));
+		if (pendingRadiusChange && selectedTheme) {
+			setSelectedTheme((prev) => {
+				if (!prev) return prev;
+				return {
+					...prev,
+					styles: {
+						...prev.styles,
+						light: { ...prev.styles.light, radius: pendingRadiusChange },
+						dark: { ...prev.styles.dark, radius: pendingRadiusChange },
+					},
+				};
+			});
 			consumePendingRadiusChange();
 		}
-	}, [pendingRadiusChange, consumePendingRadiusChange]);
+	}, [pendingRadiusChange, selectedTheme, consumePendingRadiusChange]);
 
 	// Update theme name when customName changes
 	useEffect(() => {
-		if (customName.trim()) {
-			setSelectedTheme((prev: ThemeToken) => ({
-				...prev,
-				name: customName.trim(),
-			}));
+		if (customName.trim() && selectedTheme) {
+			setSelectedTheme((prev) => {
+				if (!prev) return prev;
+				return { ...prev, name: customName.trim() };
+			});
 		}
-	}, [customName]);
+	}, [customName, selectedTheme]);
 
 	const handleConfirmInscribe = async (data: { name: string; author: string }) => {
+		if (!selectedTheme) return;
 		const themeToMint: ThemeToken = {
 			...selectedTheme,
 			name: data.name,
@@ -575,6 +537,7 @@ export function ThemeStudio() {
 
 	// Reset to original theme
 	const handleReset = async () => {
+		if (!originalTheme) return;
 		isAnimatingRef.current = true;
 		setSelectedTheme(originalTheme);
 		setCustomName("");
@@ -585,19 +548,22 @@ export function ThemeStudio() {
 	// Update a single color in the current mode
 	const updateColor = (key: string, value: string) => {
 		// Auto-generate custom name on first modification
-		if (!isDirty && !customName) {
+		if (!isDirty && !customName && originalTheme) {
 			setCustomName(`${originalTheme.name} 2`);
 		}
-		setSelectedTheme((prev: ThemeToken) => ({
-			...prev,
-			styles: {
-				...prev.styles,
-				[mode]: {
-					...prev.styles[mode],
-					[key]: value,
+		setSelectedTheme((prev) => {
+			if (!prev) return prev;
+			return {
+				...prev,
+				styles: {
+					...prev.styles,
+					[mode]: {
+						...prev.styles[mode],
+						[key]: value,
+					},
 				},
-			},
-		}));
+			};
+		});
 
 		// If updating a font, load it immediately
 		if (key.startsWith("font-") && value) {
@@ -611,6 +577,15 @@ export function ThemeStudio() {
 			loadThemeFonts(tempTheme);
 		}
 	};
+
+	// Show loading state while waiting for theme data
+	if (!selectedTheme) {
+		return (
+			<div className="flex items-center justify-center h-96">
+				<div className="text-muted-foreground">Loading theme...</div>
+			</div>
+		);
+	}
 
 	return (
 		<>
@@ -1463,7 +1438,7 @@ export function ThemeStudio() {
 								}
 							/>
 							{/* Reset Button - only show when dirty */}
-							{isDirty && (
+							{isDirty && originalTheme && (
 								<button
 									type="button"
 									onClick={handleReset}
@@ -1488,7 +1463,7 @@ export function ThemeStudio() {
 			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
 				<div className="flex items-center gap-2">
 					{/* Dirty indicator and base theme name */}
-					{isDirty && (
+					{isDirty && originalTheme && (
 						<div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400">
 							<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
 							Modified from {originalTheme.name}

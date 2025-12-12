@@ -12,6 +12,7 @@ import {
 } from "@/lib/agent/config";
 import { PAID_TOOLS, getPrice, type PricingTool } from "@/lib/pricing";
 import type { ToolName } from "@/lib/agent/tools";
+import { isToolValidForPage, getToolValidationError } from "@/lib/agent/tool-routing";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
 import { dispatchRemixTheme, saveAIThemeToDrafts } from "@/components/theme-gallery";
@@ -276,6 +277,11 @@ export function useSwatchyChat() {
 	// Handle non-paid tool execution (client-side)
 	const handleToolExecution = useCallback(
 		(toolName: ToolName, args: Record<string, unknown>): string => {
+			// Execution-time validation - fail-safe for page-specific tools
+			if (!isToolValidForPage(toolName, pathname)) {
+				return getToolValidationError(toolName, pathname);
+			}
+
 			switch (toolName) {
 				case "navigate": {
 					const destination = args.destination as string;
@@ -348,7 +354,7 @@ export function useSwatchyChat() {
 					return `Unknown tool: ${toolName}`;
 			}
 		},
-		[router, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors, resolveDestination],
+		[router, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors, resolveDestination, pathname],
 	);
 
 	// Execute paid tool after payment is confirmed

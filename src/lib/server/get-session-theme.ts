@@ -6,6 +6,7 @@
 
 import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
 import type { CachedTheme } from "@/lib/themes-cache";
+import { DEFAULT_THEME_ORIGIN, fetchDefaultTheme } from "@/lib/default-theme";
 
 /** Cookie name for theme session */
 export const THEME_SESSION_COOKIE = "theme-session";
@@ -49,20 +50,50 @@ export async function fetchCachedThemesServer(): Promise<CachedTheme[]> {
 /**
  * Get a random theme from the cache
  *
- * Returns null if cache is empty.
+ * If cache is empty, fetches the default theme from chain and caches it.
  */
 export async function getRandomCachedTheme(): Promise<CachedTheme | null> {
 	const themes = await fetchCachedThemesServer();
-	if (themes.length === 0) return null;
+
+	if (themes.length === 0) {
+		// Cache is empty - fetch default theme from chain and cache it
+		const defaultTheme = await fetchDefaultTheme();
+		if (defaultTheme) {
+			// Add to cache for future requests
+			await addThemeToCache(DEFAULT_THEME_ORIGIN, defaultTheme);
+			return {
+				origin: DEFAULT_THEME_ORIGIN,
+				theme: defaultTheme,
+				inscribedAt: Date.now(),
+			};
+		}
+		return null;
+	}
 
 	const randomIndex = Math.floor(Math.random() * themes.length);
 	return themes[randomIndex];
 }
 
 /**
+ * Add a theme to the server-side cache
+ */
+async function addThemeToCache(origin: string, theme: ThemeToken): Promise<void> {
+	try {
+		await fetch(CACHE_API_URL, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ origin, theme }),
+		});
+	} catch (error) {
+		console.error("[server] Failed to add theme to cache:", error);
+	}
+}
+
+/**
  * Fetch a specific theme by origin
  *
- * First checks cache, then falls back to direct fetch.
+ * First checks cache, then falls back to direct fetch from chain.
+ * Caches the result if fetched from chain.
  */
 export async function getThemeByOrigin(origin: string): Promise<ThemeToken | null> {
 	// Try cache first
@@ -72,9 +103,15 @@ export async function getThemeByOrigin(origin: string): Promise<ThemeToken | nul
 		return cached.theme;
 	}
 
-	// Fall back to direct fetch
+	// Fall back to direct fetch from chain
 	const published = await fetchThemeByOrigin(origin);
-	return published?.theme ?? null;
+	if (published?.theme) {
+		// Cache it for future requests
+		await addThemeToCache(origin, published.theme);
+		return published.theme;
+	}
+
+	return null;
 }
 
 /**
