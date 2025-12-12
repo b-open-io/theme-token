@@ -467,7 +467,7 @@ export function ThemeStudio() {
 	useEffect(() => {
 		if (pendingColorChange && selectedTheme) {
 			const { colorKey, value, mode: updateMode } = pendingColorChange;
-			setSelectedTheme((prev) => {
+			setSelectedTheme((prev: ThemeToken | null) => {
 				if (!prev) return prev;
 				const updated = { ...prev, styles: { ...prev.styles } };
 				if (updateMode === "light" || updateMode === "both") {
@@ -484,7 +484,7 @@ export function ThemeStudio() {
 
 	useEffect(() => {
 		if (pendingRadiusChange && selectedTheme) {
-			setSelectedTheme((prev) => {
+			setSelectedTheme((prev: ThemeToken | null) => {
 				if (!prev) return prev;
 				return {
 					...prev,
@@ -502,7 +502,7 @@ export function ThemeStudio() {
 	// Update theme name when customName changes
 	useEffect(() => {
 		if (customName.trim() && selectedTheme) {
-			setSelectedTheme((prev) => {
+			setSelectedTheme((prev: ThemeToken | null) => {
 				if (!prev) return prev;
 				return { ...prev, name: customName.trim() };
 			});
@@ -551,7 +551,7 @@ export function ThemeStudio() {
 		if (!isDirty && !customName && originalTheme) {
 			setCustomName(`${originalTheme.name} 2`);
 		}
-		setSelectedTheme((prev) => {
+		setSelectedTheme((prev: ThemeToken | null) => {
 			if (!prev) return prev;
 			return {
 				...prev,
