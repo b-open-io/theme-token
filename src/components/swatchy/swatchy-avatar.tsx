@@ -3,7 +3,7 @@
 import type React from "react";
 import { motion, type PanInfo } from "framer-motion";
 import Image from "next/image";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
 
 interface SwatchyAvatarProps {
@@ -54,7 +54,6 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const [cornerPosition, setCornerPosition] = useState<DragPosition | null>(null);
 	const [expandedPosition, setExpandedPosition] = useState<DragPosition | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
-	const constraintsRef = useRef<{ top: number; left: number; right: number; bottom: number } | null>(null);
 
 	// Load stored positions on mount
 	useEffect(() => {
@@ -63,37 +62,19 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 		if (stored.expanded) setExpandedPosition(stored.expanded);
 	}, []);
 
-	// Calculate constraints on mount and resize
-	useEffect(() => {
-		const updateConstraints = () => {
-			const avatarSize = isExpanded ? 280 : 80;
-			const margin = 16;
-			constraintsRef.current = {
-				top: margin,
-				left: margin,
-				right: window.innerWidth - avatarSize - margin,
-				bottom: window.innerHeight - avatarSize - margin,
-			};
-		};
-		updateConstraints();
-		window.addEventListener("resize", updateConstraints);
-		return () => window.removeEventListener("resize", updateConstraints);
-	}, [isExpanded]);
-
 	const handleDragStart = useCallback(() => {
 		setIsDragging(true);
 	}, []);
 
-	const handleDragEnd = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+	const handleDragEnd = useCallback((event: MouseEvent | TouchEvent | PointerEvent, _info: PanInfo) => {
 		setIsDragging(false);
-		if (!constraintsRef.current) return;
 
-		const constraints = constraintsRef.current;
-		const avatarSize = isExpanded ? 280 : 80;
-		// Calculate position from pointer, accounting for avatar center
-		const newX = Math.max(constraints.left, Math.min(constraints.right, info.point.x - avatarSize / 2));
-		const newY = Math.max(constraints.top, Math.min(constraints.bottom, info.point.y - avatarSize / 2));
-		const newPos = { x: newX, y: newY };
+		// Get the element's actual rendered position (includes transforms from drag)
+		const element = (event.target as HTMLElement).closest('button');
+		if (!element) return;
+
+		const rect = element.getBoundingClientRect();
+		const newPos = { x: rect.left, y: rect.top };
 
 		// Update the appropriate position and persist
 		const stored = loadStoredPositions();
