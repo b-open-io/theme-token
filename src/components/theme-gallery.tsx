@@ -272,7 +272,7 @@ export function ThemeGallery() {
 	const duration = Math.max(baseSpeed, itemCount * 3);
 
 	return (
-		<section className="border-y border-border bg-muted/30 py-4 overflow-hidden">
+		<section className="bg-muted/30 py-4 overflow-hidden">
 			{/* Header */}
 			<div className="mx-auto max-w-7xl mb-3 flex items-center justify-between px-6">
 				<h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">

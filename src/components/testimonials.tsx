@@ -45,7 +45,7 @@ const testimonials: Testimonial[] = [
 
 export function Testimonials() {
 	return (
-		<section className="py-24 border-t border-border">
+		<section className="py-24">
 			<div className="container mx-auto px-4">
 				{/* Section Header */}
 				<motion.div

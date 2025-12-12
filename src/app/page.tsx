@@ -229,17 +229,11 @@ export default function Home() {
 			{/* Stats Bar - Quick credibility */}
 			<StatsBar />
 
-			{/* Glowing Divider */}
-			<GlowingDivider color="chart-1" />
-
 			{/* Theme Gallery */}
 			<ThemeGallery />
 
-			{/* Section Divider */}
-			<ColorSectionDivider color="chart-2" intensity="medium" direction="both" />
-
 			{/* Why On-Chain Themes Section */}
-			<section className="relative border-t border-border/50 py-24 overflow-hidden">
+			<section className="relative py-24 overflow-hidden bg-gradient-to-b from-muted/30 to-background">
 				{/* Color bleeds for depth */}
 				<ColorBleed color="primary" position="left" />
 				<ColorBleed color="chart-3" position="right" className="top-[60%]" />
@@ -378,9 +372,6 @@ export default function Home() {
 					</div>
 				</PageContainer>
 			</section>
-
-			{/* Section Divider */}
-			<GlowingDivider color="chart-5" />
 
 			{/* Testimonials - Social proof */}
 			<Testimonials />

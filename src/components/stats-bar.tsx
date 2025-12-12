@@ -59,7 +59,7 @@ const partners = [
 
 export function StatsBar() {
 	return (
-		<section className="border-y border-border bg-muted/30">
+		<section className="border-t border-border bg-muted/30">
 			<div className="container mx-auto px-4 py-8">
 				{/* Stats Grid */}
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
