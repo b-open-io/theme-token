@@ -287,14 +287,16 @@ How would you like to modify this theme?`;
 			},
 
 			handleExternalNavigation: () => {
-				const { isNavigating } = get();
+				const { isNavigating, position } = get();
 				if (isNavigating) {
 					// Navigation was triggered by Swatchy, just reset the flag but keep chat open
 					set({ isNavigating: false });
-				} else {
-					// External navigation - close chat and return to corner
+				} else if (position === "expanded") {
+					// External navigation while chat is open - close chat and go to corner
+					// The target page's controller (e.g., SwatchyHeroController) will set the appropriate position
 					set({ position: "corner" });
 				}
+				// If position is "corner" or "hero", let page-specific controllers manage it
 			},
 
 			setHeroMode: (isHero) => {
