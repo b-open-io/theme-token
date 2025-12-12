@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { motion, type PanInfo } from "framer-motion";
+import { motion, useMotionValue } from "framer-motion";
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
@@ -12,19 +12,19 @@ interface SwatchyAvatarProps {
 	onClick: () => void;
 }
 
-interface DragPosition {
+interface DragOffset {
 	x: number;
 	y: number;
 }
 
-interface StoredPositions {
-	corner?: DragPosition;
-	expanded?: DragPosition;
+interface StoredOffsets {
+	corner?: DragOffset;
+	expanded?: DragOffset;
 }
 
-const STORAGE_KEY = "swatchy-positions";
+const STORAGE_KEY = "swatchy-offsets";
 
-function loadStoredPositions(): StoredPositions {
+function loadStoredOffsets(): StoredOffsets {
 	if (typeof window === "undefined") return {};
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
@@ -34,10 +34,10 @@ function loadStoredPositions(): StoredPositions {
 	}
 }
 
-function saveStoredPositions(positions: StoredPositions): void {
+function saveStoredOffsets(offsets: StoredOffsets): void {
 	if (typeof window === "undefined") return;
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(offsets));
 	} catch {
 		// Ignore storage errors
 	}
@@ -50,42 +50,44 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const isLeft = side === "left";
 	const isDraggable = isCorner || isExpanded;
 
-	// Separate stored positions for corner and expanded modes
-	const [cornerPosition, setCornerPosition] = useState<DragPosition | null>(null);
-	const [expandedPosition, setExpandedPosition] = useState<DragPosition | null>(null);
-	const [isDragging, setIsDragging] = useState(false);
+	// Motion values for drag offsets - these work WITH framer-motion's drag system
+	const cornerX = useMotionValue(0);
+	const cornerY = useMotionValue(0);
+	const expandedX = useMotionValue(0);
+	const expandedY = useMotionValue(0);
 
-	// Load stored positions on mount
+	const [isDragging, setIsDragging] = useState(false);
+	const [offsetsLoaded, setOffsetsLoaded] = useState(false);
+
+	// Load stored offsets on mount
 	useEffect(() => {
-		const stored = loadStoredPositions();
-		if (stored.corner) setCornerPosition(stored.corner);
-		if (stored.expanded) setExpandedPosition(stored.expanded);
-	}, []);
+		const stored = loadStoredOffsets();
+		if (stored.corner) {
+			cornerX.set(stored.corner.x);
+			cornerY.set(stored.corner.y);
+		}
+		if (stored.expanded) {
+			expandedX.set(stored.expanded.x);
+			expandedY.set(stored.expanded.y);
+		}
+		setOffsetsLoaded(true);
+	}, [cornerX, cornerY, expandedX, expandedY]);
 
 	const handleDragStart = useCallback(() => {
 		setIsDragging(true);
 	}, []);
 
-	const handleDragEnd = useCallback((event: MouseEvent | TouchEvent | PointerEvent, _info: PanInfo) => {
+	const handleDragEnd = useCallback(() => {
 		setIsDragging(false);
 
-		// Get the element's actual rendered position (includes transforms from drag)
-		const element = (event.target as HTMLElement).closest('button');
-		if (!element) return;
-
-		const rect = element.getBoundingClientRect();
-		const newPos = { x: rect.left, y: rect.top };
-
-		// Update the appropriate position and persist
-		const stored = loadStoredPositions();
+		// Save the current motion values as offsets
+		const stored = loadStoredOffsets();
 		if (isExpanded) {
-			setExpandedPosition(newPos);
-			saveStoredPositions({ ...stored, expanded: newPos });
+			saveStoredOffsets({ ...stored, expanded: { x: expandedX.get(), y: expandedY.get() } });
 		} else if (isCorner) {
-			setCornerPosition(newPos);
-			saveStoredPositions({ ...stored, corner: newPos });
+			saveStoredOffsets({ ...stored, corner: { x: cornerX.get(), y: cornerY.get() } });
 		}
-	}, [isExpanded, isCorner]);
+	}, [isExpanded, isCorner, cornerX, cornerY, expandedX, expandedY]);
 
 	const handleClick = useCallback(() => {
 		// Only trigger click if we weren't dragging
@@ -101,20 +103,7 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 
 	const getPositionStyle = (): React.CSSProperties => {
 		if (isExpanded) {
-			// Expanded mode - use stored position if available
-			if (expandedPosition) {
-				return {
-					position: "fixed",
-					top: expandedPosition.y,
-					left: expandedPosition.x,
-					bottom: "auto",
-					right: "auto",
-					width: isMobile ? 140 : 280,
-					height: isMobile ? 140 : 280,
-					zIndex: 50,
-				};
-			}
-			// Default expanded position
+			// Default expanded position - offsets handled by motion values
 			if (isMobile) {
 				return {
 					position: "fixed",
@@ -153,21 +142,7 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			};
 		}
 
-		// Corner state - use stored position if available
-		if (cornerPosition) {
-			return {
-				position: "fixed",
-				top: cornerPosition.y,
-				left: cornerPosition.x,
-				bottom: "auto",
-				right: "auto",
-				width: 80,
-				height: 80,
-				zIndex: 60,
-			};
-		}
-
-		// Default corner position
+		// Default corner position - offsets handled by motion values
 		return {
 			position: "fixed",
 			top: "auto",
@@ -178,6 +153,19 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			height: 80,
 			zIndex: 60,
 		};
+	};
+
+	// Get the appropriate motion values for the current mode
+	const getCurrentX = () => {
+		if (isCorner) return cornerX;
+		if (isExpanded) return expandedX;
+		return undefined;
+	};
+
+	const getCurrentY = () => {
+		if (isCorner) return cornerY;
+		if (isExpanded) return expandedY;
+		return undefined;
 	};
 
 	// Floating animation - more pronounced in hero mode, subtle in corner
@@ -223,7 +211,11 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			// layout prop is the key - it measures bounding box and uses transforms
 			// instead of trying to interpolate CSS position properties
 			layout
-			style={getPositionStyle()}
+			style={{
+				...getPositionStyle(),
+				x: getCurrentX(),
+				y: getCurrentY(),
+			}}
 			className={`overflow-visible rounded-full focus:outline-none focus-visible:outline-none ${
 				isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
 			}`}
