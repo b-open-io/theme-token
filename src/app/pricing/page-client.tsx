@@ -25,8 +25,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/page-container";
+import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { PRISM_PASS_COLLECTION_ID } from "@/lib/pricing";
+import { PRISM_PASS_COLLECTION_ID, PRISM_PASS_USD_PRICE, usdToSatoshis, formatBsv } from "@/lib/pricing";
 
 
 function PerkRow({ icon, text, delay = 0 }: { icon: React.ReactNode; text: string; delay?: number }) {
@@ -52,6 +53,7 @@ function TheArtifact({
 	isConnected,
 	onConnect,
 	alreadyOwned,
+	bsvAmount,
 }: {
 	active: boolean;
 	onMint: () => void;
@@ -59,6 +61,7 @@ function TheArtifact({
 	isConnected: boolean;
 	onConnect: () => void;
 	alreadyOwned: boolean;
+	bsvAmount: string | null;
 }) {
 	return (
 		<div className="perspective-[1000px]">
@@ -231,8 +234,7 @@ function TheArtifact({
 									) : (
 										<>
 											<Sparkles className="h-4 w-4" />
-											Mint Pass
-											<span className="ml-1 text-xs opacity-80">~$0.01</span>
+											Mint Pass — ${PRISM_PASS_USD_PRICE}
 										</>
 									)}
 								</Button>
@@ -243,10 +245,15 @@ function TheArtifact({
 									className="w-full gap-2 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.02]"
 								>
 									<Bitcoin className="h-4 w-4" />
-									Connect Wallet to Mint
+									Connect Wallet — ${PRISM_PASS_USD_PRICE}
 								</Button>
 							)}
-							<p className="mt-3 text-center text-xs text-muted-foreground">
+							{!alreadyOwned && bsvAmount && (
+								<p className="mt-2 text-center text-xs text-muted-foreground/70">
+									{bsvAmount}
+								</p>
+							)}
+							<p className="mt-2 text-center text-xs text-muted-foreground">
 								{alreadyOwned ? "Your benefits are active" : "Tradeable NFT on Bitcoin SV"}
 							</p>
 						</div>
@@ -370,7 +377,7 @@ function AmbientBackground({ active }: { active: boolean }) {
 	);
 }
 
-export function PricingPageClient() {
+function PricingPageInner() {
 	const [active, setActive] = useState(false);
 	const [mintedTxid, setMintedTxid] = useState<string | null>(null);
 	const {
@@ -380,8 +387,14 @@ export function PricingPageClient() {
 		isInscribing,
 		hasPrismPass,
 	} = useYoursWallet();
+	const { rate } = useBsvRateContext();
 
 	const isConnected = status === "connected";
+
+	// Calculate BSV amount from exchange rate
+	const bsvAmount = rate
+		? formatBsv(usdToSatoshis(PRISM_PASS_USD_PRICE, rate))
+		: null;
 
 	// If user already has a pass, auto-switch to member view and show success
 	const showOwned = isConnected && hasPrismPass && !mintedTxid;
@@ -486,6 +499,7 @@ export function PricingPageClient() {
 					isConnected={isConnected}
 					onConnect={handleConnect}
 					alreadyOwned={showOwned}
+					bsvAmount={bsvAmount}
 				/>
 
 				{/* Success Message */}
@@ -562,5 +576,13 @@ export function PricingPageClient() {
 				</motion.div>
 			</PageContainer>
 		</div>
+	);
+}
+
+export function PricingPageClient() {
+	return (
+		<BsvRateProvider>
+			<PricingPageInner />
+		</BsvRateProvider>
 	);
 }

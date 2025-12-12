@@ -9,8 +9,34 @@
 export const PRISM_PASS_COLLECTION_ID =
 	"b21570b4d31da8875c79c9feeaf600204cad5f9819f23ae4c1eb12ba05dfc822_0";
 
+/** Prism Pass price in USD */
+export const PRISM_PASS_USD_PRICE = 4;
+
 /** Discount multiplier for Prism Pass holders (0.5 = 50% off) */
 export const PRISM_PASS_DISCOUNT = 0.5;
+
+/**
+ * Convert USD to satoshis using exchange rate
+ * @param usd - Amount in USD
+ * @param bsvPriceUsd - Current BSV price in USD
+ * @returns Amount in satoshis
+ */
+export function usdToSatoshis(usd: number, bsvPriceUsd: number): number {
+	const bsv = usd / bsvPriceUsd;
+	return Math.round(bsv * 100_000_000);
+}
+
+/**
+ * Format BSV amount for display
+ * @param satoshis - Amount in satoshis
+ * @returns Formatted BSV string
+ */
+export function formatBsv(satoshis: number): string {
+	const bsv = satoshis / 100_000_000;
+	if (bsv >= 1) return `${bsv.toFixed(4)} BSV`;
+	if (bsv >= 0.001) return `${bsv.toFixed(6)} BSV`;
+	return `${bsv.toFixed(8)} BSV`;
+}
 
 /**
  * Base prices for AI generation tools (in satoshis)

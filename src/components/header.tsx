@@ -35,6 +35,7 @@ const NAV_LINKS = [
 	{ href: "/spec", label: "Spec", description: "Protocol specification" },
 	{ href: "/studio", label: "Studio", description: "Create & edit themes" },
 	{ href: "/market", label: "Market", description: "Browse & buy themes" },
+	{ href: "/pricing", label: "Pricing", description: "Prism Pass membership" },
 ];
 
 export function Header() {
