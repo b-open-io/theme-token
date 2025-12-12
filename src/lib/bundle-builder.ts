@@ -196,7 +196,7 @@ function buildThemeWithVoutRefs(
 				asset.slot === "serif" ||
 				asset.slot === "mono"
 			) {
-				const prop = SLOT_TO_PROP[asset.slot];
+				const prop = SLOT_TO_PROP[asset.slot] as string;
 				(styles as Record<string, string>)[prop] = voutRef;
 			}
 
