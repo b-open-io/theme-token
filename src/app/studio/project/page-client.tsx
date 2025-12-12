@@ -566,16 +566,16 @@ export function ProjectStudioPageClient() {
 									<div>
 										<h3 className="font-medium text-sm">Icons</h3>
 										<p className="text-xs text-muted-foreground capitalize">
-											{config.iconLibrary}
+											{config.iconLibrary === "lucide" && "Lucide React"}
+											{config.iconLibrary === "hugeicons" && "Hugeicons"}
+											{config.iconLibrary === "tabler" && "Tabler Icons"}
 										</p>
 									</div>
 								</div>
-								<div className="flex gap-2 text-muted-foreground">
-									<Palette className="h-5 w-5" />
-									<Type className="h-5 w-5" />
-									<Shapes className="h-5 w-5" />
-									<Image className="h-5 w-5" />
-									<FolderKanban className="h-5 w-5" />
+								<div className="flex items-center justify-center h-8 rounded-md bg-muted/50 text-xs text-muted-foreground font-mono">
+									{config.iconLibrary === "lucide" && "lucide-react"}
+									{config.iconLibrary === "hugeicons" && "@hugeicons/react"}
+									{config.iconLibrary === "tabler" && "@tabler/icons-react"}
 								</div>
 							</div>
 
