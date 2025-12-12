@@ -24,6 +24,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { PageContainer } from "@/components/page-container";
 import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -163,9 +165,9 @@ function TheArtifact({
 						className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40 blur-[80px]"
 					/>
 
-					<div className="relative z-10 flex h-full flex-col justify-between">
+					<div className="relative z-10 flex h-full flex-col">
 						{/* Header */}
-						<div>
+						<div className="mb-4">
 							<div className="mb-2 inline-block rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
 								NFT MEMBERSHIP
 							</div>
@@ -177,32 +179,8 @@ function TheArtifact({
 							</p>
 						</div>
 
-						{/* Perks */}
-						<div className="space-y-4">
-							<PerkRow
-								icon={<Zap className="h-4 w-4" />}
-								text="50% off AI generations"
-								delay={0.1}
-							/>
-							<PerkRow
-								icon={<Palette className="h-4 w-4" />}
-								text="25 drafts per asset type"
-								delay={0.15}
-							/>
-							<PerkRow
-								icon={<Clock className="h-4 w-4" />}
-								text="90-day draft retention"
-								delay={0.2}
-							/>
-							<PerkRow
-								icon={<Infinity className="h-4 w-4" />}
-								text="Inscribe to own forever"
-								delay={0.25}
-							/>
-						</div>
-
-						{/* CTA */}
-						<div>
+						{/* CTA - Moved to top for conversion */}
+						<div className="mb-6">
 							{alreadyOwned ? (
 								<>
 									<div className="w-full rounded-lg border border-green-500/30 bg-green-500/10 py-3 text-center">
@@ -257,6 +235,30 @@ function TheArtifact({
 								{alreadyOwned ? "Your benefits are active" : "Tradeable NFT on Bitcoin SV"}
 							</p>
 						</div>
+
+						{/* Perks */}
+						<div className="flex-1 space-y-4">
+							<PerkRow
+								icon={<Zap className="h-4 w-4" />}
+								text="50% off AI generations"
+								delay={0.1}
+							/>
+							<PerkRow
+								icon={<Palette className="h-4 w-4" />}
+								text="25 drafts per asset type"
+								delay={0.15}
+							/>
+							<PerkRow
+								icon={<Clock className="h-4 w-4" />}
+								text="90-day draft retention"
+								delay={0.2}
+							/>
+							<PerkRow
+								icon={<Infinity className="h-4 w-4" />}
+								text="Inscribe to own forever"
+								delay={0.25}
+							/>
+						</div>
 					</div>
 				</div>
 			</motion.div>
@@ -264,7 +266,7 @@ function TheArtifact({
 	);
 }
 
-function RealitySlider({
+function MembershipToggle({
 	active,
 	onToggle,
 }: {
@@ -272,51 +274,35 @@ function RealitySlider({
 	onToggle: (v: boolean) => void;
 }) {
 	return (
-		<div className="flex flex-col items-center gap-3">
-			<button
-				type="button"
-				onClick={() => onToggle(!active)}
-				className="relative flex h-14 w-56 items-center rounded-full border border-border bg-muted/50 p-1 shadow-inner backdrop-blur-sm transition-colors hover:border-primary/50 sm:h-16 sm:w-64"
-			>
-				{/* Background Labels */}
-				<div className="pointer-events-none absolute inset-0 flex items-center justify-between px-5 text-xs font-bold uppercase tracking-wider sm:px-6">
-					<span
-						className={`transition-colors ${!active ? "text-foreground" : "text-muted-foreground/50"}`}
-					>
-						Pay-Go
-					</span>
-					<span
-						className={`transition-colors ${active ? "text-foreground" : "text-muted-foreground/50"}`}
-					>
-						Member
-					</span>
-				</div>
-
-				{/* Sliding Knob */}
-				<motion.div
-					layout
-					initial={false}
-					animate={{
-						x: active ? "100%" : "0%",
-					}}
-					transition={{ type: "spring", stiffness: 400, damping: 30 }}
-					className={`relative z-10 flex h-full w-1/2 items-center justify-center rounded-full shadow-xl transition-colors ${
-						active
-							? "bg-gradient-to-r from-primary to-purple-600"
-							: "bg-card border border-border"
+		<div className="flex flex-col items-center gap-4">
+			<div className="flex items-center gap-4 rounded-lg border border-border bg-card/50 px-6 py-3 backdrop-blur-sm">
+				<Label
+					htmlFor="membership-toggle"
+					className={`cursor-pointer text-sm font-medium transition-colors ${
+						!active ? "text-foreground" : "text-muted-foreground"
 					}`}
 				>
-					<motion.div
-						animate={{ rotate: active ? 180 : 0 }}
-						className={`h-1 w-4 rounded-full ${active ? "bg-white/80" : "bg-muted-foreground/50"}`}
-					/>
-				</motion.div>
-			</button>
-
+					Pay-as-you-go
+				</Label>
+				<Switch
+					id="membership-toggle"
+					checked={active}
+					onCheckedChange={onToggle}
+					className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-primary data-[state=checked]:to-purple-600"
+				/>
+				<Label
+					htmlFor="membership-toggle"
+					className={`cursor-pointer text-sm font-medium transition-colors ${
+						active ? "text-foreground" : "text-muted-foreground"
+					}`}
+				>
+					Member
+				</Label>
+			</div>
 			<p className="text-center text-xs text-muted-foreground">
 				{active
-					? "Slide left for pay-as-you-go"
-					: "Slide right to see member perks"}
+					? "See member benefits below"
+					: "Toggle to see member perks"}
 			</p>
 		</div>
 	);
@@ -448,7 +434,7 @@ function PricingPageInner() {
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className="mb-12 text-center"
+					className="mb-8 text-center"
 				>
 					<motion.p
 						animate={{ opacity: active ? 0.5 : 1 }}
@@ -490,6 +476,11 @@ function PricingPageInner() {
 							: "Pay only when you create something amazing"}
 					</motion.p>
 				</motion.div>
+
+				{/* Membership Toggle - Above Card */}
+				<div className="mb-8">
+					<MembershipToggle active={active} onToggle={setActive} />
+				</div>
 
 				{/* The Artifact */}
 				<TheArtifact
@@ -550,11 +541,6 @@ function PricingPageInner() {
 						</motion.div>
 					)}
 				</AnimatePresence>
-
-				{/* Reality Slider */}
-				<div className="mt-12">
-					<RealitySlider active={active} onToggle={setActive} />
-				</div>
 
 				{/* Bottom Note */}
 				<motion.div
