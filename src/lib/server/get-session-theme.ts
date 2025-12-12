@@ -11,11 +11,11 @@ import { DEFAULT_THEME_ORIGIN, fetchDefaultTheme } from "@/lib/default-theme";
 /** Cookie name for theme session */
 export const THEME_SESSION_COOKIE = "theme-session";
 
-// Use the public base URL for server-side fetches
-// VERCEL_URL is a preview/build URL, not the production domain
-const CACHE_API_URL = process.env.NEXT_PUBLIC_BASE_URL
-	? `${process.env.NEXT_PUBLIC_BASE_URL}/api/themes/cache`
-	: "http://localhost:3033/api/themes/cache";
+// Production URL constant - no env var needed
+const BASE_URL = process.env.NODE_ENV === "production"
+	? "https://themetoken.dev"
+	: "http://localhost:3033";
+const CACHE_API_URL = `${BASE_URL}/api/themes/cache`;
 
 interface CacheResponse {
 	themes: CachedTheme[];

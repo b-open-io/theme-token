@@ -90,12 +90,13 @@ function applyStylesToElement(
   styles: ThemeStyleProps,
 ): void {
   for (const [key, value] of Object.entries(styles)) {
+    const cssValue = value as string;
     if (key.startsWith("font-")) {
-      element.style.setProperty(`--${key}`, value);
+      element.style.setProperty(`--${key}`, cssValue);
     } else if (key === "radius") {
-      element.style.setProperty(`--${key}`, value);
+      element.style.setProperty(`--${key}`, cssValue);
     } else {
-      element.style.setProperty(`--${key}`, value);
+      element.style.setProperty(`--${key}`, cssValue);
     }
   }
 }
