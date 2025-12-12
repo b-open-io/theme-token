@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import {
 	Check,
@@ -15,9 +15,16 @@ import {
 	Wallet,
 	Wand2,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { AmbientMesh } from "@/components/ambient-mesh";
+import { ColorSectionDivider, ColorBleed, GlowingDivider } from "@/components/color-section-divider";
+import { HeroOrbs } from "@/components/hero-orbs";
 import { JsonSyntax } from "@/components/json-syntax";
 import { PageContainer } from "@/components/page-container";
+import { ParallaxChips } from "@/components/parallax-chips";
+import { PresetShowcase } from "@/components/preset-showcase";
+import { StatsBar } from "@/components/stats-bar";
+import { Testimonials } from "@/components/testimonials";
 import { ThemeGallery } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,12 +88,18 @@ export default function Home() {
 
 	return (
 		<div className="min-h-screen">
+			{/* Global Ambient Background - Floating color orbs */}
+			<AmbientMesh />
+
 			{/* Swatchy Hero Controller - manages scroll-based hero pose */}
 			<SwatchyHeroController />
 
 			{/* Hero Section */}
-			<section className="relative overflow-hidden">
-				<div className="grid-background absolute inset-0 opacity-50" />
+			<section className="relative overflow-hidden min-h-screen">
+				{/* Hero Orbs - Interactive parallax orbs */}
+				<HeroOrbs />
+
+				<div className="grid-background absolute inset-0 opacity-30" />
 				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
 
 				<PageContainer className="relative pb-24 pt-32">
@@ -102,8 +115,12 @@ export default function Home() {
 						</Badge>
 
 						<h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-							<span className="block">Shadcn Themes,</span>
-							<span className="block text-primary">on Bitcoin</span>
+							<span className="block bg-gradient-to-b from-foreground via-foreground to-foreground/50 bg-clip-text text-transparent">
+								Shadcn Themes,
+							</span>
+							<span className="block bg-gradient-to-r from-primary via-chart-1 to-chart-2 bg-clip-text text-transparent">
+								on Bitcoin
+							</span>
 						</h1>
 
 						<p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
@@ -207,12 +224,31 @@ export default function Home() {
 				</PageContainer>
 			</section>
 
+			{/* Color Cascade Transition */}
+			<ParallaxChips className="-mt-32" />
+
+			{/* Stats Bar - Quick credibility */}
+			<StatsBar />
+
+			{/* Glowing Divider */}
+			<GlowingDivider color="chart-1" />
+
 			{/* Theme Gallery */}
 			<ThemeGallery />
 
+			{/* Section Divider */}
+			<ColorSectionDivider color="chart-2" intensity="medium" direction="both" />
+
+			{/* Preset Showcase - Interactive theme preview */}
+			<PresetShowcase />
+
 			{/* Why On-Chain Themes Section */}
-			<section className="border-t border-border bg-muted/30 py-24">
-				<PageContainer>
+			<section className="relative border-t border-border/50 py-24 overflow-hidden">
+				{/* Color bleeds for depth */}
+				<ColorBleed color="primary" position="left" />
+				<ColorBleed color="chart-3" position="right" className="top-[60%]" />
+
+				<PageContainer className="relative z-10">
 					<motion.div
 						initial="initial"
 						whileInView="animate"
@@ -248,9 +284,12 @@ export default function Home() {
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
 							transition={{ delay: 0.1 }}
-							className="rounded-xl border border-border bg-card p-6"
+							className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-primary/50 transition-colors"
 						>
-							<div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3">
+							{/* Bottom gradient accent */}
+							<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary via-chart-1 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+
+							<div className="mb-4 inline-flex rounded-lg bg-primary/20 p-3 shadow-lg shadow-primary/20">
 								<Palette className="h-6 w-6 text-primary" />
 							</div>
 							<h3 className="mb-2 text-xl font-semibold">For Designers</h3>
@@ -263,11 +302,11 @@ export default function Home() {
 									<span>Authorship permanently recorded on-chain</span>
 								</li>
 								<li className="flex items-start gap-2">
-									<Wallet className="mt-0.5 h-4 w-4 text-primary" />
+									<Wallet className="mt-0.5 h-4 w-4 text-chart-1" />
 									<span>Sell on any ordinal marketplace</span>
 								</li>
 								<li className="flex items-start gap-2">
-									<Globe className="mt-0.5 h-4 w-4 text-primary" />
+									<Globe className="mt-0.5 h-4 w-4 text-chart-2" />
 									<span>Direct, permissionless distribution</span>
 								</li>
 							</ul>
@@ -279,10 +318,13 @@ export default function Home() {
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
 							transition={{ delay: 0.2 }}
-							className="rounded-xl border border-border bg-card p-6"
+							className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-chart-2/50 transition-colors"
 						>
-							<div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3">
-								<Code2 className="h-6 w-6 text-primary" />
+							{/* Bottom gradient accent */}
+							<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-chart-2 via-chart-3 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+
+							<div className="mb-4 inline-flex rounded-lg bg-chart-2/20 p-3 shadow-lg shadow-chart-2/20">
+								<Code2 className="h-6 w-6 text-chart-2" />
 							</div>
 							<h3 className="mb-2 text-xl font-semibold">For Developers</h3>
 							<p className="mb-4 text-sm text-muted-foreground">
@@ -290,15 +332,15 @@ export default function Home() {
 							</p>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-start gap-2">
-									<Terminal className="mt-0.5 h-4 w-4 text-primary" />
+									<Terminal className="mt-0.5 h-4 w-4 text-chart-2" />
 									<span>Install with bunx shadcn@latest add</span>
 								</li>
 								<li className="flex items-start gap-2">
-									<Layers className="mt-0.5 h-4 w-4 text-primary" />
+									<Layers className="mt-0.5 h-4 w-4 text-chart-3" />
 									<span>100% compatible with ShadCN ecosystem</span>
 								</li>
 								<li className="flex items-start gap-2">
-									<Globe className="mt-0.5 h-4 w-4 text-primary" />
+									<Globe className="mt-0.5 h-4 w-4 text-chart-4" />
 									<span>Decentralized, immutable theme CDN</span>
 								</li>
 							</ul>
@@ -310,10 +352,13 @@ export default function Home() {
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}
 							transition={{ delay: 0.3 }}
-							className="rounded-xl border border-border bg-card p-6"
+							className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-chart-5/50 transition-colors"
 						>
-							<div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3">
-								<Wallet className="h-6 w-6 text-primary" />
+							{/* Bottom gradient accent */}
+							<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-chart-5 via-chart-4 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+
+							<div className="mb-4 inline-flex rounded-lg bg-chart-5/20 p-3 shadow-lg shadow-chart-5/20">
+								<Wallet className="h-6 w-6 text-chart-5" />
 							</div>
 							<h3 className="mb-2 text-xl font-semibold">For Users</h3>
 							<p className="mb-4 text-sm text-muted-foreground">
@@ -321,15 +366,15 @@ export default function Home() {
 							</p>
 							<ul className="space-y-2 text-sm">
 								<li className="flex items-start gap-2">
-									<Palette className="mt-0.5 h-4 w-4 text-primary" />
+									<Palette className="mt-0.5 h-4 w-4 text-chart-5" />
 									<span>Buy once, use across all supported apps</span>
 								</li>
 								<li className="flex items-start gap-2">
-									<Layers className="mt-0.5 h-4 w-4 text-primary" />
+									<Layers className="mt-0.5 h-4 w-4 text-chart-4" />
 									<span>Collect rare, limited-edition themes</span>
 								</li>
 								<li className="flex items-start gap-2">
-									<Globe className="mt-0.5 h-4 w-4 text-primary" />
+									<Globe className="mt-0.5 h-4 w-4 text-chart-3" />
 									<span>Community-driven curation ecosystem</span>
 								</li>
 							</ul>
@@ -338,6 +383,14 @@ export default function Home() {
 				</PageContainer>
 			</section>
 
+			{/* Section Divider */}
+			<GlowingDivider color="chart-5" />
+
+			{/* Testimonials - Social proof */}
+			<Testimonials />
+
+			{/* Final color accent at bottom */}
+			<ColorSectionDivider color="primary" intensity="strong" direction="top" />
 		</div>
 	);
 }
