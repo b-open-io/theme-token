@@ -1,6 +1,8 @@
 import ms from "ms";
 import { Sandbox } from "@vercel/sandbox";
 import { nanoid } from "nanoid";
+import fs from "fs/promises";
+import path from "path";
 
 export type SandboxPreviewFile = { path: string; content: string };
 
@@ -16,6 +18,7 @@ type SandboxCacheEntry = {
 };
 
 declare global {
+	// eslint-disable-next-line no-var
 	var __themeTokenPreviewSandbox: SandboxCacheEntry | undefined;
 }
 
@@ -31,12 +34,10 @@ export function hasSandboxAuthEnv(): boolean {
 }
 
 export function sanitizeCodeForPreview(code: string): string {
-	// Strip ANSI escape sequences that can appear in model output (including CSI with `:` params).
-	// This avoids leaving behind fragments like `[118;1:3u` which can break parsing/bundling.
-	const ANSI_ESCAPE_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
+	const ANSI_ESCAPE_REGEX = /\x1B(?:[@-Z\\-_]|[[\[0-?]*[ -/]*[@-~])/g;
 	return code
 		.replace(ANSI_ESCAPE_REGEX, "")
-		.replace(/[^\t\n\r -~\u00A0-\uFFFF]/g, "");
+		.replace(/[^\u0009\u000A\u000D\u0020-\u007E\u00A0-\uFFFF]/g, "");
 }
 
 function getCachedSandbox(): SandboxCacheEntry | undefined {
@@ -44,6 +45,11 @@ function getCachedSandbox(): SandboxCacheEntry | undefined {
 	if (!entry) return undefined;
 	if (Date.now() > entry.expiresAt) return undefined;
 	return entry;
+}
+
+async function getTemplateContent(filename: string): Promise<Buffer> {
+	const filePath = path.join(process.cwd(), "src/lib/sandbox/templates", filename);
+	return fs.readFile(filePath);
 }
 
 async function ensureSandbox(): Promise<Sandbox> {
@@ -59,6 +65,19 @@ async function ensureSandbox(): Promise<Sandbox> {
 			resources: { vcpus: 2 },
 		}));
 
+	// 1. Read helper scripts from disk
+	const [serverMjs, bundleMjs] = await Promise.all([
+		getTemplateContent("server.mjs"),
+		getTemplateContent("bundle.mjs"),
+	]);
+
+	// 2. Write helper scripts directly
+	await sandbox.writeFiles([
+		{ path: "/vercel/sandbox/.tt-preview/server.mjs", content: serverMjs },
+		{ path: "/vercel/sandbox/.tt-preview/bundle.mjs", content: bundleMjs },
+	]);
+
+	// 3. Initialize dependencies and start server
 	const setup = await sandbox.runCommand({
 		cmd: "bash",
 		args: [
@@ -67,144 +86,28 @@ async function ensureSandbox(): Promise<Sandbox> {
 				"set -euo pipefail",
 				"mkdir -p /vercel/sandbox/.tt-preview/{src,dist}",
 				"cd /vercel/sandbox/.tt-preview",
-				// If we seeded from a repo, install its deps once so @/ imports and deps resolve.
+				// Repo deps
 				"if [ -f /vercel/sandbox/package.json ] && [ ! -f /vercel/sandbox/.tt-preview/.repo-deps-installed ]; then",
-				"  echo \"[tt-preview] installing repo dependencies...\"",
 				"  cd /vercel/sandbox",
 				"  npm install --silent",
 				"  touch /vercel/sandbox/.tt-preview/.repo-deps-installed",
 				"  cd /vercel/sandbox/.tt-preview",
 				"fi",
-				// Ensure preview helper deps
+				// Preview deps
 				'if [ ! -f package.json ]; then npm init -y >/dev/null 2>&1; fi',
-				'if [ ! -d node_modules ]; then npm install --silent react react-dom esbuild; fi',
-				// Tiny static server to host bundles
-				'if [ ! -f server.mjs ]; then cat > server.mjs <<\"EOF\"',
-				"import http from 'node:http';",
-				"import fs from 'node:fs';",
-				"import path from 'node:path';",
-				"import { fileURLToPath } from 'node:url';",
-				"",
-				"const __filename = fileURLToPath(import.meta.url);",
-				"const __dirname = path.dirname(__filename);",
-				"const distRoot = path.join(__dirname, 'dist');",
-				"const port = Number(process.env.PORT || 3001);",
-				"",
-				"function send(res, status, headers, body) {",
-				"  res.writeHead(status, headers);",
-				"  res.end(body);",
-				"}",
-				"",
-				"function contentType(p) {",
-				"  if (p.endsWith('.js')) return 'text/javascript; charset=utf-8';",
-				"  if (p.endsWith('.css')) return 'text/css; charset=utf-8';",
-				"  if (p.endsWith('.html')) return 'text/html; charset=utf-8';",
-				"  return 'application/octet-stream';",
-				"}",
-				"",
-				"const server = http.createServer((req, res) => {",
-				"  try {",
-				"    const url = new URL(req.url || '/', 'http://localhost');",
-				"    const parts = url.pathname.split('/').filter(Boolean);",
-				"",
-				"    // GET /<id>/ -> serve an HTML shell that loads /<id>/bundle.js",
-				"    if (req.method === 'GET' && parts.length === 1) {",
-				"      const id = parts[0];",
-				"      const html = [",
-				"        '<!doctype html>',",
-				"        '<html>',",
-				"        '<head>',",
-				"        '  <meta charset=\"utf-8\" />',",
-				"        '  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />',",
-				"        '  <script src=\"https://cdn.tailwindcss.com\"></script>',",
-				"        '  <style>body{margin:0;background:transparent;font-family:system-ui,sans-serif}</style>',",
-				"        '</head>',",
-				"        '<body>',",
-				"        '  <div id=\"root\"></div>',",
-				"        '  <script type=\"module\" src=\"/' + id + '/bundle.js\"></script>',",
-				"        '</body>',",
-				"        '</html>',",
-				"      ].join('\\n');",
-				"      return send(res, 200, { 'content-type': 'text/html; charset=utf-8' }, html);",
-				"    }",
-				"",
-				"    // Static: /<id>/<file>",
-				"    if (req.method === 'GET' && parts.length >= 2) {",
-				"      const id = parts[0];",
-				"      const rel = parts.slice(1).join('/');",
-				"      const filePath = path.join(distRoot, id, rel);",
-				"      if (!filePath.startsWith(path.join(distRoot, id))) {",
-				"        return send(res, 400, { 'content-type': 'text/plain; charset=utf-8' }, 'bad path');",
-				"      }",
-				"      if (!fs.existsSync(filePath)) {",
-				"        return send(res, 404, { 'content-type': 'text/plain; charset=utf-8' }, 'not found');",
-				"      }",
-				"      const data = fs.readFileSync(filePath);",
-				"      return send(res, 200, { 'content-type': contentType(filePath) }, data);",
-				"    }",
-				"",
-				"    return send(res, 404, { 'content-type': 'text/plain; charset=utf-8' }, 'not found');",
-				"  } catch (err) {",
-				"    return send(res, 500, { 'content-type': 'text/plain; charset=utf-8' }, String(err));",
-				"  }",
-				"});",
-				"",
-				"server.listen(port, '0.0.0.0', () => {",
-				"  console.log(`[preview-server] listening on ${port}`);",
-				"});",
-				"EOF",
-				"fi",
-				// Bundler script with @/ alias to repo src
-				'if [ ! -f bundle.mjs ]; then cat > bundle.mjs <<\"EOF\"',
-				"import { build } from 'esbuild';",
-				"import fs from 'node:fs';",
-				"import path from 'node:path';",
-				"",
-				"const id = process.argv[2];",
-				"if (!id) throw new Error('missing id');",
-				"",
-				"const srcRoot = path.resolve('src', id);",
-				"const distRoot = path.resolve('dist', id);",
-				"fs.mkdirSync(distRoot, { recursive: true });",
-				"",
-				"const repoSrcRoot = '/vercel/sandbox/src';",
-				"const aliasPlugin = {",
-				"  name: 'alias-at',",
-				"  setup(build) {",
-				"    build.onResolve({ filter: /^@\// }, (args) => {",
-				"      return { path: path.join(repoSrcRoot, args.path.slice(2)) };",
-				"    });",
-				"  },",
-				"};",
-				"",
-				"await build({",
-				"",
-				"  entryPoints: [path.join(srcRoot, 'entry.tsx')],",
-				"  outfile: path.join(distRoot, 'bundle.js'),",
-				"  bundle: true,",
-				"  format: 'esm',",
-				"  platform: 'browser',",
-				"  sourcemap: 'inline',",
-				"  plugins: [aliasPlugin],",
-				"  loader: { '.ts': 'ts', '.tsx': 'tsx' },",
-				"  define: { 'process.env.NODE_ENV': '\\\"production\\\"' },",
-				"  jsx: 'automatic',",
-				"  tsconfig: fs.existsSync('/vercel/sandbox/tsconfig.json') ? '/vercel/sandbox/tsconfig.json' : undefined,",
-				"  nodePaths: fs.existsSync('/vercel/sandbox/node_modules') ? ['/vercel/sandbox/node_modules'] : undefined,",
-				"});",
-				"EOF",
-				"fi",
-				// Start server if not already running
+				'if [ ! -d node_modules ]; then npm install react react-dom esbuild; fi',
+				// Start server
 				"if ! pgrep -f \"node server.mjs\" >/dev/null 2>&1; then",
-				`  PORT=${PORT} nohup node server.mjs >/tmp/preview-server.log 2>&1 &
-`,
+				`  PORT=${PORT} nohup node server.mjs >/tmp/preview-server.log 2>&1 &`,
 				"fi",
 			].join("\n"),
 		],
 	});
+
 	if (setup.exitCode !== 0) {
 		const stderr = await setup.stderr();
-		throw new Error(`Sandbox setup failed: ${stderr || "unknown error"}`);
+		const stdout = await setup.stdout();
+		throw new Error(`Sandbox setup failed: ${stderr || stdout || "unknown error"}`);
 	}
 
 	globalThis.__themeTokenPreviewSandbox = { sandbox, expiresAt: Date.now() + SANDBOX_TTL_MS };
@@ -290,9 +193,10 @@ export async function createSandboxPreview(params: {
 
 	if (bundle.exitCode !== 0) {
 		const stderr = await bundle.stderr();
+		const stdout = await bundle.stdout();
 		return {
 			success: false,
-			error: `Sandbox bundling failed: ${stderr || "unknown error"}`,
+			error: `Sandbox bundling failed: ${stderr || stdout || "unknown error"}`,
 		};
 	}
 
