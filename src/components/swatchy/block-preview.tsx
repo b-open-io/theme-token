@@ -55,7 +55,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 		setPreviewError(null);
 		setPreviewLoading(false);
 		setShowPreview(false);
-	}, [item.txid, item.timestamp]);
+	}, [item.txid, item.timestamp, item.previewUrl]);
 
 	const containsModuleSyntax = useCallback((code: string) => {
 		return /(^|\n)\s*import\s/m.test(code) || /(^|\n)\s*export\s/m.test(code);
@@ -134,11 +134,12 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 				}
 			}
 
-			const sandboxResponse = await fetch("/api/preview-component-sandbox", {
+			const sandboxResponse = await fetch("/api/preview-registry-item-sandbox", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					code: mainFile.content,
+					files: manifest.files.map((f) => ({ path: f.path, content: f.content })),
+					mainFilePath: mainFile.path,
 				}),
 			});
 

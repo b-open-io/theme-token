@@ -16,7 +16,6 @@ type SandboxCacheEntry = {
 };
 
 declare global {
-	// eslint-disable-next-line no-var
 	var __themeTokenPreviewSandbox: SandboxCacheEntry | undefined;
 }
 
@@ -32,9 +31,12 @@ export function hasSandboxAuthEnv(): boolean {
 }
 
 export function sanitizeCodeForPreview(code: string): string {
+	// Strip ANSI escape sequences that can appear in model output (including CSI with `:` params).
+	// This avoids leaving behind fragments like `[118;1:3u` which can break parsing/bundling.
+	const ANSI_ESCAPE_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
 	return code
-		.replace(/\u001b\[[0-9;]*[a-zA-Z]/g, "")
-		.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\uFFFF]/g, "");
+		.replace(ANSI_ESCAPE_REGEX, "")
+		.replace(/[^\t\n\r -~\u00A0-\uFFFF]/g, "");
 }
 
 function getCachedSandbox(): SandboxCacheEntry | undefined {
@@ -46,18 +48,18 @@ function getCachedSandbox(): SandboxCacheEntry | undefined {
 
 async function ensureSandbox(): Promise<Sandbox> {
 	const cached = getCachedSandbox();
-	if (cached) return cached.sandbox;
-
 	const sourceUrl = process.env.SANDBOX_PREVIEW_SOURCE_URL;
-	const sandbox = await Sandbox.create({
-		source: sourceUrl ? { type: "git", url: sourceUrl, depth: 1 } : undefined,
-		ports: [PORT],
-		timeout: SANDBOX_TTL_MS,
-		runtime: "node24",
-		resources: { vcpus: 2 },
-	});
+	const sandbox =
+		cached?.sandbox ??
+		(await Sandbox.create({
+			source: sourceUrl ? { type: "git", url: sourceUrl, depth: 1 } : undefined,
+			ports: [PORT],
+			timeout: SANDBOX_TTL_MS,
+			runtime: "node24",
+			resources: { vcpus: 2 },
+		}));
 
-	await sandbox.runCommand({
+	const setup = await sandbox.runCommand({
 		cmd: "bash",
 		args: [
 			"-lc",
@@ -108,19 +110,21 @@ async function ensureSandbox(): Promise<Sandbox> {
 				"    // GET /<id>/ -> serve an HTML shell that loads /<id>/bundle.js",
 				"    if (req.method === 'GET' && parts.length === 1) {",
 				"      const id = parts[0];",
-				"      const html = `<!doctype html>",
-				"<html>",
-				"<head>",
-				"  <meta charset=\\\"utf-8\\\" />",
-				"  <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />",
-				"  <script src=\\\"https://cdn.tailwindcss.com\\\"></script>",
-				"  <style>body{margin:0;background:transparent;font-family:system-ui,sans-serif}</style>",
-				"</head>",
-				"<body>",
-				"  <div id=\\\"root\\\"></div>",
-				"  <script type=\\\"module\\\" src=\\\"/${id}/bundle.js\\\"></script>",
-				"</body>",
-				"</html>`;",
+				"      const html = [",
+				"        '<!doctype html>',",
+				"        '<html>',",
+				"        '<head>',",
+				"        '  <meta charset=\"utf-8\" />',",
+				"        '  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />',",
+				"        '  <script src=\"https://cdn.tailwindcss.com\"></script>',",
+				"        '  <style>body{margin:0;background:transparent;font-family:system-ui,sans-serif}</style>',",
+				"        '</head>',",
+				"        '<body>',",
+				"        '  <div id=\"root\"></div>',",
+				"        '  <script type=\"module\" src=\"/' + id + '/bundle.js\"></script>',",
+				"        '</body>',",
+				"        '</html>',",
+				"      ].join('\\n');",
 				"      return send(res, 200, { 'content-type': 'text/html; charset=utf-8' }, html);",
 				"    }",
 				"",
@@ -167,13 +171,14 @@ async function ensureSandbox(): Promise<Sandbox> {
 				"const aliasPlugin = {",
 				"  name: 'alias-at',",
 				"  setup(build) {",
-				"    build.onResolve({ filter: /^@\\// }, (args) => {",
+				"    build.onResolve({ filter: /^@\// }, (args) => {",
 				"      return { path: path.join(repoSrcRoot, args.path.slice(2)) };",
 				"    });",
 				"  },",
 				"};",
 				"",
 				"await build({",
+				"",
 				"  entryPoints: [path.join(srcRoot, 'entry.tsx')],",
 				"  outfile: path.join(distRoot, 'bundle.js'),",
 				"  bundle: true,",
@@ -182,7 +187,7 @@ async function ensureSandbox(): Promise<Sandbox> {
 				"  sourcemap: 'inline',",
 				"  plugins: [aliasPlugin],",
 				"  loader: { '.ts': 'ts', '.tsx': 'tsx' },",
-				"  define: { 'process.env.NODE_ENV': '\"production\"' },",
+				"  define: { 'process.env.NODE_ENV': '\\\"production\\\"' },",
 				"  jsx: 'automatic',",
 				"  tsconfig: fs.existsSync('/vercel/sandbox/tsconfig.json') ? '/vercel/sandbox/tsconfig.json' : undefined,",
 				"  nodePaths: fs.existsSync('/vercel/sandbox/node_modules') ? ['/vercel/sandbox/node_modules'] : undefined,",
@@ -191,11 +196,16 @@ async function ensureSandbox(): Promise<Sandbox> {
 				"fi",
 				// Start server if not already running
 				"if ! pgrep -f \"node server.mjs\" >/dev/null 2>&1; then",
-				`  PORT=${PORT} nohup node server.mjs >/tmp/preview-server.log 2>&1 &`,
+				`  PORT=${PORT} nohup node server.mjs >/tmp/preview-server.log 2>&1 &
+`,
 				"fi",
 			].join("\n"),
 		],
 	});
+	if (setup.exitCode !== 0) {
+		const stderr = await setup.stderr();
+		throw new Error(`Sandbox setup failed: ${stderr || "unknown error"}`);
+	}
 
 	globalThis.__themeTokenPreviewSandbox = { sandbox, expiresAt: Date.now() + SANDBOX_TTL_MS };
 	return sandbox;
