@@ -76,6 +76,18 @@ export function useSwatchyChat() {
 		}
 	}, [walletStatus, ordAddress]);
 
+	// Update pending payment if user becomes eligible for free generation while it's open
+	// This handles the flow: Generate -> Connect Wallet -> Become Eligible -> Update UI
+	useEffect(() => {
+		if (paymentPending && !paymentPending.isFree && hasFreeGeneration) {
+			console.log("[Swatchy] Updating pending payment to be free");
+			setPaymentPending({
+				...paymentPending,
+				isFree: true,
+			});
+		}
+	}, [paymentPending, hasFreeGeneration, setPaymentPending]);
+
 	// Build context to pass to API - includes current state for Swatchy's awareness
 	const context = useMemo((): SwatchyContext => {
 		const ctx: SwatchyContext = {
