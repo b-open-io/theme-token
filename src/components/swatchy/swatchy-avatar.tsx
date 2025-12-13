@@ -1,9 +1,9 @@
 "use client";
 
 import type React from "react";
-import { motion, useMotionValue } from "framer-motion";
+import { motion, useMotionValue, animate, type AnimationPlaybackControls } from "framer-motion";
 import Image from "next/image";
-import { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
 
 interface SwatchyAvatarProps {
@@ -24,7 +24,7 @@ interface StoredOffsets {
 	expanded?: DragOffset;
 }
 
-const STORAGE_KEY = "swatchy-offsets-v2";
+const STORAGE_KEY = "swatchy-offsets-v3"; // Version bump for new coord system
 
 function loadStoredOffsets(): StoredOffsets {
 	if (typeof window === "undefined") return {};
@@ -50,15 +50,16 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 	const isHero = position === "hero";
 	const isExpanded = position === "expanded";
 	const isLeft = side === "left";
-	
-	// Draggable in all states now
 	const isDraggable = true;
 
-	// Single pair of motion values for the avatar transform
+	// Motion values for absolute screen position
 	const x = useMotionValue(0);
 	const y = useMotionValue(0);
+	// Motion values for dimensions
+	const width = useMotionValue(80);
+	const height = useMotionValue(80);
 
-	// Store drag offsets in a ref to persist between renders without re-rendering
+	// Store drag offsets relative to base position
 	const offsetsRef = useRef<StoredOffsets>({
 		hero: { x: 0, y: 0 },
 		corner: { x: 0, y: 0 },
@@ -66,20 +67,21 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 	});
 
 	const [isDragging, setIsDragging] = useState(false);
-	const prevPositionRef = useRef(position);
-	const [viewportHeight, setViewportHeight] = useState(1000);
+	const [windowSize, setWindowSize] = useState({ w: 0, h: 0 });
+	// Keep track of active animations to stop them on drag
+	const controlsRef = useRef<{ x?: AnimationPlaybackControls; y?: AnimationPlaybackControls; w?: AnimationPlaybackControls; h?: AnimationPlaybackControls }>({});
 
-	// Handle window resize for constraints
+	// Handle window resize
 	useEffect(() => {
 		if (typeof window !== "undefined") {
-			setViewportHeight(window.innerHeight);
-			const handleResize = () => setViewportHeight(window.innerHeight);
+			setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+			const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
 			window.addEventListener("resize", handleResize);
 			return () => window.removeEventListener("resize", handleResize);
 		}
 	}, []);
 
-	// Load stored offsets on mount
+	// Load offsets on mount
 	useEffect(() => {
 		const stored = loadStoredOffsets();
 		offsetsRef.current = {
@@ -87,112 +89,119 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 			corner: stored.corner ?? { x: 0, y: 0 },
 			expanded: stored.expanded ?? { x: 0, y: 0 },
 		};
+	}, []);
 
-		// Initialize position based on current mode
-		const currentOffset = offsetsRef.current[position] ?? { x: 0, y: 0 };
-		x.set(currentOffset.x);
-		y.set(currentOffset.y);
-	}, [position, x, y]);
+	// Calculate base position for a given mode
+	const getBasePosition = useCallback((mode: SwatchyPosition, winW: number, winH: number) => {
+		const isMobile = winW < 640;
 
-	// Handle mode switching logic to preserve continuity
-	useLayoutEffect(() => {
-		const prev = prevPositionRef.current;
-		if (prev !== position) {
-			// 1. Save current drag state to previous mode
-			offsetsRef.current[prev] = { x: x.get(), y: y.get() };
-
-			// 2. Load drag state for new mode
-			// If transitioning to Expanded for the first time (or if we want it to follow),
-			// we might want logic to "copy" the previous position. 
-			// But for now, let's respect the persistent "Expanded" position as requested.
-			const targetOffset = offsetsRef.current[position] ?? { x: 0, y: 0 };
-
-			// 3. Update motion values immediately before paint
-			// This allows layout animation to animate from [PrevBase + PrevOffset] -> [NewBase + NewOffset]
-			x.set(targetOffset.x);
-			y.set(targetOffset.y);
-
-			// 4. Update ref
-			prevPositionRef.current = position;
+		if (mode === "expanded") {
+			const size = isMobile ? 140 : 280;
+			if (isMobile) {
+				// Mobile Expanded: Bottom Rightish
+				return {
+					x: winW - 20 - size,
+					y: winH - 40 - size,
+					size,
+				};
+			}
+			// Desktop Expanded: Top Right
+			// top: 80, right: 40
+			return {
+				x: winW - 40 - size,
+				y: 80,
+				size,
+			};
 		}
-	}, [position, x, y]);
+
+		if (mode === "hero") {
+			const size = isMobile ? 200 : 280;
+			// Desktop: bottom 25%, right 15%
+			// Mobile: bottom 20%, right 5%
+			const rightPct = isMobile ? 0.05 : 0.15;
+			const bottomPct = isMobile ? 0.20 : 0.25;
+			return {
+				x: winW - (winW * rightPct) - size,
+				y: winH - (winH * bottomPct) - size,
+				size,
+			};
+		}
+
+		// Corner (Default)
+		const size = 80;
+		// bottom: 16, right: 16 (or left: 16)
+		if (isLeft) {
+			return {
+				x: 16,
+				y: winH - 16 - size,
+				size,
+			};
+		}
+		return {
+			x: winW - 16 - size,
+			y: winH - 16 - size,
+			size,
+		};
+	}, [isLeft]);
+
+	// Animate to target position whenever state changes
+	useEffect(() => {
+		if (windowSize.w === 0) return; // Wait for hydration
+		if (isDragging) return; // Don't animate while dragging
+
+		const base = getBasePosition(position, windowSize.w, windowSize.h);
+		const offset = offsetsRef.current[position] ?? { x: 0, y: 0 };
+		const targetX = base.x + offset.x;
+		const targetY = base.y + offset.y;
+
+		// Stop any existing animations
+		controlsRef.current.x?.stop();
+		controlsRef.current.y?.stop();
+		controlsRef.current.w?.stop();
+		controlsRef.current.h?.stop();
+
+		// Spring configuration for "Fly To" feel
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const spring: any = { type: "spring", stiffness: 120, damping: 20, mass: 1 };
+
+		controlsRef.current.x = animate(x, targetX, spring);
+		controlsRef.current.y = animate(y, targetY, spring);
+		controlsRef.current.w = animate(width, base.size, spring);
+		controlsRef.current.h = animate(height, base.size, spring);
+
+	}, [position, windowSize, isDragging, getBasePosition, x, y, width, height]);
 
 	const handleDragStart = useCallback(() => {
 		setIsDragging(true);
+		// Stop animations to let user take control
+		controlsRef.current.x?.stop();
+		controlsRef.current.y?.stop();
 	}, []);
 
 	const handleDragEnd = useCallback(() => {
 		setIsDragging(false);
+		if (windowSize.w === 0) return;
 
-		// Persist to local storage
-		const currentOffsets = offsetsRef.current;
-		currentOffsets[position] = { x: x.get(), y: y.get() };
-		saveStoredOffsets(currentOffsets);
-	}, [position, x, y]);
+		// Calculate new offset relative to base
+		const base = getBasePosition(position, windowSize.w, windowSize.h);
+		const newOffset = {
+			x: x.get() - base.x,
+			y: y.get() - base.y,
+		};
+
+		// Save offset
+		offsetsRef.current[position] = newOffset;
+		saveStoredOffsets(offsetsRef.current);
+		
+		// Optional: Snap to bounds if dragging went too wild?
+		// For now we let it stay where dragged (as requested: "no matter where Swatchy is, he can be dragged")
+	}, [position, windowSize, getBasePosition, x, y]);
 
 	const handleClick = useCallback(() => {
 		if (!isDragging) {
 			onClick();
 		}
 	}, [isDragging, onClick]);
-
-	const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-
-	// Define base layout positions
-	const getPositionStyle = (): React.CSSProperties => {
-		if (isExpanded) {
-			// Expanded base position (Top-Rightish)
-			// User can drag from here
-			if (isMobile) {
-				return {
-					position: "fixed",
-					top: "auto",
-					bottom: "calc(70vh - 40px)",
-					right: 20, // using positive right
-					left: "auto",
-					width: 140,
-					height: 140,
-					zIndex: 50,
-				};
-			}
-			return {
-				position: "fixed",
-				top: 80, // Moved down a bit to be visible
-				right: 40,
-				bottom: "auto",
-				left: "auto",
-				width: 280,
-				height: 280,
-				zIndex: 50,
-			};
-		}
-
-		if (isHero) {
-			// Hero base position
-			return {
-				position: "fixed",
-				top: "auto",
-				bottom: isMobile ? "20%" : "25%",
-				left: "auto",
-				right: isMobile ? "5%" : "15%",
-				width: isMobile ? 200 : 280,
-				height: isMobile ? 200 : 280,
-				zIndex: 40,
-			};
-		}
-
-		// Corner base position
-		return {
-			position: "fixed",
-			top: "auto",
-			bottom: 16,
-			left: isLeft ? 16 : "auto",
-			right: isLeft ? "auto" : 16,
-			width: 80,
-			height: 80,
-			zIndex: 60,
-		};
-	};
 
 	// Floating animation
 	const getFloatAnimation = () => {
@@ -207,29 +216,41 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 		return { duration: 5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const };
 	};
 
-	// Determine constraints
+	// Hero constraints logic can be handled here if needed, but since we animate imperatively,
+	// dragConstraints prop works best with relative motion values usually.
+	// Since x/y are absolute, we can constrain to window bounds.
 	const getConstraints = () => {
-		// Hero: Constrain to roughly the first viewport (plus some buffer)
+		if (windowSize.w === 0) return undefined;
+		
 		if (isHero) {
-			return { 
-				top: -500, // Allow some upward movement relative to base
-				bottom: 200, 
-				left: -1000, 
-				right: 200 
+			// Hero: "draggable within the confines of the first visible view height"
+			// Assuming first view height is windowSize.h
+			// Avatar size is dynamic (width.get() is motion value)
+			// We can approximate constraints.
+			return {
+				top: 0,
+				left: 0,
+				right: windowSize.w - 200, // loose
+				bottom: windowSize.h - 200,
 			};
 		}
-		// Corner/Expanded: Free drag (window limits mostly)
+		// Free drag
 		return undefined;
 	};
 
 	return (
 		<motion.div
-			// The Rig - handles position and drag
-			layout
+			// The Rig - handles absolute position and drag
+			// NO layout prop - we handle position manually for perfect control
 			style={{
-				...getPositionStyle(),
+				position: "fixed",
+				top: 0,
+				left: 0,
 				x,
 				y,
+				width,
+				height,
+				zIndex: isCorner ? 60 : (isExpanded ? 50 : 40),
 			}}
 			className="overflow-visible"
 			drag={isDraggable}
@@ -238,14 +259,8 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 			dragConstraints={getConstraints()}
 			onDragStart={handleDragStart}
 			onDragEnd={handleDragEnd}
-			transition={{
-				type: "spring",
-				stiffness: isHero ? 120 : 200,
-				damping: isHero ? 20 : 25,
-				mass: 1,
-			}}
 		>
-			{/* The Avatar - handles visual interactions */}
+			{/* The Avatar Visuals */}
 			<motion.button
 				className={`relative w-full h-full rounded-full focus:outline-none focus-visible:outline-none ${
 					isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
@@ -256,7 +271,7 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 				aria-label="Swatchy Assistant"
 			>
 				{/* Inner wrapper for aspect ratio */}
-				<motion.div className="relative h-full w-full" layout="preserve-aspect">
+				<motion.div className="relative h-full w-full">
 					{/* Floating animation wrapper */}
 					<motion.div
 						className="h-full w-full"
