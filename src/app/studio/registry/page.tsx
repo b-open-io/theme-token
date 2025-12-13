@@ -4,6 +4,7 @@ import { Blocks, MessageCircle, ExternalLink } from "lucide-react";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { BlockPreview } from "@/components/swatchy/block-preview";
 import {
 	Empty,
 	EmptyHeader,
@@ -15,7 +16,7 @@ import {
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 
 export default function RegistryStudioPage() {
-	const { openChat, setPendingMessage } = useSwatchyStore();
+	const { openChat, setPendingMessage, generatedRegistryItem } = useSwatchyStore();
 
 	const handleGenerateWithSwatchy = () => {
 		setPendingMessage("I want to create a new block component. Can you help me design something?");
@@ -85,37 +86,46 @@ export default function RegistryStudioPage() {
 				</Button>
 			}
 		>
-			<div className="flex flex-1 items-center justify-center">
-				<Empty>
-					<EmptyHeader>
-						<EmptyMedia variant="icon">
-							<Blocks />
-						</EmptyMedia>
-						<EmptyTitle>Component Studio</EmptyTitle>
-						<EmptyDescription className="max-w-md">
-							Create shadcn blocks, components, and hooks that live forever on the blockchain.
-							All items are theme-aware and installable via the shadcn CLI.
-						</EmptyDescription>
-					</EmptyHeader>
-					<EmptyContent className="flex gap-3">
-						<Button onClick={handleGenerateWithSwatchy} className="gap-2">
-							<MessageCircle className="h-4 w-4" />
-							Generate with Swatchy
-						</Button>
-						<Button variant="outline" asChild>
-							<a
-								href="https://ui.shadcn.com/docs/registry"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="gap-2"
-							>
-								<ExternalLink className="h-4 w-4" />
-								Registry Docs
-							</a>
-						</Button>
-					</EmptyContent>
-				</Empty>
-			</div>
+			<ScrollArea className="flex-1">
+				{generatedRegistryItem ? (
+					<div className="mx-auto w-full max-w-4xl p-4">
+						<BlockPreview item={generatedRegistryItem} />
+					</div>
+				) : (
+					<div className="flex flex-1 items-center justify-center p-4">
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<Blocks />
+								</EmptyMedia>
+								<EmptyTitle>Component Studio</EmptyTitle>
+								<EmptyDescription className="max-w-md">
+									Create shadcn blocks, components, and hooks that live forever on
+									the blockchain. All items are theme-aware and installable via the
+									shadcn CLI.
+								</EmptyDescription>
+							</EmptyHeader>
+							<EmptyContent className="flex gap-3">
+								<Button onClick={handleGenerateWithSwatchy} className="gap-2">
+									<MessageCircle className="h-4 w-4" />
+									Generate with Swatchy
+								</Button>
+								<Button variant="outline" asChild>
+									<a
+										href="https://ui.shadcn.com/docs/registry"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="gap-2"
+									>
+										<ExternalLink className="h-4 w-4" />
+										Registry Docs
+									</a>
+								</Button>
+							</EmptyContent>
+						</Empty>
+					</div>
+				)}
+			</ScrollArea>
 		</StudioDashboard>
 	);
 }

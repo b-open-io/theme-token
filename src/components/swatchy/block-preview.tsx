@@ -23,6 +23,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
 	const [showPreview, setShowPreview] = useState(false);
 	const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [previewError, setPreviewError] = useState<string | null>(null);
 	const { clearGeneratedRegistryItem } = useSwatchyStore();
@@ -72,7 +73,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 
 	// Generate a live preview of the component
 	const handlePreview = useCallback(async () => {
-		if (previewHtml) {
+		if (previewHtml || previewUrl) {
 			// Already have preview, just show it
 			setShowPreview(true);
 			return;
@@ -91,7 +92,27 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 				throw new Error("No component file found");
 			}
 
-			const response = await fetch("/api/preview-component", {
+			// Try the fast inline preview first (srcDoc). If it fails (e.g., CSP or import issues),
+			// fall back to Vercel Sandbox which runs in an isolated VM and serves a URL.
+			{
+				const response = await fetch("/api/preview-component", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						code: mainFile.content,
+					}),
+				});
+
+				const data = await response.json();
+
+				if (response.ok && data.success && data.html) {
+					setPreviewHtml(data.html);
+					setShowPreview(true);
+					return;
+				}
+			}
+
+			const sandboxResponse = await fetch("/api/preview-component-sandbox", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -99,13 +120,13 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 				}),
 			});
 
-			const data = await response.json();
+			const sandboxData = await sandboxResponse.json();
 
-			if (!response.ok || !data.success) {
-				throw new Error(data.error || "Failed to generate preview");
+			if (!sandboxResponse.ok || !sandboxData.success || !sandboxData.url) {
+				throw new Error(sandboxData.error || "Failed to generate sandbox preview");
 			}
 
-			setPreviewHtml(data.html);
+			setPreviewUrl(sandboxData.url);
 			setShowPreview(true);
 		} catch (error) {
 			setPreviewError(
@@ -114,7 +135,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 		} finally {
 			setPreviewLoading(false);
 		}
-	}, [manifest.files, previewHtml]);
+	}, [manifest.files, previewHtml, previewUrl]);
 
 	return (
 		<motion.div
@@ -189,7 +210,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 
 			{/* Live Preview Panel */}
 			<AnimatePresence>
-				{showPreview && previewHtml && (
+				{showPreview && (previewHtml || previewUrl) && (
 					<motion.div
 						initial={{ height: 0, opacity: 0 }}
 						animate={{ height: "auto", opacity: 1 }}
@@ -212,10 +233,12 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 						</div>
 						<div className="bg-background p-2">
 							<iframe
-								srcDoc={previewHtml}
+								src={previewUrl ?? undefined}
+								srcDoc={previewUrl ? undefined : (previewHtml ?? undefined)}
 								title="Component Preview"
 								className="w-full h-64 rounded border bg-white"
 								sandbox="allow-scripts"
+								referrerPolicy="no-referrer"
 							/>
 						</div>
 					</motion.div>

@@ -558,6 +558,28 @@ export function SwatchyChatBubble() {
 										)}
 									</div>
 								)}
+								{(generation.toolName === "generateBlock" ||
+									generation.toolName === "generateComponent") && (
+									<div className="mt-2 flex items-center justify-between">
+										<p className="text-xs text-green-600/70 dark:text-green-400/70">
+											Saved to drafts
+										</p>
+										{pathname !== "/studio/registry" && (
+											<button
+												type="button"
+												onClick={() => {
+													setNavigating(true);
+													clearGeneration();
+													router.push("/studio/registry");
+												}}
+												className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+											>
+												View in Studio
+												<ArrowRight className="h-3 w-3" />
+											</button>
+										)}
+									</div>
+								)}
 							</motion.div>
 						)}
 

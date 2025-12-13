@@ -44,7 +44,9 @@ export const featureFlags = {
 	 * Controls: Preview button in block-preview.tsx
 	 */
 	componentPreview:
-		process.env.NEXT_PUBLIC_FEATURE_COMPONENT_PREVIEW === "true" || isDev,
+		// Default ON unless explicitly disabled.
+		// This keeps preview working in production/preview deployments without requiring env plumbing.
+		process.env.NEXT_PUBLIC_FEATURE_COMPONENT_PREVIEW !== "false",
 } as const;
 
 /**
