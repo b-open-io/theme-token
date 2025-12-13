@@ -35,12 +35,13 @@ export function PaymentRequestCard({
 
 	const displayName = TOOL_DISPLAY_NAMES[payment.toolName] ?? payment.toolName;
 	const description = TOOL_DESCRIPTIONS[payment.toolName] ?? "";
-	const hasBalance = (balance?.satoshis ?? 0) >= payment.cost;
+	const isFree = payment.isFree ?? false;
+	const hasBalance = isFree || (balance?.satoshis ?? 0) >= payment.cost;
 	const isConnected = status === "connected";
 
 	// Check if discount was applied by comparing to base price
 	const baseCost = BASE_PRICES[payment.toolName as PricingTool] ?? payment.cost;
-	const hasDiscount = hasPrismPass && payment.cost < baseCost;
+	const hasDiscount = !isFree && hasPrismPass && payment.cost < baseCost;
 
 	// Format satoshis to BSV with proper decimals
 	const formatBsv = (sats: number) => {
@@ -66,35 +67,52 @@ export function PaymentRequestCard({
 			</div>
 
 			<div className="mb-4 rounded-md bg-background/50 px-3 py-2">
-				{hasDiscount && (
-					<div className="mb-2 flex items-center gap-1.5 text-xs text-green-500">
-						<Zap className="h-3 w-3" />
-						<span>Prism Pass: 50% off!</span>
-					</div>
-				)}
-				<div className="flex items-center justify-between">
-					<span className="text-xs text-muted-foreground">Cost</span>
-					<div className="text-right">
-						{hasDiscount && (
+				{isFree ? (
+					<div className="flex items-center justify-between">
+						<span className="text-xs text-muted-foreground">Cost</span>
+						<div className="text-right">
 							<span className="mr-1.5 font-mono text-xs text-muted-foreground line-through">
-								{baseCost.toLocaleString()}
+								{baseCost.toLocaleString()} sats
 							</span>
+							<span className="font-mono text-sm font-medium text-green-500">
+								FREE
+							</span>
+							<div className="text-[10px] text-green-600/80">First generation gift 🎁</div>
+						</div>
+					</div>
+				) : (
+					<>
+						{hasDiscount && (
+							<div className="mb-2 flex items-center gap-1.5 text-xs text-green-500">
+								<Zap className="h-3 w-3" />
+								<span>Prism Pass: 50% off!</span>
+							</div>
 						)}
-						<span className="font-mono text-sm font-medium">
-							{payment.cost.toLocaleString()} sats
-						</span>
-						<span className="ml-1 text-xs text-muted-foreground">
-							({formatBsv(payment.cost)} BSV)
-						</span>
-					</div>
-				</div>
-				{isConnected && (
-					<div className="mt-1 flex items-center justify-between border-t border-border/50 pt-1">
-						<span className="text-xs text-muted-foreground">Your Balance</span>
-						<span className="font-mono text-xs">
-							{(balance?.satoshis ?? 0).toLocaleString()} sats
-						</span>
-					</div>
+						<div className="flex items-center justify-between">
+							<span className="text-xs text-muted-foreground">Cost</span>
+							<div className="text-right">
+								{hasDiscount && (
+									<span className="mr-1.5 font-mono text-xs text-muted-foreground line-through">
+										{baseCost.toLocaleString()}
+									</span>
+								)}
+								<span className="font-mono text-sm font-medium">
+									{payment.cost.toLocaleString()} sats
+								</span>
+								<span className="ml-1 text-xs text-muted-foreground">
+									({formatBsv(payment.cost)} BSV)
+								</span>
+							</div>
+						</div>
+						{isConnected && (
+							<div className="mt-1 flex items-center justify-between border-t border-border/50 pt-1">
+								<span className="text-xs text-muted-foreground">Your Balance</span>
+								<span className="font-mono text-xs">
+									{(balance?.satoshis ?? 0).toLocaleString()} sats
+								</span>
+							</div>
+						)}
+					</>
 				)}
 			</div>
 
@@ -149,7 +167,7 @@ export function PaymentRequestCard({
 						) : (
 							<>
 								<Sparkles className="h-4 w-4" />
-								Pay & Generate
+								{isFree ? "Claim Free Generation" : "Pay & Generate"}
 							</>
 						)}
 					</Button>

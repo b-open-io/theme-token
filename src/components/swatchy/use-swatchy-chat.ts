@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSwatchyStore } from "./swatchy-store";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
@@ -56,6 +56,25 @@ export function useSwatchyChat() {
 	const { setParams: setPatternParams, setColors: setPatternColors } = patternStore;
 
 	const { cacheRegistryItem } = useSwatchyStore();
+	const [hasFreeGeneration, setHasFreeGeneration] = useState(false);
+
+	// Fetch user storage to check for free generation eligibility
+	useEffect(() => {
+		if (walletStatus === "connected" && ordAddress) {
+			fetch(`/api/user/storage?userId=${ordAddress}`)
+				.then((res) => res.json())
+				.then((data) => {
+					// User gets first generation free if they have 0 total drafts
+					if (data.totalDrafts === 0) {
+						console.log("[Swatchy] User eligible for free first generation!");
+						setHasFreeGeneration(true);
+					} else {
+						setHasFreeGeneration(false);
+					}
+				})
+				.catch((err) => console.error("Failed to check storage usage:", err));
+		}
+	}, [walletStatus, ordAddress]);
 
 	// Build context to pass to API - includes current state for Swatchy's awareness
 	const context = useMemo((): SwatchyContext => {
@@ -142,6 +161,19 @@ export function useSwatchyChat() {
 			if (PAID_TOOLS.has(toolName as PricingTool)) {
 				// Get price with Prism Pass discount if applicable
 				const cost = getPrice(toolName as PricingTool, hasPrismPass);
+
+				// Check if eligible for free generation
+				if (hasFreeGeneration) {
+					console.log("[Swatchy] User eligible for free generation, showing claim UI");
+					setPaymentPending({
+						toolName,
+						toolCallId: toolCall.toolCallId,
+						cost: cost, // Keep original cost for display/comparison
+						args: toolCall.input as Record<string, unknown>,
+						isFree: true,
+					});
+					return;
+				}
 
 				// Set payment pending with toolCallId - UI will show payment request
 				setPaymentPending({
@@ -648,18 +680,27 @@ export function useSwatchyChat() {
 	const handlePaymentConfirmed = useCallback(async () => {
 		if (!paymentPending || !addToolOutputRef.current) return;
 
-		const { toolName, toolCallId, args, cost } = paymentPending;
+		const { toolName, toolCallId, args, cost, isFree } = paymentPending;
 
 		try {
-			// Process payment via Yours Wallet
-			const result = await sendPayment(FEE_ADDRESS, cost);
+			let txid: string | null = null;
 
-			if (result?.txid) {
-				// Payment successful - confirm in store
-				confirmPayment(result.txid);
+			if (isFree) {
+				console.log("[Payment] Processing free generation claim");
+				txid = "free-first-gen";
+				setHasFreeGeneration(false);
+			} else {
+				// Process payment via Yours Wallet
+				const result = await sendPayment(FEE_ADDRESS, cost);
+				txid = result?.txid || null;
+			}
+
+			if (txid) {
+				// Payment successful (or free claim) - confirm in store
+				confirmPayment(txid);
 
 				// Execute the actual tool and get the result
-				const toolResult = await executePaidTool(toolName, toolCallId, args, result.txid);
+				const toolResult = await executePaidTool(toolName, toolCallId, args, txid);
 
 				// Provide the tool output back to the model to complete the tool call
 				addToolOutputRef.current({

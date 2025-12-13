@@ -14,6 +14,7 @@ export interface PaymentRequest {
 	toolCallId: string;
 	cost: number;
 	args: Record<string, unknown>;
+	isFree?: boolean;
 }
 
 // Generation state for progress tracking
