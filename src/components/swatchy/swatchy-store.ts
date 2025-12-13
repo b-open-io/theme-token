@@ -74,6 +74,7 @@ export interface GeneratedRegistryItem {
 	txid: string;
 	timestamp: number;
 	validation?: ValidationInfo;
+	previewUrl?: string;
 }
 
 interface SwatchyStore {
@@ -134,7 +135,12 @@ interface SwatchyStore {
 	clearAIGeneratedTheme: () => void;
 
 	// Registry Item Generation Actions
-	setGeneratedRegistryItem: (manifest: GeneratedRegistryItem["manifest"], txid: string, validation?: ValidationInfo) => void;
+	setGeneratedRegistryItem: (
+		manifest: GeneratedRegistryItem["manifest"],
+		txid: string,
+		validation?: ValidationInfo,
+		previewUrl?: string,
+	) => void;
 	clearGeneratedRegistryItem: () => void;
 	cacheRegistryItem: (id: string, item: GeneratedRegistryItem) => void;
 
@@ -267,13 +273,14 @@ How would you like to modify this theme?`;
 
 			clearAIGeneratedTheme: () => set({ aiGeneratedTheme: null }),
 
-			setGeneratedRegistryItem: (manifest, txid, validation) =>
+			setGeneratedRegistryItem: (manifest, txid, validation, previewUrl) =>
 				set({
 					generatedRegistryItem: {
 						manifest,
 						txid,
 						timestamp: Date.now(),
 						validation,
+						previewUrl,
 					},
 				}),
 

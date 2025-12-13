@@ -14,9 +14,6 @@ export function createInlinePreviewHtml(
 	code: string,
 	componentName: string,
 ): string {
-	// Transform TSX to JS (basic transform - strips types)
-	const jsCode = transformTsxToJs(code);
-
 	// React 19 removed UMD builds - use ESM via esm.sh
 	// See: https://react.dev/blog/2025/10/01/react-19-2
 	// Babel standalone latest: https://babeljs.io/docs/babel-standalone
@@ -55,8 +52,8 @@ export function createInlinePreviewHtml(
 
     try {
       // Transform and execute the component code
-      const code = Babel.transform(\`${jsCode.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`, {
-        presets: ['react'],
+      const code = Babel.transform(\`${code.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`, {
+        presets: ['typescript', 'react'],
         filename: 'component.jsx'
       }).code;
 
@@ -84,36 +81,6 @@ export function createInlinePreviewHtml(
   </script>
 </body>
 </html>`;
-}
-
-/**
- * Basic TSX to JS transform (strips TypeScript types)
- * This is a simple regex-based transform for basic cases
- */
-function transformTsxToJs(code: string): string {
-	return (
-		code
-			// Remove type imports
-			.replace(/import\s+type\s+{[^}]+}\s+from\s+['"][^'"]+['"];?\n?/g, "")
-			// Remove type-only import specifiers
-			.replace(/,?\s*type\s+\w+/g, "")
-			// Remove interface declarations
-			.replace(/interface\s+\w+\s*{[^}]*}/g, "")
-			// Remove type declarations
-			.replace(/type\s+\w+\s*=\s*[^;]+;/g, "")
-			// Remove type annotations from function params
-			.replace(/:\s*\w+(\[\])?(\s*\|\s*\w+(\[\])?)*(?=\s*[,)=])/g, "")
-			// Remove return type annotations
-			.replace(/\):\s*\w+(\[\])?(\s*\|\s*\w+(\[\])?)*\s*(?=\s*[{=>])/g, ") ")
-			// Remove generic type params
-			.replace(/<[A-Z]\w*(?:\s*,\s*[A-Z]\w*)*>/g, "")
-			// Remove 'as' type assertions
-			.replace(/\s+as\s+\w+(\[\])?/g, "")
-			// Remove React.FC and similar type annotations
-			.replace(/:\s*React\.\w+(<[^>]+>)?/g, "")
-			// Clean up empty imports
-			.replace(/import\s+{\s*}\s+from\s+['"][^'"]+['"];?\n?/g, "")
-	);
 }
 
 /**

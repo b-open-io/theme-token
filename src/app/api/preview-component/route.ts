@@ -13,6 +13,19 @@ interface PreviewRequest {
 	componentName?: string;
 }
 
+function sanitizeCodeForPreview(code: string): string {
+	// Strip ANSI escape sequences and other control chars that sometimes sneak into LLM output.
+	// Keep \n \r \t for formatting.
+	return code
+		.replace(/\u001b\[[0-9;]*[a-zA-Z]/g, "")
+		.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\uFFFF]/g, "");
+}
+
+function containsModuleSyntax(code: string): boolean {
+	// Inline preview executes code via `new Function(...)` and cannot support ESM imports/exports.
+	return /(^|\n)\s*import\s/m.test(code) || /(^|\n)\s*export\s/m.test(code);
+}
+
 /**
  * POST /api/preview-component
  *
@@ -22,12 +35,25 @@ interface PreviewRequest {
 export async function POST(request: Request) {
 	try {
 		const body = (await request.json()) as PreviewRequest;
-		const { code, componentName: providedName } = body;
+		const { code: rawCode, componentName: providedName } = body;
 
-		if (!code) {
+		if (!rawCode) {
 			return NextResponse.json(
 				{ error: "Missing component code" },
 				{ status: 400 },
+			);
+		}
+
+		const code = sanitizeCodeForPreview(rawCode);
+
+		// Inline preview does not support module syntax; use the sandbox preview route instead.
+		if (containsModuleSyntax(code)) {
+			return NextResponse.json(
+				{
+					error:
+						"Inline preview does not support ES module imports/exports. Use sandbox preview.",
+				},
+				{ status: 422 },
 			);
 		}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Code2, Copy, Check, FileCode, Package, Blocks, ChevronDown, ChevronRight, CheckCircle2, Play, X, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
 	const [showPreview, setShowPreview] = useState(false);
 	const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(item.previewUrl ?? null);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [previewError, setPreviewError] = useState<string | null>(null);
 	const { clearGeneratedRegistryItem } = useSwatchyStore();
@@ -38,6 +38,28 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const validationAttempts = validation?.attempts || 1;
 	const hadRetries = validationAttempts > 1;
 	const hasWarnings = validation?.warnings && validation.warnings.length > 0;
+
+	// Auto-open the preview panel if generation already produced a sandbox preview URL.
+	useEffect(() => {
+		if (item.previewUrl) {
+			setPreviewHtml(null);
+			setPreviewUrl(item.previewUrl);
+			setShowPreview(true);
+		}
+	}, [item.previewUrl]);
+
+	// Reset preview state when a different item is shown (prevents stale srcDoc previews).
+	useEffect(() => {
+		setPreviewHtml(null);
+		setPreviewUrl(item.previewUrl ?? null);
+		setPreviewError(null);
+		setPreviewLoading(false);
+		setShowPreview(false);
+	}, [item.txid, item.timestamp]);
+
+	const containsModuleSyntax = useCallback((code: string) => {
+		return /(^|\n)\s*import\s/m.test(code) || /(^|\n)\s*export\s/m.test(code);
+	}, []);
 
 	// Build bundle items for inscription
 	const bundleResult = buildRegistryBundle({
@@ -92,9 +114,9 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 				throw new Error("No component file found");
 			}
 
-			// Try the fast inline preview first (srcDoc). If it fails (e.g., CSP or import issues),
-			// fall back to Vercel Sandbox which runs in an isolated VM and serves a URL.
-			{
+			// Inline srcDoc preview cannot execute ESM modules. Most generated registry items
+			// include imports, so we skip inline preview and go straight to sandbox.
+			if (!containsModuleSyntax(mainFile.content)) {
 				const response = await fetch("/api/preview-component", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -135,7 +157,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 		} finally {
 			setPreviewLoading(false);
 		}
-	}, [manifest.files, previewHtml, previewUrl]);
+	}, [manifest.files, previewHtml, previewUrl, containsModuleSyntax]);
 
 	return (
 		<motion.div

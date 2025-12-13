@@ -2,6 +2,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createDraft } from "@/lib/storage";
 import { generateWithValidation } from "@/lib/validated-generation";
+import { getInstalledPackageNames, getUiComponentNames, validateGeneratedRegistryCode } from "@/lib/registry/validate-generated";
+import { extractComponentName } from "@/lib/sandbox";
+import { createSandboxPreview } from "@/lib/sandbox-preview";
+
+export const runtime = "nodejs";
 
 // Schema for a generated file in a block
 const fileSchema = z.object({
@@ -116,10 +121,38 @@ For a pricing table block:
   ]
 `;
 
+function buildBlockSystemPrompt(): string {
+	const packages = getInstalledPackageNames();
+	const ui = getUiComponentNames();
+	// Keep this bounded to avoid bloating the prompt.
+	const pkgList = packages.slice(0, 120).join(", ");
+	const uiList = ui.slice(0, 80).join(", ");
+
+	return `${BLOCK_SYSTEM_PROMPT}
+
+## Available Imports (MUST FOLLOW)
+- You may ONLY import from packages already installed in this project.
+- If you need something not installed, implement it yourself instead of adding a new dependency.
+- Prefer importing shadcn primitives from \`@/components/ui/*\`.
+
+Installed packages (sample): ${pkgList}${packages.length > 120 ? ", ..." : ""}
+
+Available shadcn ui components (sample): ${uiList}${ui.length > 80 ? ", ..." : ""}
+`;
+}
+
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { prompt, name, includeHook, userId, paymentTxid } = body;
+		const { prompt, name, includeHook, userId, paymentTxid, attempt, previousErrors } = body as {
+			prompt?: string;
+			name?: string;
+			includeHook?: boolean;
+			userId?: string;
+			paymentTxid?: string;
+			attempt?: number;
+			previousErrors?: string[];
+		};
 
 		if (!prompt) {
 			return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
@@ -136,12 +169,17 @@ export async function POST(request: NextRequest) {
 			userPrompt += `\n\nInclude a companion React hook to manage state/logic.`;
 		}
 
-		// Generate with validation and automatic retry
+		const attemptNumber = typeof attempt === "number" && attempt > 0 ? attempt : 1;
+		if (attemptNumber > 1 && Array.isArray(previousErrors) && previousErrors.length > 0) {
+			userPrompt += `\n\nIMPORTANT: Your previous attempt failed to build/preview. Fix these issues exactly:\n${previousErrors.map((e, i) => `${i + 1}. ${e}`).join("\n")}\n\nRegenerate a complete, working block that only imports from packages already installed in this project and local shadcn components under @/components/ui.`;
+		}
+
+		// Generate once per request (retry loop is handled by the client for visible progress)
 		const result = await generateWithValidation<BlockSchema>({
 			schema: blockSchema,
-			systemPrompt: BLOCK_SYSTEM_PROMPT,
+			systemPrompt: buildBlockSystemPrompt(),
 			userPrompt,
-			maxRetries: 3,
+			maxRetries: 1,
 			codeExtractor: (block) =>
 				block.files.map((f) => ({ content: f.content, filename: f.path })),
 		});
@@ -158,6 +196,68 @@ export async function POST(request: NextRequest) {
 		}
 
 		const block = result.data;
+
+		// Validate imports/dependencies against what's actually available in this project
+		const importValidation = validateGeneratedRegistryCode({
+			files: block.files.map((f) => ({ path: f.path, content: f.content })),
+			declaredDependencies: block.dependencies,
+			registryDependencies: block.registryDependencies,
+		});
+
+		if (!importValidation.valid) {
+			return NextResponse.json(
+				{
+					error: "Code validation failed",
+					validation: {
+						valid: false,
+						errors: importValidation.errors,
+						warnings: [...result.validation.warnings, ...importValidation.warnings],
+					},
+					attempts: attemptNumber,
+				},
+				{ status: 422 },
+			);
+		}
+
+		// Pick the main file for preview bundling (prefer registry:block .tsx)
+		const mainFile =
+			block.files.find((f) => f.type === "registry:block" && f.path.endsWith(".tsx")) ??
+			block.files.find((f) => f.path.endsWith(".tsx")) ??
+			block.files[0];
+
+		if (!mainFile) {
+			return NextResponse.json(
+				{
+					error: "Block validation failed",
+					validation: { valid: false, errors: ["No files returned for block"], warnings: [] },
+					attempts: attemptNumber,
+				},
+				{ status: 422 },
+			);
+		}
+
+		// Validate that the block can be bundled in the sandbox preview environment
+		const componentName = extractComponentName(mainFile.content) ?? undefined;
+		const sandboxPreview = await createSandboxPreview({
+			files: block.files.map((f) => ({ path: f.path, content: f.content })),
+			mainFilePath: mainFile.path,
+			componentNameHint: componentName,
+		});
+
+		if (!sandboxPreview.success) {
+			return NextResponse.json(
+				{
+					error: "Sandbox preview validation failed",
+					validation: {
+						valid: false,
+						errors: [sandboxPreview.error || "Sandbox bundling failed"],
+						warnings: [...result.validation.warnings, ...importValidation.warnings],
+					},
+					attempts: attemptNumber,
+				},
+				{ status: 422 },
+			);
+		}
 
 		// Transform to manifest format compatible with our registry gateway
 		const manifest = {
@@ -201,10 +301,11 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({
 			block: manifest,
 			files: block.files,
+			previewUrl: sandboxPreview.url,
 			validation: {
 				valid: true,
-				attempts: result.attempts,
-				warnings: result.validation.warnings,
+				attempts: attemptNumber,
+				warnings: [...result.validation.warnings, ...importValidation.warnings],
 			},
 			draftId,
 		});

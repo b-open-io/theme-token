@@ -220,6 +220,21 @@ export function useSwatchyChat() {
 	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
 	addToolOutputRef.current = addToolOutput;
 
+	// For "navigate then generate" flows (e.g. blocks/components must be created in /studio/registry),
+	// store the last user request and re-send it after navigation so Swatchy can continue seamlessly.
+	const lastUserMessageRef = useRef<string | null>(null);
+	const queuedFollowupRef = useRef<{ destination: string; text: string } | null>(null);
+
+	useEffect(() => {
+		const queued = queuedFollowupRef.current;
+		if (!queued) return;
+		if (pathname !== queued.destination) return;
+		if (position !== "expanded") return;
+
+		queuedFollowupRef.current = null;
+		sendMessage({ text: queued.text });
+	}, [pathname, position, sendMessage]);
+
 	// Restore messages from store after hydration completes
 	const hasRestoredRef = useRef(false);
 	useEffect(() => {
@@ -250,6 +265,7 @@ export function useSwatchyChat() {
 			const pendingMessage = consumePendingMessage();
 			if (pendingMessage) {
 				hasSentPendingRef.current = true;
+				lastUserMessageRef.current = pendingMessage;
 				// Send the pending message automatically
 				sendMessage({ text: pendingMessage });
 			}
@@ -332,6 +348,20 @@ export function useSwatchyChat() {
 				case "navigate": {
 					const destination = args.destination as string;
 					const { path, label } = resolveDestination(destination);
+
+					// If we're navigating to a studio that gates certain generation tools,
+					// re-send the last user request once we arrive so the model can call the now-available tools.
+					if (
+						(path === "/studio/registry" || path === "/studio/wallpaper") &&
+						lastUserMessageRef.current
+					) {
+						const text = lastUserMessageRef.current;
+						// Heuristic: only auto-followup for generation-ish requests to avoid spamming on generic navigation.
+						if (/\b(generate|create|make|build|block|component|wallpaper)\b/i.test(text)) {
+							queuedFollowupRef.current = { destination: path, text };
+						}
+					}
+
 					setNavigating(true);
 					router.push(path);
 					// Don't close chat - let Swatchy stay open and animate
@@ -512,41 +542,50 @@ export function useSwatchyChat() {
 				}
 
 				case "generateBlock": {
-					setGenerating(toolName, "Generating your block...");
 					try {
-						const response = await fetch("/api/generate-block", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								prompt: args.prompt,
-								name: args.name,
-								includeHook: args.includeHook,
-								userId: ordAddress,
-								paymentTxid: txid,
-							}),
-						});
+						let data: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+						let previousErrors: string[] = [];
+						let lastErrorMsg = "Generation failed";
 
-						const data = await response.json();
+						for (let attempt = 1; attempt <= 3; attempt++) {
+							setGenerating(toolName, `Attempt ${attempt}/3: Generating your block...`);
 
-						// Handle validation failure (422)
-						if (response.status === 422) {
-							const errors = data.validation?.errors || [];
-							const attempts = data.attempts || 1;
-							const errorMsg = `Code validation failed after ${attempts} attempt(s): ${errors.join("; ")}`;
-							setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-							return `Error generating block: ${errorMsg}. You can retry for free using the Retry button.`;
-						}
+							const response = await fetch("/api/generate-block", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({
+									prompt: args.prompt,
+									name: args.name,
+									includeHook: args.includeHook,
+									userId: ordAddress,
+									paymentTxid: txid,
+									attempt,
+									previousErrors,
+								}),
+							});
 
-						if (!response.ok) {
+							data = await response.json();
+
+							if (response.ok) break;
+
+							// Handle validation failure (422) by looping back to AI with errors
+							if (response.status === 422) {
+								const errors = data.validation?.errors || [];
+								previousErrors = Array.isArray(errors) ? errors : [];
+								lastErrorMsg = previousErrors.length > 0 ? previousErrors.join("; ") : (data.error || "Validation failed");
+								continue;
+							}
+
 							throw new Error(data.error || "Failed to generate block");
 						}
 
-						console.log("[Swatchy] Block generated:", data.block?.name, "draftId:", data.draftId);
-
-						if (!data.block) {
-							console.error("[Swatchy] No block in response:", data);
-							throw new Error("No block returned from API");
+						if (!data || !data.block) {
+							const errorMsg = lastErrorMsg;
+							setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+							return `Error generating block: ${errorMsg}`;
 						}
+
+						console.log("[Swatchy] Block generated:", data.block?.name, "draftId:", data.draftId);
 
 						// Cache the generated item for Generative UI
 						const cacheId = data.draftId || `${txid}-${Date.now()}`;
@@ -555,10 +594,11 @@ export function useSwatchyChat() {
 							txid,
 							timestamp: Date.now(),
 							validation: data.validation,
+							previewUrl: data.previewUrl,
 						};
 						
 						// Update global preview and cache
-						setGeneratedRegistryItem(data.block, txid, data.validation);
+						setGeneratedRegistryItem(data.block, txid, data.validation, data.previewUrl);
 						cacheRegistryItem(cacheId, item);
 						setGenerationSuccess(data.block);
 
@@ -589,33 +629,46 @@ export function useSwatchyChat() {
 				}
 
 				case "generateComponent": {
-					setGenerating(toolName, "Generating your component...");
 					try {
-						const response = await fetch("/api/generate-component", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								prompt: args.prompt,
-								name: args.name,
-								variants: args.variants,
-								userId: ordAddress,
-								paymentTxid: txid,
-							}),
-						});
+						let data: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+						let previousErrors: string[] = [];
+						let lastErrorMsg = "Generation failed";
 
-						const data = await response.json();
+						for (let attempt = 1; attempt <= 3; attempt++) {
+							setGenerating(toolName, `Attempt ${attempt}/3: Generating your component...`);
 
-						// Handle validation failure (422)
-						if (response.status === 422) {
-							const errors = data.validation?.errors || [];
-							const attempts = data.attempts || 1;
-							const errorMsg = `Code validation failed after ${attempts} attempt(s): ${errors.join("; ")}`;
-							setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-							return `Error generating component: ${errorMsg}. You can retry for free using the Retry button.`;
+							const response = await fetch("/api/generate-component", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({
+									prompt: args.prompt,
+									name: args.name,
+									variants: args.variants,
+									userId: ordAddress,
+									paymentTxid: txid,
+									attempt,
+									previousErrors,
+								}),
+							});
+
+							data = await response.json();
+
+							if (response.ok) break;
+
+							if (response.status === 422) {
+								const errors = data.validation?.errors || [];
+								previousErrors = Array.isArray(errors) ? errors : [];
+								lastErrorMsg = previousErrors.length > 0 ? previousErrors.join("; ") : (data.error || "Validation failed");
+								continue;
+							}
+
+							throw new Error(data.error || "Failed to generate component");
 						}
 
-						if (!response.ok) {
-							throw new Error(data.error || "Failed to generate component");
+						if (!data || !data.component) {
+							const errorMsg = lastErrorMsg;
+							setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+							return `Error generating component: ${errorMsg}`;
 						}
 
 						// Cache the generated item for Generative UI
@@ -625,10 +678,11 @@ export function useSwatchyChat() {
 							txid,
 							timestamp: Date.now(),
 							validation: data.validation,
+							previewUrl: data.previewUrl,
 						};
 
 						// Update global preview and cache
-						setGeneratedRegistryItem(data.component, txid, data.validation);
+						setGeneratedRegistryItem(data.component, txid, data.validation, data.previewUrl);
 						cacheRegistryItem(cacheId, item);
 						setGenerationSuccess(data.component);
 
@@ -764,6 +818,7 @@ export function useSwatchyChat() {
 			clearGeneration();
 
 			const message = chatInput.trim();
+			lastUserMessageRef.current = message;
 			setChatInput(""); // Clear input immediately
 
 			await sendMessage({

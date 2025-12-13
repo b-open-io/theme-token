@@ -89,7 +89,10 @@ export default function RegistryStudioPage() {
 			<ScrollArea className="flex-1">
 				{generatedRegistryItem ? (
 					<div className="mx-auto w-full max-w-4xl p-4">
-						<BlockPreview item={generatedRegistryItem} />
+						<BlockPreview
+							key={`${generatedRegistryItem.txid}-${generatedRegistryItem.timestamp}`}
+							item={generatedRegistryItem}
+						/>
 					</div>
 				) : (
 					<div className="flex flex-1 items-center justify-center p-4">

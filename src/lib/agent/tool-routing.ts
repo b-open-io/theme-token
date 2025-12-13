@@ -44,16 +44,14 @@ export const WALLET_TOOLS: ToolName[] = [
 ];
 
 /**
- * Generation tools - available on every page
- * These tools handle their own navigation to the appropriate studio if needed
+ * Generation tools that are available on every page.
+ * NOTE: Some generation tools (like registry blocks/components) are intentionally
+ * page-scoped so the model navigates to the right studio first.
  */
 export const GENERATION_TOOLS: ToolName[] = [
 	"generateTheme",
 	"generateFont",
 	"generatePattern",
-	"generateWallpaper",
-	"generateBlock",
-	"generateComponent",
 	"createProject",
 ];
 
@@ -68,6 +66,8 @@ export const STUDIO_TOOLS: Record<string, ToolName[]> = {
 		"setThemeFont",
 	],
 	"/studio/patterns": ["setPatternParams"],
+	"/studio/registry": ["generateBlock", "generateComponent"],
+	"/studio/wallpaper": ["generateWallpaper"],
 };
 
 /**
@@ -107,7 +107,7 @@ export function getToolsForPage(pathname: string): Set<ToolName> {
  * Check if a tool is valid for the current page
  */
 export function isToolValidForPage(toolName: ToolName, pathname: string): boolean {
-	// Global, wallet, and generation tools work everywhere
+	// Global, wallet, and globally-allowed generation tools work everywhere
 	if (
 		GLOBAL_TOOLS.includes(toolName) ||
 		WALLET_TOOLS.includes(toolName) ||
