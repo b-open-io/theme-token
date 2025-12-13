@@ -313,7 +313,7 @@ bunx shadcn@latest add https://themetoken.dev/r/components/[origin]
 When generating blocks or components, you MUST follow these rules:
 
 1. **IMPORTS**: Use standard shadcn aliases - \`import { Button } from "@/components/ui/button"\`
-2. **DEPENDENCIES**: Track npm deps needed (lucide-react, zod, date-fns, etc.)
+2. **DEPENDENCIES**: Track package deps needed (lucide-react, zod, date-fns, etc.) and use Bun commands only (\`bun add\`, \`bun install\`, \`bunx\`) — do not suggest npm/yarn/pnpm.
 3. **REGISTRY DEPS**: Track shadcn components used (button, card, input, etc.)
 4. **STYLING**: NEVER use hex codes. ALWAYS use CSS variables:
    - \`bg-primary\`, \`text-primary-foreground\`
