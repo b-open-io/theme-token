@@ -95,6 +95,9 @@ interface SwatchyStore {
 	// Generated registry item (block or component) for preview
 	generatedRegistryItem: GeneratedRegistryItem | null;
 
+	// Cache of generated items for history
+	registryItemsCache: Record<string, GeneratedRegistryItem>;
+
 	// Payment State
 	paymentPending: PaymentRequest | null;
 	paymentTxid: string | null;
@@ -132,6 +135,7 @@ interface SwatchyStore {
 	// Registry Item Generation Actions
 	setGeneratedRegistryItem: (manifest: GeneratedRegistryItem["manifest"], txid: string, validation?: ValidationInfo) => void;
 	clearGeneratedRegistryItem: () => void;
+	cacheRegistryItem: (id: string, item: GeneratedRegistryItem) => void;
 
 	// Navigation Actions
 	setNavigating: (navigating: boolean) => void;
@@ -181,6 +185,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			remixContext: null,
 			aiGeneratedTheme: null,
 			generatedRegistryItem: null,
+			registryItemsCache: {},
 			paymentPending: null,
 			paymentTxid: null,
 			generation: initialGenerationState,
@@ -272,6 +277,14 @@ How would you like to modify this theme?`;
 				}),
 
 			clearGeneratedRegistryItem: () => set({ generatedRegistryItem: null }),
+
+			cacheRegistryItem: (id, item) =>
+				set((state) => ({
+					registryItemsCache: {
+						...state.registryItemsCache,
+						[id]: item,
+					},
+				})),
 
 			setNavigating: (isNavigating) => {
 				// When Swatchy triggers navigation, toggle which side he's on for fun
@@ -387,6 +400,7 @@ How would you like to modify this theme?`;
 				chatInput: state.chatInput,
 				side: state.side,
 				generatedRegistryItem: state.generatedRegistryItem,
+				registryItemsCache: state.registryItemsCache,
 			}),
 			onRehydrateStorage: () => (state) => {
 				// Called when hydration is complete

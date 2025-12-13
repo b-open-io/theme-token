@@ -55,6 +55,8 @@ export function useSwatchyChat() {
 	const patternStore = usePatternStore();
 	const { setParams: setPatternParams, setColors: setPatternColors } = patternStore;
 
+	const { cacheRegistryItem } = useSwatchyStore();
+
 	// Build context to pass to API - includes current state for Swatchy's awareness
 	const context = useMemo((): SwatchyContext => {
 		const ctx: SwatchyContext = {
@@ -359,7 +361,7 @@ export function useSwatchyChat() {
 
 	// Execute paid tool after payment is confirmed
 	const executePaidTool = useCallback(
-		async (toolName: ToolName, toolCallId: string, args: Record<string, unknown>, txid: string): Promise<string> => {
+		async (toolName: ToolName, toolCallId: string, args: Record<string, unknown>, txid: string): Promise<string | object> => {
 			switch (toolName) {
 				case "generateTheme": {
 					setGenerating(toolName, "Generating your theme...");
@@ -497,15 +499,24 @@ export function useSwatchyChat() {
 
 						console.log("[Swatchy] Block generated:", data.block?.name, "draftId:", data.draftId);
 
-						// Store the generated block for preview
-						if (data.block) {
-							console.log("[Swatchy] Setting generated registry item");
-							setGeneratedRegistryItem(data.block, txid, data.validation);
-							setGenerationSuccess(data.block);
-						} else {
+						if (!data.block) {
 							console.error("[Swatchy] No block in response:", data);
 							throw new Error("No block returned from API");
 						}
+
+						// Cache the generated item for Generative UI
+						const cacheId = data.draftId || `${txid}-${Date.now()}`;
+						const item = {
+							manifest: data.block,
+							txid,
+							timestamp: Date.now(),
+							validation: data.validation,
+						};
+						
+						// Update global preview and cache
+						setGeneratedRegistryItem(data.block, txid, data.validation);
+						cacheRegistryItem(cacheId, item);
+						setGenerationSuccess(data.block);
 
 						const fileCount = data.block.files.length;
 						const deps = data.block.registryDependencies.length > 0
@@ -517,7 +528,15 @@ export function useSwatchyChat() {
 							? ` (validated after ${data.validation.attempts} attempts)`
 							: "";
 
-						return `Block "${data.block.name}" generated!${savedMsg} ${fileCount} file(s).${deps}${attemptsMsg} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
+						const summary = `Block "${data.block.name}" generated!${savedMsg} ${fileCount} file(s).${deps}${attemptsMsg} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
+
+						// Return structured output for Generative UI
+						return {
+							summary,
+							cacheId,
+							type: "registry:block",
+							name: data.block.name
+						};
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
@@ -555,8 +574,18 @@ export function useSwatchyChat() {
 							throw new Error(data.error || "Failed to generate component");
 						}
 
-						// Store the generated component for preview
+						// Cache the generated item for Generative UI
+						const cacheId = data.draftId || `${txid}-${Date.now()}`;
+						const item = {
+							manifest: data.component,
+							txid,
+							timestamp: Date.now(),
+							validation: data.validation,
+						};
+
+						// Update global preview and cache
 						setGeneratedRegistryItem(data.component, txid, data.validation);
+						cacheRegistryItem(cacheId, item);
 						setGenerationSuccess(data.component);
 
 						const deps = data.component.registryDependencies.length > 0
@@ -568,7 +597,15 @@ export function useSwatchyChat() {
 							? ` (validated after ${data.validation.attempts} attempts)`
 							: "";
 
-						return `Component "${data.component.name}" generated!${savedMsg}${deps}${attemptsMsg} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
+						const summary = `Component "${data.component.name}" generated!${savedMsg}${deps}${attemptsMsg} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
+
+						// Return structured output for Generative UI
+						return {
+							summary,
+							cacheId,
+							type: "registry:component",
+							name: data.component.name
+						};
 					} catch (err) {
 						const errorMsg = err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });

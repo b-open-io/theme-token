@@ -254,7 +254,7 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 export function SwatchyChatBubble() {
 	const router = useRouter();
 	const pathname = usePathname();
-	const { closeChat, setNavigating, clearGeneration, generatedRegistryItem } = useSwatchyStore();
+	const { closeChat, setNavigating, clearGeneration, registryItemsCache } = useSwatchyStore();
 	const {
 		messages,
 		input,
@@ -408,6 +408,27 @@ export function SwatchyChatBubble() {
 													const toolName = "toolName" in part ? part.toolName : part.type.replace("tool-", "");
 													const displayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
 
+													// Generative UI for Blocks and Components
+													if (
+														(toolName === "generateBlock" || toolName === "generateComponent") &&
+														part.state === "output-available" &&
+														part.output &&
+														typeof part.output === "object" &&
+														"cacheId" in part.output
+													) {
+														// eslint-disable-next-line @typescript-eslint/no-explicit-any
+														const cacheId = (part.output as any).cacheId;
+														const item = registryItemsCache[cacheId];
+														
+														if (item) {
+															return (
+																<div key={index} className="w-full my-2">
+																	<BlockPreview item={item} />
+																</div>
+															);
+														}
+													}
+
 													// Show different UI based on tool state
 													if (part.state === "input-streaming" || part.state === "input-available") {
 														return (
@@ -538,11 +559,6 @@ export function SwatchyChatBubble() {
 									</div>
 								)}
 							</motion.div>
-						)}
-
-						{/* Block/Component preview */}
-						{generatedRegistryItem && (
-							<BlockPreview item={generatedRegistryItem} />
 						)}
 
 						{/* Generation error */}
