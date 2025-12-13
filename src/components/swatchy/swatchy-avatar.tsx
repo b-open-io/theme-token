@@ -3,13 +3,14 @@
 import type React from "react";
 import { motion, useMotionValue } from "framer-motion";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
 
 interface SwatchyAvatarProps {
 	position: SwatchyPosition;
 	side: SwatchySide;
 	onClick: () => void;
+	children?: React.ReactNode;
 }
 
 interface DragOffset {
@@ -18,11 +19,12 @@ interface DragOffset {
 }
 
 interface StoredOffsets {
+	hero?: DragOffset;
 	corner?: DragOffset;
 	expanded?: DragOffset;
 }
 
-const STORAGE_KEY = "swatchy-offsets";
+const STORAGE_KEY = "swatchy-offsets-v2";
 
 function loadStoredOffsets(): StoredOffsets {
 	if (typeof window === "undefined") return {};
@@ -43,35 +45,77 @@ function saveStoredOffsets(offsets: StoredOffsets): void {
 	}
 }
 
-export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
+export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
 	const isHero = position === "hero";
 	const isExpanded = position === "expanded";
 	const isLeft = side === "left";
-	const isDraggable = isCorner || isExpanded;
+	
+	// Draggable in all states now
+	const isDraggable = true;
 
-	// Motion values for drag offsets - these work WITH framer-motion's drag system
-	const cornerX = useMotionValue(0);
-	const cornerY = useMotionValue(0);
-	const expandedX = useMotionValue(0);
-	const expandedY = useMotionValue(0);
+	// Single pair of motion values for the avatar transform
+	const x = useMotionValue(0);
+	const y = useMotionValue(0);
+
+	// Store drag offsets in a ref to persist between renders without re-rendering
+	const offsetsRef = useRef<StoredOffsets>({
+		hero: { x: 0, y: 0 },
+		corner: { x: 0, y: 0 },
+		expanded: { x: 0, y: 0 },
+	});
 
 	const [isDragging, setIsDragging] = useState(false);
-	const [offsetsLoaded, setOffsetsLoaded] = useState(false);
+	const prevPositionRef = useRef(position);
+	const [viewportHeight, setViewportHeight] = useState(1000);
+
+	// Handle window resize for constraints
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			setViewportHeight(window.innerHeight);
+			const handleResize = () => setViewportHeight(window.innerHeight);
+			window.addEventListener("resize", handleResize);
+			return () => window.removeEventListener("resize", handleResize);
+		}
+	}, []);
 
 	// Load stored offsets on mount
 	useEffect(() => {
 		const stored = loadStoredOffsets();
-		if (stored.corner) {
-			cornerX.set(stored.corner.x);
-			cornerY.set(stored.corner.y);
+		offsetsRef.current = {
+			hero: stored.hero ?? { x: 0, y: 0 },
+			corner: stored.corner ?? { x: 0, y: 0 },
+			expanded: stored.expanded ?? { x: 0, y: 0 },
+		};
+
+		// Initialize position based on current mode
+		const currentOffset = offsetsRef.current[position] ?? { x: 0, y: 0 };
+		x.set(currentOffset.x);
+		y.set(currentOffset.y);
+	}, [position, x, y]);
+
+	// Handle mode switching logic to preserve continuity
+	useLayoutEffect(() => {
+		const prev = prevPositionRef.current;
+		if (prev !== position) {
+			// 1. Save current drag state to previous mode
+			offsetsRef.current[prev] = { x: x.get(), y: y.get() };
+
+			// 2. Load drag state for new mode
+			// If transitioning to Expanded for the first time (or if we want it to follow),
+			// we might want logic to "copy" the previous position. 
+			// But for now, let's respect the persistent "Expanded" position as requested.
+			const targetOffset = offsetsRef.current[position] ?? { x: 0, y: 0 };
+
+			// 3. Update motion values immediately before paint
+			// This allows layout animation to animate from [PrevBase + PrevOffset] -> [NewBase + NewOffset]
+			x.set(targetOffset.x);
+			y.set(targetOffset.y);
+
+			// 4. Update ref
+			prevPositionRef.current = position;
 		}
-		if (stored.expanded) {
-			expandedX.set(stored.expanded.x);
-			expandedY.set(stored.expanded.y);
-		}
-		setOffsetsLoaded(true);
-	}, [cornerX, cornerY, expandedX, expandedY]);
+	}, [position, x, y]);
 
 	const handleDragStart = useCallback(() => {
 		setIsDragging(true);
@@ -80,36 +124,31 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 	const handleDragEnd = useCallback(() => {
 		setIsDragging(false);
 
-		// Save the current motion values as offsets
-		const stored = loadStoredOffsets();
-		if (isExpanded) {
-			saveStoredOffsets({ ...stored, expanded: { x: expandedX.get(), y: expandedY.get() } });
-		} else if (isCorner) {
-			saveStoredOffsets({ ...stored, corner: { x: cornerX.get(), y: cornerY.get() } });
-		}
-	}, [isExpanded, isCorner, cornerX, cornerY, expandedX, expandedY]);
+		// Persist to local storage
+		const currentOffsets = offsetsRef.current;
+		currentOffsets[position] = { x: x.get(), y: y.get() };
+		saveStoredOffsets(currentOffsets);
+	}, [position, x, y]);
 
 	const handleClick = useCallback(() => {
-		// Only trigger click if we weren't dragging
 		if (!isDragging) {
 			onClick();
 		}
 	}, [isDragging, onClick]);
 
-	// Position styles applied directly to style prop - layout animation handles the transition
-	// CSS cannot interpolate between numeric values and "auto", so we use layout animation
-	// Check mobile once for all position calculations
 	const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
+	// Define base layout positions
 	const getPositionStyle = (): React.CSSProperties => {
 		if (isExpanded) {
-			// Default expanded position - offsets handled by motion values
+			// Expanded base position (Top-Rightish)
+			// User can drag from here
 			if (isMobile) {
 				return {
 					position: "fixed",
 					top: "auto",
 					bottom: "calc(70vh - 40px)",
-					right: -20,
+					right: 20, // using positive right
 					left: "auto",
 					width: 140,
 					height: 140,
@@ -118,8 +157,8 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 			}
 			return {
 				position: "fixed",
-				top: -75,
-				right: -20,
+				top: 80, // Moved down a bit to be visible
+				right: 40,
 				bottom: "auto",
 				left: "auto",
 				width: 280,
@@ -129,20 +168,20 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 		}
 
 		if (isHero) {
-			// Hero pose - NOT draggable, click only
+			// Hero base position
 			return {
 				position: "fixed",
 				top: "auto",
 				bottom: isMobile ? "20%" : "25%",
 				left: "auto",
-				right: isMobile ? "-15%" : "15%",
+				right: isMobile ? "5%" : "15%",
 				width: isMobile ? 200 : 280,
 				height: isMobile ? 200 : 280,
 				zIndex: 40,
 			};
 		}
 
-		// Default corner position - offsets handled by motion values
+		// Corner base position
 		return {
 			position: "fixed",
 			top: "auto",
@@ -155,116 +194,99 @@ export function SwatchyAvatar({ position, side, onClick }: SwatchyAvatarProps) {
 		};
 	};
 
-	// Get the appropriate motion values for the current mode
-	const getCurrentX = () => {
-		if (isCorner) return cornerX;
-		if (isExpanded) return expandedX;
-		return undefined;
-	};
-
-	const getCurrentY = () => {
-		if (isCorner) return cornerY;
-		if (isExpanded) return expandedY;
-		return undefined;
-	};
-
-	// Floating animation - more pronounced in hero mode, subtle in corner
+	// Floating animation
 	const getFloatAnimation = () => {
-		if (isExpanded) {
-			return { y: 0, rotate: 0 };
-		}
-		if (isHero) {
-			// Larger, slower, more majestic float for hero pose
-			return {
-				y: [0, -12, 0],
-				rotate: [0, 3, 0, -3, 0],
-			};
-		}
-		// Standard corner float
-		return {
-			y: [0, -8, 0],
-			rotate: [0, 2, 0, -2, 0],
-		};
+		if (isExpanded) return { y: 0, rotate: 0 };
+		if (isHero) return { y: [0, -12, 0], rotate: [0, 3, 0, -3, 0] };
+		return { y: [0, -8, 0], rotate: [0, 2, 0, -2, 0] };
 	};
 
 	const getFloatTransition = () => {
-		if (isExpanded) {
-			return { duration: 0.5 };
-		}
+		if (isExpanded) return { duration: 0.5 };
+		if (isHero) return { duration: 6, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const };
+		return { duration: 5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const };
+	};
+
+	// Determine constraints
+	const getConstraints = () => {
+		// Hero: Constrain to roughly the first viewport (plus some buffer)
 		if (isHero) {
-			// Slower, more elegant for hero
-			return {
-				duration: 6,
-				repeat: Number.POSITIVE_INFINITY,
-				ease: "easeInOut" as const,
+			return { 
+				top: -500, // Allow some upward movement relative to base
+				bottom: 200, 
+				left: -1000, 
+				right: 200 
 			};
 		}
-		return {
-			duration: 5,
-			repeat: Number.POSITIVE_INFINITY,
-			ease: "easeInOut" as const,
-		};
+		// Corner/Expanded: Free drag (window limits mostly)
+		return undefined;
 	};
 
 	return (
-		<motion.button
-			// layout prop is the key - it measures bounding box and uses transforms
-			// instead of trying to interpolate CSS position properties
+		<motion.div
+			// The Rig - handles position and drag
 			layout
 			style={{
 				...getPositionStyle(),
-				x: getCurrentX(),
-				y: getCurrentY(),
+				x,
+				y,
 			}}
-			className={`overflow-visible rounded-full focus:outline-none focus-visible:outline-none ${
-				isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-			}`}
-			onClick={handleClick}
-			// Enable drag for corner and expanded modes (not hero)
+			className="overflow-visible"
 			drag={isDraggable}
 			dragMomentum={false}
 			dragElastic={0.1}
+			dragConstraints={getConstraints()}
 			onDragStart={handleDragStart}
 			onDragEnd={handleDragEnd}
-			// Smooth spring - slightly softer for hero transitions
 			transition={{
 				type: "spring",
 				stiffness: isHero ? 120 : 200,
 				damping: isHero ? 20 : 25,
 				mass: 1,
 			}}
-			whileHover={isDraggable || isHero ? { scale: 1.05 } : undefined}
-			whileTap={isDraggable || isHero ? { scale: 0.95 } : undefined}
-			aria-label={isCorner || isHero ? "Open Swatchy assistant" : "Drag to reposition or click to close chat"}
 		>
-			{/* Wrapper with layout="preserve-aspect" prevents distortion during size transition */}
-			<motion.div className="relative h-full w-full" layout="preserve-aspect">
-				{/* Floating animation wrapper */}
-				<motion.div
-					className="h-full w-full"
-					animate={getFloatAnimation()}
-					transition={getFloatTransition()}
-				>
-					<Image
-						src="/swatchy-meditation.png"
-						alt="Swatchy Assistant"
-						fill
-						sizes="(max-width: 768px) 100vw, 280px"
-						className="object-contain"
-						priority
-						draggable={false}
-					/>
+			{/* The Avatar - handles visual interactions */}
+			<motion.button
+				className={`relative w-full h-full rounded-full focus:outline-none focus-visible:outline-none ${
+					isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+				}`}
+				onClick={handleClick}
+				whileHover={{ scale: 1.05 }}
+				whileTap={{ scale: 0.95 }}
+				aria-label="Swatchy Assistant"
+			>
+				{/* Inner wrapper for aspect ratio */}
+				<motion.div className="relative h-full w-full" layout="preserve-aspect">
+					{/* Floating animation wrapper */}
+					<motion.div
+						className="h-full w-full"
+						animate={getFloatAnimation()}
+						transition={getFloatTransition()}
+					>
+						<Image
+							src="/swatchy-meditation.png"
+							alt="Swatchy Assistant"
+							fill
+							sizes="(max-width: 768px) 100vw, 280px"
+							className="object-contain"
+							priority
+							draggable={false}
+						/>
+					</motion.div>
 				</motion.div>
-			</motion.div>
 
-			{/* Notification pulse when idle in corner (not in hero) */}
-			{isCorner && (
-				<motion.span
-					className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-primary"
-					animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
-					transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-				/>
-			)}
-		</motion.button>
+				{/* Pulse indicator */}
+				{isCorner && (
+					<motion.span
+						className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-primary"
+						animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
+						transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+					/>
+				)}
+			</motion.button>
+
+			{/* The Chat Bubble - Rendered relative to the Rig */}
+			{children}
+		</motion.div>
 	);
 }
