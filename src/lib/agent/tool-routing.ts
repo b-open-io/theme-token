@@ -28,7 +28,9 @@ export type ToolName =
 	| "getWalletBalance"
 	| "getExchangeRate";
 
-/** Tools available on every page */
+/**
+ * Tools available on every page
+ */
 export const GLOBAL_TOOLS: ToolName[] = [
 	"navigate",
 	"getWalletBalance",
@@ -42,25 +44,30 @@ export const WALLET_TOOLS: ToolName[] = [
 ];
 
 /**
+ * Generation tools - available on every page
+ * These tools handle their own navigation to the appropriate studio if needed
+ */
+export const GENERATION_TOOLS: ToolName[] = [
+	"generateTheme",
+	"generateFont",
+	"generatePattern",
+	"generateWallpaper",
+	"generateBlock",
+	"generateComponent",
+	"createProject",
+];
+
+/**
  * Studio-specific tools - require being on the correct page
- *
- * Generation tools also require navigation because:
- * 1. Proper visual feedback when generating
- * 2. User context for what they're creating
- * 3. Immediate preview/editing after generation
+ * These tools manipulate the *current* studio state
  */
 export const STUDIO_TOOLS: Record<string, ToolName[]> = {
 	"/studio/theme": [
-		"generateTheme",
 		"setThemeColor",
 		"setThemeRadius",
 		"setThemeFont",
 	],
-	"/studio/font": ["generateFont"],
-	"/studio/patterns": ["generatePattern", "setPatternParams"],
-	"/studio/wallpaper": ["generateWallpaper"],
-	"/studio/registry": ["generateBlock", "generateComponent"],
-	"/studio/project": ["createProject"],
+	"/studio/patterns": ["setPatternParams"],
 };
 
 /**
@@ -79,7 +86,11 @@ const PAGE_NAMES: Record<string, string> = {
  * Get all tools available for a specific page
  */
 export function getToolsForPage(pathname: string): Set<ToolName> {
-	const tools = new Set<ToolName>([...GLOBAL_TOOLS, ...WALLET_TOOLS]);
+	const tools = new Set<ToolName>([
+		...GLOBAL_TOOLS,
+		...WALLET_TOOLS,
+		...GENERATION_TOOLS,
+	]);
 
 	// Add studio-specific tools if on a studio page
 	const studioTools = STUDIO_TOOLS[pathname];
@@ -96,8 +107,12 @@ export function getToolsForPage(pathname: string): Set<ToolName> {
  * Check if a tool is valid for the current page
  */
 export function isToolValidForPage(toolName: ToolName, pathname: string): boolean {
-	// Global and wallet tools work everywhere
-	if (GLOBAL_TOOLS.includes(toolName) || WALLET_TOOLS.includes(toolName)) {
+	// Global, wallet, and generation tools work everywhere
+	if (
+		GLOBAL_TOOLS.includes(toolName) ||
+		WALLET_TOOLS.includes(toolName) ||
+		GENERATION_TOOLS.includes(toolName)
+	) {
 		return true;
 	}
 

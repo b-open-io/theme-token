@@ -25,7 +25,7 @@ export const featureFlags = {
 	 * Registry Studio - Browse and manage shadcn registry items (blocks, components, hooks)
 	 * Controls: /studio/registry
 	 */
-	registry: process.env.NEXT_PUBLIC_FEATURE_REGISTRY === "true" || isDev,
+	registry: true,
 
 	/**
 	 * Icon Studio - Custom icon generation for themes
