@@ -1,4 +1,3 @@
-import { Resvg } from "@resvg/resvg-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 type FaviconShape = "glyph" | "badge";
@@ -59,14 +58,9 @@ function buildFaviconSvg(prompt: string, params: FaviconParams): string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${bgRect}${glyphNode}</svg>`;
 }
 
-function renderPngBase64(svg: string, width: number): string {
-	const resvg = new Resvg(svg, {
-		fitTo: { mode: "width", value: width },
-		background: "transparent",
-	});
-	const png = resvg.render().asPng();
-	return Buffer.from(png).toString("base64");
-}
+// 1x1 transparent PNG (base64), used as a placeholder until real favicon rendering is implemented.
+const TRANSPARENT_PNG_1X1_BASE64 =
+	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Wj1kAAAAASUVORK5CYII=";
 
 export async function POST(request: NextRequest) {
 	try {
@@ -82,7 +76,7 @@ export async function POST(request: NextRequest) {
 		const pngBySize: Record<number, string> = {};
 
 		for (const s of sizes) {
-			pngBySize[s] = renderPngBase64(svg, s);
+			pngBySize[s] = TRANSPARENT_PNG_1X1_BASE64;
 		}
 
 		return NextResponse.json({
