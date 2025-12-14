@@ -2,8 +2,6 @@ import { featureFlags } from "@/lib/feature-flags";
 import {
 	BASE_PRICES,
 	PAID_TOOLS as PAID_TOOLS_SET,
-	getPrice,
-	formatSatoshis,
 } from "@/lib/pricing";
 import { generateRouteDocumentation } from "@/lib/routes";
 import { getNavigationHints, getToolsForPage } from "./tool-routing";
@@ -69,6 +67,34 @@ export interface SwatchyContext {
 		scale?: number;
 		opacity?: number;
 	};
+
+	// Icon studio state
+	iconState?: {
+		activeTab: "icon-set" | "favicon";
+		iconSet: {
+			prompt?: string;
+			iconNamesText?: string;
+			slotPreset?: "theme-token" | "custom";
+			params?: {
+				style?: "outline" | "solid";
+				strokeWidth?: number;
+				padding?: number;
+				size?: 16 | 20 | 24;
+			};
+		};
+		favicon: {
+			prompt?: string;
+			params?: {
+				shape?: "glyph" | "badge";
+				background?: "transparent" | "theme" | "solid";
+				foreground?: string;
+				backgroundColor?: string;
+				size?: 32 | 64 | 128;
+				padding?: number;
+				radius?: number;
+			};
+		};
+	};
 }
 
 /**
@@ -93,6 +119,13 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 	if (featureFlags.images) {
 		capabilities.push(
 			`${capabilityNumber}. **Pattern Generation** - Create SVG patterns (costs 1M sats)`,
+		);
+		capabilityNumber++;
+	}
+
+	if (featureFlags.icons) {
+		capabilities.push(
+			`${capabilityNumber}. **Icon Studio** - Generate icon sets and favicons`,
 		);
 		capabilityNumber++;
 	}
@@ -159,6 +192,25 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 			stateLines.push(`  - Source: ${context.patternState.source || "geopattern"}`);
 			stateLines.push(`  - Scale: ${context.patternState.scale || 100}px`);
 			stateLines.push(`  - Opacity: ${context.patternState.opacity || 50}%`);
+		}
+
+		// Add icon state if in icon studio
+		if (context.iconState && context.currentPage.includes("/studio/icon")) {
+			stateLines.push(`- **Icon Studio**: ${context.iconState.activeTab}`);
+			if (context.iconState.activeTab === "icon-set") {
+				const params = context.iconState.iconSet.params || {};
+				stateLines.push(`  - Style: ${params.style || "outline"}`);
+				stateLines.push(`  - Stroke Width: ${params.strokeWidth ?? 2}`);
+				stateLines.push(`  - Padding: ${params.padding ?? 2}`);
+				stateLines.push(`  - Size: ${params.size ?? 24}`);
+				if (context.iconState.iconSet.slotPreset) {
+					stateLines.push(`  - Slot Preset: ${context.iconState.iconSet.slotPreset}`);
+				}
+			} else {
+				const params = context.iconState.favicon.params || {};
+				stateLines.push(`  - Shape: ${params.shape || "badge"}`);
+				stateLines.push(`  - Background: ${params.background || "theme"}`);
+			}
 		}
 
 		currentStateSection = `

@@ -14,6 +14,7 @@ import { PAID_TOOLS, getPrice, type PricingTool } from "@/lib/pricing";
 import type { ToolName } from "@/lib/agent/tools";
 import { isToolValidForPage, getToolValidationError } from "@/lib/agent/tool-routing";
 import { useStudioStore, type ThemeColorKey, type FontSlot, type ThemeMode } from "@/lib/stores/studio-store";
+import { useIconStudioStore, type IconStudioTab } from "@/lib/stores/icon-studio-store";
 import { usePatternStore } from "@/lib/pattern-store";
 import { dispatchRemixTheme, saveAIThemeToDrafts } from "@/components/theme-gallery";
 import { useTheme } from "@/components/theme-provider";
@@ -54,6 +55,18 @@ export function useSwatchyChat() {
 	const { setThemeColor, setThemeRadius, setThemeFont } = studioStore;
 	const patternStore = usePatternStore();
 	const { setParams: setPatternParams, setColors: setPatternColors } = patternStore;
+	const iconStudioStore = useIconStudioStore();
+	const {
+		setActiveTab: setIconStudioTab,
+		setIconSetPrompt,
+		setIconSetNamesText,
+		applyIconSetSlotPreset,
+		setIconSetParams,
+		setFaviconPrompt,
+		setFaviconParams,
+		setGeneratedIconSet,
+		setGeneratedFavicon,
+	} = iconStudioStore;
 
 	const { cacheRegistryItem } = useSwatchyStore();
 	const [hasFreeGeneration, setHasFreeGeneration] = useState(false);
@@ -145,8 +158,25 @@ export function useSwatchyChat() {
 			};
 		}
 
+		// Add icon state if in icon studio
+		if (pathname.includes("/studio/icon")) {
+			ctx.iconState = {
+				activeTab: iconStudioStore.activeTab,
+				iconSet: {
+					prompt: iconStudioStore.iconSet.prompt,
+					iconNamesText: iconStudioStore.iconSet.iconNamesText,
+					slotPreset: iconStudioStore.iconSet.slotPreset,
+					params: iconStudioStore.iconSet.params,
+				},
+				favicon: {
+					prompt: iconStudioStore.favicon.prompt,
+					params: iconStudioStore.favicon.params,
+				},
+			};
+		}
+
 		return ctx;
-	}, [pathname, themeMode, walletStatus, balance, studioStore, patternStore, remixContext]);
+	}, [pathname, themeMode, walletStatus, balance, studioStore, patternStore, remixContext, iconStudioStore]);
 
 	// Create transport with context in body - recreate when context changes
 	const transport = useMemo(() => {
@@ -352,12 +382,18 @@ export function useSwatchyChat() {
 					// If we're navigating to a studio that gates certain generation tools,
 					// re-send the last user request once we arrive so the model can call the now-available tools.
 					if (
-						(path === "/studio/registry" || path === "/studio/wallpaper") &&
+						(path === "/studio/registry" ||
+							path === "/studio/wallpaper" ||
+							path === "/studio/icon") &&
 						lastUserMessageRef.current
 					) {
 						const text = lastUserMessageRef.current;
 						// Heuristic: only auto-followup for generation-ish requests to avoid spamming on generic navigation.
-						if (/\b(generate|create|make|build|block|component|wallpaper)\b/i.test(text)) {
+						if (
+							/\b(generate|create|make|build|block|component|wallpaper|icon|icons|favicon)\b/i.test(
+								text,
+							)
+						) {
 							queuedFollowupRef.current = { destination: path, text };
 						}
 					}
@@ -406,6 +442,112 @@ export function useSwatchyChat() {
 					return "Updated pattern parameters";
 				}
 
+				case "setIconStudioTab": {
+					const tab = args.tab as IconStudioTab;
+					setIconStudioTab(tab);
+					return `Set Icon Studio tab to ${tab}`;
+				}
+
+				case "setIconSetPrompt": {
+					setIconSetPrompt(args.prompt as string);
+					return "Updated icon set prompt";
+				}
+
+				case "setIconSetNamesText": {
+					setIconSetNamesText(args.iconNamesText as string);
+					return "Updated icon names list";
+				}
+
+				case "applyIconSetSlotPreset": {
+					applyIconSetSlotPreset(args.preset as "theme-token");
+					return `Applied icon slot preset: ${args.preset as string}`;
+				}
+
+				case "setIconSetParams": {
+					const next = args as Partial<{
+						style: "outline" | "solid";
+						strokeWidth: number;
+						padding: number;
+						size: 16 | 20 | 24;
+					}>;
+					setIconSetParams(next);
+					return "Updated icon set parameters";
+				}
+
+				case "setIconSetStyle": {
+					setIconSetParams({ style: args.style as "outline" | "solid" });
+					return "Updated icon set style";
+				}
+
+				case "setIconSetStrokeWidth": {
+					setIconSetParams({ strokeWidth: args.strokeWidth as number });
+					return "Updated icon set stroke width";
+				}
+
+				case "setIconSetPadding": {
+					setIconSetParams({ padding: args.padding as number });
+					return "Updated icon set padding";
+				}
+
+				case "setIconSetSize": {
+					setIconSetParams({ size: args.size as 16 | 20 | 24 });
+					return "Updated icon set size";
+				}
+
+				case "setFaviconPrompt": {
+					setFaviconPrompt(args.prompt as string);
+					return "Updated favicon prompt";
+				}
+
+				case "setFaviconParams": {
+					const next = args as Partial<{
+						shape: "glyph" | "badge";
+						background: "transparent" | "theme" | "solid";
+						foreground: string;
+						backgroundColor: string;
+						size: 32 | 64 | 128;
+						padding: number;
+						radius: number;
+					}>;
+					setFaviconParams(next);
+					return "Updated favicon parameters";
+				}
+
+				case "setFaviconShape": {
+					setFaviconParams({ shape: args.shape as "glyph" | "badge" });
+					return "Updated favicon shape";
+				}
+
+				case "setFaviconBackground": {
+					setFaviconParams({ background: args.background as "transparent" | "theme" | "solid" });
+					return "Updated favicon background";
+				}
+
+				case "setFaviconForeground": {
+					setFaviconParams({ foreground: args.foreground as string });
+					return "Updated favicon foreground";
+				}
+
+				case "setFaviconBackgroundColor": {
+					setFaviconParams({ backgroundColor: args.backgroundColor as string });
+					return "Updated favicon background color";
+				}
+
+				case "setFaviconSize": {
+					setFaviconParams({ size: args.size as 32 | 64 | 128 });
+					return "Updated favicon size";
+				}
+
+				case "setFaviconPadding": {
+					setFaviconParams({ padding: args.padding as number });
+					return "Updated favicon padding";
+				}
+
+				case "setFaviconRadius": {
+					setFaviconParams({ radius: args.radius as number });
+					return "Updated favicon radius";
+				}
+
 				case "prepareInscribe":
 					setNavigating(true);
 					router.push(`/studio/${args.assetType}?inscribe=true&name=${encodeURIComponent(args.name as string)}`);
@@ -430,7 +572,26 @@ export function useSwatchyChat() {
 					return `Unknown tool: ${toolName}`;
 			}
 		},
-		[router, setNavigating, walletStatus, balance, setThemeColor, setThemeRadius, setThemeFont, setPatternParams, setPatternColors, resolveDestination, pathname],
+		[
+			router,
+			setNavigating,
+			walletStatus,
+			balance,
+			setThemeColor,
+			setThemeRadius,
+			setThemeFont,
+			setPatternParams,
+			setPatternColors,
+			resolveDestination,
+			pathname,
+			setIconStudioTab,
+			setIconSetPrompt,
+			setIconSetNamesText,
+			applyIconSetSlotPreset,
+			setIconSetParams,
+			setFaviconPrompt,
+			setFaviconParams,
+		],
 	);
 
 	// Execute paid tool after payment is confirmed
@@ -510,6 +671,103 @@ export function useSwatchyChat() {
 						// Store failed request context for free retry (already paid)
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
 						return `Error generating pattern: ${errorMsg}`;
+					}
+				}
+
+				case "generateIconSet": {
+					setGenerating(toolName, "Generating your icon set...");
+					try {
+						const state = useIconStudioStore.getState();
+						const iconNamesText =
+							(typeof args.iconNamesText === "string"
+								? (args.iconNamesText as string)
+								: state.iconSet.iconNamesText) || "";
+
+						const iconNames = iconNamesText
+							.split("\n")
+							.map((l) => l.trim())
+							.filter(Boolean);
+
+						const response = await fetch("/api/generate-icon-set", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt:
+									(typeof args.prompt === "string"
+										? (args.prompt as string)
+										: state.iconSet.prompt) || "",
+								iconNames,
+								params: {
+									...state.iconSet.params,
+									...(typeof args.params === "object" && args.params
+										? (args.params as Record<string, unknown>)
+										: {}),
+								},
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate icon set");
+						}
+
+						const data = await response.json();
+						setGeneratedIconSet(data.generated);
+
+						if (pathname !== "/studio/icon") {
+							setNavigating(true);
+							router.push("/studio/icon");
+						}
+
+						setGenerationSuccess(data);
+						return `Icon set generated! (${iconNames.length} icons)`;
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+						return `Error generating icon set: ${errorMsg}`;
+					}
+				}
+
+				case "generateFavicon": {
+					setGenerating(toolName, "Generating your favicon...");
+					try {
+						const state = useIconStudioStore.getState();
+						const response = await fetch("/api/generate-favicon", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								prompt:
+									(typeof args.prompt === "string"
+										? (args.prompt as string)
+										: state.favicon.prompt) || "",
+								params: {
+									...state.favicon.params,
+									...(typeof args.params === "object" && args.params
+										? (args.params as Record<string, unknown>)
+										: {}),
+								},
+							}),
+						});
+
+						if (!response.ok) {
+							const error = await response.json();
+							throw new Error(error.error || "Failed to generate favicon");
+						}
+
+						const data = await response.json();
+						setGeneratedFavicon(data.generated);
+
+						if (pathname !== "/studio/icon") {
+							setNavigating(true);
+							router.push("/studio/icon");
+						}
+
+						setGenerationSuccess(data);
+						return "Favicon generated!";
+					} catch (err) {
+						const errorMsg = err instanceof Error ? err.message : "Generation failed";
+						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
+						return `Error generating favicon: ${errorMsg}`;
 					}
 				}
 

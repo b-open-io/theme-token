@@ -15,6 +15,8 @@ export type ToolName =
 	| "generateTheme"
 	| "generateFont"
 	| "generatePattern"
+	| "generateIconSet"
+	| "generateFavicon"
 	| "generateWallpaper"
 	| "generateBlock"
 	| "generateComponent"
@@ -23,6 +25,24 @@ export type ToolName =
 	| "setThemeRadius"
 	| "setThemeFont"
 	| "setPatternParams"
+	| "setIconStudioTab"
+	| "setIconSetPrompt"
+	| "setIconSetNamesText"
+	| "applyIconSetSlotPreset"
+	| "setIconSetParams"
+	| "setIconSetStyle"
+	| "setIconSetStrokeWidth"
+	| "setIconSetPadding"
+	| "setIconSetSize"
+	| "setFaviconPrompt"
+	| "setFaviconParams"
+	| "setFaviconShape"
+	| "setFaviconBackground"
+	| "setFaviconForeground"
+	| "setFaviconBackgroundColor"
+	| "setFaviconSize"
+	| "setFaviconPadding"
+	| "setFaviconRadius"
 	| "prepareInscribe"
 	| "prepareListing"
 	| "getWalletBalance"
@@ -66,6 +86,28 @@ export const STUDIO_TOOLS: Record<string, ToolName[]> = {
 		"setThemeFont",
 	],
 	"/studio/patterns": ["setPatternParams"],
+	"/studio/icon": [
+		"setIconStudioTab",
+		"setIconSetPrompt",
+		"setIconSetNamesText",
+		"applyIconSetSlotPreset",
+		"setIconSetParams",
+		"setIconSetStyle",
+		"setIconSetStrokeWidth",
+		"setIconSetPadding",
+		"setIconSetSize",
+		"setFaviconPrompt",
+		"setFaviconParams",
+		"setFaviconShape",
+		"setFaviconBackground",
+		"setFaviconForeground",
+		"setFaviconBackgroundColor",
+		"setFaviconSize",
+		"setFaviconPadding",
+		"setFaviconRadius",
+		"generateIconSet",
+		"generateFavicon",
+	],
 	"/studio/registry": ["generateBlock", "generateComponent"],
 	"/studio/wallpaper": ["generateWallpaper"],
 };
@@ -77,6 +119,7 @@ const PAGE_NAMES: Record<string, string> = {
 	"/studio/theme": "Theme Studio",
 	"/studio/font": "Font Studio",
 	"/studio/patterns": "Pattern Studio",
+	"/studio/icon": "Icon Studio",
 	"/studio/wallpaper": "Wallpaper Studio",
 	"/studio/registry": "Component Studio",
 	"/studio/project": "Project Studio",

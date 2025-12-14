@@ -320,6 +320,214 @@ export const setPatternParams = tool({
 });
 
 // ============================================================================
+// Icon Studio Tools (Icon Set + Favicon)
+// ============================================================================
+
+export const setIconStudioTab = tool({
+	description:
+		"Switch between the Icon Set and Favicon tabs inside Icon Studio. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		tab: z.enum(["icon-set", "favicon"]).describe("Which Icon Studio tab to show"),
+	}),
+});
+
+export const setIconSetPrompt = tool({
+	description:
+		"Set the prompt for Icon Set generation. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		prompt: z.string().describe("Prompt describing the icon set style and constraints"),
+	}),
+});
+
+export const setIconSetNamesText = tool({
+	description:
+		"Set the newline-delimited list of required icon names for the icon set. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		iconNamesText: z
+			.string()
+			.describe("Newline-delimited icon names. The generator must fill the entire list."),
+	}),
+});
+
+export const applyIconSetSlotPreset = tool({
+	description:
+		"Apply a canonical icon slot preset (replaces the icon name list). Use this to ensure the pack matches a standard slot list. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		preset: z
+			.enum(["theme-token"])
+			.describe("Which canonical slot preset to apply"),
+	}),
+});
+
+export const setIconSetParams = tool({
+	description:
+		"Update icon set parameters (style, stroke, padding, size). Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		style: z.enum(["outline", "solid"]).optional().describe("Icon style"),
+		strokeWidth: z.number().min(0.5).max(6).optional().describe("Stroke width in px"),
+		padding: z.number().min(0).max(12).optional().describe("Padding in px"),
+		size: z.union([z.literal(16), z.literal(20), z.literal(24)]).optional().describe("Icon size in px"),
+	}),
+});
+
+export const setIconSetStyle = tool({
+	description:
+		"Set the icon set style (outline or solid). Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		style: z.enum(["outline", "solid"]).describe("Icon style"),
+	}),
+});
+
+export const setIconSetStrokeWidth = tool({
+	description:
+		"Set the icon set stroke width. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		strokeWidth: z.number().min(0.5).max(6).describe("Stroke width in px"),
+	}),
+});
+
+export const setIconSetPadding = tool({
+	description:
+		"Set the icon set padding. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		padding: z.number().min(0).max(12).describe("Padding in px"),
+	}),
+});
+
+export const setIconSetSize = tool({
+	description:
+		"Set the icon set size. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		size: z.union([z.literal(16), z.literal(20), z.literal(24)]).describe("Icon size in px"),
+	}),
+});
+
+export const setFaviconPrompt = tool({
+	description:
+		"Set the prompt for favicon generation. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		prompt: z.string().describe("Prompt describing the favicon concept"),
+	}),
+});
+
+export const setFaviconParams = tool({
+	description:
+		"Update favicon parameters (shape, background, colors, size). Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		shape: z.enum(["glyph", "badge"]).optional().describe("Glyph-only or badge style"),
+		background: z
+			.enum(["transparent", "theme", "solid"])
+			.optional()
+			.describe("Background mode"),
+		foreground: z
+			.string()
+			.optional()
+			.describe("Foreground color (e.g., currentColor, #fff)"),
+		backgroundColor: z.string().optional().describe("Solid background color (e.g., #000000)"),
+		size: z.union([z.literal(32), z.literal(64), z.literal(128)]).optional().describe("Base preview size in px"),
+		padding: z.number().min(0).max(24).optional().describe("Padding in px"),
+		radius: z.number().min(0).max(64).optional().describe("Corner radius in px"),
+	}),
+});
+
+export const setFaviconShape = tool({
+	description:
+		"Set the favicon shape mode. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		shape: z.enum(["glyph", "badge"]).describe("Glyph-only or badge style"),
+	}),
+});
+
+export const setFaviconBackground = tool({
+	description:
+		"Set the favicon background mode. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		background: z.enum(["transparent", "theme", "solid"]).describe("Background mode"),
+	}),
+});
+
+export const setFaviconForeground = tool({
+	description:
+		"Set the favicon foreground color. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		foreground: z.string().describe("Foreground color (e.g., currentColor, #ffffff)"),
+	}),
+});
+
+export const setFaviconBackgroundColor = tool({
+	description:
+		"Set the favicon solid background color (used when background=solid). Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		backgroundColor: z.string().describe("Solid background color (e.g., #000000)"),
+	}),
+});
+
+export const setFaviconSize = tool({
+	description:
+		"Set the favicon base size. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		size: z.union([z.literal(32), z.literal(64), z.literal(128)]).describe("Base preview size in px"),
+	}),
+});
+
+export const setFaviconPadding = tool({
+	description:
+		"Set the favicon padding. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		padding: z.number().min(0).max(24).describe("Padding in px"),
+	}),
+});
+
+export const setFaviconRadius = tool({
+	description:
+		"Set the favicon corner radius. Only works when the user is in the Icon Studio.",
+	inputSchema: z.object({
+		radius: z.number().min(0).max(64).describe("Corner radius in px"),
+	}),
+});
+
+export const generateIconSet = tool({
+	description:
+		"Generate a complete SVG icon set for the current icon name list using the current icon set settings. Costs sats and requires payment UI confirmation.",
+	inputSchema: z.object({
+		prompt: z.string().optional().describe("Optional override prompt"),
+		iconNamesText: z
+			.string()
+			.optional()
+			.describe("Optional override newline-delimited icon names"),
+		params: z
+			.object({
+				style: z.enum(["outline", "solid"]).optional(),
+				strokeWidth: z.number().min(0.5).max(6).optional(),
+				padding: z.number().min(0).max(12).optional(),
+				size: z.union([z.literal(16), z.literal(20), z.literal(24)]).optional(),
+			})
+			.optional()
+			.describe("Optional parameter overrides (merges with current settings)"),
+	}),
+});
+
+export const generateFavicon = tool({
+	description:
+		"Generate a favicon (SVG + PNG sizes) using the current favicon settings. Costs sats and requires payment UI confirmation.",
+	inputSchema: z.object({
+		prompt: z.string().optional().describe("Optional override prompt"),
+		params: z
+			.object({
+				shape: z.enum(["glyph", "badge"]).optional(),
+				background: z.enum(["transparent", "theme", "solid"]).optional(),
+				foreground: z.string().optional(),
+				backgroundColor: z.string().optional(),
+				size: z.union([z.literal(32), z.literal(64), z.literal(128)]).optional(),
+				padding: z.number().min(0).max(24).optional(),
+				radius: z.number().min(0).max(64).optional(),
+			})
+			.optional()
+			.describe("Optional parameter overrides (merges with current settings)"),
+	}),
+});
+
+// ============================================================================
 // Publishing Tools (Require wallet connection)
 // ============================================================================
 
@@ -400,6 +608,30 @@ export function getAvailableTools() {
 		tools.setPatternParams = setPatternParams;
 	}
 
+	// Add icon-related tools if icons feature is enabled
+	if (featureFlags.icons) {
+		tools.generateIconSet = generateIconSet;
+		tools.generateFavicon = generateFavicon;
+		tools.setIconStudioTab = setIconStudioTab;
+		tools.setIconSetPrompt = setIconSetPrompt;
+		tools.setIconSetNamesText = setIconSetNamesText;
+		tools.applyIconSetSlotPreset = applyIconSetSlotPreset;
+		tools.setIconSetParams = setIconSetParams;
+		tools.setIconSetStyle = setIconSetStyle;
+		tools.setIconSetStrokeWidth = setIconSetStrokeWidth;
+		tools.setIconSetPadding = setIconSetPadding;
+		tools.setIconSetSize = setIconSetSize;
+		tools.setFaviconPrompt = setFaviconPrompt;
+		tools.setFaviconParams = setFaviconParams;
+		tools.setFaviconShape = setFaviconShape;
+		tools.setFaviconBackground = setFaviconBackground;
+		tools.setFaviconForeground = setFaviconForeground;
+		tools.setFaviconBackgroundColor = setFaviconBackgroundColor;
+		tools.setFaviconSize = setFaviconSize;
+		tools.setFaviconPadding = setFaviconPadding;
+		tools.setFaviconRadius = setFaviconRadius;
+	}
+
 	// Add wallpaper-related tools if wallpapers feature is enabled
 	if (featureFlags.wallpapers) {
 		tools.generateWallpaper = generateWallpaper;
@@ -442,6 +674,8 @@ export const allTools = {
 	generateTheme,
 	generateFont,
 	generatePattern,
+	generateIconSet,
+	generateFavicon,
 	generateWallpaper,
 	generateBlock,
 	generateComponent,
@@ -450,6 +684,24 @@ export const allTools = {
 	setThemeRadius,
 	setThemeFont,
 	setPatternParams,
+	setIconStudioTab,
+	setIconSetPrompt,
+	setIconSetNamesText,
+	applyIconSetSlotPreset,
+	setIconSetParams,
+	setIconSetStyle,
+	setIconSetStrokeWidth,
+	setIconSetPadding,
+	setIconSetSize,
+	setFaviconPrompt,
+	setFaviconParams,
+	setFaviconShape,
+	setFaviconBackground,
+	setFaviconForeground,
+	setFaviconBackgroundColor,
+	setFaviconSize,
+	setFaviconPadding,
+	setFaviconRadius,
 	prepareInscribe,
 	prepareListing,
 	getWalletBalance,

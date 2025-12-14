@@ -47,6 +47,8 @@ export const BASE_PRICES = {
 	generateTheme: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateFont: 10_000_000, // 10M sats (~$0.10 BSV)
 	generatePattern: 1_000_000, // 1M sats (~$0.01 BSV)
+	generateIconSet: 5_000_000, // 5M sats (~$0.05 BSV)
+	generateFavicon: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateWallpaper: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateBlock: 1_000_000, // 1M sats (~$0.01 BSV)
 	generateComponent: 500_000, // 500K sats (~$0.005 BSV)
@@ -69,6 +71,8 @@ export const PAID_TOOLS = new Set<PricingTool>([
 	"generateTheme",
 	"generateFont",
 	"generatePattern",
+	"generateIconSet",
+	"generateFavicon",
 	"generateWallpaper",
 	"generateBlock",
 	"generateComponent",

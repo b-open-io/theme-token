@@ -91,7 +91,14 @@ export const routes: RouteInfo[] = [
 		category: "studio",
 		feature: "icons",
 		icon: Shapes,
-		tools: [],
+		tools: [
+			"generateIconSet",
+			"generateFavicon",
+			"setIconStudioTab",
+			"setIconSetParams",
+			"setFaviconParams",
+		],
+		cost: 5_000_000,
 	},
 	{
 		path: "/studio/wallpaper",
