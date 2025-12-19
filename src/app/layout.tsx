@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { SoftwareApplication, WithContext } from "schema-dts";
 import { cookies } from "next/headers";
+import { JsonLd } from "@/components/json-ld";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
@@ -52,6 +54,33 @@ export const metadata: Metadata = {
 	},
 };
 
+const jsonLd: WithContext<SoftwareApplication> = {
+	"@context": "https://schema.org",
+	"@type": "SoftwareApplication",
+	name: "Theme Token",
+	url: "https://themetoken.dev",
+	description:
+		"Install ShadCN UI themes from blockchain with one command. Create, own, trade, and apply themes across any compatible application.",
+	applicationCategory: "DeveloperApplication",
+	operatingSystem: "Web",
+	offers: {
+		"@type": "Offer",
+		price: "0",
+		priceCurrency: "USD",
+	},
+	provider: {
+		"@type": "Organization",
+		name: "Theme Token",
+		url: "https://themetoken.dev",
+	},
+	featureList: [
+		"On-chain theme storage via Bitcoin ordinals",
+		"ShadCN CLI compatible registry",
+		"Theme marketplace with NFT ownership",
+		"Runtime theme application via SDK",
+	],
+};
+
 export default async function RootLayout({
 	children,
 }: Readonly<{
@@ -85,6 +114,7 @@ export default async function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				<JsonLd data={jsonLd} />
 				{inlineThemeCss && (
 					<style
 						id="ssr-theme"
