@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import {
 	ArrowRight,
-	Bot,
 	Grid3X3,
 	Image,
 	Palette,
@@ -105,22 +104,6 @@ const WallpaperPreview = () => (
 	</div>
 );
 
-const AIPreview = () => (
-	<div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-bl from-primary/5 to-transparent">
-		<div className="relative z-10 flex flex-col items-center gap-2">
-			<div className="flex h-14 w-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10">
-				<Bot className="h-7 w-7 text-primary" />
-			</div>
-			<div className="flex gap-1">
-				<div className="h-2 w-2 animate-pulse rounded-full bg-primary/60" />
-				<div className="h-2 w-2 animate-pulse rounded-full bg-primary/60 delay-100" />
-				<div className="h-2 w-2 animate-pulse rounded-full bg-primary/60 delay-200" />
-			</div>
-		</div>
-		<div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,hsl(var(--background))_80%)]" />
-	</div>
-);
-
 // Preview component mapping by path
 const previewComponents: Record<string, React.FC> = {
 	"/studio/theme": ThemePreview,
@@ -128,7 +111,6 @@ const previewComponents: Record<string, React.FC> = {
 	"/studio/patterns": PatternPreview,
 	"/studio/icon": IconPreview,
 	"/studio/wallpaper": WallpaperPreview,
-	"/studio/ai": AIPreview,
 };
 
 // Default preview for any new studios

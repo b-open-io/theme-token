@@ -53,6 +53,11 @@ function loadPendingPayment(): PendingPayment | null {
 		const stored = localStorage.getItem(PENDING_PAYMENT_KEY);
 		if (!stored) return null;
 		const data = JSON.parse(stored) as PendingPayment;
+		// Validate required fields
+		if (!data.txid || typeof data.txid !== "string") {
+			localStorage.removeItem(PENDING_PAYMENT_KEY);
+			return null;
+		}
 		// Expire after 1 hour
 		if (Date.now() - data.timestamp > 60 * 60 * 1000) {
 			localStorage.removeItem(PENDING_PAYMENT_KEY);
@@ -141,7 +146,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				setState("paying");
 				const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
 
-				if (!paymentResult) {
+				if (!paymentResult?.txid) {
 					throw new Error("Payment failed or was cancelled");
 				}
 				paymentTxid = paymentResult.txid;
@@ -380,7 +385,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 								Resume generation?
 							</p>
 							<p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
-								{pendingPayment.txid.slice(0, 12)}...
+								{pendingPayment.txid?.slice(0, 12) ?? "unknown"}...
 							</p>
 						</div>
 						<div className="flex items-center gap-1">
