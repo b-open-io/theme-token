@@ -113,8 +113,7 @@ export function Header() {
 							)}
 						</a>
 						
-						{/* Wallet - hide mode toggle on mobile via prop */}
-						<WalletConnect hideModeToggleOnMobile />
+						<WalletConnect />
 						
 						{/* Mobile Menu Button */}
 						<Button

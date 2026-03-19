@@ -4,106 +4,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
 	Check,
 	ChevronDown,
-	ExternalLink,
 	Loader2,
-	Monitor,
 	Moon,
 	Sun,
 	Wallet,
 	X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { YOURS_WALLET_URL } from "@/lib/yours-wallet";
-
-// Mobile detection hook
-function useIsMobile() {
-	const [isMobile, setIsMobile] = useState(false);
-
-	useEffect(() => {
-		const checkMobile = () => {
-			const isTouchDevice =
-				"ontouchstart" in window || navigator.maxTouchPoints > 0;
-			const isSmallScreen = window.innerWidth < 768;
-			const isMobileUserAgent = /iPhone|iPad|iPod|Android/i.test(
-				navigator.userAgent,
-			);
-			setIsMobile((isTouchDevice && isSmallScreen) || isMobileUserAgent);
-		};
-
-		checkMobile();
-		window.addEventListener("resize", checkMobile);
-		return () => window.removeEventListener("resize", checkMobile);
-	}, []);
-
-	return isMobile;
-}
-
-// Mobile wallet dialog
-function MobileWalletDialog({
-	open,
-	onOpenChange,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-}) {
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-sm">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<Monitor className="h-5 w-5" />
-						Desktop Required
-					</DialogTitle>
-					<DialogDescription asChild>
-						<div className="space-y-3 pt-2">
-							<p>
-								Theme Token uses the Yours Wallet browser extension for secure
-								blockchain interactions.
-							</p>
-							<p>
-								Browser extensions are only available on desktop browsers. Please
-								visit this site on a desktop computer to:
-							</p>
-							<ul className="list-inside list-disc space-y-1 text-sm">
-								<li>Purchase themes from the marketplace</li>
-								<li>Mint new themes to the blockchain</li>
-								<li>Access your owned themes</li>
-							</ul>
-							<p className="text-xs text-muted-foreground">
-								You can still browse themes and preview them on mobile.
-							</p>
-						</div>
-					</DialogDescription>
-				</DialogHeader>
-				<div className="mt-4 flex flex-col gap-2">
-					<a
-						href={YOURS_WALLET_URL}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
-					>
-						<Wallet className="h-4 w-4" fill="currentColor" />
-						Learn about Yours Wallet
-						<ExternalLink className="h-3 w-3" />
-					</a>
-					<Button variant="ghost" onClick={() => onOpenChange(false)}>
-						Continue Browsing
-					</Button>
-				</div>
-			</DialogContent>
-		</Dialog>
-	);
-}
 
 // Color stripes thumbnail for themes
 function ThemeStripes({
@@ -149,90 +59,29 @@ function ModeToggle() {
 	);
 }
 
-interface WalletConnectProps {
-	hideModeToggleOnMobile?: boolean;
-}
-
-export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {}) {
+export function WalletConnect() {
 	const { status, error, connect, disconnect, themeTokens, isLoading } =
 		useYoursWallet();
 	const { activeTheme, applyThemeAnimated, resetTheme, mode } = useTheme();
 	const [isOpen, setIsOpen] = useState(false);
-	const [showMobileDialog, setShowMobileDialog] = useState(false);
-	const isMobile = useIsMobile();
 
-	const showModeToggle = !hideModeToggleOnMobile || !isMobile;
-
-	const handleConnectClick = () => {
-		if (isMobile) {
-			setShowMobileDialog(true);
-		} else {
-			connect();
-		}
-	};
-
-	// Not installed state
-	if (status === "not-installed") {
+	// Not installed / disconnected / error — show connect button
+	if (status === "not-installed" || status === "disconnected" || status === "error") {
 		return (
-			<>
-				<div className="flex items-center gap-1">
-					{showModeToggle && <ModeToggle />}
-					{isMobile ? (
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setShowMobileDialog(true)}
-							title="Connect wallet"
-						>
-							<Wallet className="h-4 w-4" fill="currentColor" />
-							<span className="sr-only">Connect wallet</span>
-						</Button>
-					) : (
-						<Button variant="ghost" size="icon" className="relative" asChild>
-							<a
-								href={YOURS_WALLET_URL}
-								target="_blank"
-								rel="noopener noreferrer"
-								title="Install Yours Wallet"
-							>
-								<Wallet className="h-4 w-4" fill="currentColor" />
-								{/* External link indicator dot */}
-								<span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary" />
-							</a>
-						</Button>
-					)}
-				</div>
-				<MobileWalletDialog
-					open={showMobileDialog}
-					onOpenChange={setShowMobileDialog}
-				/>
-			</>
-		);
-	}
-
-	// Disconnected state
-	if (status === "disconnected" || status === "error") {
-		return (
-			<>
-				<div className="flex items-center gap-1">
-					{showModeToggle && <ModeToggle />}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={handleConnectClick}
-						className="gap-1.5"
-						title="Connect wallet"
-					>
-						<Wallet className="h-4 w-4" fill="currentColor" />
-						<span className="hidden sm:inline">Connect</span>
-					</Button>
-					{error && <span className="text-xs text-destructive">{error}</span>}
-				</div>
-				<MobileWalletDialog
-					open={showMobileDialog}
-					onOpenChange={setShowMobileDialog}
-				/>
-			</>
+			<div className="flex items-center gap-1">
+				<ModeToggle />
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={() => connect()}
+					className="gap-1.5"
+					title="Connect wallet"
+				>
+					<Wallet className="h-4 w-4" fill="currentColor" />
+					<span className="hidden sm:inline">Connect</span>
+				</Button>
+				{error && <span className="text-xs text-destructive">{error}</span>}
+			</div>
 		);
 	}
 
@@ -240,7 +89,7 @@ export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {
 	if (status === "connecting") {
 		return (
 			<div className="flex items-center gap-1">
-				{showModeToggle && <ModeToggle />}
+				<ModeToggle />
 				<Button variant="ghost" size="sm" disabled className="gap-1.5">
 					<Loader2 className="h-4 w-4 animate-spin" />
 					<span className="hidden sm:inline">Connecting...</span>
@@ -252,7 +101,7 @@ export function WalletConnect({ hideModeToggleOnMobile }: WalletConnectProps = {
 	// Connected state
 	return (
 		<div className="flex items-center gap-1">
-			{showModeToggle && <ModeToggle />}
+			<ModeToggle />
 
 			{/* Theme Selector Dropdown */}
 			<div className="relative">
