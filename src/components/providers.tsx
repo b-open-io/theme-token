@@ -1,5 +1,6 @@
 "use client";
 
+import { WalletProvider as OneSatWalletProvider } from "@1sat/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -37,9 +38,11 @@ export function Providers({
 				initialThemeOrigin={initialThemeOrigin}
 				hasExistingSession={hasExistingSession}
 			>
-				<WalletProvider>
-					<BsvRateProvider>{children}</BsvRateProvider>
-				</WalletProvider>
+				<OneSatWalletProvider autoDetect>
+					<WalletProvider>
+						<BsvRateProvider>{children}</BsvRateProvider>
+					</WalletProvider>
+				</OneSatWalletProvider>
 			</ThemeProvider>
 		</QueryClientProvider>
 	);
