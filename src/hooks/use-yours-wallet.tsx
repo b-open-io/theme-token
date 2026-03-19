@@ -1,5 +1,6 @@
 "use client";
 
+import type { WalletInterface } from "@bsv/sdk";
 import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import {
 	createContext,
@@ -690,17 +691,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setError(null);
 
 			try {
-				const response = await wallet.getOrdinals({ limit: 100 });
-				const ordinals = Array.isArray(response)
-					? response
-					: (response?.ordinals ?? []);
-				const ordinal = ordinals.find((o) => o.outpoint === outpoint) as
-					| Ordinal
-					| undefined;
-
-				if (!ordinal) throw new Error("Ordinal not found");
-
-				const result = await listOrdinal(wallet, { ordinal, priceSatoshis });
+				// Cast legacy wallet to WalletInterface — the browser extension
+				// object implements both interfaces. Full CWI migration in tasks #4/#5.
+				const result = await listOrdinal(
+					wallet as unknown as WalletInterface,
+					{ outpoint, priceSatoshis },
+				);
 				await fetchThemeTokens();
 				await fetchWalletInfo();
 				return result;
