@@ -172,6 +172,7 @@ declare global {
 
 /**
  * Get the Yours Wallet provider from window
+ * @deprecated Use @1sat/react WalletProvider + useWallet() instead
  */
 export function getYoursWallet(): YoursWallet | null {
 	if (typeof window === "undefined") return null;
@@ -180,6 +181,7 @@ export function getYoursWallet(): YoursWallet | null {
 
 /**
  * Check if Yours Wallet is installed
+ * @deprecated Use @1sat/react WalletProvider + useWallet() instead
  */
 export function isYoursWalletInstalled(): boolean {
 	return typeof window !== "undefined" && !!window.yours;
@@ -596,6 +598,30 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 		return await response.json();
 	} catch {
 		return null;
+	}
+}
+
+/**
+ * Fetch ordinals owned by an address from GorillaPool API.
+ * Returns enriched data with origin, MAP metadata, inscription content.
+ * Used because BRC-100 listOutputs() returns sparse data without MAP/inscription content.
+ */
+export async function fetchOrdinalsByAddress(
+	address: string,
+	limit = 100,
+): Promise<Ordinal[]> {
+	try {
+		const response = await fetch(
+			`${ORDINALS_API}/txos/address/${address}/unspent?limit=${limit}&offset=0`,
+		);
+		if (!response.ok) {
+			console.error("[fetchOrdinalsByAddress] API error:", response.status);
+			return [];
+		}
+		return await response.json();
+	} catch (err) {
+		console.error("[fetchOrdinalsByAddress] Failed:", err);
+		return [];
 	}
 }
 
