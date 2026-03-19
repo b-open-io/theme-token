@@ -38,7 +38,16 @@ export function Providers({
 				initialThemeOrigin={initialThemeOrigin}
 				hasExistingSession={hasExistingSession}
 			>
-				<OneSatWalletProvider autoDetect>
+				<OneSatWalletProvider
+				autoDetect
+				providers={[
+					{
+						type: "onesat",
+						name: "1Sat Wallet",
+						url: "https://1satwallet.com",
+					},
+				]}
+			>
 					<WalletProvider>
 						<BsvRateProvider>{children}</BsvRateProvider>
 					</WalletProvider>
