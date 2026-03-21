@@ -5,7 +5,7 @@
  * - Font files (woff2)
  * - Icon sprites (svg)
  * - Wallpapers (png)
- * - Project manifest (json) with {{vout:N}} references
+ * - Project manifest (json) with _N relative vout references
  */
 
 import { Utils } from "@bsv/sdk";
@@ -64,7 +64,7 @@ export interface BuildProjectBundleOptions {
 export interface ProjectBundleResult {
 	/** Items ready for inscribeBundle() - assets first, manifest last */
 	items: BundleItem[];
-	/** The project manifest with {{vout:N}} references */
+	/** The project manifest with _N vout references */
 	manifest: ProjectManifest;
 	/** Mapping of asset types to vout indices */
 	assetVouts: Map<string, number>;
@@ -90,7 +90,7 @@ export interface ProjectBundleResult {
  *
  * // items[0] = font at vout 0
  * // items[1] = icons at vout 1
- * // items[2] = manifest at vout 2 with registryDependencies: ["utils", "{{vout:0}}"]
+ * // items[2] = manifest at vout 2 with registryDependencies: ["utils", "_0"]
  *
  * const result = await inscribeBundle(items);
  * // Use: bunx shadcn create --preset "https://themetoken.dev/init?project={origin}"
@@ -139,7 +139,7 @@ export function buildProjectBundle(
 		if (asset.type === "font" && asset.slot) {
 			const vout = assetVouts.get(`font-${asset.slot}`);
 			if (vout !== undefined) {
-				registryDependencies.push(`{{vout:${vout}}}`);
+				registryDependencies.push(`_${vout}`);
 			}
 		}
 	}

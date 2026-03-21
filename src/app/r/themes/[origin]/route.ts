@@ -2,7 +2,7 @@ import { toShadcnRegistry, validateThemeToken, getOrdfsUrl } from "@theme-token/
 import { NextResponse } from "next/server";
 
 /**
- * Resolve {{vout:N}} placeholders in theme JSON to absolute /content/{txid}_{N} paths
+ * Resolve _N relative vout references in theme JSON to absolute /content/{txid}_{N} paths
  * This allows theme bundles to reference sibling inscriptions in the same transaction
  */
 function resolveBundleReferences(
@@ -16,8 +16,8 @@ function resolveBundleReferences(
 
 	const resolveValue = (value: unknown): unknown => {
 		if (typeof value !== "string") return value;
-		// Match {{vout:N}} pattern
-		const match = value.match(/^\{\{vout:(\d+)\}\}$/);
+		// Match _N relative vout reference
+		const match = value.match(/^_(\d+)$/);
 		if (!match) return value;
 		const vout = parseInt(match[1], 10);
 		return `/content/${txid}_${vout}`;
@@ -39,11 +39,16 @@ function resolveBundleReferences(
 }
 
 /**
- * Check if theme JSON contains {{vout:N}} placeholders that need resolution
+ * Check if theme JSON contains _N relative vout references that need resolution
  */
 function hasBundleReferences(theme: Record<string, unknown>): boolean {
-	const jsonString = JSON.stringify(theme);
-	return /\{\{vout:\d+\}\}/.test(jsonString);
+	for (const v of Object.values(theme)) {
+		if (typeof v === "string" && /^_\d+$/.test(v)) return true;
+		if (v && typeof v === "object" && !Array.isArray(v)) {
+			if (hasBundleReferences(v as Record<string, unknown>)) return true;
+		}
+	}
+	return false;
 }
 
 export async function GET(
@@ -60,7 +65,7 @@ export async function GET(
 
 		let json = await response.json();
 
-		// Resolve {{vout:N}} placeholders for bundle themes
+		// Resolve _N vout references for bundle themes
 		if (hasBundleReferences(json)) {
 			json = resolveBundleReferences(json, origin);
 		}

@@ -608,8 +608,8 @@ export function SpecPageClient() {
 								Served via{" "}
 								<code className="rounded bg-muted px-1">/init?project=[origin]</code>{" "}
 								for <code className="rounded bg-muted px-1">shadcn create --preset</code>.
-								Bundle assets use <code className="rounded bg-muted px-1">{"{{vout:N}}"}</code>{" "}
-								references resolved to ORDFS URLs.
+								Bundle assets use <code className="rounded bg-muted px-1">{"_N"}</code>{" "}
+								relative vout references resolved to ORDFS URLs.
 							</p>
 						</motion.div>
 					</div>

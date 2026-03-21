@@ -17,7 +17,7 @@ import {
  * Handles:
  * - Single-file components (most common)
  * - Multi-file components with hooks/utils
- * - {{vout:N}} placeholder resolution
+ * - _N relative vout reference resolution
  */
 export async function GET(
 	_request: Request,
@@ -37,7 +37,7 @@ export async function GET(
 
 		let json = await response.json();
 
-		// Resolve any {{vout:N}} placeholders in the manifest
+		// Resolve any _N vout references in the manifest
 		if (hasBundleReferences(json)) {
 			json = resolveBundleReferences(json, origin);
 		}

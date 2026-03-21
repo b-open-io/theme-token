@@ -90,7 +90,7 @@ export async function GET(request: Request) {
 			);
 		}
 
-		// Resolve {{vout:N}} references to absolute ORDFS URLs
+		// Resolve _N vout references to absolute ORDFS URLs
 		const manifest = resolveBundleReferences(
 			rawManifest as unknown as Record<string, unknown>,
 			params.project,

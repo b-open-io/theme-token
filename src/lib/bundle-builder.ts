@@ -10,8 +10,8 @@ function toBase64(str: string): string {
 /**
  * Bundle Builder - Helpers for creating multi-output inscriptions
  *
- * Creates bundles with proper {{vout:N}} placeholder references that the
- * registry gateway will resolve to absolute ORDFS URLs at serve time.
+ * Creates bundles with proper _N relative vout references that ORDFS
+ * resolves against the directory inscription's own txid at serve time.
  */
 
 /** Asset slot types that can be bundled with a theme */
@@ -52,7 +52,7 @@ export interface BuildThemeBundleOptions {
 export interface ThemeBundleResult {
 	/** Items ready for inscribeBundle() - assets first, theme last */
 	items: BundleItem[];
-	/** The theme JSON with {{vout:N}} references (what will be inscribed) */
+	/** The theme JSON with _N vout references (what will be inscribed) */
 	themeWithRefs: ThemeToken;
 	/** Mapping of asset slots to vout indices */
 	assetVouts: Record<ThemeAssetSlot, number>;
@@ -77,10 +77,10 @@ const SLOT_TO_TYPE: Record<ThemeAssetSlot, BundleAssetType> = {
 };
 
 /**
- * Build a theme bundle with proper {{vout:N}} references
+ * Build a theme bundle with proper _N vout references
  *
  * Assets are placed first (vout 0, 1, 2...) so the theme (inscribed last)
- * can reference them with placeholders like {{vout:0}}.
+ * can reference them with relative vout refs like _0.
  *
  * @example
  * ```ts
@@ -94,7 +94,7 @@ const SLOT_TO_TYPE: Record<ThemeAssetSlot, BundleAssetType> = {
  *
  * // items[0] = font at vout 0
  * // items[1] = pattern at vout 1
- * // items[2] = theme at vout 2 with "font-sans": "{{vout:0}}", etc.
+ * // items[2] = theme at vout 2 with "font-sans": "_0", etc.
  *
  * const result = await inscribeBundle(items);
  * // result.origins = ["txid_0", "txid_1", "txid_2"]
@@ -124,7 +124,7 @@ export function buildThemeBundle(
 		};
 	});
 
-	// Build the theme with {{vout:N}} references
+	// Build the theme with _N vout references
 	const themeWithRefs = buildThemeWithVoutRefs(theme, assets, assetVouts);
 
 	// Add bundle metadata to theme
@@ -172,7 +172,7 @@ export function buildThemeBundle(
 }
 
 /**
- * Build theme with {{vout:N}} references for bundled assets
+ * Build theme with _N vout references for bundled assets
  */
 function buildThemeWithVoutRefs(
 	theme: ThemeToken,
@@ -188,7 +188,7 @@ function buildThemeWithVoutRefs(
 
 		for (const asset of assets) {
 			const vout = assetVouts[asset.slot];
-			const voutRef = `{{vout:${vout}}}`;
+			const voutRef = `_${vout}`;
 
 			// Handle font slots
 			if (
@@ -296,7 +296,7 @@ export interface RegistryBundleResult {
 }
 
 /**
- * Build a block/component bundle with proper {{vout:N}} references
+ * Build a block/component bundle with proper _N vout references
  *
  * Structure:
  * - vout 0: Manifest JSON (application/json) with file references

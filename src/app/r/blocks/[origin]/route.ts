@@ -17,7 +17,7 @@ import {
  * Handles:
  * - Single-file blocks (content embedded in JSON)
  * - Multi-file blocks (content in sibling inscriptions, hydrated at serve time)
- * - {{vout:N}} placeholder resolution for bundle references
+ * - _N relative vout reference resolution for bundle references
  */
 export async function GET(
 	_request: Request,
@@ -37,7 +37,7 @@ export async function GET(
 
 		let json = await response.json();
 
-		// Resolve any {{vout:N}} placeholders in the manifest
+		// Resolve any _N vout references in the manifest
 		if (hasBundleReferences(json)) {
 			json = resolveBundleReferences(json, origin);
 		}

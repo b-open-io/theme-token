@@ -77,10 +77,10 @@ export function toBase64(str: string): string {
 }
 
 /**
- * Generate a vout reference placeholder
+ * Generate a relative vout reference (_N format)
  */
 export function voutRef(index: number): string {
-	return `{{vout:${index}}}`;
+	return `_${index}`;
 }
 
 /**
@@ -126,7 +126,7 @@ export function estimateInscriptionOverhead(): number {
  *     { id: "icons", content: spriteBase64, isBase64: true, contentType: "image/svg+xml", assetType: "file" },
  *   ],
  *   manifest: {
- *     content: { type: "registry:base", cssVars: {...}, registryDependencies: ["{{vout:0}}"] },
+ *     content: { type: "registry:base", cssVars: {...}, registryDependencies: ["_0"] },
  *     assetType: "file",
  *   },
  * });
@@ -193,7 +193,7 @@ export function createBundle(options: BundlerOptions): BundleResult {
  *   registryDependencies: ["utils", "{{font}}", "{{icons}}"],
  * };
  * const resolved = resolveVoutRefs(manifest, voutMap);
- * // { registryDependencies: ["utils", "{{vout:0}}", "{{vout:1}}"] }
+ * // { registryDependencies: ["utils", "_0", "_1"] }
  * ```
  */
 export function resolveVoutRefs<T extends Record<string, unknown>>(
@@ -202,7 +202,7 @@ export function resolveVoutRefs<T extends Record<string, unknown>>(
 ): T {
 	const json = JSON.stringify(obj);
 
-	// Replace {{artifactId}} patterns with {{vout:N}}
+	// Replace {{artifactId}} patterns with _N vout references
 	const resolved = json.replace(/\{\{(\w+)\}\}/g, (match, id) => {
 		const vout = voutMap.get(id);
 		if (vout !== undefined) {

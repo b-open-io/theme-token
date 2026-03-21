@@ -5,7 +5,7 @@ import { getOrdfsUrl } from "@theme-token/sdk";
  *
  * Handles:
  * - Fetching content from ORDFS (Ordinals File System)
- * - Resolving {{vout:N}} placeholders to absolute content URLs
+ * - Resolving _N relative vout references to absolute content URLs
  * - Hydrating multi-file registry items (blocks, components) with file contents
  */
 
@@ -32,7 +32,7 @@ export interface RegistryFileEntry {
 	type: RegistryItemType;
 	vout?: number; // Reference to sibling inscription output
 	content?: string; // Already-embedded content (for single-file items)
-	target?: string; // Alternative to vout: {{vout:N}} pattern
+	target?: string; // Alternative to vout: _N relative reference
 }
 
 /**
@@ -72,28 +72,28 @@ export function extractVout(origin: string): number | null {
 }
 
 /**
- * Resolve {{vout:N}} placeholders in a string value to absolute /content/{txid}_{N} paths
+ * Resolve _N relative vout references in a string value to absolute /content/{txid}_{N} paths
  */
 export function resolveVoutPlaceholder(
 	value: string,
 	txid: string,
 ): string {
-	const match = value.match(/^\{\{vout:(\d+)\}\}$/);
+	const match = value.match(/^_(\d+)$/);
 	if (!match) return value;
 	const vout = parseInt(match[1], 10);
 	return `${ORDFS_BASE}/content/${txid}_${vout}`;
 }
 
 /**
- * Check if a value contains a {{vout:N}} placeholder
+ * Check if a value is a _N relative vout reference
  */
 export function hasVoutPlaceholder(value: unknown): boolean {
 	if (typeof value !== "string") return false;
-	return /\{\{vout:\d+\}\}/.test(value);
+	return /^_\d+$/.test(value);
 }
 
 /**
- * Recursively resolve all {{vout:N}} placeholders in an object
+ * Recursively resolve all _N relative vout references in an object
  */
 export function resolveBundleReferences<T extends Record<string, unknown>>(
 	obj: T,
@@ -127,11 +127,19 @@ export function resolveBundleReferences<T extends Record<string, unknown>>(
 }
 
 /**
- * Check if an object contains any {{vout:N}} placeholders
+ * Check if an object contains any _N relative vout references (recursive)
  */
 export function hasBundleReferences(obj: Record<string, unknown>): boolean {
-	const jsonString = JSON.stringify(obj);
-	return /\{\{vout:\d+\}\}/.test(jsonString);
+	for (const v of Object.values(obj)) {
+		if (typeof v === "string" && /^_\d+$/.test(v)) return true;
+		if (Array.isArray(v)) {
+			if (v.some(item => typeof item === "string" && /^_\d+$/.test(item))) return true;
+		}
+		if (v && typeof v === "object" && !Array.isArray(v)) {
+			if (hasBundleReferences(v as Record<string, unknown>)) return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -188,7 +196,7 @@ export async function hydrateRegistryManifest(
 			if (typeof file.vout === "number") {
 				vout = file.vout;
 			} else if (file.target && hasVoutPlaceholder(file.target)) {
-				const match = file.target.match(/\{\{vout:(\d+)\}\}/);
+				const match = file.target.match(/^_(\d+)$/);
 				if (match) {
 					vout = parseInt(match[1], 10);
 				}
