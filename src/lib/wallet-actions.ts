@@ -1,13 +1,17 @@
-import { PublicKey } from "@bsv/sdk";
+import { PublicKey, Utils } from "@bsv/sdk";
 import type { WalletInterface } from "@bsv/sdk";
 import {
 	createContext,
-	inscribe,
 	sendBsv,
 	type OneSatContext,
 } from "@1sat/actions";
-import { buildThemeMetadata, buildTileMetadata } from "@/lib/asset-metadata";
-import { fetchOrdinalsByAddress, submitToIndexer } from "@/lib/yours-wallet";
+import {
+	buildThemeMetadata,
+	buildTileMetadata,
+	type PackageMapMetadata,
+} from "@/lib/asset-metadata";
+import { publishPackage, type PublishPackageResult, type PackageFile } from "@/lib/package-builder";
+import { fetchOrdinalsByAddress } from "@/lib/yours-wallet";
 import type { Ordinal } from "@/lib/yours-wallet";
 
 /**
@@ -86,42 +90,37 @@ export async function getOwnedOrdinals(
 }
 
 /**
- * Inscribe a JSON theme on-chain with MAP metadata.
+ * Inscribe a JSON theme on-chain as a registry:style package.
+ * Produces 2 outputs: theme.json file + ord-fs/json manifest with MAP metadata.
  */
 export async function inscribeTheme(
 	wallet: WalletInterface,
 	themeJson: string,
-): Promise<{ txid: string; rawtx?: string }> {
-	const ctx = createWalletContext(wallet);
-	const map = buildThemeMetadata();
-	const base64Content = btoa(themeJson);
+	themeName?: string,
+): Promise<PublishPackageResult> {
+	const files: PackageFile[] = [
+		{
+			path: "theme.json",
+			content: new Uint8Array(Utils.toArray(themeJson, "utf8")),
+			contentType: "application/json",
+		},
+	];
 
-	const result = await inscribe.execute(ctx, {
-		base64Content,
-		contentType: "application/json",
-		map,
+	const metadata = buildThemeMetadata({
+		name: themeName || "theme",
 	});
 
-	if (result.error) {
-		throw new Error(`Inscription failed: ${result.error}`);
-	}
-
-	if (!result.txid) {
-		throw new Error("Inscription succeeded but no txid was returned");
-	}
-
-	await submitToIndexer(result.txid);
-
-	return { txid: result.txid, rawtx: result.rawtx };
+	return publishPackage(wallet, files, metadata);
 }
 
 /**
- * Inscribe an SVG pattern on-chain with tile MAP metadata.
+ * Inscribe an SVG pattern on-chain as a registry:file package.
+ * Produces 2 outputs: the SVG file + ord-fs/json manifest with MAP metadata.
  */
 export async function inscribePattern(
 	wallet: WalletInterface,
 	svg: string,
-	metadata?: {
+	patternMetadata?: {
 		name?: string;
 		author?: string;
 		license?: string;
@@ -129,40 +128,37 @@ export async function inscribePattern(
 		provider?: string;
 		model?: string;
 	},
-): Promise<{ txid: string; rawtx?: string }> {
-	const ctx = createWalletContext(wallet);
-	const map = buildTileMetadata(metadata ?? {});
-	const base64Content = btoa(svg);
+): Promise<PublishPackageResult> {
+	const name = patternMetadata?.name || "pattern";
+	const files: PackageFile[] = [
+		{
+			path: `${name}.svg`,
+			content: new Uint8Array(Utils.toArray(svg, "utf8")),
+			contentType: "image/svg+xml",
+		},
+	];
 
-	const result = await inscribe.execute(ctx, {
-		base64Content,
-		contentType: "image/svg+xml",
-		map,
+	const metadata = buildTileMetadata({
+		name,
+		author: patternMetadata?.author,
+		license: patternMetadata?.license,
+		prompt: patternMetadata?.prompt,
+		provider: patternMetadata?.provider,
+		model: patternMetadata?.model,
 	});
 
-	if (result.error) {
-		throw new Error(`Pattern inscription failed: ${result.error}`);
-	}
-
-	if (!result.txid) {
-		throw new Error(
-			"Pattern inscription succeeded but no txid was returned",
-		);
-	}
-
-	await submitToIndexer(result.txid);
-
-	return { txid: result.txid, rawtx: result.rawtx };
+	return publishPackage(wallet, files, metadata);
 }
 
 /**
- * Inscribe an image (PNG, JPEG, WebP, etc.) on-chain with MAP metadata.
+ * Inscribe an image on-chain as a registry:file package.
+ * Produces 2 outputs: the image file + ord-fs/json manifest with MAP metadata.
  */
 export async function inscribeImage(
 	wallet: WalletInterface,
 	base64Data: string,
 	mimeType: string,
-	metadata?: {
+	imageMetadata?: {
 		name?: string;
 		aspectRatio?: string;
 		style?: string;
@@ -172,42 +168,38 @@ export async function inscribeImage(
 		provider?: string;
 		model?: string;
 	},
-): Promise<{ txid: string; rawtx?: string }> {
-	const ctx = createWalletContext(wallet);
+): Promise<PublishPackageResult> {
+	const ext = mimeType.split("/")[1] || "bin";
+	const name = imageMetadata?.name || "image";
+	const files: PackageFile[] = [
+		{
+			path: `${name}.${ext}`,
+			content: new Uint8Array(Utils.toArray(base64Data, "base64")),
+			contentType: mimeType,
+		},
+	];
 
-	const map: Record<string, string> = {
+	const isWallpaper = !!(imageMetadata?.aspectRatio || imageMetadata?.style);
+	const metadata: PackageMapMetadata = {
 		app: "theme-token",
-		type: "image",
+		type: "registry:file",
+		name,
+		version: "1.0.0",
+		description: name,
+		categories: isWallpaper
+			? JSON.stringify(["wallpaper", "image"])
+			: JSON.stringify(["image"]),
+		license: "CC0",
+		...(imageMetadata?.prompt && { prompt: imageMetadata.prompt }),
+		...(imageMetadata?.provider && { provider: imageMetadata.provider }),
+		...(imageMetadata?.model && { model: imageMetadata.model }),
+		...(imageMetadata?.aspectRatio && { aspectRatio: imageMetadata.aspectRatio }),
+		...(imageMetadata?.style && { style: imageMetadata.style }),
+		...(imageMetadata?.width && { width: imageMetadata.width.toString() }),
+		...(imageMetadata?.height && { height: imageMetadata.height.toString() }),
 	};
 
-	if (metadata?.name) map.name = metadata.name;
-	if (metadata?.aspectRatio) map.aspectRatio = metadata.aspectRatio;
-	if (metadata?.style) map.style = metadata.style;
-	if (metadata?.width) map.width = metadata.width.toString();
-	if (metadata?.height) map.height = metadata.height.toString();
-	if (metadata?.prompt) map.prompt = metadata.prompt;
-	if (metadata?.provider) map.provider = metadata.provider;
-	if (metadata?.model) map.model = metadata.model;
-
-	const result = await inscribe.execute(ctx, {
-		base64Content: base64Data,
-		contentType: mimeType,
-		map,
-	});
-
-	if (result.error) {
-		throw new Error(`Image inscription failed: ${result.error}`);
-	}
-
-	if (!result.txid) {
-		throw new Error(
-			"Image inscription succeeded but no txid was returned",
-		);
-	}
-
-	await submitToIndexer(result.txid);
-
-	return { txid: result.txid, rawtx: result.rawtx };
+	return publishPackage(wallet, files, metadata);
 }
 
 /**

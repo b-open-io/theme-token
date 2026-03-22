@@ -8,9 +8,6 @@ import { getOrdfsUrl } from "@theme-token/sdk";
  * - Hydrating multi-file registry items (blocks, components) with file contents via ORDFS directory traversal
  */
 
-// ORDFS base URL for content
-const ORDFS_BASE = "https://ordfs.network";
-
 /**
  * Registry item types we support
  */
@@ -21,7 +18,10 @@ export type RegistryItemType =
 	| "registry:hook"
 	| "registry:lib"
 	| "registry:ui"
-	| "registry:page";
+	| "registry:page"
+	| "registry:font"
+	| "registry:theme"
+	| "registry:file";
 
 /**
  * File entry in a registry manifest (inscribed JSON)
@@ -186,6 +186,9 @@ export function validateRegistryManifest(
 		"registry:lib",
 		"registry:ui",
 		"registry:page",
+		"registry:font",
+		"registry:theme",
+		"registry:file",
 	];
 
 	if (!validTypes.includes(obj.type as RegistryItemType)) {

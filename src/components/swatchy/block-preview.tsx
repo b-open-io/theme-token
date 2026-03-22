@@ -69,8 +69,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const handleInscribe = useCallback(async () => {
 		const result = await inscribeBundle(bundleResult.items);
 		if (result) {
-			// First origin is the manifest (vout 0)
-			setInscribedOrigin(result.origins[0]);
+			setInscribedOrigin(result.manifestOrigin);
 			setShowInscribeDialog(false);
 		}
 		return result;

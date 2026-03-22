@@ -1,126 +1,101 @@
+/**
+ * MAP metadata for a registry package manifest.
+ * Mirrors PackageMapMetadata from @1sat/actions.
+ */
+export interface PackageMapMetadata {
+	app: string;
+	type: string;
+	name: string;
+	version: string;
+	description: string;
+	language?: string;
+	homepage?: string;
+	prev?: string;
+	"opns.name"?: string;
+	"opns.outpoint"?: string;
+	title?: string;
+	author?: string;
+	dependencies?: string;
+	devDependencies?: string;
+	registryDependencies?: string;
+	categories?: string;
+	[key: string]: string | undefined;
+}
+
 export function buildTileMetadata(params: {
-	name?: string;
+	name: string;
+	version?: string;
+	description?: string;
 	author?: string;
 	license?: string;
 	prompt?: string;
 	provider?: string;
 	model?: string;
-}): Record<string, string> {
-	const result: Record<string, string> = {
+}): PackageMapMetadata {
+	return {
 		app: "theme-token",
-		type: "tile",
+		type: "registry:file",
+		name: params.name,
+		version: params.version || "1.0.0",
+		description: params.description || params.name,
+		categories: JSON.stringify(["pattern", "svg"]),
+		...(params.author && { author: params.author }),
+		license: params.license || "CC0",
+		...(params.prompt && { prompt: params.prompt }),
+		...(params.provider && { provider: params.provider }),
+		...(params.model && { model: params.model }),
 	};
-
-	if (params.name) result.name = params.name;
-	if (params.author) result.author = params.author;
-	// Default to CC0 (public domain) if no license specified
-	result.license = params.license || "CC0";
-	if (params.prompt) result.prompt = params.prompt;
-	if (params.provider) result.provider = params.provider;
-	if (params.model) result.model = params.model;
-
-	return result;
 }
 
 export function buildFontMetadata(params: {
-	name?: string;
+	name: string;
+	version?: string;
+	description?: string;
 	author?: string;
 	license?: string;
 	prompt?: string;
 	provider?: string;
 	model?: string;
-	previewOutput?: number;
-}): Record<string, string> {
-	const result: Record<string, string> = {
-		app: "theme-token",
-		type: "font",
-	};
-
-	if (params.name) result.name = params.name;
-	if (params.author) result.author = params.author;
-	if (params.license) result.license = params.license;
-	if (params.prompt) result.prompt = params.prompt;
-	if (params.provider) result.provider = params.provider;
-	if (params.model) result.model = params.model;
-	if (params.previewOutput !== undefined) {
-		result.previewOutput = params.previewOutput.toString();
-	}
-
-	return result;
-}
-
-export function buildFontPreviewMetadata(params: {
-	fontName: string;
-}): Record<string, string> {
+	"font.family"?: string;
+	"font.variable"?: string;
+	"font.weight"?: string;
+}): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: "font-preview",
-		fontName: params.fontName,
-	};
-}
-
-export function buildThemeMetadata(params?: {
-	prompt?: string;
-	provider?: string;
-	model?: string;
-}): Record<string, string> {
-	const result: Record<string, string> = {
-		app: "theme-token",
-		type: "theme",
-	};
-
-	if (params?.prompt) result.prompt = params.prompt;
-	if (params?.provider) result.provider = params.provider;
-	if (params?.model) result.model = params.model;
-
-	return result;
-}
-
-export function buildWallpaperMetadata(params: {
-	name?: string;
-	prompt?: string;
-	provider?: string;
-	model?: string;
-	aspectRatio?: string;
-	style?: string;
-}): Record<string, string> {
-	const result: Record<string, string> = {
-		app: "theme-token",
-		type: "wallpaper",
-	};
-
-	if (params.name) result.name = params.name;
-	result.license = "CC0"; // Default to public domain
-	if (params.prompt) result.prompt = params.prompt;
-	if (params.provider) result.provider = params.provider;
-	if (params.model) result.model = params.model;
-	if (params.aspectRatio) result.aspectRatio = params.aspectRatio;
-	if (params.style) result.style = params.style;
-
-	return result;
-}
-
-/** Registry item types for blocks, components, hooks, etc. */
-export type RegistryItemType =
-	| "block"
-	| "component"
-	| "hook"
-	| "lib"
-	| "ui"
-	| "page";
-
-export function buildRegistryMetadata(params: {
-	name: string;
-	type: RegistryItemType;
-	description?: string;
-}): Record<string, string> {
-	const result: Record<string, string> = {
-		app: "theme-token",
-		type: `registry:${params.type}`,
+		type: "registry:font",
 		name: params.name,
+		version: params.version || "1.0.0",
+		description: params.description || params.name,
+		...(params.author && { author: params.author }),
+		...(params.license && { license: params.license }),
+		...(params.prompt && { prompt: params.prompt }),
+		...(params.provider && { provider: params.provider }),
+		...(params.model && { model: params.model }),
+		...(params["font.family"] && { "font.family": params["font.family"] }),
+		...(params["font.variable"] && {
+			"font.variable": params["font.variable"],
+		}),
+		...(params["font.weight"] && { "font.weight": params["font.weight"] }),
 	};
-
-	if (params.description) result.description = params.description;
-
-	return result;
 }
+
+export function buildThemeMetadata(params: {
+	name: string;
+	version?: string;
+	description?: string;
+	prompt?: string;
+	provider?: string;
+	model?: string;
+}): PackageMapMetadata {
+	return {
+		app: "theme-token",
+		type: "registry:style",
+		name: params.name,
+		version: params.version || "1.0.0",
+		description: params.description || params.name,
+		...(params.prompt && { prompt: params.prompt }),
+		...(params.provider && { provider: params.provider }),
+		...(params.model && { model: params.model }),
+	};
+}
+

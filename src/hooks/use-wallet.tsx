@@ -1,7 +1,7 @@
 "use client";
 
 import type { WalletInterface } from "@bsv/sdk";
-import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
+import { type ThemeToken, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
 import {
 	createContext,
 	type ReactNode,
@@ -25,7 +25,6 @@ import {
 	type Ordinal,
 	type SocialProfile,
 	type SendBsvResult,
-	submitToIndexer,
 } from "@/lib/yours-wallet";
 import {
 	getOwnedOrdinals,
@@ -38,6 +37,10 @@ import {
 	inscribeImage as walletInscribeImage,
 	sendPayment as walletSendPayment,
 } from "@/lib/wallet-actions";
+import {
+	publishPackage,
+	bundleItemsToPackage,
+} from "@/lib/package-builder";
 
 // Import and re-export pricing constants
 import {
@@ -116,10 +119,10 @@ export interface BundleItem {
 export interface BundleInscribeResult {
 	/** Transaction ID */
 	txid: string;
-	/** Raw transaction hex */
-	rawtx: string;
-	/** Origins for each item in order: [{txid}_0, {txid}_1, ...] */
+	/** Origins for all outputs including manifest: [{txid}_0, {txid}_1, ...] */
 	origins: string[];
+	/** Origin of the package manifest (the package identity on-chain) */
+	manifestOrigin: string;
 }
 
 /** Configuration for minting a collection item */
@@ -226,19 +229,27 @@ function mapWalletStatus(oneSatStatus: OneSatWalletStatus): WalletStatus {
 /**
  * Categorize ordinals from GorillaPool API into themes, fonts, and patterns.
  * Also checks for Prism Pass ownership.
+ * Async because registry:style manifests require an ORDFS fetch for theme.json.
  */
-function categorizeOrdinals(ordinals: Ordinal[]): {
+async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
 	tokens: ThemeToken[];
 	owned: OwnedTheme[];
 	fonts: OwnedFont[];
 	patterns: OwnedPattern[];
 	hasPrismPass: boolean;
-} {
+}> {
 	const tokens: ThemeToken[] = [];
 	const owned: OwnedTheme[] = [];
 	const fonts: OwnedFont[] = [];
 	const patterns: OwnedPattern[] = [];
 
+	// Candidates for parallel ORDFS fetch (registry:style manifests)
+	const registryStyleCandidates: Array<{
+		outpoint: string;
+		origin: string;
+	}> = [];
+
+	// Pass 1: Synchronous categorization
 	for (const ordinal of ordinals) {
 		try {
 			const mapData = ordinal?.origin?.data?.map as
@@ -246,7 +257,27 @@ function categorizeOrdinals(ordinals: Ordinal[]): {
 				| undefined;
 			const fileType = ordinal?.origin?.data?.insc?.file?.type;
 
-			// Check if it's a theme-token font
+			// New registry format: registry:font
+			if (
+				mapData?.app === "theme-token" &&
+				mapData?.type === "registry:font"
+			) {
+				fonts.push({
+					outpoint: ordinal.outpoint,
+					origin: ordinal.origin?.outpoint || ordinal.outpoint,
+					metadata: {
+						name: mapData.name || "Unknown Font",
+						author: mapData.author,
+						license: mapData.license,
+						weight: mapData["font.weight"] || "400",
+						style: "normal",
+						prompt: mapData.prompt,
+					},
+				});
+				continue;
+			}
+
+			// Legacy format: type === "font"
 			if (
 				mapData?.app === "theme-token" &&
 				mapData?.type === "font" &&
@@ -267,7 +298,33 @@ function categorizeOrdinals(ordinals: Ordinal[]): {
 				continue;
 			}
 
-			// Check if it's a theme-token tile (SVG pattern/texture)
+			// New registry format: registry:file with pattern categories
+			if (
+				mapData?.app === "theme-token" &&
+				mapData?.type === "registry:file"
+			) {
+				try {
+					const categories = mapData.categories
+						? (JSON.parse(mapData.categories) as string[])
+						: [];
+					if (categories.includes("pattern")) {
+						patterns.push({
+							outpoint: ordinal.outpoint,
+							origin: ordinal.origin?.outpoint || ordinal.outpoint,
+							metadata: {
+								name: mapData.name,
+								prompt: mapData.prompt,
+							},
+						});
+						continue;
+					}
+				} catch {
+					// Invalid categories JSON — skip
+				}
+				continue;
+			}
+
+			// Legacy format: type === "tile"
 			if (
 				mapData?.app === "theme-token" &&
 				mapData?.type === "tile" &&
@@ -284,7 +341,20 @@ function categorizeOrdinals(ordinals: Ordinal[]): {
 				continue;
 			}
 
-			// Check if it's a theme token
+			// New registry format: registry:style — collect for parallel fetch
+			if (
+				mapData?.app === "theme-token" &&
+				mapData?.type === "registry:style" &&
+				fileType === "ord-fs/json"
+			) {
+				registryStyleCandidates.push({
+					outpoint: ordinal.outpoint,
+					origin: ordinal.origin?.outpoint || ordinal.outpoint,
+				});
+				continue;
+			}
+
+			// Legacy format: direct theme JSON
 			const content = ordinal?.origin?.data?.insc?.file?.json;
 			if (content && typeof content === "object") {
 				const result = validateThemeToken(content);
@@ -299,6 +369,32 @@ function categorizeOrdinals(ordinals: Ordinal[]): {
 			}
 		} catch {
 			// Skip invalid ordinals
+		}
+	}
+
+	// Pass 2: Fetch registry:style theme.json files in parallel via ORDFS
+	if (registryStyleCandidates.length > 0) {
+		const results = await Promise.allSettled(
+			registryStyleCandidates.map(async (candidate) => {
+				const res = await fetch(
+					getOrdfsUrl(`${candidate.origin}/theme.json`),
+				);
+				if (!res.ok) return null;
+				const themeJson = await res.json();
+				const validation = validateThemeToken(themeJson);
+				if (!validation.valid) return null;
+				return { ...candidate, theme: validation.theme };
+			}),
+		);
+		for (const result of results) {
+			if (result.status === "fulfilled" && result.value) {
+				tokens.push(result.value.theme);
+				owned.push({
+					theme: result.value.theme,
+					outpoint: result.value.outpoint,
+					origin: result.value.origin,
+				});
+			}
 		}
 	}
 
@@ -378,7 +474,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			try {
 				const ordinals = await getOwnedOrdinals(w);
 				const { tokens, owned, fonts, patterns, hasPrismPass: prismPass } =
-					categorizeOrdinals(ordinals);
+					await categorizeOrdinals(ordinals);
 
 				setHasPrismPass(prismPass);
 				setThemeTokens(tokens);
@@ -512,7 +608,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 			try {
 				const jsonString = JSON.stringify(theme);
-				const result = await walletInscribeTheme(wallet, jsonString);
+				const result = await walletInscribeTheme(
+					wallet,
+					jsonString,
+					theme.name,
+				);
 
 				// Add to themes cache immediately so it shows up on homepage
 				try {
@@ -533,10 +633,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				await fetchThemeTokens(wallet);
 				await fetchWalletInfo(wallet);
 
-				return {
-					txid: result.txid,
-					rawtx: result.rawtx || "",
-				};
+				return { txid: result.txid };
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Inscription failed");
 				return null;
@@ -573,10 +670,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				await fetchThemeTokens(wallet);
 				await fetchWalletInfo(wallet);
 
-				return {
-					txid: result.txid,
-					rawtx: result.rawtx || "",
-				};
+				return { txid: result.txid };
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Inscription failed");
 				return null;
@@ -622,10 +716,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				await fetchThemeTokens(wallet);
 				await fetchWalletInfo(wallet);
 
-				return {
-					txid: result.txid,
-					rawtx: result.rawtx || "",
-				};
+				return { txid: result.txid };
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Inscription failed");
 				return null;
@@ -722,18 +813,50 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 	/**
 	 * Inscribe multiple items in a single transaction (multi-output bundle).
-	 *
-	 * CWI's @1sat/actions inscribe only supports single inscriptions.
-	 * Multi-output bundles are not yet supported via CWI.
+	 * Uses publishPackage to create a registry package with all items.
 	 */
 	const inscribeBundle = useCallback(
-		async (_items: BundleItem[]): Promise<BundleInscribeResult | null> => {
-			throw new Error(
-				"Multi-output bundle inscriptions not yet supported via CWI. " +
-					"This feature requires batch inscription support in @1sat/actions.",
-			);
+		async (items: BundleItem[]): Promise<BundleInscribeResult | null> => {
+			if (!wallet || !addresses) {
+				setError("Wallet not connected");
+				return null;
+			}
+
+			setIsInscribing(true);
+			setError(null);
+
+			try {
+				const primaryName =
+					items.find((i) => i.name)?.name || "bundle";
+				const { files, metadata } = bundleItemsToPackage(
+					items,
+					primaryName,
+					`Bundle: ${primaryName}`,
+				);
+
+				const result = await publishPackage(wallet, files, metadata);
+
+				await fetchThemeTokens(wallet);
+				await fetchWalletInfo(wallet);
+
+				const manifestOrigin = result.origins[result.manifestVout];
+				return {
+					txid: result.txid,
+					origins: result.origins,
+					manifestOrigin,
+				};
+			} catch (err) {
+				setError(
+					err instanceof Error
+						? err.message
+						: "Bundle inscription failed",
+				);
+				return null;
+			} finally {
+				setIsInscribing(false);
+			}
 		},
-		[],
+		[wallet, addresses, fetchThemeTokens, fetchWalletInfo],
 	);
 
 	/**

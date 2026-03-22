@@ -1,16 +1,21 @@
 "use client";
 
 import { getOrdfsUrl } from "@theme-token/sdk";
+import { Utils } from "@bsv/sdk";
+import type { PackageFile } from "@/lib/package-builder";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FontFile } from "@/app/studio/font/font-mint-client";
 import type { FontMetadata } from "./metadata-form";
 import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
-import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { buildFontMetadata, buildFontPreviewMetadata } from "@/lib/asset-metadata";
+import { useYoursWallet } from "@/hooks/use-wallet";
+import { buildFontMetadata } from "@/lib/asset-metadata";
 import { generateFontPreviewFromData } from "@/lib/font-preview-generator";
-import { getYoursWallet, submitToIndexer } from "@/lib/yours-wallet";
+import { publishPackage } from "@/lib/package-builder";
+import {
+	useWallet as useOneSatWallet,
+} from "@1sat/react";
 
 interface TransactionTerminalProps {
 	files: FontFile[];
@@ -37,6 +42,7 @@ export function TransactionTerminal({
 	const [logs, setLogs] = useState<LogEntry[]>([]);
 	const [isProcessing, setIsProcessing] = useState(true);
 	const { addresses } = useYoursWallet();
+	const { wallet } = useOneSatWallet();
 	const hasStarted = useRef(false);
 
 	const addLog = useCallback(
@@ -62,22 +68,14 @@ export function TransactionTerminal({
 	}, []);
 
 	const executeInscription = useCallback(async () => {
-		if (!addresses?.ordAddress) {
-			onError("Wallet address not available");
+		if (!addresses?.ordAddress || !wallet) {
+			onError("Wallet not available");
 			return;
 		}
 
 		try {
 			addLog("PACKING_DATA...", "info");
 			await new Promise((r) => setTimeout(r, 300));
-
-			// Build inscription payload - always includes font + preview image
-			const inscriptions: Array<{
-				address: string;
-				base64Data: string;
-				mimeType: string;
-				map: Record<string, string>;
-			}> = [];
 
 			let fontBase64: string;
 			let fontMimeType: string;
@@ -110,6 +108,17 @@ export function TransactionTerminal({
 				throw new Error("No font data available");
 			}
 
+			// Build package files
+			const packageFiles: PackageFile[] = [];
+
+			// File 0: Font file
+			const fontExt = fontMimeType.split("/")[1] || "woff2";
+			packageFiles.push({
+				path: `font.${fontExt}`,
+				content: new Uint8Array(Utils.toArray(fontBase64, "base64")),
+				contentType: fontMimeType,
+			});
+
 			// Generate preview image from the font
 			addLog("GENERATING_PREVIEW_IMAGE...", "info");
 			await new Promise((r) => setTimeout(r, 200));
@@ -123,37 +132,17 @@ export function TransactionTerminal({
 				);
 				addLog(`GENERATING_PREVIEW_IMAGE... ${(previewResult.sizeBytes / 1024).toFixed(1)}KB`, "success");
 			} catch (previewError) {
-				// If preview generation fails, continue without it
 				console.warn("[TransactionTerminal] Preview generation failed:", previewError);
 				addLog("GENERATING_PREVIEW_IMAGE... SKIPPED (font loading error)", "info");
 				previewResult = { base64: "", sizeBytes: 0 };
 			}
 
-			const hasPreview = previewResult.base64.length > 0;
-
-			// Output 0: Font file
-			const fontMapData = buildFontMetadata({
-				name: fontName,
-				author: metadata.author || undefined,
-				license: metadata.license,
-				prompt: metadata.prompt,
-				previewOutput: hasPreview ? 1 : undefined,
-			});
-
-			inscriptions.push({
-				address: addresses.ordAddress,
-				base64Data: fontBase64,
-				mimeType: fontMimeType,
-				map: fontMapData,
-			});
-
-			// Output 1: Preview image (if generated successfully)
-			if (hasPreview) {
-				inscriptions.push({
-					address: addresses.ordAddress,
-					base64Data: previewResult.base64,
-					mimeType: "image/png",
-					map: buildFontPreviewMetadata({ fontName }),
+			// File 1: Preview image (if generated successfully)
+			if (previewResult.base64.length > 0) {
+				packageFiles.push({
+					path: "preview.png",
+					content: new Uint8Array(Utils.toArray(previewResult.base64, "base64")),
+					contentType: "image/png",
 				});
 			}
 
@@ -172,23 +161,25 @@ export function TransactionTerminal({
 			const totalBytes = fontBytes + previewResult.sizeBytes;
 			await new Promise((r) => setTimeout(r, 200));
 			addLog(
-				`CALCULATING_TX_SIZE... ${(totalBytes / 1024).toFixed(1)}KB (${inscriptions.length} outputs)`,
+				`CALCULATING_TX_SIZE... ${(totalBytes / 1024).toFixed(1)}KB (${packageFiles.length + 1} outputs)`,
 				"success",
 			);
 			await new Promise((r) => setTimeout(r, 200));
 
 			addLog("SIGNING_TX (WAITING_FOR_WALLET)...", "waiting");
 
-			// Get the wallet and call inscribe
-			const wallet = await getYoursWallet();
-			if (!wallet) {
-				throw new Error("Wallet not available");
-			}
+			// Build metadata for registry:font package
+			const fontMapMetadata = buildFontMetadata({
+				name: fontName,
+				author: metadata.author || undefined,
+				license: metadata.license,
+				prompt: metadata.prompt,
+				"font.family": fontName,
+				"font.variable": `--font-${fontName.toLowerCase().replace(/\s+/g, "-")}`,
+				"font.weight": "400",
+			});
 
-			const response = await wallet.inscribe(inscriptions);
-
-			// Submit to indexer immediately
-			submitToIndexer(response.txid).catch(() => {});
+			const result = await publishPackage(wallet, packageFiles, fontMapMetadata);
 
 			addLog("[USER_SIGNATURE_RECEIVED]", "success");
 			await new Promise((r) => setTimeout(r, 300));
@@ -196,21 +187,21 @@ export function TransactionTerminal({
 			addLog("BROADCASTING_TO_NODES...", "info");
 			await new Promise((r) => setTimeout(r, 500));
 
-			addLog(`TXID: ${response.txid.slice(0, 12)}...${response.txid.slice(-8)}`, "success");
+			addLog(`TXID: ${result.txid.slice(0, 12)}...${result.txid.slice(-8)}`, "success");
 			await new Promise((r) => setTimeout(r, 300));
 
 			addLog("INDEXING_ORDFS...", "info");
 			await new Promise((r) => setTimeout(r, 400));
 
-			// Build ORDFS URL - for fonts, we use the txid_0 format
-			const ordfsUrl = getOrdfsUrl(`${response.txid}_0`);
+			// The manifest is the package identity — use its origin for the ORDFS URL
+			const ordfsUrl = getOrdfsUrl(`${result.txid}_${result.manifestVout}`);
 
 			addLog("SUCCESS.", "success");
 			setIsProcessing(false);
 
 			// Wait a moment before completing
 			await new Promise((r) => setTimeout(r, 500));
-			onComplete({ txid: response.txid, ordfsUrl });
+			onComplete({ txid: result.txid, ordfsUrl });
 		} catch (err) {
 			console.error("[TransactionTerminal] Error:", err);
 			const errorMessage =
@@ -222,7 +213,7 @@ export function TransactionTerminal({
 			await new Promise((r) => setTimeout(r, 500));
 			onError(errorMessage);
 		}
-	}, [addresses, files, metadata, compiledFont, addLog, fileToBase64, onComplete, onError]);
+	}, [addresses, wallet, files, metadata, compiledFont, addLog, fileToBase64, onComplete, onError]);
 
 	useEffect(() => {
 		if (hasStarted.current) return;

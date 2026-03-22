@@ -139,9 +139,7 @@ export function ProjectStudioPageClient() {
 		// Inscribe the bundle
 		const result = await inscribeBundle(items);
 		if (result) {
-			// The last item in the bundle is the project manifest
-			const projectOrigin = result.origins[result.origins.length - 1];
-			setInscribedOrigin(projectOrigin);
+			setInscribedOrigin(result.manifestOrigin);
 			setShowSuccessDialog(true);
 		}
 	};

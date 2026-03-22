@@ -70,7 +70,7 @@ export interface InscribeRequest {
 
 export interface InscribeResponse {
 	txid: string;
-	rawtx: string;
+	rawtx?: string;
 }
 
 export interface TransferOrdinalRequest {
