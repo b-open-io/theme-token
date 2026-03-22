@@ -13,7 +13,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { fetchJsonFromOrdfs, resolveBundleReferences } from "@/lib/registry-gateway";
+import { fetchJsonFromOrdfs } from "@/lib/registry-gateway";
 import type { ProjectManifest, IconLibrary, BaseColor, MenuColor, MenuAccent } from "@/lib/project-types";
 
 export const runtime = "edge";
@@ -90,11 +90,8 @@ export async function GET(request: Request) {
 			);
 		}
 
-		// Resolve _N vout references to absolute ORDFS URLs
-		const manifest = resolveBundleReferences(
-			rawManifest as unknown as Record<string, unknown>,
-			params.project,
-		) as unknown as ProjectManifest;
+		// ORDFS resolves _N vout references natively — no client-side resolution needed
+		const manifest = rawManifest;
 
 		// Apply query parameter overrides
 		const finalManifest = applyOverrides(manifest, params);

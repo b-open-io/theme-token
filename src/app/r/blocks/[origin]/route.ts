@@ -4,8 +4,6 @@ import {
 	validateRegistryManifest,
 	hydrateRegistryManifest,
 	toShadcnRegistryItem,
-	hasBundleReferences,
-	resolveBundleReferences,
 } from "@/lib/registry-gateway";
 
 /**
@@ -35,12 +33,8 @@ export async function GET(
 			);
 		}
 
-		let json = await response.json();
-
-		// Resolve any _N vout references in the manifest
-		if (hasBundleReferences(json)) {
-			json = resolveBundleReferences(json, origin);
-		}
+		// ORDFS resolves _N refs natively — no client-side resolution needed
+		const json = await response.json();
 
 		// Validate the manifest structure
 		const result = validateRegistryManifest(json);

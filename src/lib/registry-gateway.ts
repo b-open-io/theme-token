@@ -5,8 +5,7 @@ import { getOrdfsUrl } from "@theme-token/sdk";
  *
  * Handles:
  * - Fetching content from ORDFS (Ordinals File System)
- * - Resolving _N relative vout references to absolute content URLs
- * - Hydrating multi-file registry items (blocks, components) with file contents
+ * - Hydrating multi-file registry items (blocks, components) with file contents via ORDFS directory traversal
  */
 
 // ORDFS base URL for content
@@ -52,7 +51,7 @@ export interface RegistryManifest {
 }
 
 /**
- * Extract txid from origin string (e.g., "abc123def456_3" → "abc123def456")
+ * Extract txid from origin string (e.g., "abc123def456_3" -> "abc123def456")
  */
 export function extractTxid(origin: string): string | null {
 	const underscoreIndex = origin.lastIndexOf("_");
@@ -61,7 +60,7 @@ export function extractTxid(origin: string): string | null {
 }
 
 /**
- * Extract vout from origin string (e.g., "abc123def456_3" → 3)
+ * Extract vout from origin string (e.g., "abc123def456_3" -> 3)
  */
 export function extractVout(origin: string): number | null {
 	const underscoreIndex = origin.lastIndexOf("_");
@@ -69,77 +68,6 @@ export function extractVout(origin: string): number | null {
 	const voutStr = origin.slice(underscoreIndex + 1);
 	const vout = parseInt(voutStr, 10);
 	return Number.isNaN(vout) ? null : vout;
-}
-
-/**
- * Resolve _N relative vout references in a string value to absolute /content/{txid}_{N} paths
- */
-export function resolveVoutPlaceholder(
-	value: string,
-	txid: string,
-): string {
-	const match = value.match(/^_(\d+)$/);
-	if (!match) return value;
-	const vout = parseInt(match[1], 10);
-	return `${ORDFS_BASE}/content/${txid}_${vout}`;
-}
-
-/**
- * Check if a value is a _N relative vout reference
- */
-export function hasVoutPlaceholder(value: unknown): boolean {
-	if (typeof value !== "string") return false;
-	return /^_\d+$/.test(value);
-}
-
-/**
- * Recursively resolve all _N relative vout references in an object
- */
-export function resolveBundleReferences<T extends Record<string, unknown>>(
-	obj: T,
-	origin: string,
-): T {
-	const txid = extractTxid(origin);
-	if (!txid) return obj;
-
-	const resolveValue = (value: unknown): unknown => {
-		if (typeof value === "string") {
-			return resolveVoutPlaceholder(value, txid);
-		}
-		if (Array.isArray(value)) {
-			return value.map(resolveValue);
-		}
-		if (value && typeof value === "object") {
-			return resolveObject(value as Record<string, unknown>);
-		}
-		return value;
-	};
-
-	const resolveObject = (obj: Record<string, unknown>): Record<string, unknown> => {
-		const resolved: Record<string, unknown> = {};
-		for (const [key, value] of Object.entries(obj)) {
-			resolved[key] = resolveValue(value);
-		}
-		return resolved;
-	};
-
-	return resolveObject(obj) as T;
-}
-
-/**
- * Check if an object contains any _N relative vout references (recursive)
- */
-export function hasBundleReferences(obj: Record<string, unknown>): boolean {
-	for (const v of Object.values(obj)) {
-		if (typeof v === "string" && /^_\d+$/.test(v)) return true;
-		if (Array.isArray(v)) {
-			if (v.some(item => typeof item === "string" && /^_\d+$/.test(item))) return true;
-		}
-		if (v && typeof v === "object" && !Array.isArray(v)) {
-			if (hasBundleReferences(v as Record<string, unknown>)) return true;
-		}
-	}
-	return false;
 }
 
 /**
@@ -172,51 +100,30 @@ export async function fetchTextFromOrdfs(
 }
 
 /**
- * Hydrate a registry manifest by fetching file contents from sibling inscriptions
+ * Hydrate a registry manifest by fetching file contents via ORDFS directory traversal
  *
- * For multi-file blocks/components, the manifest references files by vout index.
- * This function fetches each file's content and injects it into the response.
+ * For multi-file blocks/components, ORDFS resolves _N refs and nested directories
+ * natively. This function fetches each file's content by path and injects it into the response.
  */
 export async function hydrateRegistryManifest(
 	manifest: RegistryManifest,
 	origin: string,
 ): Promise<RegistryManifest> {
-	const txid = extractTxid(origin);
-	if (!txid) return manifest;
-
-	// Process files that need hydration
 	const hydratedFiles = await Promise.all(
 		manifest.files.map(async (file) => {
-			// If content is already present, no hydration needed
 			if (file.content) return file;
 
-			// Determine vout from explicit vout field or target placeholder
-			let vout: number | null = null;
-
-			if (typeof file.vout === "number") {
-				vout = file.vout;
-			} else if (file.target && hasVoutPlaceholder(file.target)) {
-				const match = file.target.match(/^_(\d+)$/);
-				if (match) {
-					vout = parseInt(match[1], 10);
-				}
-			}
-
-			if (vout === null) return file;
-
-			// Fetch content from sibling inscription
-			const fileOrigin = `${txid}_${vout}`;
-			const content = await fetchTextFromOrdfs(fileOrigin);
+			// Fetch file content via ORDFS directory traversal
+			const content = await fetchTextFromOrdfs(`${origin}/${file.path}`);
 
 			if (!content) {
-				console.warn(`[Registry Gateway] Failed to fetch file at ${fileOrigin}`);
+				console.warn(`[Registry Gateway] Failed to fetch file at ${origin}/${file.path}`);
 				return file;
 			}
 
 			return {
 				...file,
 				content,
-				// Remove vout/target from output - CLI doesn't need them
 				vout: undefined,
 				target: undefined,
 			};
