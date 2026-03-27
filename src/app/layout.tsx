@@ -51,6 +51,9 @@ export const metadata: Metadata = {
 		description: "Install ShadCN themes from blockchain with one command",
 		images: ["/og/default.png"],
 	},
+	alternates: {
+		canonical: "https://themetoken.dev",
+	},
 };
 
 const jsonLd = {
