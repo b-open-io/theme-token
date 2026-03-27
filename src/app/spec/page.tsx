@@ -39,7 +39,7 @@ const jsonLd = {
 			inLanguage: "en-US",
 			proficiencyLevel: "Expert",
 			publisher: { "@id": "https://bopen.io/#organization" },
-			knowsAbout: [
+			keywords: [
 				"Theme Token JSON Schema",
 				"ShadCN Registry Format",
 				"On-Chain Metadata Protocol",
@@ -74,7 +74,7 @@ export default function SpecPage() {
 		<>
 			<script
 				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
 			/>
 			<SpecPageClient />
 		</>

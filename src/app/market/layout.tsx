@@ -45,7 +45,7 @@ const jsonLd = {
 			isPartOf: { "@id": "https://themetoken.dev/#website" },
 			about: { "@id": "https://themetoken.dev/#softwareapplication" },
 			inLanguage: "en-US",
-			knowsAbout: [
+			keywords: [
 				"Theme Marketplace",
 				"On-Chain Design Assets",
 				"1Sat Ordinals Trading",
@@ -82,7 +82,7 @@ export default function MarketLayout({
 		<>
 			<script
 				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
 			/>
 			<MarketLayoutClient>{children}</MarketLayoutClient>
 		</>

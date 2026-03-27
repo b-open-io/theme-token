@@ -36,7 +36,7 @@ const jsonLd = {
 			isPartOf: { "@id": "https://themetoken.dev/#website" },
 			about: { "@id": "https://themetoken.dev/#softwareapplication" },
 			inLanguage: "en-US",
-			knowsAbout: [
+			keywords: [
 				"ShadCN UI Themes",
 				"On-Chain Theme Registry",
 				"1Sat Ordinals",
@@ -68,7 +68,7 @@ export default function ThemesPage() {
 		<>
 			<script
 				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
 			/>
 			<ThemesPageClient />
 		</>

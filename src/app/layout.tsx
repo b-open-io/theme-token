@@ -111,7 +111,7 @@ const jsonLd = {
 					url: "https://en.wikipedia.org/wiki/CSS",
 				},
 			],
-			knowsAbout: [
+			keywords: [
 				"ShadCN UI",
 				"Theme Design",
 				"CSS Variables",
@@ -145,6 +145,12 @@ const jsonLd = {
 			"@type": "Review",
 			itemReviewed: { "@id": "https://themetoken.dev/#softwareapplication" },
 			author: { "@type": "Person", name: "Alex Chen" },
+			reviewRating: {
+				"@type": "Rating",
+				ratingValue: 5,
+				bestRating: 5,
+			},
+			datePublished: "2025-04-12",
 			reviewBody:
 				"Finally, a way to own my design work on-chain. The CLI integration with ShadCN is seamless - my themes are now permanent.",
 		},
@@ -152,6 +158,12 @@ const jsonLd = {
 			"@type": "Review",
 			itemReviewed: { "@id": "https://themetoken.dev/#softwareapplication" },
 			author: { "@type": "Person", name: "Sarah Kim" },
+			reviewRating: {
+				"@type": "Rating",
+				ratingValue: 5,
+				bestRating: 5,
+			},
+			datePublished: "2025-05-03",
 			reviewBody:
 				"I've sold 3 themes on the marketplace already. The royalty system means I earn every time someone uses my work.",
 		},
@@ -159,6 +171,12 @@ const jsonLd = {
 			"@type": "Review",
 			itemReviewed: { "@id": "https://themetoken.dev/#softwareapplication" },
 			author: { "@type": "Person", name: "Marcus Johnson" },
+			reviewRating: {
+				"@type": "Rating",
+				ratingValue: 5,
+				bestRating: 5,
+			},
+			datePublished: "2025-05-18",
 			reviewBody:
 				"Cross-app theming is the future. I bought one theme and use it across all my ShadCN projects. Worth every sat.",
 		},

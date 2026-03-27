@@ -61,7 +61,7 @@ const jsonLd = {
 				"ShadCN registry export",
 				"Direct blockchain inscription",
 			],
-			knowsAbout: [
+			keywords: [
 				"Theme Design",
 				"AI Font Generation",
 				"Wallpaper Generation",
@@ -95,7 +95,7 @@ export default function StudioPage() {
 		<>
 			<script
 				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
 			/>
 			<StudioPageClient />
 		</>
