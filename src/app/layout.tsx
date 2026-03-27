@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import type { SoftwareApplication, WithContext } from "schema-dts";
 import { cookies } from "next/headers";
-import { JsonLd } from "@/components/json-ld";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
@@ -48,36 +46,98 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
+		site: "@baborern",
 		title: "Theme Token | On-Chain Themes for ShadCN UI",
 		description: "Install ShadCN themes from blockchain with one command",
 		images: ["/og/default.png"],
 	},
 };
 
-const jsonLd: WithContext<SoftwareApplication> = {
+const jsonLd = {
 	"@context": "https://schema.org",
-	"@type": "SoftwareApplication",
-	name: "Theme Token",
-	url: "https://themetoken.dev",
-	description:
-		"Install ShadCN UI themes from blockchain with one command. Create, own, trade, and apply themes across any compatible application.",
-	applicationCategory: "DeveloperApplication",
-	operatingSystem: "Web",
-	offers: {
-		"@type": "Offer",
-		price: "0",
-		priceCurrency: "USD",
-	},
-	provider: {
-		"@type": "Organization",
-		name: "Theme Token",
-		url: "https://themetoken.dev",
-	},
-	featureList: [
-		"On-chain theme storage via Bitcoin ordinals",
-		"ShadCN CLI compatible registry",
-		"Theme marketplace with NFT ownership",
-		"Runtime theme application via SDK",
+	"@graph": [
+		{
+			"@type": "WebSite",
+			"@id": "https://themetoken.dev/#website",
+			name: "Theme Token",
+			url: "https://themetoken.dev",
+			publisher: { "@id": "https://bopen.io/#organization" },
+			inLanguage: "en-US",
+		},
+		{
+			"@type": "WebPage",
+			"@id": "https://themetoken.dev/#webpage",
+			url: "https://themetoken.dev",
+			name: "Theme Token | On-Chain Themes for ShadCN UI",
+			isPartOf: { "@id": "https://themetoken.dev/#website" },
+			inLanguage: "en-US",
+		},
+		{
+			"@type": "SoftwareApplication",
+			"@id": "https://themetoken.dev/#softwareapplication",
+			name: "Theme Token",
+			url: "https://themetoken.dev",
+			description:
+				"Install ShadCN themes from blockchain with one command. Create, own, trade, and apply themes across any compatible application. On-chain themes for ShadCN UI inscribed as 1Sat Ordinals on the BSV blockchain.",
+			applicationCategory: "Developer Tools",
+			operatingSystem: "Web",
+			provider: { "@id": "https://bopen.io/#organization" },
+			creator: { "@id": "https://bopen.io/#organization" },
+			offers: {
+				"@type": "Offer",
+				price: "0",
+				priceCurrency: "USD",
+				description: "Free theme browsing and CLI installation",
+			},
+			featureList: [
+				"One-command ShadCN theme installation",
+				"AI-powered theme generation",
+				"On-chain theme ownership via 1Sat Ordinals",
+				"Theme marketplace with trading",
+				"OKLCH color system",
+				"Custom font and pattern support",
+				"Wallpaper generation",
+				"ShadCN registry compatibility",
+				"Swatchy AI assistant",
+			],
+			isRelatedTo: [
+				{ "@id": "https://1satordinals.com/#softwareapplication" },
+				{
+					"@type": "Thing",
+					name: "Cascading Style Sheets",
+					url: "https://en.wikipedia.org/wiki/CSS",
+				},
+			],
+			knowsAbout: [
+				"ShadCN UI",
+				"Theme Design",
+				"CSS Variables",
+				"OKLCH Color Space",
+				"1Sat Ordinals",
+				"AI Theme Generation",
+				"Design Tokens",
+				"Component Libraries",
+			],
+		},
+		{
+			"@type": "Person",
+			"@id": "https://kurtwuckertjr.com/#person",
+			name: "Kurt Wuckert Jr.",
+			url: "https://kurtwuckertjr.com",
+			description:
+				"Bitcoin Historian and founder of bOpen, GorillaPool, and Open Protocol Labs",
+		},
+		{
+			"@type": "BreadcrumbList",
+			itemListElement: [
+				{
+					"@type": "ListItem",
+					position: 1,
+					name: "Home",
+					item: "https://themetoken.dev",
+				},
+			],
+		},
 	],
 };
 
@@ -114,7 +174,12 @@ export default async function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
-				<JsonLd data={jsonLd} />
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{
+						__html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+					}}
+				/>
 				{inlineThemeCss && (
 					<style
 						id="ssr-theme"
