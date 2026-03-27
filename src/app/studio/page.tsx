@@ -27,8 +27,77 @@ export const metadata: Metadata = {
 			"Initialize your creative suite. Visual editors for themes, fonts, wallpapers, and icons. Inscribe directly to blockchain.",
 		images: ["/og/studio.png"],
 	},
+	alternates: {
+		canonical: "https://themetoken.dev/studio",
+	},
+};
+
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@graph": [
+		{
+			"@type": "WebApplication",
+			"@id": "https://themetoken.dev/studio/#webapplication",
+			url: "https://themetoken.dev/studio",
+			name: "Theme Token Creator Studio",
+			description:
+				"Web-based creative suite for designing ShadCN themes, generating AI fonts, creating wallpapers, and crafting SVG patterns. Inscribe creations directly to the BSV blockchain as 1Sat Ordinals.",
+			applicationCategory: "DesignApplication",
+			operatingSystem: "Web",
+			provider: { "@id": "https://bopen.io/#organization" },
+			isPartOf: { "@id": "https://themetoken.dev/#softwareapplication" },
+			offers: {
+				"@type": "Offer",
+				price: "0",
+				priceCurrency: "USD",
+				description: "Free to use. AI generation features require BSV payment.",
+			},
+			featureList: [
+				"Visual theme editor with OKLCH colors",
+				"AI-powered font generation",
+				"Wallpaper generation",
+				"SVG pattern editor",
+				"Icon customization",
+				"ShadCN registry export",
+				"Direct blockchain inscription",
+			],
+			knowsAbout: [
+				"Theme Design",
+				"AI Font Generation",
+				"Wallpaper Generation",
+				"SVG Patterns",
+				"On-Chain Inscription",
+				"OKLCH Color System",
+			],
+		},
+		{
+			"@type": "BreadcrumbList",
+			itemListElement: [
+				{
+					"@type": "ListItem",
+					position: 1,
+					name: "Home",
+					item: "https://themetoken.dev",
+				},
+				{
+					"@type": "ListItem",
+					position: 2,
+					name: "Creator Studio",
+					item: "https://themetoken.dev/studio",
+				},
+			],
+		},
+	],
 };
 
 export default function StudioPage() {
-	return <StudioPageClient />;
+	return (
+		<>
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+			/>
+			<StudioPageClient />
+		</>
+	);
 }

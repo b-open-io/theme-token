@@ -27,8 +27,69 @@ export const metadata: Metadata = {
 			"Unlock creative superpowers with Prism Pass. 50% off AI generations, extended storage, and NFT membership benefits.",
 		images: ["/og/pricing.png"],
 	},
+	alternates: {
+		canonical: "https://themetoken.dev/pricing",
+	},
+};
+
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@graph": [
+		{
+			"@type": "WebPage",
+			"@id": "https://themetoken.dev/pricing/#webpage",
+			url: "https://themetoken.dev/pricing",
+			name: "Prism Pass | Theme Token Membership",
+			description:
+				"Unlock creative superpowers with Prism Pass NFT membership. 50% off AI generations, extended storage, and exclusive benefits.",
+			isPartOf: { "@id": "https://themetoken.dev/#website" },
+			about: { "@id": "https://themetoken.dev/#softwareapplication" },
+			inLanguage: "en-US",
+		},
+		{
+			"@type": "Product",
+			name: "Prism Pass",
+			description:
+				"NFT membership pass for Theme Token. Unlocks 50% off AI generations, extended cloud storage, and exclusive member benefits. Inscribed as a 1Sat Ordinal on the BSV blockchain.",
+			brand: { "@id": "https://bopen.io/#organization" },
+			offers: {
+				"@type": "Offer",
+				name: "Prism Pass",
+				price: "4",
+				priceCurrency: "USD",
+				description:
+					"NFT membership with 50% off AI generations, extended storage, and exclusive benefits",
+				availability: "https://schema.org/InStock",
+			},
+		},
+		{
+			"@type": "BreadcrumbList",
+			itemListElement: [
+				{
+					"@type": "ListItem",
+					position: 1,
+					name: "Home",
+					item: "https://themetoken.dev",
+				},
+				{
+					"@type": "ListItem",
+					position: 2,
+					name: "Pricing",
+					item: "https://themetoken.dev/pricing",
+				},
+			],
+		},
+	],
 };
 
 export default function PricingPage() {
-	return <PricingPageClient />;
+	return (
+		<>
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+			/>
+			<PricingPageClient />
+		</>
+	);
 }
