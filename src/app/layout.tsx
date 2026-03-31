@@ -103,7 +103,7 @@ const jsonLd = {
 				"ShadCN registry compatibility",
 				"Swatchy AI assistant",
 			],
-			isRelatedTo: [
+			about: [
 				{ "@id": "https://1satordinals.com/#softwareapplication" },
 				{
 					"@type": "Thing",
@@ -134,56 +134,6 @@ const jsonLd = {
 				"https://x.com/kurtwuckertjr",
 				"https://www.linkedin.com/in/kurtwuckertjr/",
 			],
-		},
-		{
-			"@type": "BreadcrumbList",
-			itemListElement: [
-				{
-					"@type": "ListItem",
-					position: 1,
-					name: "Home",
-					item: "https://themetoken.dev",
-				},
-			],
-		},
-		{
-			"@type": "Review",
-			itemReviewed: { "@id": "https://themetoken.dev/#softwareapplication" },
-			author: { "@type": "Person", name: "Alex Chen" },
-			reviewRating: {
-				"@type": "Rating",
-				ratingValue: 5,
-				bestRating: 5,
-			},
-			datePublished: "2025-04-12",
-			reviewBody:
-				"Finally, a way to own my design work on-chain. The CLI integration with ShadCN is seamless - my themes are now permanent.",
-		},
-		{
-			"@type": "Review",
-			itemReviewed: { "@id": "https://themetoken.dev/#softwareapplication" },
-			author: { "@type": "Person", name: "Sarah Kim" },
-			reviewRating: {
-				"@type": "Rating",
-				ratingValue: 5,
-				bestRating: 5,
-			},
-			datePublished: "2025-05-03",
-			reviewBody:
-				"I've sold 3 themes on the marketplace already. The royalty system means I earn every time someone uses my work.",
-		},
-		{
-			"@type": "Review",
-			itemReviewed: { "@id": "https://themetoken.dev/#softwareapplication" },
-			author: { "@type": "Person", name: "Marcus Johnson" },
-			reviewRating: {
-				"@type": "Rating",
-				ratingValue: 5,
-				bestRating: 5,
-			},
-			datePublished: "2025-05-18",
-			reviewBody:
-				"Cross-app theming is the future. I bought one theme and use it across all my ShadCN projects. Worth every sat.",
 		},
 	],
 };

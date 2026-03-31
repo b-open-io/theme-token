@@ -48,7 +48,9 @@ const jsonLd = {
 		},
 		{
 			"@type": "Product",
+			"@id": "https://themetoken.dev/pricing/#product",
 			name: "Prism Pass",
+			image: "https://themetoken.dev/og/pricing.png",
 			description:
 				"NFT membership pass for Theme Token. Unlocks 50% off AI generations, extended cloud storage, and exclusive member benefits. Inscribed as a 1Sat Ordinal on the BSV blockchain.",
 			brand: { "@id": "https://bopen.io/#organization" },

@@ -28,7 +28,7 @@ const jsonLd = {
 	"@graph": [
 		{
 			"@type": "TechArticle",
-			"@id": "https://themetoken.dev/spec/#webpage",
+			"@id": "https://themetoken.dev/spec/#article",
 			url: "https://themetoken.dev/spec",
 			name: "Theme Token Specification",
 			headline: "Theme Token Technical Specification",
