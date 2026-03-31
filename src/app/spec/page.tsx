@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import type { Graph } from "schema-dts";
+import { JsonLd } from "@/components/json-ld";
 import { SpecPageClient } from "./page-client";
 
 export const metadata: Metadata = {
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 	},
 };
 
-const jsonLd = {
+const jsonLd: Graph = {
 	"@context": "https://schema.org",
 	"@graph": [
 		{
@@ -72,10 +74,7 @@ const jsonLd = {
 export default function SpecPage() {
 	return (
 		<>
-			<script
-				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
-			/>
+			<JsonLd data={jsonLd} />
 			<SpecPageClient />
 		</>
 	);

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import type { Graph } from "schema-dts";
 import { cookies } from "next/headers";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
+import { JsonLd } from "@/components/json-ld";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
@@ -56,7 +58,7 @@ export const metadata: Metadata = {
 	},
 };
 
-const jsonLd = {
+const jsonLd: Graph = {
 	"@context": "https://schema.org",
 	"@graph": [
 		{
@@ -171,12 +173,7 @@ export default async function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
-				<script
-					type="application/ld+json"
-					dangerouslySetInnerHTML={{
-						__html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
-					}}
-				/>
+				<JsonLd data={jsonLd} />
 				{inlineThemeCss && (
 					<style
 						id="ssr-theme"

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import type { Graph } from "schema-dts";
+import { JsonLd } from "@/components/json-ld";
 import { MarketLayoutClient } from "./layout-client";
 
 export const metadata: Metadata = {
@@ -32,7 +34,7 @@ export const metadata: Metadata = {
 	},
 };
 
-const jsonLd = {
+const jsonLd: Graph = {
 	"@context": "https://schema.org",
 	"@graph": [
 		{
@@ -80,10 +82,7 @@ export default function MarketLayout({
 }) {
 	return (
 		<>
-			<script
-				type="application/ld+json"
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
-			/>
+			<JsonLd data={jsonLd} />
 			<MarketLayoutClient>{children}</MarketLayoutClient>
 		</>
 	);
