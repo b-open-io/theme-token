@@ -129,6 +129,11 @@ const jsonLd = {
 			url: "https://kurtwuckertjr.com",
 			description:
 				"Bitcoin Historian and founder of bOpen, GorillaPool, and Open Protocol Labs",
+			sameAs: [
+				"https://www.wikidata.org/wiki/Q138774106",
+				"https://x.com/kurtwuckertjr",
+				"https://www.linkedin.com/in/kurtwuckertjr/",
+			],
 		},
 		{
 			"@type": "BreadcrumbList",
