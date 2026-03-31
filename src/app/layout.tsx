@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		site: "@baborern",
+		// site: TODO — add real Twitter handle when available
 		title: "Theme Token | On-Chain Themes for ShadCN UI",
 		description: "Install ShadCN themes from blockchain with one command",
 		images: ["/og/default.png"],
