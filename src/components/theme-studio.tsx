@@ -207,6 +207,11 @@ export function ThemeStudio() {
 	// URL sync refs
 	const isInitialized = useRef(false);
 	const urlSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// True once an explicit theme has been loaded from the URL (?styles/?import/
+	// ?remix), the AI generation handoff, or a gallery remix. When set, the
+	// wallet's active/session theme must NOT overwrite it — otherwise a shared
+	// pre-published theme would get clobbered and couldn't be tweaked.
+	const loadedExplicitTheme = useRef(false);
 
 	// Dirty state detection - compare selectedTheme styles with originalTheme styles
 	const isDirty =
@@ -277,6 +282,7 @@ export function ThemeStudio() {
 			const { theme, txid } = aiGeneratedTheme;
 
 			// Load theme into editor
+			loadedExplicitTheme.current = true;
 			loadThemeFonts(theme);
 			setSelectedTheme(theme);
 			setOriginalTheme(theme);
@@ -319,6 +325,7 @@ export function ThemeStudio() {
 					name: nameParam || "Shared Theme",
 					styles: decoded,
 				};
+				loadedExplicitTheme.current = true;
 				loadThemeFonts(theme);
 				setSelectedTheme(theme);
 				setOriginalTheme(theme);
@@ -360,9 +367,11 @@ export function ThemeStudio() {
 		syncToUrl();
 	}, [syncToUrl]);
 
-	// Sync with wallet's active theme when it changes externally
+	// Sync with wallet's active theme when it changes externally.
+	// Skip if an explicit theme was loaded (shared URL, AI generation, or remix)
+	// so the session theme can't clobber a theme the user came here to edit.
 	useEffect(() => {
-		if (activeTheme) {
+		if (activeTheme && !loadedExplicitTheme.current) {
 			setSelectedTheme(activeTheme);
 			setOriginalTheme(activeTheme);
 			setCustomName("");
@@ -387,6 +396,7 @@ export function ThemeStudio() {
 							author: data.author,
 							styles: data.styles,
 						};
+						loadedExplicitTheme.current = true;
 						loadThemeFonts(theme);
 						setSelectedTheme(theme);
 						setOriginalTheme(theme);
@@ -409,6 +419,7 @@ export function ThemeStudio() {
 				const cssResult = parseCss(decodedCss, themeName);
 
 				if (cssResult.valid) {
+					loadedExplicitTheme.current = true;
 					loadThemeFonts(cssResult.theme);
 					setSelectedTheme(cssResult.theme);
 					setOriginalTheme(cssResult.theme);
@@ -427,6 +438,7 @@ export function ThemeStudio() {
 	useEffect(() => {
 		const remixData = getAndClearRemixTheme();
 		if (remixData) {
+			loadedExplicitTheme.current = true;
 			loadThemeFonts(remixData.theme);
 			setSelectedTheme(remixData.theme);
 			setOriginalTheme(remixData.theme);
@@ -464,6 +476,7 @@ export function ThemeStudio() {
 	useEffect(() => {
 		const handleRemix = (e: Event) => {
 			const theme = (e as CustomEvent<ThemeToken>).detail;
+			loadedExplicitTheme.current = true;
 			setSelectedTheme(theme);
 			setOriginalTheme(theme);
 			setCustomName(""); // Clear custom name for remix
