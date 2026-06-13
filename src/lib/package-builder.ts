@@ -1,3 +1,4 @@
+import { ORDINALS_BASKET } from "@1sat/actions";
 import { Inscription, MAP, MAP_PREFIX } from "@1sat/templates";
 import {
 	P2PKH,
@@ -22,7 +23,6 @@ export interface PackageFile {
 	content: Uint8Array;
 	contentType: string;
 }
-const ORDINALS_BASKET = "ordinals";
 
 /**
  * Result from publishing a package via CWI wallet.
