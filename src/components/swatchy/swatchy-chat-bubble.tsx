@@ -416,11 +416,11 @@ export function SwatchyChatBubble() {
 										key={msg.id}
 										from={msg.role === "user" ? "user" : "assistant"}
 									>
-										{uiMessage.parts?.map((part, index) => {
+										{uiMessage.parts?.map((part) => {
 											// Render text parts
 											if (isTextUIPart(part) && part.text) {
 												return (
-													<MessageContent key={index}>
+													<MessageContent key={`${msg.id}:text:${part.text}`}>
 														{part.text}
 													</MessageContent>
 												);
@@ -434,6 +434,10 @@ export function SwatchyChatBubble() {
 														: part.type.replace("tool-", "");
 												const displayName =
 													TOOL_DISPLAY_NAMES[toolName] || toolName;
+												const partKey =
+													"toolCallId" in part && part.toolCallId
+														? part.toolCallId
+														: `${msg.id}:${part.type}`;
 
 												// Generative UI for Blocks and Components
 												if (
@@ -450,7 +454,7 @@ export function SwatchyChatBubble() {
 
 													if (item) {
 														return (
-															<div key={index} className="w-full my-2">
+															<div key={partKey} className="w-full my-2">
 																<BlockPreview item={item} />
 															</div>
 														);
@@ -464,7 +468,7 @@ export function SwatchyChatBubble() {
 												) {
 													return (
 														<div
-															key={index}
+															key={partKey}
 															className="flex items-center gap-2 text-xs text-muted-foreground py-1"
 														>
 															<Loader2 className="h-3 w-3 animate-spin" />
@@ -476,7 +480,7 @@ export function SwatchyChatBubble() {
 												if (part.state === "output-available") {
 													return (
 														<div
-															key={index}
+															key={partKey}
 															className="flex items-center gap-2 text-xs text-muted-foreground py-1"
 														>
 															<CheckCircle2 className="h-3 w-3 text-green-500" />
@@ -488,7 +492,7 @@ export function SwatchyChatBubble() {
 												if (part.state === "output-error") {
 													return (
 														<div
-															key={index}
+															key={partKey}
 															className="flex items-center gap-2 text-xs text-destructive py-1"
 														>
 															<XCircle className="h-3 w-3" />
@@ -500,7 +504,7 @@ export function SwatchyChatBubble() {
 												// Default: show tool is being called
 												return (
 													<div
-														key={index}
+														key={partKey}
 														className="flex items-center gap-2 text-xs text-muted-foreground py-1"
 													>
 														<Wrench className="h-3 w-3" />

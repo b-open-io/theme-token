@@ -34,6 +34,7 @@ export function SwatchyTalkBubble({ type, text }: SwatchyTalkBubbleProps) {
 				{/* Tails */}
 				{type === "say" && (
 					<svg
+						aria-hidden="true"
 						className="absolute -bottom-[14px] left-4 w-4 h-4 text-primary fill-background stroke-primary stroke-2"
 						viewBox="0 0 20 20"
 					>

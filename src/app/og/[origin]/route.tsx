@@ -164,9 +164,9 @@ export async function GET(
 					transform: "rotate(-35deg)",
 				}}
 			>
-				{stripes.map((stripe, i) => (
+				{stripes.map((stripe) => (
 					<div
-						key={i}
+						key={stripe.x}
 						style={{
 							width: stripe.width,
 							height: "100%",

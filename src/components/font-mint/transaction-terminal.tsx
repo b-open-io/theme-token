@@ -25,6 +25,7 @@ interface TransactionTerminalProps {
 }
 
 type LogEntry = {
+	id: number;
 	message: string;
 	type: "info" | "success" | "error" | "waiting";
 };
@@ -42,10 +43,12 @@ export function TransactionTerminal({
 	const { addresses } = useYoursWallet();
 	const { wallet } = useOneSatWallet();
 	const hasStarted = useRef(false);
+	const logIdRef = useRef(0);
 
 	const addLog = useCallback(
 		(message: string, type: LogEntry["type"] = "info") => {
-			setLogs((prev) => [...prev, { message, type }]);
+			const id = logIdRef.current++;
+			setLogs((prev) => [...prev, { id, message, type }]);
 		},
 		[],
 	);
@@ -271,9 +274,9 @@ export function TransactionTerminal({
 
 				{/* Log Output */}
 				<div className="h-[400px] overflow-y-auto bg-black p-4 font-mono text-xs">
-					{logs.map((log, i) => (
+					{logs.map((log) => (
 						<div
-							key={i}
+							key={log.id}
 							className={`mb-1 ${
 								log.type === "success"
 									? "text-primary"

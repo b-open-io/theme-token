@@ -243,6 +243,7 @@ export function GeneratedFontPreview({
 								viewBox={`0 0 ${Math.max(800, sampleText.length * fontSize * 0.6)} ${fontSize * 1.5}`}
 								className="w-full"
 								style={{ height: `${fontSize * 1.5}px` }}
+								aria-hidden="true"
 							>
 								{renderText(sampleText, 0, fontSize * 1.2, fontSize / 1000)}
 							</svg>
@@ -273,6 +274,7 @@ export function GeneratedFontPreview({
 								viewBox={`0 0 ${ALPHABET_UPPER.length * 45} 60`}
 								className="w-full"
 								style={{ height: "40px" }}
+								aria-hidden="true"
 							>
 								{renderText(ALPHABET_UPPER, 0, 50, 0.05)}
 							</svg>
@@ -303,6 +305,7 @@ export function GeneratedFontPreview({
 								viewBox={`0 0 ${ALPHABET_LOWER.length * 45} 60`}
 								className="w-full"
 								style={{ height: "40px" }}
+								aria-hidden="true"
 							>
 								{renderText(ALPHABET_LOWER, 0, 50, 0.05)}
 							</svg>
@@ -333,6 +336,7 @@ export function GeneratedFontPreview({
 								viewBox={`0 0 ${NUMBERS.length * 45} 60`}
 								className="w-full"
 								style={{ height: "40px" }}
+								aria-hidden="true"
 							>
 								{renderText(NUMBERS, 0, 50, 0.05)}
 							</svg>
@@ -348,9 +352,9 @@ export function GeneratedFontPreview({
 							ALL_GLYPHS:
 						</div>
 						<div className="grid grid-cols-10 gap-1">
-							{font.glyphs.map((glyph, i) => (
+							{font.glyphs.map((glyph) => (
 								<div
-									key={i}
+									key={glyph.unicode}
 									className="aspect-square flex items-center justify-center rounded border"
 									style={{
 										borderColor: inverted ? "#ddd" : "#333",
@@ -361,6 +365,7 @@ export function GeneratedFontPreview({
 										viewBox={`0 0 ${glyph.width} 1000`}
 										className="h-6 w-6"
 										style={{ transform: "scaleY(-1)" }}
+										aria-hidden="true"
 									>
 										<path d={glyph.path} fill={fgColor} />
 									</svg>

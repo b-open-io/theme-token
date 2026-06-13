@@ -118,11 +118,18 @@ export function JsonSyntax({ json, className = "" }: JsonSyntaxProps) {
 			className={`code-block overflow-x-auto rounded-lg p-4 w-full ${className}`}
 		>
 			<code className="block w-max min-w-full">
-				{tokens.map((token, i) => (
-					<span key={i} className={`token-${token.type}`}>
-						{token.value}
-					</span>
-				))}
+				{(() => {
+					let offset = 0;
+					return tokens.map((token) => {
+						const key = `${offset}-${token.type}`;
+						offset += token.value.length;
+						return (
+							<span key={key} className={`token-${token.type}`}>
+								{token.value}
+							</span>
+						);
+					});
+				})()}
 			</code>
 		</pre>
 	);

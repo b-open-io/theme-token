@@ -50,6 +50,7 @@ const PatternPreview = () => (
 		<svg
 			className="absolute inset-0 h-full w-full opacity-20"
 			xmlns="http://www.w3.org/2000/svg"
+			aria-hidden="true"
 		>
 			<defs>
 				<pattern
@@ -72,9 +73,13 @@ const PatternPreview = () => (
 const IconPreview = () => (
 	<div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-tr from-primary/5 to-transparent">
 		<div className="relative z-10 grid grid-cols-3 gap-2">
-			{[Shapes, Palette, Type].map((Icon, i) => (
+			{[
+				{ label: "shapes", Icon: Shapes },
+				{ label: "palette", Icon: Palette },
+				{ label: "type", Icon: Type },
+			].map(({ label, Icon }) => (
 				<div
-					key={i}
+					key={label}
 					className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/50"
 				>
 					<Icon className="h-5 w-5 text-primary/60" />

@@ -104,15 +104,18 @@ function ThemePreview({
 
 				{/* Color bar */}
 				<div className="flex h-2 gap-0.5 overflow-hidden rounded">
-					{[styles.primary, styles.secondary, styles.accent, styles.muted].map(
-						(color, i) => (
-							<div
-								key={i}
-								className="flex-1"
-								style={{ backgroundColor: color }}
-							/>
-						),
-					)}
+					{[
+						{ slot: "primary", color: styles.primary },
+						{ slot: "secondary", color: styles.secondary },
+						{ slot: "accent", color: styles.accent },
+						{ slot: "muted", color: styles.muted },
+					].map(({ slot, color }) => (
+						<div
+							key={slot}
+							className="flex-1"
+							style={{ backgroundColor: color }}
+						/>
+					))}
 				</div>
 			</div>
 		</div>

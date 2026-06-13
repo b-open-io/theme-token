@@ -157,9 +157,9 @@ export function DashboardDemo() {
 										</CardHeader>
 										<CardContent className="p-3 pt-0">
 											<div className="h-[140px] w-full bg-muted/20 rounded-md flex items-end gap-1.5 p-3">
-												{[40, 30, 50, 80, 60, 90, 70, 45, 65].map((h, i) => (
+												{[40, 30, 50, 80, 60, 90, 70, 45, 65].map((h) => (
 													<div
-														key={i}
+														key={h}
 														className="flex-1 bg-primary/80 hover:bg-primary rounded-t-sm transition-all"
 														style={{ height: `${h}%` }}
 													/>
@@ -260,7 +260,10 @@ export function DashboardDemo() {
 									{/* Quick Actions */}
 									<div className="flex justify-between gap-2">
 										{["Send", "Receive", "More"].map((label, i) => (
-											<div key={i} className="flex flex-col items-center gap-1">
+											<div
+												key={label}
+												className="flex flex-col items-center gap-1"
+											>
 												<Button
 													variant="outline"
 													size="icon"

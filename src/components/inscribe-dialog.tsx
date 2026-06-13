@@ -67,12 +67,12 @@ export function InscribeDialog({
 	// Extract palette colors from theme
 	const styles = theme.styles[mode];
 	const paletteColors = [
-		styles.background,
-		styles.foreground,
-		styles.primary,
-		styles.secondary || styles.muted,
-		styles.accent,
-	].filter(Boolean);
+		{ role: "background", color: styles.background },
+		{ role: "foreground", color: styles.foreground },
+		{ role: "primary", color: styles.primary },
+		{ role: "secondary", color: styles.secondary || styles.muted },
+		{ role: "accent", color: styles.accent },
+	].filter((entry) => Boolean(entry.color));
 
 	const isAnonymous = author === "Anonymous";
 
@@ -88,10 +88,10 @@ export function InscribeDialog({
 
 				{/* Palette Strip Preview */}
 				<div className="w-full h-16 rounded-md overflow-hidden flex border border-border my-2">
-					{paletteColors.map((color, i) => (
+					{paletteColors.map((entry, i) => (
 						<div
-							key={i}
-							style={{ backgroundColor: color }}
+							key={entry.role}
+							style={{ backgroundColor: entry.color }}
 							className={`h-full flex-1 ${i === 0 ? "flex-[2]" : ""}`}
 						/>
 					))}

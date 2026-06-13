@@ -126,9 +126,9 @@ export function TrendingRailSkeleton() {
 			</div>
 
 			<div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5 xl:grid-cols-6">
-				{Array.from({ length: 6 }).map((_, index) => (
+				{["s1", "s2", "s3", "s4", "s5", "s6"].map((skeletonId) => (
 					<div
-						key={index}
+						key={skeletonId}
 						className="flex w-40 shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 md:w-auto"
 					>
 						{/* Top row: swatch + name + change */}

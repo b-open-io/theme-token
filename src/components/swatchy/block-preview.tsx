@@ -252,9 +252,9 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 					<div className="flex items-start gap-2">
 						<AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
 						<div className="space-y-0.5">
-							{validation?.warnings.map((warning, idx) => (
+							{validation?.warnings.map((warning) => (
 								<p
-									key={idx}
+									key={warning}
 									className="text-[10px] text-amber-600 dark:text-amber-400"
 								>
 									{warning}

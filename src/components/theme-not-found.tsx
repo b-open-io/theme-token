@@ -40,10 +40,14 @@ function ColorColumn({
 	}, [theme, mode]);
 
 	// Create a long trail by repeating colors
-	const tiles = useMemo(
-		() => [...colors, ...colors, ...colors, ...colors],
-		[colors],
-	);
+	const tiles = useMemo(() => {
+		const repeated = [...colors, ...colors, ...colors, ...colors];
+		return repeated.map((color, index) => ({
+			id: `tile-${index}`,
+			color,
+			opacity: 1 - index / repeated.length,
+		}));
+	}, [colors]);
 
 	return (
 		<motion.div
@@ -57,13 +61,13 @@ function ColorColumn({
 				delay: delay,
 			}}
 		>
-			{tiles.map((color, i) => (
+			{tiles.map((tile) => (
 				<div
-					key={i}
+					key={tile.id}
 					className="aspect-square w-full rounded-sm"
 					style={{
-						backgroundColor: color,
-						opacity: 1 - i / tiles.length,
+						backgroundColor: tile.color,
+						opacity: tile.opacity,
 					}}
 				/>
 			))}

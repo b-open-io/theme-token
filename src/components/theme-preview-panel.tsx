@@ -370,10 +370,12 @@ function CalendarCard() {
 		today.getMonth() + 1,
 		0,
 	).getDate();
-	const calendarDays: (number | null)[] = [];
+	const calendarDays: { key: string; day: number | null }[] = [];
 
-	for (let i = 0; i < firstDay; i++) calendarDays.push(null);
-	for (let i = 1; i <= daysInMonth; i++) calendarDays.push(i);
+	for (let i = 0; i < firstDay; i++)
+		calendarDays.push({ key: `empty-${i}`, day: null });
+	for (let i = 1; i <= daysInMonth; i++)
+		calendarDays.push({ key: `day-${i}`, day: i });
 
 	const highlightedDays = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 	const todayDate = today.getDate();
@@ -400,9 +402,9 @@ function CalendarCard() {
 							{day}
 						</div>
 					))}
-					{calendarDays.map((day, i) => (
+					{calendarDays.map(({ key, day }) => (
 						<div
-							key={i}
+							key={key}
 							className={`p-2 rounded-md text-sm ${
 								day === null
 									? ""
@@ -454,9 +456,9 @@ function MoveGoalCard() {
 					</Button>
 				</div>
 				<div className="flex gap-1 w-full">
-					{[40, 60, 80, 100, 70, 90, 50].map((h, i) => (
+					{[40, 60, 80, 100, 70, 90, 50].map((h) => (
 						<div
-							key={i}
+							key={h}
 							className="flex-1 rounded bg-primary"
 							style={{ height: `${h}px` }}
 						/>
@@ -724,8 +726,8 @@ function TeamMembers() {
 				<CardDescription>Invite and manage team members</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				{members.map((member, i) => (
-					<div key={i} className="flex items-center justify-between">
+				{members.map((member) => (
+					<div key={member.email} className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<Avatar className="h-9 w-9">
 								<AvatarImage src={`https://avatar.vercel.sh/${member.email}`} />

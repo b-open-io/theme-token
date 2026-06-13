@@ -146,8 +146,12 @@ export function ParallaxChips({ className = "" }: { className?: string }) {
 			<div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent z-10" />
 
 			{/* The chips */}
-			{chips.map((chip, i) => (
-				<Chip key={`chip-${i}`} data={chip} progress={scrollYProgress} />
+			{chips.map((chip) => (
+				<Chip
+					key={`chip-${chip.x}-${chip.y}`}
+					data={chip}
+					progress={scrollYProgress}
+				/>
 			))}
 
 			{/* Gradient fade bottom */}
@@ -167,7 +171,7 @@ export function FloatingChips() {
 		<div className="relative h-32 w-full overflow-hidden pointer-events-none">
 			{chips.slice(0, 6).map((chip, i) => (
 				<motion.div
-					key={`float-${i}`}
+					key={`float-${chip.x}-${chip.y}`}
 					animate={{
 						y: [0, -20, 0],
 						rotate: [

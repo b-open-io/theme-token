@@ -28,12 +28,13 @@ export async function GET(request: Request) {
 	const seed = 42; // Fixed seed for consistent default image
 
 	// Generate stripe widths
-	const stripes: { width: number; color: string }[] = [];
+	const stripes: { id: string; width: number; color: string }[] = [];
 	let totalWidth = 0;
 	let widthSeed = 0;
 	while (totalWidth < 1600) {
 		const width = 40 + seededRandom(seed, 100 + widthSeed) * 80;
 		stripes.push({
+			id: `stripe-${widthSeed}`,
 			width,
 			color: stripeColors[widthSeed % stripeColors.length],
 		});
@@ -66,9 +67,9 @@ export async function GET(request: Request) {
 					transform: "rotate(-35deg)",
 				}}
 			>
-				{stripes.map((stripe, i) => (
+				{stripes.map((stripe) => (
 					<div
-						key={i}
+						key={stripe.id}
 						style={{
 							width: stripe.width,
 							height: "100%",

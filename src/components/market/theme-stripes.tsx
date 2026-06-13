@@ -10,10 +10,10 @@ export function ThemeStripes({
 	size?: "sm" | "md" | "lg";
 }) {
 	const colors = [
-		styles[mode].primary,
-		styles[mode].secondary,
-		styles[mode].accent,
-		styles[mode].background,
+		{ slot: "primary", color: styles[mode].primary },
+		{ slot: "secondary", color: styles[mode].secondary },
+		{ slot: "accent", color: styles[mode].accent },
+		{ slot: "background", color: styles[mode].background },
 	];
 
 	const sizeClasses = {
@@ -26,8 +26,8 @@ export function ThemeStripes({
 		<div
 			className={`flex overflow-hidden rounded border border-border ${sizeClasses[size]}`}
 		>
-			{colors.map((color, i) => (
-				<div key={i} className="flex-1" style={{ backgroundColor: color }} />
+			{colors.map(({ slot, color }) => (
+				<div key={slot} className="flex-1" style={{ backgroundColor: color }} />
 			))}
 		</div>
 	);

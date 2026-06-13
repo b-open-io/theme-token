@@ -131,9 +131,9 @@ async function generateOgImage(theme: ThemeToken, outputPath: string) {
 					transform: "rotate(-35deg)",
 				}}
 			>
-				{stripes.map((stripe, i) => (
+				{stripes.map((stripe) => (
 					<div
-						key={i}
+						key={stripe.x}
 						style={{
 							width: stripe.width,
 							height: "100%",
@@ -462,9 +462,9 @@ async function generateThemeStudioOg() {
 					opacity: 0.4,
 				}}
 			>
-				{colors.map((c, i) => (
+				{colors.map((c) => (
 					<div
-						key={i}
+						key={c}
 						style={{
 							width: "25%",
 							height: "50%",

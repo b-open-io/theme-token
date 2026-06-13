@@ -9,6 +9,19 @@ import {
 } from "framer-motion";
 import { useEffect, useRef } from "react";
 
+// Stable descriptors for the floating particles (precomputed from former index math)
+const PARTICLES = Array.from({ length: 8 }, (_, i) => {
+	const left = `${15 + i * 10}%`;
+	return {
+		id: `particle-l${left}`,
+		yPeak: -20 - i * 5,
+		duration: 3 + i * 0.5,
+		delay: i * 0.3,
+		left,
+		top: `${30 + (i % 3) * 15}%`,
+	};
+});
+
 /**
  * HeroOrbs - Animated orbital elements that surround the hero content
  * Responds to both mouse movement and scroll
@@ -184,23 +197,23 @@ export function HeroOrbs() {
 			</motion.div>
 
 			{/* Tiny floating particles */}
-			{[...Array(8)].map((_, i) => (
+			{PARTICLES.map((particle) => (
 				<motion.div
-					key={`particle-${i}`}
+					key={particle.id}
 					animate={{
-						y: [0, -20 - i * 5, 0],
+						y: [0, particle.yPeak, 0],
 						opacity: [0.3, 0.6, 0.3],
 					}}
 					transition={{
-						duration: 3 + i * 0.5,
+						duration: particle.duration,
 						repeat: Number.POSITIVE_INFINITY,
 						ease: "easeInOut",
-						delay: i * 0.3,
+						delay: particle.delay,
 					}}
 					className="absolute w-2 h-2 rounded-full bg-primary/60 blur-[2px]"
 					style={{
-						left: `${15 + i * 10}%`,
-						top: `${30 + (i % 3) * 15}%`,
+						left: particle.left,
+						top: particle.top,
 					}}
 				/>
 			))}
