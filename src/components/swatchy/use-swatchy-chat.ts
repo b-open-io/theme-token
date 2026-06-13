@@ -709,6 +709,8 @@ export function useSwatchyChat() {
 								primaryColor: args.primaryColor,
 								radius: args.radius,
 								style: args.style,
+								userId: ordAddress,
+								paymentTxid: txid,
 							}),
 						});
 

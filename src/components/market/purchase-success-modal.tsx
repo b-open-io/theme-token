@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { Check, ExternalLink, ShoppingBag } from "lucide-react";
 import { useEffect } from "react";
 import useSound from "use-sound";
+import { ConfettiExplosion } from "@/components/confetti";
 import { Button } from "@/components/ui/button";
-import { ConfettiExplosion } from "@/components/ui/confetti";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface PurchaseSuccessModalProps {

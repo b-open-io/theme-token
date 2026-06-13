@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ConfettiExplosion } from "@/components/confetti";
 import { ExportModal } from "@/components/export-modal";
 import { FontSelector } from "@/components/font-selector";
 import { ImportModal } from "@/components/import-modal";
@@ -48,7 +49,6 @@ import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { ConfettiExplosion } from "@/components/ui/confetti";
 import {
 	Dialog,
 	DialogContent,

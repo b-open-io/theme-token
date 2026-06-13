@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { Check, Copy, ExternalLink, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import useSound from "use-sound";
+import { ConfettiExplosion } from "@/components/confetti";
 import { Button } from "@/components/ui/button";
-import { ConfettiExplosion } from "@/components/ui/confetti";
 import {
 	Dialog,
 	DialogContent,

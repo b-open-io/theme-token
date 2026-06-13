@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { FONT_NAMES, SYSTEM_FONTS } from "@/lib/fonts";
+import { createDraft } from "@/lib/storage";
 import { generateTintsPalette } from "@/lib/tints";
 
 // Theme color schema for OKLCH colors
@@ -110,7 +111,16 @@ const themeSchema = z.object({
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { prompt, primaryColor, radius, style, model, previousTheme } = body;
+		const {
+			prompt,
+			primaryColor,
+			radius,
+			style,
+			model,
+			previousTheme,
+			userId,
+			paymentTxid,
+		} = body;
 
 		// Determine which model to use
 		const modelId =
@@ -269,7 +279,27 @@ Maintain the core identity and color harmony but apply the user's modifications.
 			},
 		};
 
-		return NextResponse.json({ theme: themeToken });
+		// Persist a server-side draft when the user is identified (paid or free
+		// generation). This increments the user's server draft count, which is
+		// what the "first generation free" eligibility check reads — without it,
+		// the count never moves and free generations are effectively unlimited.
+		let draftId: string | undefined;
+		if (userId && typeof userId === "string") {
+			try {
+				const draft = await createDraft(userId, {
+					type: "theme",
+					name: themeToken.name,
+					data: { theme: themeToken, paymentTxid, status: "draft" },
+					metadata: { prompt: userPrompt, sourceType: "ai" },
+				});
+				draftId = draft.id;
+			} catch (storageError) {
+				console.error("Failed to save theme to cloud storage:", storageError);
+				// Continue — the user still gets their theme.
+			}
+		}
+
+		return NextResponse.json({ theme: themeToken, draftId });
 	} catch (error) {
 		console.error("Theme generation error:", error);
 		return NextResponse.json(
