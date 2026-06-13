@@ -26,14 +26,14 @@ import { useYoursWallet } from "@/hooks/use-yours-wallet";
 
 export default function MyPatternsPage() {
 	const { status, connect, inscribePattern, isInscribing } = useYoursWallet();
-	const { openChat, setPendingMessage } = useSwatchyStore();
+	const { openChat, setPendingPrefill } = useSwatchyStore();
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage(
+		setPendingPrefill(
 			"I want to create a seamless pattern. Can you help me design something?",
 		);
 		openChat();
-	}, [openChat, setPendingMessage]);
+	}, [openChat, setPendingPrefill]);
 	const { drafts, loading, usage, isCloudEnabled, fetchDrafts, deleteDraft } =
 		usePatternDrafts();
 

@@ -178,7 +178,7 @@ const PAGE_SIZE = 12;
 export function ThemesPageClient() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { openChat, setPendingMessage } = useSwatchyStore();
+	const { openChat, setPendingPrefill } = useSwatchyStore();
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
 	const [successModal, setSuccessModal] = useState<{
 		theme: ThemeToken;
@@ -187,7 +187,7 @@ export function ThemesPageClient() {
 	const loadMoreRef = useRef<HTMLDivElement>(null);
 
 	const handleCreateWithSwatchy = () => {
-		setPendingMessage(
+		setPendingPrefill(
 			"I want to create a new theme. Can you help me design something?",
 		);
 		openChat();

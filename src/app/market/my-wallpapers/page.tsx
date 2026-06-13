@@ -36,16 +36,16 @@ interface WallpaperDraft {
 export default function MyWallpapersPage() {
 	const { status, connect, addresses, inscribeImage, isInscribing } =
 		useYoursWallet();
-	const { openChat, setPendingMessage } = useSwatchyStore();
+	const { openChat, setPendingPrefill } = useSwatchyStore();
 	const ordAddress = addresses?.ordAddress;
 	const isConnected = status === "connected";
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage(
+		setPendingPrefill(
 			"I want to create a wallpaper. Can you help me generate something?",
 		);
 		openChat();
-	}, [openChat, setPendingMessage]);
+	}, [openChat, setPendingPrefill]);
 
 	const [drafts, setDrafts] = useState<WallpaperDraft[]>([]);
 	const [loading, setLoading] = useState(false);

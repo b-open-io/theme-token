@@ -74,14 +74,14 @@ const exampleOrigin =
 
 export default function Home() {
 	const [copied, setCopied] = useState(false);
-	const { openChat, setPendingMessage } = useSwatchyStore();
+	const { openChat, setPendingPrefill } = useSwatchyStore();
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage(
+		setPendingPrefill(
 			"I want to create a new theme. Can you help me design something?",
 		);
 		openChat();
-	}, [openChat, setPendingMessage]);
+	}, [openChat, setPendingPrefill]);
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}`;
 
 	const copyCommand = useCallback(() => {

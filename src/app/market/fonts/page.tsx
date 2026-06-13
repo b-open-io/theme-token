@@ -34,14 +34,14 @@ import {
 
 export default function FontBrowsePage() {
 	const { status, connect } = useYoursWallet();
-	const { openChat, setPendingMessage } = useSwatchyStore();
+	const { openChat, setPendingPrefill } = useSwatchyStore();
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage(
+		setPendingPrefill(
 			"I want to create a custom font. Can you help me design something?",
 		);
 		openChat();
-	}, [openChat, setPendingMessage]);
+	}, [openChat, setPendingPrefill]);
 	const [listings, setListings] = useState<FontMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

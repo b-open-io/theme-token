@@ -117,8 +117,12 @@ interface SwatchyStore {
 	// Hydration state - true when store has loaded from localStorage
 	hasHydrated: boolean;
 
-	// Pending initial message to send on next chat open
+	// Pending initial message to AUTO-SEND on next chat open (e.g. remix flow)
 	pendingMessage: string | null;
+
+	// Pending text to PREFILL into the input on next chat open, only when the
+	// conversation is empty (e.g. "create a new theme" CTAs). Never auto-sent.
+	pendingPrefill: string | null;
 
 	// Actions
 	openChat: () => void;
@@ -172,6 +176,8 @@ interface SwatchyStore {
 	setChatInput: (input: string) => void;
 	setPendingMessage: (message: string | null) => void;
 	consumePendingMessage: () => string | null;
+	setPendingPrefill: (text: string | null) => void;
+	consumePendingPrefill: () => string | null;
 
 	// Hydration Actions
 	setHasHydrated: (hydrated: boolean) => void;
@@ -201,6 +207,7 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			chatInput: "",
 			hasHydrated: false,
 			pendingMessage: null,
+			pendingPrefill: null,
 
 			openChat: () =>
 				set({
@@ -398,6 +405,16 @@ How would you like to modify this theme?`;
 					set({ pendingMessage: null });
 				}
 				return pendingMessage;
+			},
+
+			setPendingPrefill: (pendingPrefill) => set({ pendingPrefill }),
+
+			consumePendingPrefill: () => {
+				const { pendingPrefill } = get();
+				if (pendingPrefill) {
+					set({ pendingPrefill: null });
+				}
+				return pendingPrefill;
 			},
 
 			setHasHydrated: (hasHydrated) => set({ hasHydrated }),

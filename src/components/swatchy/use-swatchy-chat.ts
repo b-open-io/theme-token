@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -29,6 +29,40 @@ import {
 	useStudioStore,
 } from "@/lib/stores/studio-store";
 import { useSwatchyStore } from "./swatchy-store";
+
+/**
+ * Finalize any tool calls left in a non-terminal state in a restored
+ * conversation. A page reload/redeploy mid-generation leaves a `tool-*` part
+ * stuck in "input-available"/"input-streaming" — which renders as a perpetual
+ * "Generating…" spinner and also produces an invalid history (a tool_use with
+ * no tool_result) when replayed to the model. Mark these as errored so the UI
+ * shows them as interrupted and the conversation stays valid.
+ */
+function finalizeInterruptedToolCalls(messages: UIMessage[]): UIMessage[] {
+	return messages.map((message) => {
+		if (!message.parts) return message;
+		let changed = false;
+		const parts = message.parts.map((part) => {
+			const type = (part as { type?: string }).type;
+			const state = (part as { state?: string }).state;
+			if (
+				typeof type === "string" &&
+				(type.startsWith("tool-") || type === "dynamic-tool") &&
+				(state === "input-available" || state === "input-streaming")
+			) {
+				changed = true;
+				return {
+					...part,
+					state: "output-error",
+					errorText:
+						"Interrupted — the page was reloaded before this finished.",
+				} as typeof part;
+			}
+			return part;
+		});
+		return changed ? { ...message, parts } : message;
+	});
+}
 
 export function useSwatchyChat() {
 	const router = useRouter();
@@ -60,6 +94,7 @@ export function useSwatchyChat() {
 		setChatInput,
 		remixContext,
 		consumePendingMessage,
+		consumePendingPrefill,
 		position,
 		setAIGeneratedTheme,
 		setGeneratedRegistryItem,
@@ -306,7 +341,7 @@ export function useSwatchyChat() {
 				chatMessages.length,
 				"messages from storage",
 			);
-			setMessages(chatMessages);
+			setMessages(finalizeInterruptedToolCalls(chatMessages));
 			hasRestoredRef.current = true;
 		} else if (!hasRestoredRef.current) {
 			// Mark as restored even if no messages, so sync can start
@@ -321,23 +356,41 @@ export function useSwatchyChat() {
 		}
 	}, [messages, setChatMessages, hasHydrated]);
 
-	// Handle pending message when chat opens (e.g., from remix button)
+	// Handle pending input when chat opens.
 	const hasSentPendingRef = useRef(false);
 	useEffect(() => {
 		if (position === "expanded" && !hasSentPendingRef.current) {
+			// Remix flow: auto-send the rich, intentional context message.
 			const pendingMessage = consumePendingMessage();
 			if (pendingMessage) {
 				hasSentPendingRef.current = true;
 				lastUserMessageRef.current = pendingMessage;
-				// Send the pending message automatically
 				sendMessage({ text: pendingMessage });
+			} else {
+				// CTA flow (e.g. "create a new theme"): only prefill the input when
+				// the conversation is empty; otherwise just open and let the user
+				// type. Never auto-send these.
+				const prefill = consumePendingPrefill();
+				if (prefill) {
+					hasSentPendingRef.current = true;
+					if (messages.length === 0) {
+						setChatInput(prefill);
+					}
+				}
 			}
 		}
 		// Reset when chat closes
 		if (position === "corner") {
 			hasSentPendingRef.current = false;
 		}
-	}, [position, consumePendingMessage, sendMessage]);
+	}, [
+		position,
+		consumePendingMessage,
+		consumePendingPrefill,
+		sendMessage,
+		messages.length,
+		setChatInput,
+	]);
 
 	// Compute loading state from status
 	const isLoading = status === "submitted" || status === "streaming";

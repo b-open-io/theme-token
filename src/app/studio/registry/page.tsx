@@ -16,11 +16,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function RegistryStudioPage() {
-	const { openChat, setPendingMessage, generatedRegistryItem } =
+	const { openChat, setPendingPrefill, generatedRegistryItem } =
 		useSwatchyStore();
 
 	const handleGenerateWithSwatchy = () => {
-		setPendingMessage(
+		setPendingPrefill(
 			"I want to create a new block component. Can you help me design something?",
 		);
 		openChat();
