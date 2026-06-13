@@ -110,33 +110,34 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 					{(["css", "tailwind", "cli", "json"] as ExportFormat[]).map(
 						(format) => (
 							<TabsContent key={format} value={format} className="mt-4">
-								<div className="space-y-3">
-									<p className="text-sm text-muted-foreground">
-										{getDescription(format)}
-									</p>
-									<div className="relative">
-										<pre className="max-h-[50vh] overflow-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs">
-											{getContent(format)}
-										</pre>
+								<div className="space-y-2">
+									{/* Toolbar: description + always-visible copy button */}
+									<div className="flex items-center justify-between gap-3">
+										<p className="min-w-0 truncate text-sm text-muted-foreground">
+											{getDescription(format)}
+										</p>
 										<Button
 											size="sm"
-											variant="secondary"
-											className="absolute right-2 top-2 gap-1"
+											variant="default"
+											className="h-8 shrink-0 gap-1.5"
 											onClick={() => handleCopy(format)}
 										>
 											{copied === format ? (
 												<>
-													<Check className="h-3 w-3" />
+													<Check className="h-3.5 w-3.5" />
 													Copied
 												</>
 											) : (
 												<>
-													<Copy className="h-3 w-3" />
+													<Copy className="h-3.5 w-3.5" />
 													Copy
 												</>
 											)}
 										</Button>
 									</div>
+									<pre className="max-h-[50vh] overflow-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs whitespace-pre">
+										{getContent(format)}
+									</pre>
 								</div>
 							</TabsContent>
 						),
