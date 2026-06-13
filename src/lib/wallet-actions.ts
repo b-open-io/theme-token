@@ -1,4 +1,9 @@
-import { createContext, type OneSatContext, sendBsv } from "@1sat/actions";
+import {
+	createContext,
+	getProfile,
+	type OneSatContext,
+	sendBsv,
+} from "@1sat/actions";
 import type { WalletInterface } from "@bsv/sdk";
 import { PublicKey, Utils } from "@bsv/sdk";
 import {
@@ -55,6 +60,34 @@ export async function getPaymentAddress(
 export async function getIdentityKey(wallet: WalletInterface): Promise<string> {
 	const { publicKey } = await wallet.getPublicKey({ identityKey: true });
 	return publicKey;
+}
+
+/**
+ * Read the wallet's published BAP profile (display name + avatar), if any.
+ * Returns empty fields when the identity hasn't published a profile — never
+ * throws, so callers can use it inside Promise.all without breaking other data.
+ */
+export async function getSocialProfile(
+	wallet: WalletInterface,
+): Promise<{ displayName?: string; avatar?: string }> {
+	try {
+		const ctx = createWalletContext(wallet);
+		const result = await getProfile.execute(ctx, {});
+		const profile = result?.profile as Record<string, unknown> | undefined;
+		if (!profile) return {};
+		// BAP profiles use schema.org Person shape: { "@type": "Person", name, image }
+		const displayName =
+			typeof profile.name === "string"
+				? profile.name
+				: typeof profile.alternateName === "string"
+					? profile.alternateName
+					: undefined;
+		const avatar =
+			typeof profile.image === "string" ? profile.image : undefined;
+		return { displayName, avatar };
+	} catch {
+		return {};
+	}
 }
 
 /**

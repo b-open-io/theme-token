@@ -30,6 +30,7 @@ import {
 	getOrdinalAddress,
 	getOwnedOrdinals,
 	getPaymentAddress,
+	getSocialProfile,
 	inscribeImage as walletInscribeImage,
 	inscribePattern as walletInscribePattern,
 	inscribeTheme as walletInscribeTheme,
@@ -493,10 +494,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			// main funds basket ("default") is admin-only, so apps cannot read the
 			// user's BSV balance. Payment affordability is determined by attempting
 			// the payment and surfacing any wallet error (e.g. insufficient funds).
-			const [ordAddr, bsvAddr, idKey] = await Promise.all([
+			const [ordAddr, bsvAddr, idKey, social] = await Promise.all([
 				getOrdinalAddress(w),
 				getPaymentAddress(w),
 				getIdentityKey(w),
+				getSocialProfile(w),
 			]);
 
 			const addrs: Addresses = {
@@ -508,8 +510,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 			setAddresses(addrs);
 
-			// CWI doesn't have social profiles; set a basic profile
-			setProfile({ displayName: "1Sat User", avatar: "" });
+			// Use the connected wallet's published BAP profile (display name) as the
+			// default identity/creator. Null when no profile is published, so the
+			// inscribe dialog falls back to "Anonymous" rather than a placeholder.
+			setProfile(
+				social.displayName
+					? { displayName: social.displayName, avatar: social.avatar ?? "" }
+					: null,
+			);
 		} catch (err) {
 			console.error("[Wallet] Failed to fetch wallet info:", err);
 		}

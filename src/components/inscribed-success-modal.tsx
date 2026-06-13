@@ -15,7 +15,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface InscribedSuccessModalProps {
 	isOpen: boolean;
@@ -209,59 +208,60 @@ export function InscribedSuccessModal({
 					</DialogDescription>
 				</DialogHeader>
 
-				{/* Scrollable content area */}
-				<ScrollArea className="relative z-10 max-h-[50vh]">
-					<div className="space-y-4 px-1">
-						{/* Theme preview */}
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							transition={{ delay: 0.2 }}
-						>
-							<ThemePreviewCard theme={theme} />
-						</motion.div>
+				{/* Scrollable content area. Plain block scroll container: the radix
+				    ScrollArea wraps content in a `display:table` element that
+				    shrink-wraps to content width and breaks `truncate`/`max-w`,
+				    overflowing the modal. */}
+				<div className="relative z-10 max-h-[50vh] space-y-4 overflow-y-auto px-1">
+					{/* Theme preview */}
+					<motion.div
+						initial={{ opacity: 0, scale: 0.95 }}
+						animate={{ opacity: 1, scale: 1 }}
+						transition={{ delay: 0.2 }}
+					>
+						<ThemePreviewCard theme={theme} />
+					</motion.div>
 
-						{/* Install command */}
-						<motion.div
-							initial={{ opacity: 0, y: 8 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.3 }}
-						>
-							<div className="mb-1.5 block text-xs font-medium text-muted-foreground">
-								Install via CLI
+					{/* Install command */}
+					<motion.div
+						initial={{ opacity: 0, y: 8 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ delay: 0.3 }}
+					>
+						<div className="mb-1.5 block text-xs font-medium text-muted-foreground">
+							Install via CLI
+						</div>
+						<div className="group relative rounded-md border bg-muted/50">
+							<div className="overflow-hidden p-3 pr-10">
+								<code className="block truncate font-mono text-xs">
+									{installCommand}
+								</code>
 							</div>
-							<div className="group relative rounded-md border bg-muted/50">
-								<div className="overflow-hidden p-3 pr-10">
-									<code className="block truncate font-mono text-xs">
-										{installCommand}
-									</code>
-								</div>
-								<button
-									type="button"
-									onClick={handleCopy}
-									className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded transition-colors hover:bg-background"
-									title="Copy command"
-								>
-									{copied ? (
-										<Check className="h-3.5 w-3.5 text-green-500" />
-									) : (
-										<Copy className="h-3.5 w-3.5 text-muted-foreground" />
-									)}
-								</button>
-							</div>
-						</motion.div>
+							<button
+								type="button"
+								onClick={handleCopy}
+								className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded transition-colors hover:bg-background"
+								title="Copy command"
+							>
+								{copied ? (
+									<Check className="h-3.5 w-3.5 text-green-500" />
+								) : (
+									<Copy className="h-3.5 w-3.5 text-muted-foreground" />
+								)}
+							</button>
+						</div>
+					</motion.div>
 
-						{/* Origin ID */}
-						<motion.p
-							className="truncate text-[10px] text-muted-foreground"
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ delay: 0.35 }}
-						>
-							Origin: <span className="font-mono">{origin}</span>
-						</motion.p>
-					</div>
-				</ScrollArea>
+					{/* Origin ID */}
+					<motion.p
+						className="truncate text-[10px] text-muted-foreground"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ delay: 0.35 }}
+					>
+						Origin: <span className="font-mono">{origin}</span>
+					</motion.p>
+				</div>
 
 				{/* Footer with actions */}
 				<DialogFooter className="relative z-10 flex-col gap-2 sm:flex-col">
