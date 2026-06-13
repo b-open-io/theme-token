@@ -1,10 +1,11 @@
 import {
 	createContext,
+	getOrdinals,
 	getProfile,
 	type OneSatContext,
 	sendBsv,
 } from "@1sat/actions";
-import type { WalletInterface } from "@bsv/sdk";
+import type { WalletInterface, WalletOutput } from "@bsv/sdk";
 import { PublicKey, Utils } from "@bsv/sdk";
 import {
 	buildThemeMetadata,
@@ -16,8 +17,6 @@ import {
 	type PublishPackageResult,
 	publishPackage,
 } from "@/lib/package-builder";
-import type { Ordinal } from "@/lib/yours-wallet";
-import { fetchOrdinalsByAddress } from "@/lib/yours-wallet";
 
 /**
  * Create an action context for @1sat/actions from a CWI wallet.
@@ -91,15 +90,21 @@ export async function getSocialProfile(
 }
 
 /**
- * Get ordinals owned by the wallet via the GorillaPool indexer.
- * Derives the ord address from the wallet, then fetches from the API.
+ * Get the ordinals the wallet actually holds, read from the provider's
+ * ordinals basket via @1sat/actions getOrdinals (BRC-100 listOutputs).
+ *
+ * This is the canonical source: it returns everything the wallet tracks —
+ * including self-inscribed packages locked to per-mint derived addresses,
+ * which a GorillaPool-by-address lookup would miss. Outputs carry our MAP
+ * tags (e.g. `registry:style:Name@1.0.0`); content is hydrated by outpoint.
  */
 export async function getOwnedOrdinals(
 	wallet: WalletInterface,
-	limit = 100,
-): Promise<Ordinal[]> {
-	const address = await getOrdinalAddress(wallet);
-	return fetchOrdinalsByAddress(address, limit);
+	limit = 1000,
+): Promise<WalletOutput[]> {
+	const ctx = createWalletContext(wallet);
+	const { outputs } = await getOrdinals.execute(ctx, { limit });
+	return outputs;
 }
 
 /**

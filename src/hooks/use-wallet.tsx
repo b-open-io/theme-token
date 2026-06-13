@@ -4,7 +4,7 @@ import {
 	type WalletStatus as OneSatWalletStatus,
 	useWallet as useOneSatWallet,
 } from "@1sat/react";
-import type { WalletInterface } from "@bsv/sdk";
+import type { WalletInterface, WalletOutput } from "@bsv/sdk";
 import {
 	getOrdfsUrl,
 	type ThemeToken,
@@ -39,7 +39,6 @@ import {
 import type {
 	Addresses,
 	InscribeResponse,
-	Ordinal,
 	SendBsvResult,
 	SocialProfile,
 } from "@/lib/yours-wallet";
@@ -223,11 +222,15 @@ function mapWalletStatus(oneSatStatus: OneSatWalletStatus): WalletStatus {
 }
 
 /**
- * Categorize ordinals from GorillaPool API into themes, fonts, and patterns.
- * Also checks for Prism Pass ownership.
- * Async because registry:style manifests require an ORDFS fetch for theme.json.
+ * Categorize the wallet's basket outputs into themes, fonts, and patterns.
+ *
+ * Outputs come from the provider's ordinals basket (getOrdinals). They are
+ * sparse — each carries the MAP tags we set at inscription time, e.g.
+ * `registry:style:Name@1.0.0` — so we categorize by tag and hydrate theme
+ * content from ORDFS by outpoint. For freshly inscribed (wallet-owned) items
+ * the outpoint is the origin, which is exactly what ORDFS needs.
  */
-async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
+async function categorizeOrdinals(outputs: WalletOutput[]): Promise<{
 	tokens: ThemeToken[];
 	owned: OwnedTheme[];
 	fonts: OwnedFont[];
@@ -238,140 +241,63 @@ async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
 	const owned: OwnedTheme[] = [];
 	const fonts: OwnedFont[] = [];
 	const patterns: OwnedPattern[] = [];
+	let hasPrismPass = false;
 
-	// Candidates for parallel ORDFS fetch (registry:style manifests)
-	const registryStyleCandidates: Array<{
-		outpoint: string;
-		origin: string;
-	}> = [];
+	// Theme package outpoints to hydrate from ORDFS (content isn't in the
+	// sparse basket output).
+	const styleCandidates: string[] = [];
 
-	// Pass 1: Synchronous categorization
-	for (const ordinal of ordinals) {
-		try {
-			const mapData = ordinal?.origin?.data?.map as
-				| Record<string, string>
-				| undefined;
-			const fileType = ordinal?.origin?.data?.insc?.file?.type;
+	for (const output of outputs) {
+		const tags = output.tags ?? [];
+		const { outpoint } = output;
 
-			// New registry format: registry:font
-			if (mapData?.app === "theme-token" && mapData?.type === "registry:font") {
-				fonts.push({
-					outpoint: ordinal.outpoint,
-					origin: ordinal.origin?.outpoint || ordinal.outpoint,
-					metadata: {
-						name: mapData.name || "Unknown Font",
-						author: mapData.author,
-						license: mapData.license,
-						weight: mapData["font.weight"] || "400",
-						style: "normal",
-						prompt: mapData.prompt,
-					},
-				});
-				continue;
-			}
+		// Pull the name from a `prefix:Name@version` tag.
+		const nameFromTag = (prefix: string): string | null => {
+			const tag = tags.find((t) => t.startsWith(prefix));
+			return tag ? tag.slice(prefix.length).split("@")[0] : null;
+		};
 
-			// Legacy format: type === "font"
-			if (
-				mapData?.app === "theme-token" &&
-				mapData?.type === "font" &&
-				fileType?.startsWith("font/")
-			) {
-				fonts.push({
-					outpoint: ordinal.outpoint,
-					origin: ordinal.origin?.outpoint || ordinal.outpoint,
-					metadata: {
-						name: mapData.name || "Unknown Font",
-						author: mapData.author,
-						license: mapData.license,
-						weight: mapData.weight || "400",
-						style: mapData.style || "normal",
-						prompt: mapData.prompt,
-					},
-				});
-				continue;
-			}
+		if (tags.some((t) => t.startsWith("registry:style:"))) {
+			styleCandidates.push(outpoint);
+			continue;
+		}
 
-			// New registry format: registry:file with pattern categories
-			if (mapData?.app === "theme-token" && mapData?.type === "registry:file") {
-				try {
-					const categories = mapData.categories
-						? (JSON.parse(mapData.categories) as string[])
-						: [];
-					if (categories.includes("pattern")) {
-						patterns.push({
-							outpoint: ordinal.outpoint,
-							origin: ordinal.origin?.outpoint || ordinal.outpoint,
-							metadata: {
-								name: mapData.name,
-								prompt: mapData.prompt,
-							},
-						});
-						continue;
-					}
-				} catch {
-					// Invalid categories JSON — skip
-				}
-				continue;
-			}
+		const fontName = nameFromTag("registry:font:");
+		if (fontName) {
+			fonts.push({
+				outpoint,
+				origin: outpoint,
+				metadata: { name: fontName, weight: "400", style: "normal" },
+			});
+			continue;
+		}
 
-			// Legacy format: type === "tile"
-			if (
-				mapData?.app === "theme-token" &&
-				mapData?.type === "tile" &&
-				fileType === "image/svg+xml"
-			) {
-				patterns.push({
-					outpoint: ordinal.outpoint,
-					origin: ordinal.origin?.outpoint || ordinal.outpoint,
-					metadata: {
-						name: mapData.name,
-						prompt: mapData.prompt,
-					},
-				});
-				continue;
-			}
+		const fileName = nameFromTag("registry:file:");
+		if (fileName) {
+			patterns.push({
+				outpoint,
+				origin: outpoint,
+				metadata: { name: fileName },
+			});
+			continue;
+		}
 
-			// New registry format: registry:style — collect for parallel fetch
-			if (
-				mapData?.app === "theme-token" &&
-				mapData?.type === "registry:style" &&
-				fileType === "ord-fs/json"
-			) {
-				registryStyleCandidates.push({
-					outpoint: ordinal.outpoint,
-					origin: ordinal.origin?.outpoint || ordinal.outpoint,
-				});
-				continue;
-			}
-
-			// Legacy format: direct theme JSON
-			const content = ordinal?.origin?.data?.insc?.file?.json;
-			if (content && typeof content === "object") {
-				const result = validateThemeToken(content);
-				if (result.valid) {
-					tokens.push(result.theme);
-					owned.push({
-						theme: result.theme,
-						outpoint: ordinal.outpoint,
-						origin: ordinal.origin?.outpoint || ordinal.outpoint,
-					});
-				}
-			}
-		} catch {
-			// Skip invalid ordinals
+		// Prism Pass membership NFT (collection item).
+		if (tags.some((t) => t.includes(PRISM_PASS_COLLECTION_ID))) {
+			hasPrismPass = true;
 		}
 	}
 
-	// Pass 2: Fetch registry:style theme.json files in parallel via ORDFS
-	if (registryStyleCandidates.length > 0) {
+	// Hydrate theme packages: fetch theme.json from ORDFS by outpoint.
+	if (styleCandidates.length > 0) {
 		const results = await Promise.allSettled(
-			registryStyleCandidates.map(async (candidate) => {
-				const res = await fetch(getOrdfsUrl(`${candidate.origin}/theme.json`));
+			styleCandidates.map(async (outpoint) => {
+				const res = await fetch(getOrdfsUrl(`${outpoint}/theme.json`));
 				if (!res.ok) return null;
 				const themeJson = await res.json();
 				const validation = validateThemeToken(themeJson);
 				if (!validation.valid) return null;
-				return { ...candidate, theme: validation.theme };
+				return { outpoint, theme: validation.theme };
 			}),
 		);
 		for (const result of results) {
@@ -380,23 +306,11 @@ async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
 				owned.push({
 					theme: result.value.theme,
 					outpoint: result.value.outpoint,
-					origin: result.value.origin,
+					origin: result.value.outpoint,
 				});
 			}
 		}
 	}
-
-	// Check for Prism Pass ownership
-	const hasPrismPass = ordinals.some((ordinal) => {
-		try {
-			const content = ordinal?.origin?.data?.insc?.file?.json as
-				| { collectionId?: string }
-				| undefined;
-			return content?.collectionId === PRISM_PASS_COLLECTION_ID;
-		} catch {
-			return false;
-		}
-	});
 
 	return { tokens, owned, fonts, patterns, hasPrismPass };
 }
