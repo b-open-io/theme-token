@@ -207,6 +207,8 @@ export function ThemeStudio() {
 	// URL sync refs
 	const isInitialized = useRef(false);
 	const urlSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Last URL written by syncToUrl, to skip redundant router.replace calls.
+	const lastSyncedUrl = useRef<string | null>(null);
 	// True once an explicit theme has been loaded from the URL (?styles/?import/
 	// ?remix), the AI generation handoff, or a gallery remix. When set, the
 	// wallet's active/session theme must NOT overwrite it — otherwise a shared
@@ -358,6 +360,10 @@ export function ThemeStudio() {
 
 			const queryString = params.toString();
 			const url = queryString ? `${pathname}?${queryString}` : pathname;
+			// Skip redundant replaces: writing the same URL can re-render and feed
+			// a render/update loop. Only navigate when the URL actually changed.
+			if (url === lastSyncedUrl.current) return;
+			lastSyncedUrl.current = url;
 			router.replace(url, { scroll: false });
 		}, 500); // 500ms debounce
 	}, [selectedTheme, customName, editorSubTab, pathname, router]);
