@@ -215,7 +215,9 @@ export function DashboardDemo() {
 																{sale.email}
 															</p>
 														</div>
-														<div className="text-xs font-bold">{sale.amount}</div>
+														<div className="text-xs font-bold">
+															{sale.amount}
+														</div>
 													</div>
 												))}
 											</div>
