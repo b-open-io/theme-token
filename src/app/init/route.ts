@@ -13,14 +13,26 @@
  */
 
 import { NextResponse } from "next/server";
+import type {
+	BaseColor,
+	IconLibrary,
+	MenuAccent,
+	MenuColor,
+	ProjectManifest,
+} from "@/lib/project-types";
 import { fetchJsonFromOrdfs } from "@/lib/registry-gateway";
-import type { ProjectManifest, IconLibrary, BaseColor, MenuColor, MenuAccent } from "@/lib/project-types";
 
 export const runtime = "edge";
 
 // Valid parameter values
 const VALID_ICON_LIBRARIES: IconLibrary[] = ["lucide", "hugeicons", "tabler"];
-const VALID_BASE_COLORS: BaseColor[] = ["neutral", "gray", "zinc", "stone", "slate"];
+const VALID_BASE_COLORS: BaseColor[] = [
+	"neutral",
+	"gray",
+	"zinc",
+	"stone",
+	"slate",
+];
 const VALID_MENU_COLORS: MenuColor[] = ["default", "primary", "accent"];
 const VALID_MENU_ACCENTS: MenuAccent[] = ["subtle", "normal", "bold"];
 
@@ -40,10 +52,16 @@ function parseParams(searchParams: URLSearchParams): InitParams {
 
 	return {
 		project: searchParams.get("project"),
-		iconLibrary: iconLibrary && VALID_ICON_LIBRARIES.includes(iconLibrary) ? iconLibrary : null,
-		baseColor: baseColor && VALID_BASE_COLORS.includes(baseColor) ? baseColor : null,
-		menuColor: menuColor && VALID_MENU_COLORS.includes(menuColor) ? menuColor : null,
-		menuAccent: menuAccent && VALID_MENU_ACCENTS.includes(menuAccent) ? menuAccent : null,
+		iconLibrary:
+			iconLibrary && VALID_ICON_LIBRARIES.includes(iconLibrary)
+				? iconLibrary
+				: null,
+		baseColor:
+			baseColor && VALID_BASE_COLORS.includes(baseColor) ? baseColor : null,
+		menuColor:
+			menuColor && VALID_MENU_COLORS.includes(menuColor) ? menuColor : null,
+		menuAccent:
+			menuAccent && VALID_MENU_ACCENTS.includes(menuAccent) ? menuAccent : null,
 	};
 }
 
@@ -65,7 +83,9 @@ export async function GET(request: Request) {
 
 	try {
 		// Fetch project manifest from ORDFS
-		const rawManifest = await fetchJsonFromOrdfs<ProjectManifest>(params.project);
+		const rawManifest = await fetchJsonFromOrdfs<ProjectManifest>(
+			params.project,
+		);
 
 		if (!rawManifest) {
 			return NextResponse.json(

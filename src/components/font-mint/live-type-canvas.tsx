@@ -32,7 +32,9 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 	// Load fonts when files change
 	useEffect(() => {
 		// Cleanup previous font URLs
-		fontUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+		fontUrlsRef.current.forEach((url) => {
+			URL.revokeObjectURL(url);
+		});
 		fontUrlsRef.current = [];
 
 		if (files.length === 0) {
@@ -47,14 +49,10 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 					const fontUrl = URL.createObjectURL(fontFile.file);
 					fontUrlsRef.current.push(fontUrl);
 
-					const fontFace = new FontFace(
-						"PreviewFont",
-						`url(${fontUrl})`,
-						{
-							weight: String(fontFile.weight || 400),
-							style: fontFile.style || "normal",
-						},
-					);
+					const fontFace = new FontFace("PreviewFont", `url(${fontUrl})`, {
+						weight: String(fontFile.weight || 400),
+						style: fontFile.style || "normal",
+					});
 
 					const loadedFont = await fontFace.load();
 					document.fonts.add(loadedFont);
@@ -75,10 +73,12 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 		loadFonts();
 
 		return () => {
-			fontUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+			fontUrlsRef.current.forEach((url) => {
+				URL.revokeObjectURL(url);
+			});
 			fontUrlsRef.current = [];
 		};
-	}, [files]);
+	}, [files, selectedWeight, availableWeights[0]]);
 
 	const bgColor = inverted ? "#ffffff" : "#050505";
 	const fgColor = inverted ? "#050505" : "#e5e5e5";

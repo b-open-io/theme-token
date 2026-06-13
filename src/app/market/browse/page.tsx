@@ -9,7 +9,18 @@ import {
 	RefreshCw,
 	ShoppingCart,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+	FilterSidebar,
+	type FilterState,
+} from "@/components/market/filter-sidebar";
+import { GenerateCard } from "@/components/market/generate-card";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
+import { ThemeCard } from "@/components/market/theme-card";
+import {
+	TrendingRail,
+	TrendingRailSkeleton,
+} from "@/components/market/trending-rail";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,25 +30,17 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { useMarketHistory } from "@/hooks/use-market-history";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
 	getColorDistance,
-	parseOklch,
 	type OklchColor,
+	parseOklch,
 } from "@/lib/color-utils";
 import {
 	fetchThemeMarketListings,
 	type ThemeMarketListing,
 } from "@/lib/yours-wallet";
-import {
-	FilterSidebar,
-	type FilterState,
-} from "@/components/market/filter-sidebar";
-import { GenerateCard } from "@/components/market/generate-card";
-import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
-import { ThemeCard } from "@/components/market/theme-card";
-import { TrendingRail, TrendingRailSkeleton } from "@/components/market/trending-rail";
 
 const DEFAULT_FILTERS: FilterState = {
 	primaryColor: null,
@@ -59,12 +62,17 @@ export default function BrowsePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [purchasing, setPurchasing] = useState<string | null>(null);
 	const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-	const [purchaseSuccess, setPurchaseSuccess] = useState<PurchaseSuccess | null>(null);
+	const [purchaseSuccess, setPurchaseSuccess] =
+		useState<PurchaseSuccess | null>(null);
 
 	const isConnected = status === "connected";
 
 	// Market history for stats and trending
-	const { stats: _stats, trending, getPriceChange } = useMarketHistory({
+	const {
+		stats: _stats,
+		trending,
+		getPriceChange,
+	} = useMarketHistory({
 		listings: listings.map((l) => ({ origin: l.origin, price: l.price })),
 	});
 
@@ -79,6 +87,7 @@ export default function BrowsePage() {
 			.filter((t): t is NonNullable<typeof t> => t !== null);
 	}, [trending, listings]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: load listings once on mount
 	useEffect(() => {
 		loadListings();
 	}, []);
@@ -336,9 +345,7 @@ export default function BrowsePage() {
 											isPurchasing={purchasing === listing.outpoint}
 											onPurchase={() => handlePurchase(listing)}
 											onConnect={connect}
-											onApplyTheme={(e) =>
-												applyThemeAnimated(listing.theme, e)
-											}
+											onApplyTheme={(e) => applyThemeAnimated(listing.theme, e)}
 											priceChange={getPriceChange(listing.origin)}
 										/>
 									</motion.div>

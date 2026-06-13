@@ -250,7 +250,9 @@ export function SpecPageClient() {
 									</div>
 									<p className="mt-1 text-[10px] text-muted-foreground/70">
 										Font values: Google Font name or{" "}
-										<code className="rounded bg-muted px-1">/content/origin</code>{" "}
+										<code className="rounded bg-muted px-1">
+											/content/origin
+										</code>{" "}
 										for on-chain fonts
 									</p>
 								</div>
@@ -298,61 +300,65 @@ export function SpecPageClient() {
 						>
 							<h3 className="mb-4 font-semibold">Full Schema Structure</h3>
 							<CodeBlock
-								code={JSON.stringify({
-									$schema: "https://themetoken.dev/v1/schema.json",
-									name: "My Theme",
-									author: "Name (https://github.com/username)",
-									styles: {
-										light: {
-											background: "oklch(0.98 0.005 240)",
-											foreground: "oklch(0.15 0.01 240)",
-											card: "oklch(1 0 0)",
-											"card-foreground": "oklch(0.15 0.01 240)",
-											popover: "oklch(1 0 0)",
-											"popover-foreground": "oklch(0.15 0.01 240)",
-											primary: "oklch(0.55 0.22 255)",
-											"primary-foreground": "oklch(0.98 0 0)",
-											secondary: "oklch(0.95 0.005 240)",
-											"secondary-foreground": "oklch(0.25 0.01 240)",
-											muted: "oklch(0.95 0.005 240)",
-											"muted-foreground": "oklch(0.5 0.01 240)",
-											accent: "oklch(0.95 0.01 255)",
-											"accent-foreground": "oklch(0.25 0.01 240)",
-											destructive: "oklch(0.55 0.22 25)",
-											"destructive-foreground": "oklch(0.98 0 0)",
-											border: "oklch(0.9 0.005 240)",
-											input: "oklch(0.9 0.005 240)",
-											ring: "oklch(0.55 0.22 255)",
-											radius: "0.5rem",
-											"font-sans": "Inter",
-											"font-mono": "/content/abc123_0",
-										},
-										dark: {
-											background: "oklch(0.12 0.015 240)",
-											foreground: "oklch(0.95 0.005 240)",
-											card: "oklch(0.16 0.015 240)",
-											"card-foreground": "oklch(0.95 0.005 240)",
-											popover: "oklch(0.16 0.015 240)",
-											"popover-foreground": "oklch(0.95 0.005 240)",
-											primary: "oklch(0.65 0.22 255)",
-											"primary-foreground": "oklch(0.12 0.015 240)",
-											secondary: "oklch(0.2 0.015 240)",
-											"secondary-foreground": "oklch(0.95 0.005 240)",
-											muted: "oklch(0.2 0.015 240)",
-											"muted-foreground": "oklch(0.65 0.01 240)",
-											accent: "oklch(0.25 0.02 255)",
-											"accent-foreground": "oklch(0.95 0.005 240)",
-											destructive: "oklch(0.6 0.22 25)",
-											"destructive-foreground": "oklch(0.98 0 0)",
-											border: "oklch(0.25 0.015 240)",
-											input: "oklch(0.25 0.015 240)",
-											ring: "oklch(0.65 0.22 255)",
-											radius: "0.5rem",
-											"font-sans": "Inter",
-											"font-mono": "/content/abc123_0",
+								code={JSON.stringify(
+									{
+										$schema: "https://themetoken.dev/v1/schema.json",
+										name: "My Theme",
+										author: "Name (https://github.com/username)",
+										styles: {
+											light: {
+												background: "oklch(0.98 0.005 240)",
+												foreground: "oklch(0.15 0.01 240)",
+												card: "oklch(1 0 0)",
+												"card-foreground": "oklch(0.15 0.01 240)",
+												popover: "oklch(1 0 0)",
+												"popover-foreground": "oklch(0.15 0.01 240)",
+												primary: "oklch(0.55 0.22 255)",
+												"primary-foreground": "oklch(0.98 0 0)",
+												secondary: "oklch(0.95 0.005 240)",
+												"secondary-foreground": "oklch(0.25 0.01 240)",
+												muted: "oklch(0.95 0.005 240)",
+												"muted-foreground": "oklch(0.5 0.01 240)",
+												accent: "oklch(0.95 0.01 255)",
+												"accent-foreground": "oklch(0.25 0.01 240)",
+												destructive: "oklch(0.55 0.22 25)",
+												"destructive-foreground": "oklch(0.98 0 0)",
+												border: "oklch(0.9 0.005 240)",
+												input: "oklch(0.9 0.005 240)",
+												ring: "oklch(0.55 0.22 255)",
+												radius: "0.5rem",
+												"font-sans": "Inter",
+												"font-mono": "/content/abc123_0",
+											},
+											dark: {
+												background: "oklch(0.12 0.015 240)",
+												foreground: "oklch(0.95 0.005 240)",
+												card: "oklch(0.16 0.015 240)",
+												"card-foreground": "oklch(0.95 0.005 240)",
+												popover: "oklch(0.16 0.015 240)",
+												"popover-foreground": "oklch(0.95 0.005 240)",
+												primary: "oklch(0.65 0.22 255)",
+												"primary-foreground": "oklch(0.12 0.015 240)",
+												secondary: "oklch(0.2 0.015 240)",
+												"secondary-foreground": "oklch(0.95 0.005 240)",
+												muted: "oklch(0.2 0.015 240)",
+												"muted-foreground": "oklch(0.65 0.01 240)",
+												accent: "oklch(0.25 0.02 255)",
+												"accent-foreground": "oklch(0.95 0.005 240)",
+												destructive: "oklch(0.6 0.22 25)",
+												"destructive-foreground": "oklch(0.98 0 0)",
+												border: "oklch(0.25 0.015 240)",
+												input: "oklch(0.25 0.015 240)",
+												ring: "oklch(0.65 0.22 255)",
+												radius: "0.5rem",
+												"font-sans": "Inter",
+												"font-mono": "/content/abc123_0",
+											},
 										},
 									},
-								}, null, 2)}
+									null,
+									2,
+								)}
 								language="json"
 								className="h-[500px]"
 							/>
@@ -430,7 +436,8 @@ export function SpecPageClient() {
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
 							Project presets bundle themes, fonts, icons, and configuration
-							into complete shadcn/create bases. Create entire projects with one command.
+							into complete shadcn/create bases. Create entire projects with one
+							command.
 						</motion.p>
 					</motion.div>
 
@@ -443,21 +450,27 @@ export function SpecPageClient() {
 						<div className="rounded-xl border border-primary/20 bg-card p-6">
 							<div className="mb-4 flex items-center gap-2">
 								<Terminal className="h-5 w-5 text-primary" />
-								<span className="font-semibold">Create Project from Preset</span>
+								<span className="font-semibold">
+									Create Project from Preset
+								</span>
 							</div>
 							<div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 font-mono text-sm">
 								<code className="flex-1 overflow-x-auto text-muted-foreground">
-									<span className="text-primary">bunx</span> shadcn@latest create{" "}
+									<span className="text-primary">bunx</span> shadcn@latest
+									create{" "}
 									<span className="text-foreground">
-										--preset &quot;https://themetoken.dev/init?project=[origin]&quot;
+										--preset
+										&quot;https://themetoken.dev/init?project=[origin]&quot;
 									</span>
 								</code>
 								<button
 									type="button"
-									onClick={() => copyToClipboard(
-										'bunx shadcn@latest create --preset "https://themetoken.dev/init?project=[origin]"',
-										"project-cli"
-									)}
+									onClick={() =>
+										copyToClipboard(
+											'bunx shadcn@latest create --preset "https://themetoken.dev/init?project=[origin]"',
+											"project-cli",
+										)
+									}
 									className="flex-shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 									title="Copy command"
 								>
@@ -492,7 +505,8 @@ export function SpecPageClient() {
 										<span className="font-medium text-sm">Theme Styles</span>
 									</div>
 									<p className="text-xs text-muted-foreground">
-										Complete light/dark CSS variables including sidebar and chart colors
+										Complete light/dark CSS variables including sidebar and
+										chart colors
 									</p>
 								</div>
 
@@ -509,7 +523,9 @@ export function SpecPageClient() {
 								<div className="rounded-lg border border-border bg-card p-4">
 									<div className="flex items-center gap-2 mb-2">
 										<div className="h-2 w-2 rounded-full bg-primary" />
-										<span className="font-medium text-sm">CLI Configuration</span>
+										<span className="font-medium text-sm">
+											CLI Configuration
+										</span>
 									</div>
 									<p className="text-xs text-muted-foreground">
 										Base color, menu style, icon library, font settings
@@ -520,7 +536,9 @@ export function SpecPageClient() {
 									<div className="flex items-center gap-2 mb-2">
 										<div className="h-2 w-2 rounded-full bg-primary" />
 										<span className="font-medium text-sm">On-Chain Assets</span>
-										<span className="text-[10px] text-muted-foreground">(optional)</span>
+										<span className="text-[10px] text-muted-foreground">
+											(optional)
+										</span>
 									</div>
 									<p className="text-xs text-muted-foreground">
 										Bundled fonts, patterns, or wallpapers via vout references
@@ -533,14 +551,16 @@ export function SpecPageClient() {
 									Query parameter overrides:
 								</p>
 								<div className="flex flex-wrap gap-1 font-mono text-xs">
-									{["iconLibrary", "baseColor", "menuColor", "menuAccent"].map((param) => (
-										<div
-											key={param}
-											className="rounded border border-border bg-muted/30 px-2 py-1"
-										>
-											{param}
-										</div>
-									))}
+									{["iconLibrary", "baseColor", "menuColor", "menuAccent"].map(
+										(param) => (
+											<div
+												key={param}
+												className="rounded border border-border bg-muted/30 px-2 py-1"
+											>
+												{param}
+											</div>
+										),
+									)}
 								</div>
 							</div>
 						</motion.div>
@@ -554,62 +574,70 @@ export function SpecPageClient() {
 						>
 							<h3 className="mb-4 font-semibold">registry:base Schema</h3>
 							<CodeBlock
-								code={JSON.stringify({
-									type: "registry:base",
-									name: "My Project",
-									extends: "none",
-									dependencies: [
-										"shadcn@latest",
-										"class-variance-authority",
-										"tw-animate-css",
-										"lucide-react"
-									],
-									registryDependencies: ["utils"],
-									cssVars: {
-										light: {
-											background: "oklch(...)",
-											primary: "oklch(...)",
-											sidebar: "oklch(...)",
-											"chart-1": "oklch(...)"
+								code={JSON.stringify(
+									{
+										type: "registry:base",
+										name: "My Project",
+										extends: "none",
+										dependencies: [
+											"shadcn@latest",
+											"class-variance-authority",
+											"tw-animate-css",
+											"lucide-react",
+										],
+										registryDependencies: ["utils"],
+										cssVars: {
+											light: {
+												background: "oklch(...)",
+												primary: "oklch(...)",
+												sidebar: "oklch(...)",
+												"chart-1": "oklch(...)",
+											},
+											dark: {
+												background: "oklch(...)",
+												primary: "oklch(...)",
+												sidebar: "oklch(...)",
+												"chart-1": "oklch(...)",
+											},
 										},
-										dark: {
-											background: "oklch(...)",
-											primary: "oklch(...)",
-											sidebar: "oklch(...)",
-											"chart-1": "oklch(...)"
-										}
+										css: {
+											'@import "tw-animate-css"': {},
+											'@import "shadcn/tailwind.css"': {},
+											"@layer base": {
+												"*": { "@apply border-border outline-ring/50": "" },
+												body: { "@apply bg-background text-foreground": "" },
+											},
+										},
+										config: {
+											style: "my-style",
+											tailwind: { baseColor: "zinc" },
+											iconLibrary: "lucide",
+											menuColor: "default",
+											menuAccent: "subtle",
+										},
+										bundle: {
+											version: 2,
+											assets: [{ vout: 0, type: "font", slot: "sans" }],
+										},
 									},
-									css: {
-										"@import \"tw-animate-css\"": {},
-										"@import \"shadcn/tailwind.css\"": {},
-										"@layer base": {
-											"*": { "@apply border-border outline-ring/50": "" },
-											body: { "@apply bg-background text-foreground": "" }
-										}
-									},
-									config: {
-										style: "my-style",
-										tailwind: { baseColor: "zinc" },
-										iconLibrary: "lucide",
-										menuColor: "default",
-										menuAccent: "subtle"
-									},
-									bundle: {
-										version: 2,
-										assets: [
-											{ vout: 0, type: "font", slot: "sans" }
-										]
-									}
-								}, null, 2)}
+									null,
+									2,
+								)}
 								language="json"
 								className="h-[500px]"
 							/>
 							<p className="mt-3 text-xs text-muted-foreground">
 								Served via{" "}
-								<code className="rounded bg-muted px-1">/init?project=[origin]</code>{" "}
-								for <code className="rounded bg-muted px-1">shadcn create --preset</code>.
-								Bundle assets use <code className="rounded bg-muted px-1">{"_N"}</code>{" "}
-								relative vout references resolved to ORDFS URLs.
+								<code className="rounded bg-muted px-1">
+									/init?project=[origin]
+								</code>{" "}
+								for{" "}
+								<code className="rounded bg-muted px-1">
+									shadcn create --preset
+								</code>
+								. Bundle assets use{" "}
+								<code className="rounded bg-muted px-1">{"_N"}</code> relative
+								vout references resolved to ORDFS URLs.
 							</p>
 						</motion.div>
 					</div>
@@ -641,7 +669,8 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							Assets use the MAP (Magic Attribute Protocol) for on-chain metadata.
+							Assets use the MAP (Magic Attribute Protocol) for on-chain
+							metadata.
 						</motion.p>
 					</motion.div>
 
@@ -801,6 +830,7 @@ export function SpecPageClient() {
 									className="h-4 w-4"
 									viewBox="0 0 24 24"
 									fill="currentColor"
+									aria-hidden="true"
 								>
 									<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
 								</svg>
@@ -816,6 +846,7 @@ export function SpecPageClient() {
 									className="h-4 w-4"
 									viewBox="0 0 24 24"
 									fill="currentColor"
+									aria-hidden="true"
 								>
 									<path d="M0 0v24h24V0H0zm6.168 20.064H3.36V8.352h2.808v11.712zm6.552 0H9.936V3.936h2.784v16.128zm6.552 0h-2.784v-7.872h2.784v7.872z" />
 								</svg>
@@ -851,8 +882,8 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-8 max-w-2xl text-muted-foreground"
 						>
-							Machine-readable documentation for AI coding assistants. Copy context
-							directly into your AI tool or feed the URLs. Following the{" "}
+							Machine-readable documentation for AI coding assistants. Copy
+							context directly into your AI tool or feed the URLs. Following the{" "}
 							<a
 								href="https://llmstxt.org"
 								target="_blank"
@@ -1073,6 +1104,8 @@ export function SpecPageClient() {
 										className="h-4 w-4"
 										viewBox="0 0 24 24"
 										fill="currentColor"
+										role="img"
+										aria-label="GitHub"
 									>
 										<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
 									</svg>

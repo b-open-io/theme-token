@@ -1,11 +1,20 @@
 "use client";
 
+import type { ThemeToken } from "@theme-token/sdk";
 import { isTextUIPart, isToolOrDynamicToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
-import { Loader2, X, CheckCircle2, XCircle, Wrench, Sparkles, ArrowRight, RotateCcw } from "lucide-react";
-import { useRouter, usePathname } from "next/navigation";
+import {
+	ArrowRight,
+	CheckCircle2,
+	Loader2,
+	RotateCcw,
+	Sparkles,
+	Wrench,
+	X,
+	XCircle,
+} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
 	Conversation,
 	ConversationContent,
@@ -14,18 +23,18 @@ import {
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
 	PromptInput,
-	PromptInputTextarea,
 	PromptInputFooter,
-	PromptInputTools,
 	PromptInputSubmit,
+	PromptInputTextarea,
+	PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { Button } from "@/components/ui/button";
+import { featureFlags } from "@/lib/feature-flags";
+import { BlockPreview } from "./block-preview";
+import { PaymentRequestCard } from "./payment-request";
 import { useSwatchyStore } from "./swatchy-store";
 import { useSwatchyChat } from "./use-swatchy-chat";
-import { PaymentRequestCard } from "./payment-request";
-import { BlockPreview } from "./block-preview";
-import { featureFlags } from "@/lib/feature-flags";
-import type { ThemeToken } from "@theme-token/sdk";
 
 /**
  * Get dynamic suggestions based on enabled feature flags
@@ -200,7 +209,9 @@ function getSuggestions(pathname: string): string[] {
 	const firstSuggestion = `Create a ${getRandomPopCultureTheme()} theme`;
 
 	// Get page-specific suggestions based on current path
-	const pageKey = Object.keys(PAGE_SUGGESTIONS).find(key => pathname.startsWith(key));
+	const pageKey = Object.keys(PAGE_SUGGESTIONS).find((key) =>
+		pathname.startsWith(key),
+	);
 	const pageSuggestions = pageKey ? PAGE_SUGGESTIONS[pageKey] : [];
 
 	// Global suggestions (always available as fallback)
@@ -226,7 +237,11 @@ function getSuggestions(pathname: string): string[] {
 	}
 
 	// Blend: prioritize page-specific, then feature-gated, then global
-	const pool = [...pageSuggestions, ...featureSuggestions, ...globalSuggestions];
+	const pool = [
+		...pageSuggestions,
+		...featureSuggestions,
+		...globalSuggestions,
+	];
 	const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, 3);
 
 	// Return first suggestion followed by 3 contextual others
@@ -245,7 +260,6 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	setPatternParams: "Updating pattern",
 	prepareInscribe: "Preparing inscription",
 	prepareListing: "Preparing listing",
-	getWalletBalance: "Checking balance",
 	getExchangeRate: "Getting exchange rate",
 	generateBlock: "Generating block",
 	generateComponent: "Generating component",
@@ -254,7 +268,8 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 export function SwatchyChatBubble() {
 	const router = useRouter();
 	const pathname = usePathname();
-	const { closeChat, setNavigating, clearGeneration, registryItemsCache } = useSwatchyStore();
+	const { closeChat, setNavigating, clearGeneration, registryItemsCache } =
+		useSwatchyStore();
 	const {
 		messages,
 		input,
@@ -267,6 +282,7 @@ export function SwatchyChatBubble() {
 		handleRetry,
 		generation,
 		failedRequest,
+		paymentError,
 	} = useSwatchyChat();
 
 	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -294,7 +310,10 @@ export function SwatchyChatBubble() {
 	// Close on click outside
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
-			if (chatContainerRef.current && !chatContainerRef.current.contains(e.target as Node)) {
+			if (
+				chatContainerRef.current &&
+				!chatContainerRef.current.contains(e.target as Node)
+			) {
 				closeChat();
 			}
 		};
@@ -328,14 +347,15 @@ export function SwatchyChatBubble() {
 	// Auto-scroll to bottom when messages change
 	useEffect(() => {
 		if (scrollContainerRef.current) {
-			scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+			scrollContainerRef.current.scrollTop =
+				scrollContainerRef.current.scrollHeight;
 		}
-	}, [messages, paymentPending, generation.status]);
+	}, []);
 
 	return (
 		<motion.div
 			ref={chatContainerRef}
-			className="absolute right-[75%] top-0 z-40 flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl origin-top-right max-sm:fixed max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
+			className="absolute right-[75%] top-0 z-[60] flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl origin-top-right max-sm:fixed max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
 			initial={{ opacity: 0, scale: 0.9, x: 20 }}
 			animate={{ opacity: 1, scale: 1, x: 0 }}
 			exit={{ opacity: 0, scale: 0.9, x: 20 }}
@@ -383,95 +403,117 @@ export function SwatchyChatBubble() {
 								</Suggestions>
 							</div>
 						) : (
-							<>
-								{messages.map((msg) => {
-									const uiMessage = msg as UIMessage;
-									const hasContent = uiMessage.parts?.some(
-										(part) => isTextUIPart(part) || isToolOrDynamicToolUIPart(part)
-									);
-									if (!hasContent) return null;
+							messages.map((msg) => {
+								const uiMessage = msg as UIMessage;
+								const hasContent = uiMessage.parts?.some(
+									(part) =>
+										isTextUIPart(part) || isToolOrDynamicToolUIPart(part),
+								);
+								if (!hasContent) return null;
 
-									return (
-										<Message key={msg.id} from={msg.role === "user" ? "user" : "assistant"}>
-											{uiMessage.parts?.map((part, index) => {
-												// Render text parts
-												if (isTextUIPart(part) && part.text) {
+								return (
+									<Message
+										key={msg.id}
+										from={msg.role === "user" ? "user" : "assistant"}
+									>
+										{uiMessage.parts?.map((part, index) => {
+											// Render text parts
+											if (isTextUIPart(part) && part.text) {
+												return (
+													<MessageContent key={index}>
+														{part.text}
+													</MessageContent>
+												);
+											}
+
+											// Render tool invocation parts
+											if (isToolOrDynamicToolUIPart(part)) {
+												const toolName =
+													"toolName" in part
+														? part.toolName
+														: part.type.replace("tool-", "");
+												const displayName =
+													TOOL_DISPLAY_NAMES[toolName] || toolName;
+
+												// Generative UI for Blocks and Components
+												if (
+													(toolName === "generateBlock" ||
+														toolName === "generateComponent") &&
+													part.state === "output-available" &&
+													part.output &&
+													typeof part.output === "object" &&
+													"cacheId" in part.output
+												) {
+													// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
+													const cacheId = (part.output as any).cacheId;
+													const item = registryItemsCache[cacheId];
+
+													if (item) {
+														return (
+															<div key={index} className="w-full my-2">
+																<BlockPreview item={item} />
+															</div>
+														);
+													}
+												}
+
+												// Show different UI based on tool state
+												if (
+													part.state === "input-streaming" ||
+													part.state === "input-available"
+												) {
 													return (
-														<MessageContent key={index}>
-															{part.text}
-														</MessageContent>
+														<div
+															key={index}
+															className="flex items-center gap-2 text-xs text-muted-foreground py-1"
+														>
+															<Loader2 className="h-3 w-3 animate-spin" />
+															<span>{displayName}...</span>
+														</div>
 													);
 												}
 
-												// Render tool invocation parts
-												if (isToolOrDynamicToolUIPart(part)) {
-													const toolName = "toolName" in part ? part.toolName : part.type.replace("tool-", "");
-													const displayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
-
-													// Generative UI for Blocks and Components
-													if (
-														(toolName === "generateBlock" || toolName === "generateComponent") &&
-														part.state === "output-available" &&
-														part.output &&
-														typeof part.output === "object" &&
-														"cacheId" in part.output
-													) {
-														// eslint-disable-next-line @typescript-eslint/no-explicit-any
-														const cacheId = (part.output as any).cacheId;
-														const item = registryItemsCache[cacheId];
-														
-														if (item) {
-															return (
-																<div key={index} className="w-full my-2">
-																	<BlockPreview item={item} />
-																</div>
-															);
-														}
-													}
-
-													// Show different UI based on tool state
-													if (part.state === "input-streaming" || part.state === "input-available") {
-														return (
-															<div key={index} className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-																<Loader2 className="h-3 w-3 animate-spin" />
-																<span>{displayName}...</span>
-															</div>
-														);
-													}
-
-													if (part.state === "output-available") {
-														return (
-															<div key={index} className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-																<CheckCircle2 className="h-3 w-3 text-green-500" />
-																<span>{displayName}</span>
-															</div>
-														);
-													}
-
-													if (part.state === "output-error") {
-														return (
-															<div key={index} className="flex items-center gap-2 text-xs text-destructive py-1">
-																<XCircle className="h-3 w-3" />
-																<span>{displayName} failed</span>
-															</div>
-														);
-													}
-
-													// Default: show tool is being called
+												if (part.state === "output-available") {
 													return (
-														<div key={index} className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-															<Wrench className="h-3 w-3" />
+														<div
+															key={index}
+															className="flex items-center gap-2 text-xs text-muted-foreground py-1"
+														>
+															<CheckCircle2 className="h-3 w-3 text-green-500" />
 															<span>{displayName}</span>
 														</div>
 													);
 												}
 
-												return null;
-											})}
-										</Message>
-									);
-								})}
-							</>
+												if (part.state === "output-error") {
+													return (
+														<div
+															key={index}
+															className="flex items-center gap-2 text-xs text-destructive py-1"
+														>
+															<XCircle className="h-3 w-3" />
+															<span>{displayName} failed</span>
+														</div>
+													);
+												}
+
+												// Default: show tool is being called
+												return (
+													<div
+														key={index}
+														className="flex items-center gap-2 text-xs text-muted-foreground py-1"
+													>
+														<Wrench className="h-3 w-3" />
+														<span>{displayName}</span>
+													</div>
+												);
+											}
+
+											return null;
+										})}
+									</Message>
+								);
+							})
 						)}
 
 						{/* Loading indicator */}
@@ -491,6 +533,7 @@ export function SwatchyChatBubble() {
 									onConfirm={onPaymentConfirm}
 									onCancel={onPaymentCancel}
 									isProcessing={isPaymentProcessing}
+									paymentError={paymentError}
 								/>
 							</div>
 						)}
@@ -519,20 +562,22 @@ export function SwatchyChatBubble() {
 									<motion.div
 										animate={{
 											rotate: [0, 10, -10, 0],
-											scale: [1, 1.2, 1]
+											scale: [1, 1.2, 1],
 										}}
 										transition={{
 											duration: 0.5,
 											repeat: 2,
-											repeatDelay: 0.5
+											repeatDelay: 0.5,
 										}}
 									>
 										<Sparkles className="h-4 w-4 text-green-500" />
 									</motion.div>
 									<span className="text-sm font-medium text-green-700 dark:text-green-300">
-										{generation.toolName === "generateTheme" && generation.result
+										{generation.toolName === "generateTheme" &&
+										generation.result
 											? `"${(generation.result as ThemeToken).name}" created!`
-											: (generation.toolName === "generateBlock" || generation.toolName === "generateComponent")
+											: generation.toolName === "generateBlock" ||
+													generation.toolName === "generateComponent"
 												? "Code generated!"
 												: "Generation complete!"}
 									</span>

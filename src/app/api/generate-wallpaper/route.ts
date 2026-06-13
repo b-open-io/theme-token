@@ -127,7 +127,13 @@ Description: ${prompt}`;
 export async function POST(request: NextRequest) {
 	try {
 		const body = (await request.json()) as WallpaperRequest;
-		const { prompt, sourceImage, aspectRatio = "16:9", style, themeContext } = body;
+		const {
+			prompt,
+			sourceImage,
+			aspectRatio = "16:9",
+			style,
+			themeContext,
+		} = body;
 
 		if (!prompt?.trim()) {
 			return NextResponse.json(

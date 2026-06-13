@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface StudioDashboardProps {
 	/** Sidebar content (controls, settings) */
@@ -51,12 +51,8 @@ export function StudioDashboard({
 
 			{/* Bottom Action Bar - always visible */}
 			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
-				<div className="flex items-center gap-2">
-					{bottomLeft}
-				</div>
-				<div className="flex items-center gap-2">
-					{bottomRight}
-				</div>
+				<div className="flex items-center gap-2">{bottomLeft}</div>
+				<div className="flex items-center gap-2">{bottomRight}</div>
 			</div>
 		</div>
 	);

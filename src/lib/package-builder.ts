@@ -3,8 +3,8 @@ import {
 	P2PKH,
 	PublicKey,
 	Script,
-	Utils,
 	type SecurityLevel,
+	Utils,
 	type WalletInterface,
 } from "@bsv/sdk";
 import type { PackageMapMetadata } from "@/lib/asset-metadata";
@@ -101,7 +101,7 @@ export async function publishPackage(
 			const dir = parts[0];
 			const rest = parts.slice(1).join("/");
 			if (!subdirs.has(dir)) subdirs.set(dir, []);
-			subdirs.get(dir)!.push({ name: rest, vout: i });
+			subdirs.get(dir)?.push({ name: rest, vout: i });
 		}
 	}
 
@@ -286,7 +286,13 @@ export function bundleItemsToPackage(
 	for (const item of items) {
 		if (item.metadata) {
 			for (const [key, value] of Object.entries(item.metadata)) {
-				if (key !== "app" && key !== "type" && key !== "name" && key !== "version" && key !== "description") {
+				if (
+					key !== "app" &&
+					key !== "type" &&
+					key !== "name" &&
+					key !== "version" &&
+					key !== "description"
+				) {
 					metadata[key] = value;
 				}
 			}

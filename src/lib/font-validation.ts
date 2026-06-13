@@ -209,7 +209,7 @@ function generateGlyphFingerprint(font: opentype.Font): string {
 
 	for (const char of sampleChars) {
 		const glyph = font.charToGlyph(char);
-		if (glyph && glyph.path) {
+		if (glyph?.path) {
 			// Get path commands and normalize them
 			const path = glyph.path;
 			const commands = path.commands.map((cmd) => {

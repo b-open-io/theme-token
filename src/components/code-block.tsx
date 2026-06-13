@@ -2,7 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import * as React from "react";
-import { type Highlighter, createHighlighter } from "shiki";
+import { createHighlighter, type Highlighter } from "shiki";
 import { createCssVariablesTheme } from "shiki/core";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +87,7 @@ export function CodeBlock({
 		<div
 			className={cn(
 				"relative group rounded-lg border border-border bg-muted/50 text-sm font-mono overflow-hidden",
-				className
+				className,
 			)}
 			{...props}
 		>
@@ -99,7 +99,7 @@ export function CodeBlock({
 					</div>
 				</div>
 			)}
-			
+
 			<div className="relative h-full">
 				{showCopy && (
 					<button
@@ -118,9 +118,10 @@ export function CodeBlock({
 
 				<div className="overflow-auto h-full p-4">
 					{isLoaded && html ? (
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: rendering trusted syntax-highlighted HTML from shiki
 						<div dangerouslySetInnerHTML={{ __html: html }} />
 					) : (
-						<pre style={{ backgroundColor: 'transparent' }}>
+						<pre style={{ backgroundColor: "transparent" }}>
 							<code>{code}</code>
 						</pre>
 					)}

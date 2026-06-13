@@ -1,6 +1,6 @@
 import * as opentype from "opentype.js";
 import { compress } from "wawoff2";
-import { svgPathToOpentypePath, getPathBounds } from "./svg-to-path";
+import { getPathBounds, svgPathToOpentypePath } from "./svg-to-path";
 
 /**
  * Font Compiler
@@ -57,7 +57,10 @@ const SIDE_BEARING_RATIO = 0.05; // 5% on each side
  * Create the required .notdef glyph
  * This glyph is shown when a character is missing
  */
-function createNotdefGlyph(unitsPerEm: number, ascender: number): opentype.Glyph {
+function createNotdefGlyph(
+	unitsPerEm: number,
+	ascender: number,
+): opentype.Glyph {
 	const width = unitsPerEm * 0.5;
 	const height = ascender;
 	const thickness = unitsPerEm * 0.05;
@@ -107,7 +110,8 @@ function calculateAdvanceWidth(
 ): number {
 	// Use the larger of provided width or calculated width
 	const contentWidth = pathBounds.width;
-	const sideBearing = Math.max(contentWidth, providedWidth) * SIDE_BEARING_RATIO;
+	const sideBearing =
+		Math.max(contentWidth, providedWidth) * SIDE_BEARING_RATIO;
 
 	return Math.round(contentWidth + sideBearing * 2);
 }
@@ -115,10 +119,7 @@ function calculateAdvanceWidth(
 /**
  * Convert a single glyph from AI data to opentype.js Glyph
  */
-function convertGlyph(
-	glyphData: GlyphData,
-	ascender: number,
-): opentype.Glyph {
+function convertGlyph(glyphData: GlyphData, ascender: number): opentype.Glyph {
 	// Convert SVG path to opentype path
 	const path = svgPathToOpentypePath(glyphData.path, ascender);
 
@@ -279,10 +280,7 @@ export async function compileFont(fontData: FontData): Promise<CompiledFont> {
 /**
  * Export font as downloadable blob
  */
-export function fontToBlob(
-	buffer: ArrayBuffer,
-	type: "otf" | "woff2",
-): Blob {
+export function fontToBlob(buffer: ArrayBuffer, type: "otf" | "woff2"): Blob {
 	const mimeType = type === "woff2" ? "font/woff2" : "font/otf";
 	return new Blob([buffer], { type: mimeType });
 }

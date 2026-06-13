@@ -44,7 +44,7 @@ export interface GeoPatternResult {
  */
 export function generateGeoPattern(opts: GeoPatternOptions): GeoPatternResult {
 	const generator = opts.generator || "hexagons";
-	
+
 	// Map our generator name to the library's internal name
 	const generatorMap: Record<GeoGeneratorType, string> = {
 		hexagons: "hexagons",
@@ -74,7 +74,10 @@ export function generateGeoPattern(opts: GeoPatternOptions): GeoPatternResult {
 
 	// 1. Remove background rect to allow transparency (crucial for mask-image)
 	// GeoPattern adds a full-size rect as the first element
-	svg = svg.replace(/<rect[^>]*width="100%"[^>]*height="100%"[^>]*><\/rect>/, "");
+	svg = svg.replace(
+		/<rect[^>]*width="100%"[^>]*height="100%"[^>]*><\/rect>/,
+		"",
+	);
 	svg = svg.replace(/<rect[^>]*width="100%"[^>]*height="100%"[^>]*\/>/, ""); // self-closing variant just in case
 
 	// 2. Force all remaining shapes to be white for consistent mask opacity

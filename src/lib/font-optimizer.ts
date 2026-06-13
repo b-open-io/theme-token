@@ -7,7 +7,7 @@
  * - Stroke weight normalization
  */
 
-import type { GlyphData, FontData } from "./font-compiler";
+import type { FontData, GlyphData } from "./font-compiler";
 import { getPathBounds } from "./svg-to-path";
 
 /**
@@ -119,7 +119,7 @@ const BOTTOM_OVERSHOOT_CHARS = new Set([
 /**
  * Characters with descenders that should extend below baseline
  */
-const DESCENDER_CHARS = new Set(["g", "j", "p", "q", "y"]);
+const _DESCENDER_CHARS = new Set(["g", "j", "p", "q", "y"]);
 
 export interface KerningPair {
 	left: string;
@@ -152,7 +152,8 @@ function analyzeGlyphShape(glyph: GlyphData): {
 	const char = glyph.char;
 
 	return {
-		hasRoundTop: TOP_OVERSHOOT_CHARS.has(char) && !["A", "V", "W"].includes(char),
+		hasRoundTop:
+			TOP_OVERSHOOT_CHARS.has(char) && !["A", "V", "W"].includes(char),
 		hasRoundBottom: BOTTOM_OVERSHOOT_CHARS.has(char),
 		hasPointedTop: ["A", "V", "W"].includes(char),
 		topY: bounds.maxY,
@@ -164,7 +165,11 @@ function analyzeGlyphShape(glyph: GlyphData): {
  * Scale a path's Y coordinates by a factor around a pivot point
  * This is used to create optical overshoots
  */
-function scalePathY(path: string, scaleFactor: number, pivotY: number): string {
+function _scalePathY(
+	path: string,
+	scaleFactor: number,
+	pivotY: number,
+): string {
 	// This is a simplified implementation that works for basic paths
 	// A full implementation would need proper path parsing and transformation
 
@@ -191,7 +196,7 @@ function scalePathY(path: string, scaleFactor: number, pivotY: number): string {
 			}
 
 			return `${command}${scaled.join(" ")}`;
-		}
+		},
 	);
 }
 
@@ -202,17 +207,17 @@ function scalePathY(path: string, scaleFactor: number, pivotY: number): string {
  */
 export function applyOpticalCorrections(
 	glyphs: GlyphData[],
-	metrics: {
+	_metrics: {
 		ascender: number;
 		descender: number;
 		capHeight: number;
 		xHeight: number;
-	}
+	},
 ): GlyphData[] {
-	const OVERSHOOT_PERCENT = 0.015; // 1.5% overshoot
+	const _OVERSHOOT_PERCENT = 0.015; // 1.5% overshoot
 
 	return glyphs.map((glyph) => {
-		const analysis = analyzeGlyphShape(glyph);
+		const _analysis = analyzeGlyphShape(glyph);
 
 		// For now, we'll skip path modification and rely on the AI to generate
 		// correct overshoots. Full path transformation would require more complex
@@ -250,7 +255,7 @@ export function generateKerningPairs(glyphs: GlyphData[]): KerningPair[] {
  */
 export function calculateSideBearings(
 	glyph: GlyphData,
-	targetSideBearing: number
+	targetSideBearing: number,
 ): { left: number; right: number; newWidth: number } {
 	const bounds = getPathBounds(glyph.path);
 
@@ -259,8 +264,8 @@ export function calculateSideBearings(
 	const currentRightBearing = glyph.width - bounds.maxX;
 
 	// Adjust to target side bearing
-	const leftAdjustment = targetSideBearing - currentLeftBearing;
-	const rightAdjustment = targetSideBearing - currentRightBearing;
+	const _leftAdjustment = targetSideBearing - currentLeftBearing;
+	const _rightAdjustment = targetSideBearing - currentRightBearing;
 
 	return {
 		left: targetSideBearing,

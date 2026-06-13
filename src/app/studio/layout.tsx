@@ -1,14 +1,9 @@
 "use client";
 
-import {
-	motion,
-	useMotionValue,
-	useSpring,
-	useTransform,
-} from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { getStudioTabs } from "@/lib/routes";
 
 export default function StudioLayout({
@@ -81,7 +76,11 @@ export default function StudioLayout({
 											<motion.div
 												layoutId="studio-active-tab"
 												className="absolute inset-0 rounded-md bg-muted/60"
-												transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+												transition={{
+													type: "spring",
+													bounce: 0.15,
+													duration: 0.5,
+												}}
 											/>
 										)}
 										{Icon && <Icon className="relative z-10 h-3.5 w-3.5" />}
@@ -107,7 +106,9 @@ export default function StudioLayout({
 							)}
 							{pathname === "/studio/patterns" && (
 								<>
-									<span className="text-muted-foreground/60">AI SVG patterns —</span>{" "}
+									<span className="text-muted-foreground/60">
+										AI SVG patterns —
+									</span>{" "}
 									<span className="text-primary">root</span>/studio/
 									<span className="text-foreground">patterns</span>{" "}
 									<span className="animate-pulse">_</span>
@@ -129,7 +130,9 @@ export default function StudioLayout({
 							)}
 							{pathname === "/studio/wallpaper" && (
 								<>
-									<span className="text-muted-foreground/60">AI wallpapers —</span>{" "}
+									<span className="text-muted-foreground/60">
+										AI wallpapers —
+									</span>{" "}
 									<span className="text-primary">root</span>/studio/
 									<span className="text-foreground">wallpaper</span>{" "}
 									<span className="animate-pulse">_</span>
@@ -139,10 +142,7 @@ export default function StudioLayout({
 					</div>
 
 					{/* Animated Gradient Bar with Spotlight */}
-					<div
-						ref={barRef}
-						className="relative h-0.5 w-full overflow-hidden"
-					>
+					<div ref={barRef} className="relative h-0.5 w-full overflow-hidden">
 						{/* Base: Dim animated gradient */}
 						<motion.div
 							className="absolute inset-0 opacity-30"

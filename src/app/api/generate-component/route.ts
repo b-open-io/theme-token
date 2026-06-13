@@ -1,20 +1,38 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createDraft } from "@/lib/storage";
-import { generateWithValidation } from "@/lib/validated-generation";
-import { getInstalledPackageNames, getUiComponentNames, validateGeneratedRegistryCode } from "@/lib/registry/validate-generated";
+import {
+	getInstalledPackageNames,
+	getUiComponentNames,
+	validateGeneratedRegistryCode,
+} from "@/lib/registry/validate-generated";
 import { extractComponentName } from "@/lib/sandbox";
 import { createSandboxPreview } from "@/lib/sandbox-preview";
+import { createDraft } from "@/lib/storage";
+import { generateWithValidation } from "@/lib/validated-generation";
 
 export const runtime = "nodejs";
 
 // Schema for a generated component
 const componentSchema = z.object({
-	name: z.string().describe("Component name in kebab-case, e.g., 'animated-button' or 'status-badge'"),
-	description: z.string().describe("Short description of what the component does"),
-	dependencies: z.array(z.string()).describe("NPM packages required (e.g., ['lucide-react', 'class-variance-authority'])"),
-	registryDependencies: z.array(z.string()).describe("shadcn components used as base (e.g., ['button', 'badge'])"),
-	content: z.string().describe("The complete component file content - React/TypeScript code"),
+	name: z
+		.string()
+		.describe(
+			"Component name in kebab-case, e.g., 'animated-button' or 'status-badge'",
+		),
+	description: z
+		.string()
+		.describe("Short description of what the component does"),
+	dependencies: z
+		.array(z.string())
+		.describe(
+			"NPM packages required (e.g., ['lucide-react', 'class-variance-authority'])",
+		),
+	registryDependencies: z
+		.array(z.string())
+		.describe("shadcn components used as base (e.g., ['button', 'badge'])"),
+	content: z
+		.string()
+		.describe("The complete component file content - React/TypeScript code"),
 });
 
 type ComponentSchema = z.infer<typeof componentSchema>;
@@ -155,7 +173,15 @@ Available shadcn ui components (sample): ${uiList}${ui.length > 80 ? ", ..." : "
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { prompt, name, variants, userId, paymentTxid, attempt, previousErrors } = body as {
+		const {
+			prompt,
+			name,
+			variants,
+			userId,
+			paymentTxid,
+			attempt,
+			previousErrors,
+		} = body as {
 			prompt?: string;
 			name?: string;
 			variants?: string[];
@@ -168,7 +194,7 @@ export async function POST(request: NextRequest) {
 		if (!prompt) {
 			return NextResponse.json(
 				{ error: "Prompt is required" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -183,8 +209,13 @@ export async function POST(request: NextRequest) {
 			userPrompt += `\n\nInclude these variants: ${variants.join(", ")}`;
 		}
 
-		const attemptNumber = typeof attempt === "number" && attempt > 0 ? attempt : 1;
-		if (attemptNumber > 1 && Array.isArray(previousErrors) && previousErrors.length > 0) {
+		const attemptNumber =
+			typeof attempt === "number" && attempt > 0 ? attempt : 1;
+		if (
+			attemptNumber > 1 &&
+			Array.isArray(previousErrors) &&
+			previousErrors.length > 0
+		) {
 			userPrompt += `\n\nIMPORTANT: Your previous attempt failed to build/preview. Fix these issues exactly:\n${previousErrors.map((e, i) => `${i + 1}. ${e}`).join("\n")}\n\nRegenerate a complete, working component that only imports from packages already installed in this project and local shadcn components under @/components/ui.`;
 		}
 
@@ -224,7 +255,10 @@ export async function POST(request: NextRequest) {
 					validation: {
 						valid: false,
 						errors: importValidation.errors,
-						warnings: [...result.validation.warnings, ...importValidation.warnings],
+						warnings: [
+							...result.validation.warnings,
+							...importValidation.warnings,
+						],
 					},
 					attempts: attemptNumber,
 				},
@@ -247,7 +281,10 @@ export async function POST(request: NextRequest) {
 					validation: {
 						valid: false,
 						errors: [sandboxPreview.error || "Sandbox bundling failed"],
-						warnings: [...result.validation.warnings, ...importValidation.warnings],
+						warnings: [
+							...result.validation.warnings,
+							...importValidation.warnings,
+						],
 					},
 					attempts: attemptNumber,
 				},
@@ -291,7 +328,10 @@ export async function POST(request: NextRequest) {
 				});
 				draftId = draft.id;
 			} catch (storageError) {
-				console.error("Failed to save component to cloud storage:", storageError);
+				console.error(
+					"Failed to save component to cloud storage:",
+					storageError,
+				);
 				// Continue even if storage fails - user still gets the component
 			}
 		}
@@ -312,9 +352,12 @@ export async function POST(request: NextRequest) {
 		console.error("Component generation error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to generate component",
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to generate component",
 			},
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

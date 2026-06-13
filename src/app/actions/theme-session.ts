@@ -1,7 +1,10 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { createThemeSession, THEME_SESSION_COOKIE } from "@/lib/server/get-session-theme";
+import {
+	createThemeSession,
+	THEME_SESSION_COOKIE,
+} from "@/lib/server/get-session-theme";
 
 const COOKIE_OPTIONS = {
 	httpOnly: false, // Allow client read for debugging
@@ -20,7 +23,11 @@ export async function setSessionTheme(origin: string): Promise<void> {
 	const cookieStore = await cookies();
 	const session = createThemeSession(origin);
 
-	cookieStore.set(THEME_SESSION_COOKIE, JSON.stringify(session), COOKIE_OPTIONS);
+	cookieStore.set(
+		THEME_SESSION_COOKIE,
+		JSON.stringify(session),
+		COOKIE_OPTIONS,
+	);
 }
 
 /**

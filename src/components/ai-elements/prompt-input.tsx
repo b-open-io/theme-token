@@ -649,6 +649,7 @@ export const PromptInput = ({
     };
   }, [add, globalDrop]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: cleanup only on unmount; filesRef always current
   useEffect(
     () => () => {
       if (!usingProvider) {
@@ -657,7 +658,6 @@ export const PromptInput = ({
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup only on unmount; filesRef always current
     [usingProvider]
   );
 

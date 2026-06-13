@@ -14,11 +14,11 @@ import {
 	Wallet,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { toast } from "sonner";
 import type { DraftMetadata } from "@/lib/storage/types";
 
 interface WallpaperDraft {
@@ -34,19 +34,24 @@ interface WallpaperDraft {
 }
 
 export default function MyWallpapersPage() {
-	const { status, connect, addresses, inscribeImage, isInscribing } = useYoursWallet();
+	const { status, connect, addresses, inscribeImage, isInscribing } =
+		useYoursWallet();
 	const { openChat, setPendingMessage } = useSwatchyStore();
 	const ordAddress = addresses?.ordAddress;
 	const isConnected = status === "connected";
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage("I want to create a wallpaper. Can you help me generate something?");
+		setPendingMessage(
+			"I want to create a wallpaper. Can you help me generate something?",
+		);
 		openChat();
 	}, [openChat, setPendingMessage]);
 
 	const [drafts, setDrafts] = useState<WallpaperDraft[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(null);
+	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(
+		null,
+	);
 	const [inscribingId, setInscribingId] = useState<string | null>(null);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -162,15 +167,11 @@ export default function MyWallpapersPage() {
 
 		setInscribingId(draft.id);
 		try {
-			const result = await inscribeImage(
-				draft.imageBase64,
-				draft.mimeType,
-				{
-					prompt: draft.prompt || "",
-					style: draft.style,
-					aspectRatio: draft.aspectRatio,
-				},
-			);
+			const result = await inscribeImage(draft.imageBase64, draft.mimeType, {
+				prompt: draft.prompt || "",
+				style: draft.style,
+				aspectRatio: draft.aspectRatio,
+			});
 			if (result?.txid) {
 				toast.success("Wallpaper inscribed!");
 			}
@@ -222,9 +223,9 @@ export default function MyWallpapersPage() {
 						Generate some wallpapers in the studio
 					</p>
 					<Button onClick={handleCreateWithSwatchy}>
-					<MessageCircle className="mr-2 h-4 w-4" />
-					Create Wallpaper
-				</Button>
+						<MessageCircle className="mr-2 h-4 w-4" />
+						Create Wallpaper
+					</Button>
 				</div>
 			);
 		}
@@ -271,6 +272,7 @@ export default function MyWallpapersPage() {
 								className="relative aspect-video w-full overflow-hidden bg-muted"
 							>
 								{draft.imageBase64 ? (
+									// biome-ignore lint/performance/noImgElement: dynamic/generated image (data URL or runtime dimensions); next/image not suitable
 									<img
 										src={`data:${draft.mimeType};base64,${draft.imageBase64}`}
 										alt={draft.prompt || draft.name}
@@ -321,7 +323,11 @@ export default function MyWallpapersPage() {
 										size="sm"
 										className="flex-1 h-8 text-xs"
 										onClick={() => handleInscribe(draft)}
-										disabled={isInscribing || inscribingId === draft.id || !draft.imageBase64}
+										disabled={
+											isInscribing ||
+											inscribingId === draft.id ||
+											!draft.imageBase64
+										}
 									>
 										{inscribingId === draft.id ? (
 											<>

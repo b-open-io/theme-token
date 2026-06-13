@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import { Suspense } from "react";
 import { PatternProvider } from "@/components/patterns/pattern-context";
 import { PatternLayout } from "@/components/patterns/pattern-layout";
 

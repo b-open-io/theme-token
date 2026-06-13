@@ -2,7 +2,10 @@
  * Hero Patterns adapter - wraps the hero-patterns library for SVG generation
  * https://heropatterns.com - 87 professionally designed seamless SVG patterns
  */
-import * as heroPatterns from "hero-patterns";
+import * as heroPatternsNs from "hero-patterns";
+
+type HeroPatternFn = (fillColor: string, opacity: number) => string;
+const heroPatterns = heroPatternsNs as unknown as Record<string, HeroPatternFn>;
 
 // All available hero pattern names
 export const HERO_PATTERNS = [
@@ -113,26 +116,28 @@ export interface HeroPatternResult {
 /**
  * Generate an SVG pattern using hero-patterns
  */
-export function generateHeroPattern(opts: HeroPatternOptions): HeroPatternResult {
+export function generateHeroPattern(
+	opts: HeroPatternOptions,
+): HeroPatternResult {
 	const color = opts.color || "#000000";
 	const opacity = opts.opacity ?? 0.4;
-	
-	const patternFn = heroPatterns[opts.pattern as keyof typeof heroPatterns];
+
+	const patternFn = heroPatterns[opts.pattern];
 	if (typeof patternFn !== "function") {
 		throw new Error(`Unknown hero pattern: ${opts.pattern}`);
 	}
-	
+
 	// Get the CSS url() value
 	const url = patternFn(color, opacity);
-	
+
 	// Extract raw SVG from url("data:image/svg+xml,...")
 	const match = url.match(/url\(['"]data:image\/svg\+xml,(.+)['"]\)/);
 	if (!match) {
 		throw new Error(`Failed to extract SVG from pattern: ${opts.pattern}`);
 	}
-	
+
 	const svg = decodeURIComponent(match[1]);
-	
+
 	return {
 		svg,
 		pattern: opts.pattern,
@@ -171,4 +176,3 @@ export const FEATURED_HERO_PATTERNS: HeroPatternName[] = [
 	"aztec",
 	"zigZag",
 ];
-

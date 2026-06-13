@@ -12,13 +12,13 @@ import { Utils } from "@bsv/sdk";
 import type { ThemeToken } from "@theme-token/sdk";
 import type { BundleItem } from "@/hooks/use-yours-wallet";
 import {
-	type ProjectManifest,
-	type ProjectConfig,
-	type ProjectBundle,
-	type ProjectAsset,
-	type IconLibrary,
 	createProjectManifest,
 	ICON_LIBRARY_PACKAGES,
+	type IconLibrary,
+	type ProjectAsset,
+	type ProjectBundle,
+	type ProjectConfig,
+	type ProjectManifest,
 } from "./project-types";
 
 /** Unicode-safe base64 encoding */
@@ -206,7 +206,9 @@ export function estimateProjectBundleSize(items: BundleItem[]): number {
 /**
  * Get required dependencies for a project configuration
  */
-export function getProjectDependencies(config: Partial<ProjectConfig>): string[] {
+export function getProjectDependencies(
+	config: Partial<ProjectConfig>,
+): string[] {
 	const baseDeps = [
 		"shadcn@latest",
 		"class-variance-authority",

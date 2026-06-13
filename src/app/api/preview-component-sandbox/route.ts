@@ -16,10 +16,14 @@ export async function POST(request: Request) {
 		const { code: rawCode, componentName: providedName } = body;
 
 		if (!rawCode) {
-			return NextResponse.json({ error: "Missing component code" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Missing component code" },
+				{ status: 400 },
+			);
 		}
 
-		const componentName = providedName || extractComponentName(rawCode) || undefined;
+		const componentName =
+			providedName || extractComponentName(rawCode) || undefined;
 
 		const result = await createSandboxPreview({
 			files: [{ path: "Component.tsx", content: rawCode }],
@@ -42,9 +46,13 @@ export async function POST(request: Request) {
 	} catch (error) {
 		console.error("[preview-component-sandbox] Error:", error);
 		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : "Failed to generate sandbox preview" },
+			{
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to generate sandbox preview",
+			},
 			{ status: 500 },
 		);
 	}
 }
-

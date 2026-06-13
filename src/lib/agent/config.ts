@@ -1,8 +1,5 @@
 import { featureFlags } from "@/lib/feature-flags";
-import {
-	BASE_PRICES,
-	PAID_TOOLS as PAID_TOOLS_SET,
-} from "@/lib/pricing";
+import { BASE_PRICES, PAID_TOOLS as PAID_TOOLS_SET } from "@/lib/pricing";
 import { generateRouteDocumentation } from "@/lib/routes";
 import { getNavigationHints, getToolsForPage } from "./tool-routing";
 
@@ -23,7 +20,6 @@ export const PAID_TOOLS = PAID_TOOLS_SET;
 export const WALLET_REQUIRED_TOOLS = new Set([
 	"prepareInscribe",
 	"prepareListing",
-	"getWalletBalance",
 	...PAID_TOOLS,
 ]);
 
@@ -39,7 +35,6 @@ export interface SwatchyContext {
 
 	// Wallet status
 	walletConnected: boolean;
-	walletBalance?: number; // in satoshis
 
 	// Current theme being edited (when in studio)
 	currentTheme?: {
@@ -164,11 +159,15 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 
 		stateLines.push(`- **Current Page**: ${context.currentPage}`);
 		stateLines.push(`- **Theme Mode**: ${context.themeMode}`);
-		stateLines.push(`- **Wallet**: ${context.walletConnected ? `Connected (${context.walletBalance?.toLocaleString() ?? 0} sats)` : "Not connected"}`);
+		stateLines.push(
+			`- **Wallet**: ${context.walletConnected ? "Connected" : "Not connected"}`,
+		);
 
 		// Add theme state if in studio
 		if (context.currentTheme && context.currentPage.includes("/studio/theme")) {
-			stateLines.push(`- **Editing Theme**: ${context.currentTheme.name || "Untitled"}`);
+			stateLines.push(
+				`- **Editing Theme**: ${context.currentTheme.name || "Untitled"}`,
+			);
 			if (context.currentTheme.colors) {
 				const colors = context.currentTheme.colors;
 				stateLines.push(`  - Primary: ${colors.primary || "not set"}`);
@@ -187,9 +186,14 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 		}
 
 		// Add pattern state if in pattern studio
-		if (context.patternState && context.currentPage.includes("/studio/pattern")) {
+		if (
+			context.patternState &&
+			context.currentPage.includes("/studio/pattern")
+		) {
 			stateLines.push(`- **Pattern Settings**:`);
-			stateLines.push(`  - Source: ${context.patternState.source || "geopattern"}`);
+			stateLines.push(
+				`  - Source: ${context.patternState.source || "geopattern"}`,
+			);
 			stateLines.push(`  - Scale: ${context.patternState.scale || 100}px`);
 			stateLines.push(`  - Opacity: ${context.patternState.opacity || 50}%`);
 		}
@@ -204,7 +208,9 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 				stateLines.push(`  - Padding: ${params.padding ?? 2}`);
 				stateLines.push(`  - Size: ${params.size ?? 24}`);
 				if (context.iconState.iconSet.slotPreset) {
-					stateLines.push(`  - Slot Preset: ${context.iconState.iconSet.slotPreset}`);
+					stateLines.push(
+						`  - Slot Preset: ${context.iconState.iconSet.slotPreset}`,
+					);
 				}
 			} else {
 				const params = context.iconState.favicon.params || {};
@@ -231,10 +237,14 @@ ${stateLines.join("\n")}
 ## Currently Available Tools
 You can use these tools right now: ${availableToolsList}
 
-${navHints ? `**Tools requiring navigation:**
+${
+	navHints
+		? `**Tools requiring navigation:**
 ${navHints}
 
-IMPORTANT: If you need to use a tool that requires navigation, use the 'navigate' tool FIRST, then call the tool in your next response. The user will see proper visual context this way.` : "All studio tools are available on this page!"}
+IMPORTANT: If you need to use a tool that requires navigation, use the 'navigate' tool FIRST, then call the tool in your next response. The user will see proper visual context this way.`
+		: "All studio tools are available on this page!"
+}
 `;
 	}
 

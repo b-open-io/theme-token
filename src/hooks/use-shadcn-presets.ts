@@ -4,7 +4,7 @@
  * Fetches from https://ui.shadcn.com/r/config.json to always have the latest presets
  */
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const SHADCN_REGISTRY_URL = "https://ui.shadcn.com/r/config.json";
 

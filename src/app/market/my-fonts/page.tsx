@@ -4,17 +4,12 @@ import { motion } from "framer-motion";
 import { Eye, Tag, Type, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { FontFilterSidebar } from "@/components/market/font-filter-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { loadFontByOrigin, getCachedFont } from "@/lib/font-loader";
-import {
-	FontFilterSidebar,
-} from "@/components/market/font-filter-sidebar";
-import {
-	DEFAULT_FONT_FILTERS,
-	type FontFilterState,
-} from "@/lib/font-market";
+import { getCachedFont, loadFontByOrigin } from "@/lib/font-loader";
+import { DEFAULT_FONT_FILTERS, type FontFilterState } from "@/lib/font-market";
 
 export default function MyFontsPage() {
 	const { status, connect, ownedFonts } = useYoursWallet();
@@ -148,7 +143,9 @@ function OwnedFontCard({
 			<div className="mb-3 flex h-24 items-center justify-center rounded-lg bg-muted/30">
 				<div
 					className="text-4xl"
-					style={{ fontFamily: fontFamily !== "inherit" ? fontFamily : "inherit" }}
+					style={{
+						fontFamily: fontFamily !== "inherit" ? fontFamily : "inherit",
+					}}
 				>
 					{isLoading ? (
 						<span className="text-muted-foreground text-sm">Loading...</span>

@@ -58,24 +58,6 @@ export async function getIdentityKey(wallet: WalletInterface): Promise<string> {
 }
 
 /**
- * Get the wallet's spendable balance by summing outputs in the default basket.
- */
-export async function getBalance(
-	wallet: WalletInterface,
-): Promise<{ satoshis: number; bsv: number }> {
-	const { outputs } = await wallet.listOutputs({
-		basket: "default",
-		limit: 1000,
-	});
-	const spendable = outputs.filter((o) => o.spendable);
-	const satoshis = spendable.reduce((sum, o) => sum + o.satoshis, 0);
-	return {
-		satoshis,
-		bsv: satoshis / 1e8,
-	};
-}
-
-/**
  * Get ordinals owned by the wallet via the GorillaPool indexer.
  * Derives the ord address from the wallet, then fetches from the API.
  */

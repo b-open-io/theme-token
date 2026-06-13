@@ -1,6 +1,6 @@
 declare module "hero-patterns" {
 	type PatternFn = (color: string, opacity: number) => string;
-	
+
 	export const anchorsAway: PatternFn;
 	export const architect: PatternFn;
 	export const autumn: PatternFn;
@@ -88,9 +88,8 @@ declare module "hero-patterns" {
 	export const xEquals: PatternFn;
 	export const yyy: PatternFn;
 	export const zigZag: PatternFn;
-	
+
 	// Allow indexing by string
 	const patterns: Record<string, PatternFn>;
 	export default patterns;
 }
-

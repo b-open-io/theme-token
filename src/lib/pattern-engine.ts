@@ -1,41 +1,65 @@
 /**
  * Pattern Engine - unified interface for pattern generation
- * 
+ *
  * Combines GeoPattern, hero-patterns, and AI sources with animation support.
  */
 
-import { generateGeoPattern, GEO_GENERATORS, type GeoGeneratorType, type GeoPatternResult } from "./pattern-sources/geopattern-adapter";
-import { generateHeroPattern, HERO_PATTERNS, FEATURED_HERO_PATTERNS, type HeroPatternName, type HeroPatternResult } from "./pattern-sources/heropattern-adapter";
-import { injectAnimations, type AnimationOptions, DEFAULT_ANIMATION_OPTIONS } from "./pattern-animations";
+import {
+	type AnimationOptions,
+	DEFAULT_ANIMATION_OPTIONS,
+	injectAnimations,
+} from "./pattern-animations";
+import {
+	GEO_GENERATORS,
+	type GeoGeneratorType,
+	type GeoPatternResult,
+	generateGeoPattern,
+} from "./pattern-sources/geopattern-adapter";
+import {
+	generateHeroPattern,
+	HERO_PATTERNS,
+	type HeroPatternName,
+	type HeroPatternResult,
+} from "./pattern-sources/heropattern-adapter";
 
+export {
+	type AnimationOptions,
+	DEFAULT_ANIMATION_OPTIONS,
+} from "./pattern-animations";
 // Re-export for convenience
-export { GEO_GENERATORS, type GeoGeneratorType } from "./pattern-sources/geopattern-adapter";
-export { HERO_PATTERNS, FEATURED_HERO_PATTERNS, type HeroPatternName } from "./pattern-sources/heropattern-adapter";
-export { type AnimationOptions, DEFAULT_ANIMATION_OPTIONS } from "./pattern-animations";
+export {
+	GEO_GENERATORS,
+	type GeoGeneratorType,
+} from "./pattern-sources/geopattern-adapter";
+export {
+	FEATURED_HERO_PATTERNS,
+	HERO_PATTERNS,
+	type HeroPatternName,
+} from "./pattern-sources/heropattern-adapter";
 
 export type PatternSource = "geopattern" | "hero" | "ai";
 
 export interface PatternParams {
 	// Source selection
 	source: PatternSource;
-	
+
 	// GeoPattern options
 	geoSeed: string;
 	geoGenerator: GeoGeneratorType;
-	
+
 	// Hero pattern options
 	heroPattern: HeroPatternName;
-	
+
 	// AI options (for future use)
 	aiPrompt?: string;
 	aiSvg?: string; // Pre-generated AI SVG
-	
+
 	// Appearance (shared)
 	foregroundColor: string;
 	backgroundColor: string;
 	opacity: number; // 0-100
 	scale: number; // Pattern tile scale (pixels)
-	
+
 	// Animation
 	animation: AnimationOptions;
 }
@@ -79,7 +103,7 @@ export function generatePattern(params: PatternParams): PatternResult {
 			meta = result;
 			break;
 		}
-		
+
 		case "hero": {
 			const result = generateHeroPattern({
 				pattern: params.heroPattern,
@@ -90,7 +114,7 @@ export function generatePattern(params: PatternParams): PatternResult {
 			meta = result;
 			break;
 		}
-		
+
 		case "ai": {
 			// AI mode uses pre-generated SVG
 			if (!params.aiSvg) {
@@ -100,7 +124,7 @@ export function generatePattern(params: PatternParams): PatternResult {
 			meta = { prompt: params.aiPrompt || "" };
 			break;
 		}
-		
+
 		default:
 			throw new Error(`Unknown pattern source: ${params.source}`);
 	}
@@ -133,4 +157,3 @@ export function getGenerators(source: PatternSource): readonly string[] {
 			return [];
 	}
 }
-

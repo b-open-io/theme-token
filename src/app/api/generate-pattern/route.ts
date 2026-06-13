@@ -1,20 +1,24 @@
 import { generateText, streamText } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
-import { patternTools, tokenToCss, type Token } from "@/lib/tools/pattern-tools";
 import {
-	validatePatternSvg,
-	sanitizeSvg,
-	extractPatternMeta,
-	ensureSeamlessStructure,
-} from "@/lib/pattern-validation";
-import {
-	generators,
 	type GeneratorType,
 	type GridParams,
-	type WaveParams,
+	generators,
 	type TopoParams,
+	type WaveParams,
 } from "@/lib/pattern-generators";
-import type { ScatterParams, LineParams, NoiseParams } from "@/lib/tools/pattern-tools";
+import {
+	ensureSeamlessStructure,
+	extractPatternMeta,
+	sanitizeSvg,
+	validatePatternSvg,
+} from "@/lib/pattern-validation";
+import type {
+	LineParams,
+	NoiseParams,
+	ScatterParams,
+} from "@/lib/tools/pattern-tools";
+import { patternTools, tokenToCss } from "@/lib/tools/pattern-tools";
 
 type ColorMode = "theme" | "currentColor" | "grayscale";
 
@@ -35,7 +39,10 @@ interface PatternRequest {
 
 // Build tool descriptions for the system prompt
 const toolDescriptions = Object.entries(patternTools)
-	.map(([name, tool]) => `- ${name}: ${tool.description?.split("\n")[0] || "No description"}`)
+	.map(
+		([name, tool]) =>
+			`- ${name}: ${tool.description?.split("\n")[0] || "No description"}`,
+	)
 	.join("\n");
 
 // Token reference for the prompt
@@ -183,7 +190,7 @@ Remember:
 function handleProceduralGen(
 	generator: GeneratorType,
 	params: Record<string, unknown>,
-	seed?: string
+	seed?: string,
 ): { svg: string; seed: string } {
 	const p = { ...params, seed };
 	switch (generator) {
@@ -207,11 +214,25 @@ function handleProceduralGen(
 export async function POST(request: NextRequest) {
 	try {
 		const body = (await request.json()) as PatternRequest;
-		const { prompt, colorMode = "currentColor", seed, generator, generatorParams, stream, mode, existingSvg, currentParams } = body;
+		const {
+			prompt,
+			colorMode = "currentColor",
+			seed,
+			generator,
+			generatorParams,
+			stream,
+			mode,
+			existingSvg,
+			currentParams,
+		} = body;
 
 		// Handle procedural generator mode
 		if (generator && generators[generator]) {
-			const result = handleProceduralGen(generator, generatorParams || {}, seed);
+			const result = handleProceduralGen(
+				generator,
+				generatorParams || {},
+				seed,
+			);
 			const validation = validatePatternSvg(result.svg);
 
 			return NextResponse.json({
@@ -225,15 +246,18 @@ export async function POST(request: NextRequest) {
 
 		// AI generation mode
 		if (!prompt?.trim()) {
-			return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Prompt is required" },
+				{ status: 400 },
+			);
 		}
 
 		// Augmentation mode - modify existing pattern
 		const isAugment = mode === "augment" && existingSvg;
-		
+
 		let userPrompt: string;
 		let activeSystemPrompt: string;
-		
+
 		if (isAugment) {
 			activeSystemPrompt = augmentSystemPrompt;
 			userPrompt = `Here is the current SVG pattern:
@@ -254,7 +278,9 @@ Apply the requested changes and return the modified SVG.`;
 		// Streaming mode
 		if (stream) {
 			const result = await streamText({
-				model: "google/gemini-3.5-flash" as Parameters<typeof streamText>[0]["model"],
+				model: "google/gemini-3.5-flash" as Parameters<
+					typeof streamText
+				>[0]["model"],
 				system: activeSystemPrompt,
 				prompt: userPrompt,
 				tools: patternTools,
@@ -272,7 +298,9 @@ Apply the requested changes and return the modified SVG.`;
 
 		// Non-streaming mode
 		const { text: svgResult, toolCalls: resultToolCalls } = await generateText({
-			model: "google/gemini-3.5-flash" as Parameters<typeof generateText>[0]["model"],
+			model: "google/gemini-3.5-flash" as Parameters<
+				typeof generateText
+			>[0]["model"],
 			system: activeSystemPrompt,
 			prompt: userPrompt,
 			tools: patternTools,
@@ -283,7 +311,7 @@ Apply the requested changes and return the modified SVG.`;
 		if (!svgMatch) {
 			return NextResponse.json(
 				{ error: "Failed to generate valid SVG" },
-				{ status: 500 }
+				{ status: 500 },
 			);
 		}
 
@@ -301,7 +329,7 @@ Apply the requested changes and return the modified SVG.`;
 						error: "Generated SVG failed validation",
 						details: revalidation.errors,
 					},
-					{ status: 500 }
+					{ status: 500 },
 				);
 			}
 		}
@@ -313,8 +341,10 @@ Apply the requested changes and return the modified SVG.`;
 		const meta = extractPatternMeta(svg);
 
 		// Collect tool calls (toolCalls use 'input' in AI SDK v5)
-		const toolCalls = (resultToolCalls || [])
-			.map((tc) => ({ name: tc.toolName, input: "input" in tc ? tc.input : undefined }));
+		const toolCalls = (resultToolCalls || []).map((tc) => ({
+			name: tc.toolName,
+			input: "input" in tc ? tc.input : undefined,
+		}));
 
 		return NextResponse.json({
 			svg,
@@ -333,9 +363,10 @@ Apply the requested changes and return the modified SVG.`;
 		console.error("Pattern generation error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to generate pattern",
+				error:
+					error instanceof Error ? error.message : "Failed to generate pattern",
 			},
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

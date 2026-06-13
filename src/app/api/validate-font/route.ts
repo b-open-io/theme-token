@@ -49,11 +49,14 @@ export async function POST(request: NextRequest) {
 		const file = formData.get("font") as File | null;
 
 		if (!file) {
-			return NextResponse.json({ error: "No font file provided" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No font file provided" },
+				{ status: 400 },
+			);
 		}
 
 		// Validate file type
-		const validTypes = [
+		const _validTypes = [
 			"font/woff2",
 			"font/woff",
 			"font/ttf",

@@ -66,13 +66,13 @@ export function ThemeCard({
 	} as React.CSSProperties;
 
 	return (
-		<div className="group flex flex-col gap-2 sm:gap-3 min-w-0" onMouseEnter={() => loadThemeFonts(theme)}>
+		// biome-ignore lint/a11y/noStaticElementInteractions: hover only preloads theme fonts; no click/keyboard interaction to expose
+		<div
+			className="group flex flex-col gap-2 sm:gap-3 min-w-0"
+			onMouseEnter={() => loadThemeFonts(theme)}
+		>
 			{/* Live Preview Area - Click to apply theme */}
-			<button
-				type="button"
-				onClick={onApplyTheme}
-				className="text-left w-full"
-			>
+			<button type="button" onClick={onApplyTheme} className="text-left w-full">
 				<div
 					style={themeVars}
 					className="relative aspect-square sm:aspect-[4/3] w-full overflow-hidden rounded-lg sm:rounded-xl border shadow-sm transition-all group-hover:shadow-lg cursor-pointer"
@@ -204,7 +204,9 @@ export function ThemeCard({
 			{/* Metadata */}
 			<div className="flex items-start justify-between gap-1 sm:gap-2">
 				<div className="min-w-0 flex-1">
-					<h3 className="font-semibold text-xs sm:text-sm truncate">{theme.name}</h3>
+					<h3 className="font-semibold text-xs sm:text-sm truncate">
+						{theme.name}
+					</h3>
 					<p className="text-[10px] sm:text-xs text-muted-foreground truncate">
 						<span className="font-mono">{origin.slice(0, 8)}</span>
 					</p>

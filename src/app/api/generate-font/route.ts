@@ -1,6 +1,6 @@
-import { generateObject } from "ai";
-import { kv } from "@vercel/kv";
 import { waitUntil } from "@vercel/functions";
+import { kv } from "@vercel/kv";
+import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -27,8 +27,14 @@ const CACHE_TTL_SECONDS = 86400;
 const glyphSchema = z.object({
 	char: z.string().describe("The character this glyph represents"),
 	unicode: z.number().describe("Unicode code point"),
-	width: z.number().describe("Advance width in font units (typically 1000 units per em)"),
-	path: z.string().describe("SVG path data (d attribute) for the glyph outline. Use M, L, C, Q, Z commands. Coordinate space is 0-1000 units, with baseline at y=200 and cap height at y=800."),
+	width: z
+		.number()
+		.describe("Advance width in font units (typically 1000 units per em)"),
+	path: z
+		.string()
+		.describe(
+			"SVG path data (d attribute) for the glyph outline. Use M, L, C, Q, Z commands. Coordinate space is 0-1000 units, with baseline at y=200 and cap height at y=800.",
+		),
 });
 
 // Schema for the complete font
@@ -37,14 +43,17 @@ const fontSchema = z.object({
 	style: z.string().describe("Style description (e.g., 'Bold Sans-Serif')"),
 	unitsPerEm: z.number().describe("Units per em (always use 1000)"),
 	ascender: z.number().describe("Ascender height (typically 800-900)"),
-	descender: z.number().describe("Descender depth as negative (typically -200 to -300)"),
+	descender: z
+		.number()
+		.describe("Descender depth as negative (typically -200 to -300)"),
 	capHeight: z.number().describe("Capital letter height (typically 700-750)"),
 	xHeight: z.number().describe("Lowercase x height (typically 450-550)"),
 	glyphs: z.array(glyphSchema).describe("Array of glyph definitions"),
 });
 
 // Characters to generate - basic Latin set
-const CHARS_TO_GENERATE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?-'\"()";
+const CHARS_TO_GENERATE =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?-'\"()";
 
 // Type for previous font data (for seeded remix)
 interface PreviousFontData {
@@ -82,7 +91,7 @@ interface GenerationState {
 
 export async function POST(request: NextRequest) {
 	try {
-		const { prompt, model, previousFont } = await request.json() as {
+		const { prompt, model, previousFont } = (await request.json()) as {
 			prompt: string;
 			model?: string;
 			previousFont?: PreviousFontData;
@@ -97,9 +106,10 @@ export async function POST(request: NextRequest) {
 
 		// Generate job ID server-side
 		const jobId = crypto.randomUUID();
-		const modelId = model === "claude-opus-4.5"
-			? "anthropic/claude-opus-4.5"
-			: "google/gemini-3.1-pro-preview";
+		const modelId =
+			model === "claude-opus-4.5"
+				? "anthropic/claude-opus-4.5"
+				: "google/gemini-3.1-pro-preview";
 		const modelName = model || "gemini-3-pro";
 
 		// Store initial state immediately
@@ -115,7 +125,7 @@ export async function POST(request: NextRequest) {
 
 		// Fire and forget - run AI generation after response is sent
 		waitUntil(
-			runFontGeneration(jobId, prompt, modelId, modelName, previousFont)
+			runFontGeneration(jobId, prompt, modelId, modelName, previousFont),
 		);
 
 		// Return job ID immediately
@@ -128,7 +138,8 @@ export async function POST(request: NextRequest) {
 		console.error("[generate-font] Error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to start generation",
+				error:
+					error instanceof Error ? error.message : "Failed to start generation",
 			},
 			{ status: 500 },
 		);
@@ -143,21 +154,29 @@ async function runFontGeneration(
 	prompt: string,
 	modelId: string,
 	modelName: string,
-	previousFont?: PreviousFontData
+	previousFont?: PreviousFontData,
 ) {
 	try {
 		// Build seeded remix context if previous font provided
-		const seedContext = previousFont ? `
+		const seedContext = previousFont
+			? `
 ## Previous Font Reference (SEEDED REMIX)
 You are REMIXING an existing font. Here is the previous design to use as a reference:
 - Original Style: ${previousFont.style}
 - Metrics: capHeight=${previousFont.capHeight}, xHeight=${previousFont.xHeight}
 - Key glyph paths for reference (first 10 characters):
-${previousFont.glyphs.slice(0, 10).map(g => `  ${g.char}: width=${g.width}, path="${g.path.substring(0, 100)}..."`).join('\n')}
+${previousFont.glyphs
+	.slice(0, 10)
+	.map(
+		(g) =>
+			`  ${g.char}: width=${g.width}, path="${g.path.substring(0, 100)}..."`,
+	)
+	.join("\n")}
 
 IMPORTANT: Maintain the core identity and proportions of this font while applying the user's modifications.
 The result should feel like an evolution of the original, not a completely different font.
-` : '';
+`
+			: "";
 
 		const systemPrompt = `You are a master typographer and font designer with deep expertise in letterform construction. Generate precise SVG path data for professional-quality font glyphs.
 ${seedContext}
@@ -246,23 +265,35 @@ Technical requirements:
 		};
 
 		// Update status to compiling
-		await kv.set(`font:${jobId}`, {
-			status: "compiling",
-			prompt,
-			model: modelName,
-			createdAt: Date.now(),
-			isRemix: !!previousFont,
-			font: fontData,
-		} satisfies GenerationState, { ex: CACHE_TTL_SECONDS });
+		await kv.set(
+			`font:${jobId}`,
+			{
+				status: "compiling",
+				prompt,
+				model: modelName,
+				createdAt: Date.now(),
+				isRemix: !!previousFont,
+				font: fontData,
+			} satisfies GenerationState,
+			{ ex: CACHE_TTL_SECONDS },
+		);
 
 		// Compile font to WOFF2
-		let compiled: GenerationState["compiled"] = undefined;
+		let compiled: GenerationState["compiled"];
 		try {
-			const compileResponse = await fetch(new URL("/api/compile-font", process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3033"), {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(font),
-			});
+			const compileResponse = await fetch(
+				new URL(
+					"/api/compile-font",
+					process.env.VERCEL_URL
+						? `https://${process.env.VERCEL_URL}`
+						: "http://localhost:3033",
+				),
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(font),
+				},
+			);
 
 			if (compileResponse.ok) {
 				const compileData = await compileResponse.json();
@@ -294,7 +325,6 @@ Technical requirements:
 
 		await kv.set(`font:${jobId}`, completedState, { ex: CACHE_TTL_SECONDS });
 		console.log(`[generate-font] Completed job ${jobId}`);
-
 	} catch (error) {
 		console.error(`[generate-font] Job ${jobId} failed:`, error);
 

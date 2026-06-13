@@ -49,7 +49,8 @@
 :root {
 	--radius: 0.5rem;
 	--font-display: ui-sans-serif, system-ui, sans-serif;
-	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+	--font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
 		"Courier New", monospace;
 
 	/* Blueprint Design System - Light Mode */
@@ -187,7 +188,7 @@
 			color var(--theme-transition-duration) ease-out,
 			fill var(--theme-transition-duration) ease-out,
 			stroke var(--theme-transition-duration) ease-out,
-			box-shadow var(--theme-transition-duration) ease-out !important;
+			box-shadow var(--theme-transition-duration) ease-out;
 	}
 }
 
@@ -222,14 +223,14 @@
 
 /* Ensure dropdowns/popovers appear above everything */
 [data-radix-popper-content-wrapper] {
-	z-index: 9999 !important;
+	z-index: 9999;
 }
 
 /* Dropdown menu content */
 [data-radix-menu-content],
 [data-radix-select-content],
 [data-radix-popover-content] {
-	z-index: 9999 !important;
+	z-index: 9999;
 }
 
 /* Blueprint grid background */
@@ -289,7 +290,10 @@
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
-	background-color: oklch(from var(--bg-image-color) l c h / calc(var(--bg-image-opacity) * 0.15));
+	background-color: oklch(
+		from var(--bg-image-color) l c h /
+		calc(var(--bg-image-opacity) * 0.15)
+	);
 	-webkit-mask-image: var(--bg-image);
 	mask-image: var(--bg-image);
 	-webkit-mask-repeat: var(--bg-image-repeat);
@@ -328,31 +332,31 @@
 }
 
 @layer base {
-  :root {
-    --shiki-foreground: var(--foreground);
-    --shiki-background: transparent; /* Handled by container */
-    --shiki-token-constant: var(--chart-4);
-    --shiki-token-string: var(--chart-3);
-    --shiki-token-comment: var(--muted-foreground);
-    --shiki-token-keyword: var(--primary);
-    --shiki-token-parameter: var(--foreground);
-    --shiki-token-function: var(--secondary-foreground);
-    --shiki-token-string-expression: var(--chart-3);
-    --shiki-token-punctuation: var(--muted-foreground);
-    --shiki-token-link: var(--primary);
-  }
+	:root {
+		--shiki-foreground: var(--foreground);
+		--shiki-background: transparent; /* Handled by container */
+		--shiki-token-constant: var(--chart-4);
+		--shiki-token-string: var(--chart-3);
+		--shiki-token-comment: var(--muted-foreground);
+		--shiki-token-keyword: var(--primary);
+		--shiki-token-parameter: var(--foreground);
+		--shiki-token-function: var(--secondary-foreground);
+		--shiki-token-string-expression: var(--chart-3);
+		--shiki-token-punctuation: var(--muted-foreground);
+		--shiki-token-link: var(--primary);
+	}
 
-  .dark {
-    --shiki-foreground: var(--foreground);
-    --shiki-background: transparent;
-    --shiki-token-constant: var(--chart-4);
-    --shiki-token-string: var(--chart-3);
-    --shiki-token-comment: var(--muted-foreground);
-    --shiki-token-keyword: var(--primary);
-    --shiki-token-parameter: var(--foreground);
-    --shiki-token-function: var(--secondary-foreground);
-    --shiki-token-string-expression: var(--chart-3);
-    --shiki-token-punctuation: var(--muted-foreground);
-    --shiki-token-link: var(--primary);
-  }
+	.dark {
+		--shiki-foreground: var(--foreground);
+		--shiki-background: transparent;
+		--shiki-token-constant: var(--chart-4);
+		--shiki-token-string: var(--chart-3);
+		--shiki-token-comment: var(--muted-foreground);
+		--shiki-token-keyword: var(--primary);
+		--shiki-token-parameter: var(--foreground);
+		--shiki-token-function: var(--secondary-foreground);
+		--shiki-token-string-expression: var(--chart-3);
+		--shiki-token-punctuation: var(--muted-foreground);
+		--shiki-token-link: var(--primary);
+	}
 }

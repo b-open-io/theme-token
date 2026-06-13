@@ -24,16 +24,16 @@ function ThemeStripes({
 	mode: "light" | "dark";
 }) {
 	const colors = [
-		styles[mode].primary,
-		styles[mode].secondary,
-		styles[mode].accent,
-		styles[mode].background,
+		{ role: "primary", color: styles[mode].primary },
+		{ role: "secondary", color: styles[mode].secondary },
+		{ role: "accent", color: styles[mode].accent },
+		{ role: "background", color: styles[mode].background },
 	];
 
 	return (
 		<div className="flex h-4 w-4 overflow-hidden rounded-sm border border-border">
-			{colors.map((color, i) => (
-				<div key={i} className="flex-1" style={{ backgroundColor: color }} />
+			{colors.map(({ role, color }) => (
+				<div key={role} className="flex-1" style={{ backgroundColor: color }} />
 			))}
 		</div>
 	);
@@ -66,7 +66,11 @@ export function WalletConnect() {
 	const [isOpen, setIsOpen] = useState(false);
 
 	// Not installed / disconnected / error — show connect button
-	if (status === "not-installed" || status === "disconnected" || status === "error") {
+	if (
+		status === "not-installed" ||
+		status === "disconnected" ||
+		status === "error"
+	) {
 		return (
 			<div className="flex items-center gap-1">
 				<ModeToggle />
@@ -162,6 +166,7 @@ export function WalletConnect() {
 								<div className="max-h-64 space-y-1 overflow-auto">
 									{themeTokens.map((token) => (
 										<button
+											type="button"
 											key={token.name}
 											onClick={(e) => {
 												applyThemeAnimated(token, e);
@@ -187,6 +192,7 @@ export function WalletConnect() {
 							<div className="mt-2 border-t border-border pt-2">
 								{activeTheme && (
 									<button
+										type="button"
 										onClick={() => {
 											resetTheme();
 											setIsOpen(false);
@@ -198,6 +204,7 @@ export function WalletConnect() {
 									</button>
 								)}
 								<button
+									type="button"
 									onClick={() => {
 										disconnect();
 										setIsOpen(false);

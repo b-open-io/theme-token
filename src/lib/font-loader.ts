@@ -6,29 +6,29 @@
  */
 
 import {
-	isOnChainPath,
-	extractOrigin,
-	loadFontByOrigin,
-	isFontLoaded,
-	getCachedFont,
 	clearFontCache,
+	extractOrigin,
+	getCachedFont,
 	getOrdfsUrl,
+	isFontLoaded,
+	isOnChainPath,
 	type LoadedFont,
+	loadFontByOrigin,
 } from "@theme-token/sdk";
 
 import {
-	isUploadedFontPath,
 	extractUploadedFontId,
+	isUploadedFontPath,
 	useFontUploadStore,
 } from "@/lib/stores/font-upload-store";
 
 // Re-export SDK functions with legacy names for backward compatibility
 export {
-	loadFontByOrigin,
-	isFontLoaded,
-	getCachedFont,
 	clearFontCache,
+	getCachedFont,
+	isFontLoaded,
 	type LoadedFont,
+	loadFontByOrigin,
 };
 
 // Alias exports to match previous API names
@@ -79,7 +79,7 @@ export async function fetchFontMetadata(
 				style: data.map.style || "normal",
 				prompt: data.map.prompt,
 				glyphCount: data.map.glyphCount
-					? parseInt(data.map.glyphCount)
+					? parseInt(data.map.glyphCount, 10)
 					: undefined,
 			};
 		}

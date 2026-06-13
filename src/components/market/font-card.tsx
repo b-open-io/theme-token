@@ -7,14 +7,12 @@ import {
 	TrendingDown,
 	TrendingUp,
 	Type,
-	Bot,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
-import { loadFontByOrigin, getCachedFont } from "@/lib/font-loader";
+import { getCachedFont, loadFontByOrigin } from "@/lib/font-loader";
 import type { FontMarketListing } from "@/lib/yours-wallet";
 
 interface FontCardProps {
@@ -83,6 +81,7 @@ export function FontCard({
 	}, [isHovered, loadFont]);
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: hover only triggers lazy font loading; no click/keyboard interaction to expose
 		<div
 			className="group flex flex-col gap-3"
 			onMouseEnter={() => setIsHovered(true)}
@@ -120,8 +119,12 @@ export function FontCard({
 					) : (
 						<div className="flex flex-col items-center gap-2">
 							{/* Default "Aa" preview before hover loads font */}
-							<div className="text-5xl font-normal text-muted-foreground/50">Aa</div>
-							<span className="text-xs text-muted-foreground">Hover to preview</span>
+							<div className="text-5xl font-normal text-muted-foreground/50">
+								Aa
+							</div>
+							<span className="text-xs text-muted-foreground">
+								Hover to preview
+							</span>
 						</div>
 					)}
 				</div>

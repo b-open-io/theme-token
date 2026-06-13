@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import type { Graph } from "schema-dts";
 import { cookies } from "next/headers";
+import type { Graph } from "schema-dts";
 import { ConditionalFooter } from "@/components/conditional-footer";
 import { Header } from "@/components/header";
 import { JsonLd } from "@/components/json-ld";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
-import {
-	THEME_SESSION_COOKIE,
-	parseThemeSession,
-	getThemeByOrigin,
-	getRandomCachedTheme,
-} from "@/lib/server/get-session-theme";
 import { generateInlineThemeCss } from "@/lib/server/generate-theme-css";
+import {
+	getRandomCachedTheme,
+	getThemeByOrigin,
+	parseThemeSession,
+	THEME_SESSION_COOKIE,
+} from "@/lib/server/get-session-theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -177,6 +177,7 @@ export default async function RootLayout({
 				{inlineThemeCss && (
 					<style
 						id="ssr-theme"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: injecting trusted server-generated theme CSS for SSR
 						dangerouslySetInnerHTML={{ __html: inlineThemeCss }}
 					/>
 				)}

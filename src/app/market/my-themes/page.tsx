@@ -4,15 +4,15 @@ import { motion } from "framer-motion";
 import { Eye, Palette, Tag, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useTheme } from "@/components/theme-provider";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { ThemeStripes } from "@/components/market/theme-stripes";
 import {
 	FilterSidebar,
 	type FilterState,
 } from "@/components/market/filter-sidebar";
+import { ThemeStripes } from "@/components/market/theme-stripes";
+import { useTheme } from "@/components/theme-provider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
 
 const DEFAULT_FILTERS: FilterState = {
 	primaryColor: null,
@@ -77,7 +77,11 @@ export default function MyThemesPage() {
 							className="rounded-xl border border-border bg-card p-4"
 						>
 							<div className="mb-3 flex items-center justify-between">
-								<ThemeStripes styles={owned.theme.styles} mode={mode} size="lg" />
+								<ThemeStripes
+									styles={owned.theme.styles}
+									mode={mode}
+									size="lg"
+								/>
 								<Badge variant="outline">Owned</Badge>
 							</div>
 							<h3 className="mb-1 font-semibold">{owned.theme.name}</h3>

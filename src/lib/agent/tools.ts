@@ -27,7 +27,9 @@ Use natural language intent to pick the right destination.`,
 	inputSchema: z.object({
 		destination: z
 			.string()
-			.describe("Where to navigate - can be a path like '/themes' or natural language like 'theme studio', 'browse themes', 'my collection'"),
+			.describe(
+				"Where to navigate - can be a path like '/themes' or natural language like 'theme studio', 'browse themes', 'my collection'",
+			),
 	}),
 });
 
@@ -148,7 +150,9 @@ All blocks use CSS variables for theme-awareness.`,
 		name: z
 			.string()
 			.optional()
-			.describe("Optional name for the block (e.g., 'pricing-table', 'stats-dashboard')"),
+			.describe(
+				"Optional name for the block (e.g., 'pricing-table', 'stats-dashboard')",
+			),
 		includeHook: z
 			.boolean()
 			.optional()
@@ -176,11 +180,15 @@ All components use CSS variables for theme-awareness.`,
 		name: z
 			.string()
 			.optional()
-			.describe("Optional name for the component (e.g., 'submit-button', 'user-avatar')"),
+			.describe(
+				"Optional name for the component (e.g., 'submit-button', 'user-avatar')",
+			),
 		variants: z
 			.array(z.string())
 			.optional()
-			.describe("Optional variant names to generate (e.g., ['default', 'outline', 'ghost'])"),
+			.describe(
+				"Optional variant names to generate (e.g., ['default', 'outline', 'ghost'])",
+			),
 	}),
 });
 
@@ -260,7 +268,9 @@ export const setThemeColor = tool({
 			.describe("The color token to update"),
 		value: z
 			.string()
-			.describe("The new color value in OKLCH format (e.g., 'oklch(0.7 0.15 250)')"),
+			.describe(
+				"The new color value in OKLCH format (e.g., 'oklch(0.7 0.15 250)')",
+			),
 		mode: z
 			.enum(["light", "dark", "both"])
 			.optional()
@@ -288,7 +298,9 @@ export const setThemeFont = tool({
 			.describe("Which font slot to update"),
 		fontFamily: z
 			.string()
-			.describe("The font family name (e.g., 'Inter', 'Playfair Display', 'JetBrains Mono')"),
+			.describe(
+				"The font family name (e.g., 'Inter', 'Playfair Display', 'JetBrains Mono')",
+			),
 	}),
 });
 
@@ -327,7 +339,9 @@ export const setIconStudioTab = tool({
 	description:
 		"Switch between the Icon Set and Favicon tabs inside Icon Studio. Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		tab: z.enum(["icon-set", "favicon"]).describe("Which Icon Studio tab to show"),
+		tab: z
+			.enum(["icon-set", "favicon"])
+			.describe("Which Icon Studio tab to show"),
 	}),
 });
 
@@ -335,7 +349,9 @@ export const setIconSetPrompt = tool({
 	description:
 		"Set the prompt for Icon Set generation. Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		prompt: z.string().describe("Prompt describing the icon set style and constraints"),
+		prompt: z
+			.string()
+			.describe("Prompt describing the icon set style and constraints"),
 	}),
 });
 
@@ -345,7 +361,9 @@ export const setIconSetNamesText = tool({
 	inputSchema: z.object({
 		iconNamesText: z
 			.string()
-			.describe("Newline-delimited icon names. The generator must fill the entire list."),
+			.describe(
+				"Newline-delimited icon names. The generator must fill the entire list.",
+			),
 	}),
 });
 
@@ -364,9 +382,17 @@ export const setIconSetParams = tool({
 		"Update icon set parameters (style, stroke, padding, size). Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
 		style: z.enum(["outline", "solid"]).optional().describe("Icon style"),
-		strokeWidth: z.number().min(0.5).max(6).optional().describe("Stroke width in px"),
+		strokeWidth: z
+			.number()
+			.min(0.5)
+			.max(6)
+			.optional()
+			.describe("Stroke width in px"),
 		padding: z.number().min(0).max(12).optional().describe("Padding in px"),
-		size: z.union([z.literal(16), z.literal(20), z.literal(24)]).optional().describe("Icon size in px"),
+		size: z
+			.union([z.literal(16), z.literal(20), z.literal(24)])
+			.optional()
+			.describe("Icon size in px"),
 	}),
 });
 
@@ -398,7 +424,9 @@ export const setIconSetSize = tool({
 	description:
 		"Set the icon set size. Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		size: z.union([z.literal(16), z.literal(20), z.literal(24)]).describe("Icon size in px"),
+		size: z
+			.union([z.literal(16), z.literal(20), z.literal(24)])
+			.describe("Icon size in px"),
 	}),
 });
 
@@ -414,7 +442,10 @@ export const setFaviconParams = tool({
 	description:
 		"Update favicon parameters (shape, background, colors, size). Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		shape: z.enum(["glyph", "badge"]).optional().describe("Glyph-only or badge style"),
+		shape: z
+			.enum(["glyph", "badge"])
+			.optional()
+			.describe("Glyph-only or badge style"),
 		background: z
 			.enum(["transparent", "theme", "solid"])
 			.optional()
@@ -423,10 +454,21 @@ export const setFaviconParams = tool({
 			.string()
 			.optional()
 			.describe("Foreground color (e.g., currentColor, #fff)"),
-		backgroundColor: z.string().optional().describe("Solid background color (e.g., #000000)"),
-		size: z.union([z.literal(32), z.literal(64), z.literal(128)]).optional().describe("Base preview size in px"),
+		backgroundColor: z
+			.string()
+			.optional()
+			.describe("Solid background color (e.g., #000000)"),
+		size: z
+			.union([z.literal(32), z.literal(64), z.literal(128)])
+			.optional()
+			.describe("Base preview size in px"),
 		padding: z.number().min(0).max(24).optional().describe("Padding in px"),
-		radius: z.number().min(0).max(64).optional().describe("Corner radius in px"),
+		radius: z
+			.number()
+			.min(0)
+			.max(64)
+			.optional()
+			.describe("Corner radius in px"),
 	}),
 });
 
@@ -442,7 +484,9 @@ export const setFaviconBackground = tool({
 	description:
 		"Set the favicon background mode. Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		background: z.enum(["transparent", "theme", "solid"]).describe("Background mode"),
+		background: z
+			.enum(["transparent", "theme", "solid"])
+			.describe("Background mode"),
 	}),
 });
 
@@ -450,7 +494,9 @@ export const setFaviconForeground = tool({
 	description:
 		"Set the favicon foreground color. Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		foreground: z.string().describe("Foreground color (e.g., currentColor, #ffffff)"),
+		foreground: z
+			.string()
+			.describe("Foreground color (e.g., currentColor, #ffffff)"),
 	}),
 });
 
@@ -458,7 +504,9 @@ export const setFaviconBackgroundColor = tool({
 	description:
 		"Set the favicon solid background color (used when background=solid). Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		backgroundColor: z.string().describe("Solid background color (e.g., #000000)"),
+		backgroundColor: z
+			.string()
+			.describe("Solid background color (e.g., #000000)"),
 	}),
 });
 
@@ -466,7 +514,9 @@ export const setFaviconSize = tool({
 	description:
 		"Set the favicon base size. Only works when the user is in the Icon Studio.",
 	inputSchema: z.object({
-		size: z.union([z.literal(32), z.literal(64), z.literal(128)]).describe("Base preview size in px"),
+		size: z
+			.union([z.literal(32), z.literal(64), z.literal(128)])
+			.describe("Base preview size in px"),
 	}),
 });
 
@@ -518,7 +568,9 @@ export const generateFavicon = tool({
 				background: z.enum(["transparent", "theme", "solid"]).optional(),
 				foreground: z.string().optional(),
 				backgroundColor: z.string().optional(),
-				size: z.union([z.literal(32), z.literal(64), z.literal(128)]).optional(),
+				size: z
+					.union([z.literal(32), z.literal(64), z.literal(128)])
+					.optional(),
 				padding: z.number().min(0).max(24).optional(),
 				radius: z.number().min(0).max(64).optional(),
 			})
@@ -550,22 +602,13 @@ export const prepareListing = tool({
 		origin: z
 			.string()
 			.describe("The ordinal origin/outpoint to list (format: txid_vout)"),
-		priceSatoshis: z
-			.number()
-			.min(1)
-			.describe("Sale price in satoshis"),
+		priceSatoshis: z.number().min(1).describe("Sale price in satoshis"),
 	}),
 });
 
 // ============================================================================
 // Information Tools (Free)
 // ============================================================================
-
-export const getWalletBalance = tool({
-	description:
-		"Get the connected wallet's current BSV balance. Requires wallet connection.",
-	inputSchema: z.object({}),
-});
 
 export const getExchangeRate = tool({
 	description:
@@ -584,7 +627,7 @@ import { getToolsForPage, type ToolName } from "./tool-routing";
  * Get all available tools based on feature flags
  */
 export function getAvailableTools() {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
 	const tools: Record<string, any> = {
 		navigate,
 		generateTheme,
@@ -593,7 +636,6 @@ export function getAvailableTools() {
 		setThemeFont,
 		prepareInscribe,
 		prepareListing,
-		getWalletBalance,
 		getExchangeRate,
 	};
 
@@ -657,7 +699,7 @@ export function getPageAwareTools(pathname: string) {
 	const allAvailableTools = getAvailableTools();
 	const allowedTools = getToolsForPage(pathname);
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
 	const filteredTools: Record<string, any> = {};
 
 	for (const [name, tool] of Object.entries(allAvailableTools)) {
@@ -704,7 +746,6 @@ export const allTools = {
 	setFaviconRadius,
 	prepareInscribe,
 	prepareListing,
-	getWalletBalance,
 	getExchangeRate,
 };
 

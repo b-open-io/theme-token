@@ -57,7 +57,8 @@ const LICENSE_OPTIONS: LicenseOption[] = [
 	{
 		value: "SIL_OFL_1.1",
 		label: "SIL Open Font License 1.1",
-		description: "Industry standard for open fonts. Allows modification and redistribution.",
+		description:
+			"Industry standard for open fonts. Allows modification and redistribution.",
 		attributionRequired: true,
 		spdxId: "OFL-1.1",
 		url: "https://openfontlicense.org/",
@@ -103,15 +104,23 @@ export function MetadataForm({
 	onAttestationsChange,
 	isAIGenerated = false,
 }: MetadataFormProps) {
-	const handleChange = (field: keyof FontMetadata, newValue: string | boolean) => {
+	const handleChange = (
+		field: keyof FontMetadata,
+		newValue: string | boolean,
+	) => {
 		onChange({ ...value, [field]: newValue });
 	};
 
-	const handleAttestationChange = (field: keyof FontAttestations, checked: boolean) => {
+	const handleAttestationChange = (
+		field: keyof FontAttestations,
+		checked: boolean,
+	) => {
 		onAttestationsChange({ ...attestations, [field]: checked });
 	};
 
-	const selectedLicense = LICENSE_OPTIONS.find((l) => l.value === value.license);
+	const selectedLicense = LICENSE_OPTIONS.find(
+		(l) => l.value === value.license,
+	);
 	const isOFL = value.license === "SIL_OFL_1.1";
 
 	return (
@@ -211,7 +220,9 @@ export function MetadataForm({
 						<div className="ml-[7.75rem] flex items-start gap-2 rounded border border-border/50 bg-muted/30 p-2">
 							<Info className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
 							<div className="space-y-1">
-								<p className="text-muted-foreground">{selectedLicense.description}</p>
+								<p className="text-muted-foreground">
+									{selectedLicense.description}
+								</p>
 								{selectedLicense.url && (
 									<a
 										href={selectedLicense.url}
@@ -261,7 +272,9 @@ export function MetadataForm({
 							<input
 								type="checkbox"
 								checked={attestations.ownsRights}
-								onChange={(e) => handleAttestationChange("ownsRights", e.target.checked)}
+								onChange={(e) =>
+									handleAttestationChange("ownsRights", e.target.checked)
+								}
 								className="peer sr-only"
 							/>
 							<div className="h-4 w-4 rounded border border-border bg-transparent peer-checked:border-primary peer-checked:bg-primary/20 peer-focus:ring-1 peer-focus:ring-primary" />
@@ -270,7 +283,8 @@ export function MetadataForm({
 							)}
 						</div>
 						<span className="text-foreground">
-							I have the legal right to inscribe this font (I am the creator, have a valid license, or it is in the public domain)
+							I have the legal right to inscribe this font (I am the creator,
+							have a valid license, or it is in the public domain)
 						</span>
 					</label>
 
@@ -280,7 +294,12 @@ export function MetadataForm({
 							<input
 								type="checkbox"
 								checked={attestations.understandsPermanence}
-								onChange={(e) => handleAttestationChange("understandsPermanence", e.target.checked)}
+								onChange={(e) =>
+									handleAttestationChange(
+										"understandsPermanence",
+										e.target.checked,
+									)
+								}
 								className="peer sr-only"
 							/>
 							<div className="h-4 w-4 rounded border border-border bg-transparent peer-checked:border-primary peer-checked:bg-primary/20 peer-focus:ring-1 peer-focus:ring-primary" />
@@ -289,7 +308,8 @@ export function MetadataForm({
 							)}
 						</div>
 						<span className="text-foreground">
-							I understand blockchain inscriptions are permanent and cannot be deleted or modified
+							I understand blockchain inscriptions are permanent and cannot be
+							deleted or modified
 						</span>
 					</label>
 
@@ -300,7 +320,12 @@ export function MetadataForm({
 								<input
 									type="checkbox"
 									checked={attestations.acceptsAttribution}
-									onChange={(e) => handleAttestationChange("acceptsAttribution", e.target.checked)}
+									onChange={(e) =>
+										handleAttestationChange(
+											"acceptsAttribution",
+											e.target.checked,
+										)
+									}
 									className="peer sr-only"
 								/>
 								<div className="h-4 w-4 rounded border border-border bg-transparent peer-checked:border-primary peer-checked:bg-primary/20 peer-focus:ring-1 peer-focus:ring-primary" />
@@ -309,7 +334,8 @@ export function MetadataForm({
 								)}
 							</div>
 							<span className="text-foreground">
-								I will ensure proper attribution is maintained as required by the {selectedLicense.label}
+								I will ensure proper attribution is maintained as required by
+								the {selectedLicense.label}
 							</span>
 						</label>
 					)}
@@ -322,7 +348,10 @@ export function MetadataForm({
 								<div>
 									<p className="font-medium">OFL License Notice</p>
 									<p className="mt-1 text-yellow-600/80 dark:text-yellow-400/80">
-										The SIL OFL prohibits selling the font &ldquo;by itself&rdquo; - it must be bundled with other software. NFT sales of standalone font files may violate this clause. Consider CC0 or MIT for unrestricted commercial use.
+										The SIL OFL prohibits selling the font &ldquo;by
+										itself&rdquo; - it must be bundled with other software. NFT
+										sales of standalone font files may violate this clause.
+										Consider CC0 or MIT for unrestricted commercial use.
 									</p>
 								</div>
 							</div>
@@ -331,7 +360,12 @@ export function MetadataForm({
 									<input
 										type="checkbox"
 										checked={attestations.oflNoSaleAcknowledged}
-										onChange={(e) => handleAttestationChange("oflNoSaleAcknowledged", e.target.checked)}
+										onChange={(e) =>
+											handleAttestationChange(
+												"oflNoSaleAcknowledged",
+												e.target.checked,
+											)
+										}
 										className="peer sr-only"
 									/>
 									<div className="h-4 w-4 rounded border border-border bg-transparent peer-checked:border-primary peer-checked:bg-primary/20 peer-focus:ring-1 peer-focus:ring-primary" />
@@ -354,7 +388,10 @@ export function MetadataForm({
 								<div>
 									<p className="font-medium">AI-Generated Content Notice</p>
 									<p className="mt-1 text-blue-600/80 dark:text-blue-400/80">
-										AI-generated works may not be eligible for copyright protection in some jurisdictions. The US Copyright Office (2025) requires &ldquo;sufficient human authorship&rdquo; for registration.
+										AI-generated works may not be eligible for copyright
+										protection in some jurisdictions. The US Copyright Office
+										(2025) requires &ldquo;sufficient human authorship&rdquo;
+										for registration.
 									</p>
 								</div>
 							</div>
@@ -363,7 +400,12 @@ export function MetadataForm({
 									<input
 										type="checkbox"
 										checked={attestations.aiGeneratedAcknowledged}
-										onChange={(e) => handleAttestationChange("aiGeneratedAcknowledged", e.target.checked)}
+										onChange={(e) =>
+											handleAttestationChange(
+												"aiGeneratedAcknowledged",
+												e.target.checked,
+											)
+										}
 										className="peer sr-only"
 									/>
 									<div className="h-4 w-4 rounded border border-border bg-transparent peer-checked:border-primary peer-checked:bg-primary/20 peer-focus:ring-1 peer-focus:ring-primary" />
@@ -372,7 +414,8 @@ export function MetadataForm({
 									)}
 								</div>
 								<span className="text-foreground">
-									I understand this font was AI-generated and may have limited copyright protection
+									I understand this font was AI-generated and may have limited
+									copyright protection
 								</span>
 							</label>
 						</div>
@@ -395,7 +438,10 @@ export function areAttestationsComplete(
 		return false;
 	}
 
-	if (selectedLicense?.attributionRequired && !attestations.acceptsAttribution) {
+	if (
+		selectedLicense?.attributionRequired &&
+		!attestations.acceptsAttribution
+	) {
 		return false;
 	}
 

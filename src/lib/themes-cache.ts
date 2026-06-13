@@ -42,7 +42,7 @@ export async function fetchCachedThemes(): Promise<CachedTheme[]> {
 export async function addThemeToCache(
 	txid: string,
 	theme: ThemeToken,
-	owner?: string
+	owner?: string,
 ): Promise<boolean> {
 	try {
 		const response = await fetch("/api/themes/cache", {
@@ -57,5 +57,3 @@ export async function addThemeToCache(
 		return false;
 	}
 }
-
-

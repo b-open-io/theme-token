@@ -1,17 +1,15 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
 	type ParseMetadata,
 	parseCss,
-	type ThemeStyleProps,
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { AlertCircle, Check, Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -115,6 +113,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 				{/* Tab Switcher */}
 				<div className="flex gap-2 rounded-lg bg-muted p-1">
 					<button
+						type="button"
 						onClick={() => setActiveTab("presets")}
 						className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
 							activeTab === "presets"
@@ -125,6 +124,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 						Presets
 					</button>
 					<button
+						type="button"
 						onClick={() => setActiveTab("css")}
 						className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
 							activeTab === "css"
@@ -135,6 +135,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 						Paste CSS
 					</button>
 					<button
+						type="button"
 						onClick={() => setActiveTab("json")}
 						className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
 							activeTab === "json"
@@ -167,7 +168,9 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 										<div className="flex -space-x-1">
 											<div
 												className="h-6 w-6 rounded-full border-2 border-background"
-												style={{ backgroundColor: cached.theme.styles[mode].primary }}
+												style={{
+													backgroundColor: cached.theme.styles[mode].primary,
+												}}
 											/>
 											<div
 												className="h-6 w-6 rounded-full border-2 border-background"
@@ -357,6 +360,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 
 							<div className="flex flex-wrap gap-2">
 								<button
+									type="button"
 									className="rounded-md px-4 py-2 text-sm font-medium"
 									style={{
 										backgroundColor: "var(--primary)",
@@ -366,6 +370,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 									Primary
 								</button>
 								<button
+									type="button"
 									className="rounded-md px-4 py-2 text-sm font-medium"
 									style={{
 										backgroundColor: "var(--secondary)",
@@ -375,6 +380,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 									Secondary
 								</button>
 								<button
+									type="button"
 									className="rounded-md px-4 py-2 text-sm font-medium"
 									style={{
 										backgroundColor: "var(--destructive)",

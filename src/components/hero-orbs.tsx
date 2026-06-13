@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from "framer-motion";
+import {
+	motion,
+	useMotionValue,
+	useScroll,
+	useSpring,
+	useTransform,
+} from "framer-motion";
 import { useEffect, useRef } from "react";
 
 /**
@@ -19,7 +25,7 @@ export function HeroOrbs() {
 
 	// Smooth spring for mouse tracking
 	const smoothMouseX = useSpring(mouseX, { stiffness: 50, damping: 20 });
-	const smoothMouseY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+	const _smoothMouseY = useSpring(mouseY, { stiffness: 50, damping: 20 });
 
 	// Scroll-based transforms
 	const heroOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
@@ -49,7 +55,10 @@ export function HeroOrbs() {
 	}, [mouseX, mouseY]);
 
 	return (
-		<div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none">
+		<div
+			ref={ref}
+			className="absolute inset-0 overflow-hidden pointer-events-none"
+		>
 			{/* Central Halo behind content */}
 			<motion.div
 				style={{

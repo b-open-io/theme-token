@@ -67,7 +67,9 @@ export function validatePatternSvg(svg: string): ValidationResult {
 
 	// Pattern element check
 	if (!svg.includes("<pattern")) {
-		errors.push("Missing <pattern> element - SVG must define a tileable pattern");
+		errors.push(
+			"Missing <pattern> element - SVG must define a tileable pattern",
+		);
 	}
 
 	if (!svg.includes("</pattern>") && !svg.includes("/>")) {
@@ -77,8 +79,13 @@ export function validatePatternSvg(svg: string): ValidationResult {
 	}
 
 	// patternUnits check
-	if (svg.includes("<pattern") && !svg.includes('patternUnits="userSpaceOnUse"')) {
-		warnings.push('Pattern should use patternUnits="userSpaceOnUse" for predictable tiling');
+	if (
+		svg.includes("<pattern") &&
+		!svg.includes('patternUnits="userSpaceOnUse"')
+	) {
+		warnings.push(
+			'Pattern should use patternUnits="userSpaceOnUse" for predictable tiling',
+		);
 	}
 
 	// Unsafe element checks
@@ -108,7 +115,9 @@ export function validatePatternSvg(svg: string): ValidationResult {
 
 	// Size checks
 	if (svg.length > MAX_SVG_BYTES) {
-		errors.push(`SVG exceeds ${MAX_SVG_BYTES} byte limit (${svg.length} bytes)`);
+		errors.push(
+			`SVG exceeds ${MAX_SVG_BYTES} byte limit (${svg.length} bytes)`,
+		);
 	}
 
 	// Node count estimate (rough)
@@ -145,13 +154,22 @@ export function sanitizeSvg(svg: string): string {
 		// Self-closing
 		cleaned = cleaned.replace(new RegExp(`<${elem}[^>]*/?>`, "gi"), "");
 		// With content
-		cleaned = cleaned.replace(new RegExp(`<${elem}[^>]*>[\\s\\S]*?</${elem}>`, "gi"), "");
+		cleaned = cleaned.replace(
+			new RegExp(`<${elem}[^>]*>[\\s\\S]*?</${elem}>`, "gi"),
+			"",
+		);
 	}
 
 	// Remove unsafe attributes
 	for (const attr of UNSAFE_ATTRS) {
-		cleaned = cleaned.replace(new RegExp(`\\s*${attr}\\s*=\\s*["'][^"']*["']`, "gi"), "");
-		cleaned = cleaned.replace(new RegExp(`\\s*${attr}\\s*=\\s*[^\\s>]+`, "gi"), "");
+		cleaned = cleaned.replace(
+			new RegExp(`\\s*${attr}\\s*=\\s*["'][^"']*["']`, "gi"),
+			"",
+		);
+		cleaned = cleaned.replace(
+			new RegExp(`\\s*${attr}\\s*=\\s*[^\\s>]+`, "gi"),
+			"",
+		);
 	}
 
 	// Remove external URLs in url() functions
@@ -228,5 +246,3 @@ export function ensureSeamlessStructure(svg: string): string {
 	}
 	return svg;
 }
-
-

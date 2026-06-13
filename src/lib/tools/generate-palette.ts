@@ -48,7 +48,9 @@ The returned palette includes:
 	inputSchema: z.object({
 		hex: z
 			.string()
-			.describe("Hex color code (with or without #), e.g., '3B82F6' or '#3B82F6'"),
+			.describe(
+				"Hex color code (with or without #), e.g., '3B82F6' or '#3B82F6'",
+			),
 		name: z
 			.string()
 			.default("primary")

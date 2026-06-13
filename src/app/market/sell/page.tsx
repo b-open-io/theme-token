@@ -3,6 +3,11 @@
 import { AlertCircle, Check, Loader2, Palette, Tag } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+	FilterSidebar,
+	type FilterState,
+} from "@/components/market/filter-sidebar";
+import { formatBSV, ThemeStripes } from "@/components/market/theme-stripes";
 import { PriceInput } from "@/components/price-input";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +15,6 @@ import { Button } from "@/components/ui/button";
 import { useBsvRate } from "@/hooks/use-bsv-rate";
 import { type OwnedTheme, useYoursWallet } from "@/hooks/use-yours-wallet";
 import { fetchThemeMarketListings } from "@/lib/yours-wallet";
-import { formatBSV, ThemeStripes } from "@/components/market/theme-stripes";
-import {
-	FilterSidebar,
-	type FilterState,
-} from "@/components/market/filter-sidebar";
 
 const DEFAULT_FILTERS: FilterState = {
 	primaryColor: null,
@@ -245,7 +245,8 @@ export default function SellPage() {
 									) : (
 										<>
 											<Tag className="mr-2 h-4 w-4" />
-											List for ${priceUsd.toFixed(2)} ({formatBSV(priceSats)} BSV)
+											List for ${priceUsd.toFixed(2)} ({formatBSV(priceSats)}{" "}
+											BSV)
 										</>
 									)}
 								</Button>

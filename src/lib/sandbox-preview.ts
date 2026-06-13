@@ -1,8 +1,8 @@
-import ms from "ms";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { Sandbox } from "@vercel/sandbox";
+import ms from "ms";
 import { nanoid } from "nanoid";
-import fs from "fs/promises";
-import path from "path";
 
 export type SandboxPreviewFile = { path: string; content: string };
 
@@ -26,7 +26,11 @@ const SANDBOX_TTL_MS = ms("10m");
 
 export function hasSandboxAuthEnv(): boolean {
 	if (process.env.VERCEL_OIDC_TOKEN) return true;
-	if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
+	if (
+		process.env.VERCEL_TOKEN &&
+		process.env.VERCEL_TEAM_ID &&
+		process.env.VERCEL_PROJECT_ID
+	) {
 		return true;
 	}
 	return false;
@@ -34,10 +38,14 @@ export function hasSandboxAuthEnv(): boolean {
 
 export function sanitizeCodeForPreview(code: string): string {
 	// Strip ANSI escape sequences that can appear in model output (including CSI with `:` params).
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-character stripping
 	const ANSI_ESCAPE_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
-	return code
-		.replace(ANSI_ESCAPE_REGEX, "")
-		.replace(/[^\u0009\u000A\u000D\u0020-\u007E\u00A0-\uFFFF]/g, "");
+	return (
+		code
+			.replace(ANSI_ESCAPE_REGEX, "")
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-character stripping
+			.replace(/[^\u0009\u000A\u000D\u0020-\u007E\u00A0-\uFFFF]/g, "")
+	);
 }
 
 type AllowedDeps = {
@@ -150,14 +158,16 @@ async function ensureSandboxDeps(
 				"for (const d of missing) installed.add(d.name);",
 				"fs.writeFileSync(statePath, JSON.stringify(Array.from(installed).sort(), null, 2));",
 				"NODE",
-				].join("\n"),
-			],
-		});
+			].join("\n"),
+		],
+	});
 
 	if (res.exitCode !== 0) {
 		const stderr = await res.stderr().catch(() => "");
 		const stdout = await res.stdout().catch(() => "");
-		throw new Error(`Sandbox dependency install failed: ${stderr || stdout || "unknown error"}`);
+		throw new Error(
+			`Sandbox dependency install failed: ${stderr || stdout || "unknown error"}`,
+		);
 	}
 }
 
@@ -169,7 +179,11 @@ function getCachedSandbox(): SandboxCacheEntry | undefined {
 }
 
 async function getTemplateContent(filename: string): Promise<Buffer> {
-	const filePath = path.join(process.cwd(), "src/lib/sandbox/templates", filename);
+	const filePath = path.join(
+		process.cwd(),
+		"src/lib/sandbox/templates",
+		filename,
+	);
 	return fs.readFile(filePath);
 }
 
@@ -199,93 +213,100 @@ async function ensureSandbox(): Promise<Sandbox> {
 	]);
 
 	// 3. Initialize dependencies and start server
-		const setup = await sandbox.runCommand({
-			cmd: "bash",
-			args: [
-				"-lc",
-				[
-					"set -euo pipefail",
-					"echo \"[tt-preview] setup start\"",
-					"mkdir -p /vercel/sandbox/.tt-preview/{src,dist}",
-					"cd /vercel/sandbox/.tt-preview",
-					// Repo deps
-					"if [ -f /vercel/sandbox/package.json ] && [ ! -f /vercel/sandbox/.tt-preview/.repo-deps-installed ]; then",
-					"  echo \"[tt-preview] installing repo dependencies\"",
-					"  cd /vercel/sandbox",
-					"  if command -v bun >/dev/null 2>&1; then",
-					"    bun install --no-progress",
-					"  else",
-					"    npm install --no-audit --no-fund",
-					"  fi",
-					"  touch /vercel/sandbox/.tt-preview/.repo-deps-installed",
-					"  cd /vercel/sandbox/.tt-preview",
-					"fi",
-					// Preview deps
-					"echo \"[tt-preview] ensuring preview helper deps\"",
-					"if [ ! -f package.json ]; then echo '{\"name\":\"tt-preview\",\"private\":true,\"type\":\"module\"}' > package.json; fi",
-					"if [ ! -d node_modules ]; then",
-					"  if command -v bun >/dev/null 2>&1; then",
-					"    bun add --no-progress react react-dom esbuild",
-					"  else",
-					"    npm install --no-audit --no-fund react react-dom esbuild",
-					"  fi",
-					"fi",
-					// Start server
-					"echo \"[tt-preview] ensuring preview server running\"",
-				"if [ -f /tmp/tt-preview-server.pid ] && kill -0 \"$(cat /tmp/tt-preview-server.pid)\" 2>/dev/null; then",
-					"  echo \"[tt-preview] server already running\"",
-					"else",
-					`  PORT=${PORT} nohup node server.mjs >/tmp/preview-server.log 2>&1 & echo $! > /tmp/tt-preview-server.pid`,
-					"  echo \"[tt-preview] server started\"",
-					"fi",
-					"echo \"[tt-preview] setup done\"",
-				].join("\n"),
-			],
-		});
+	const setup = await sandbox.runCommand({
+		cmd: "bash",
+		args: [
+			"-lc",
+			[
+				"set -euo pipefail",
+				'echo "[tt-preview] setup start"',
+				"mkdir -p /vercel/sandbox/.tt-preview/{src,dist}",
+				"cd /vercel/sandbox/.tt-preview",
+				// Repo deps
+				"if [ -f /vercel/sandbox/package.json ] && [ ! -f /vercel/sandbox/.tt-preview/.repo-deps-installed ]; then",
+				'  echo "[tt-preview] installing repo dependencies"',
+				"  cd /vercel/sandbox",
+				"  if command -v bun >/dev/null 2>&1; then",
+				"    bun install --no-progress",
+				"  else",
+				"    npm install --no-audit --no-fund",
+				"  fi",
+				"  touch /vercel/sandbox/.tt-preview/.repo-deps-installed",
+				"  cd /vercel/sandbox/.tt-preview",
+				"fi",
+				// Preview deps
+				'echo "[tt-preview] ensuring preview helper deps"',
+				'if [ ! -f package.json ]; then echo \'{"name":"tt-preview","private":true,"type":"module"}\' > package.json; fi',
+				"if [ ! -d node_modules ]; then",
+				"  if command -v bun >/dev/null 2>&1; then",
+				"    bun add --no-progress react react-dom esbuild",
+				"  else",
+				"    npm install --no-audit --no-fund react react-dom esbuild",
+				"  fi",
+				"fi",
+				// Start server
+				'echo "[tt-preview] ensuring preview server running"',
+				'if [ -f /tmp/tt-preview-server.pid ] && kill -0 "$(cat /tmp/tt-preview-server.pid)" 2>/dev/null; then',
+				'  echo "[tt-preview] server already running"',
+				"else",
+				`  PORT=${PORT} nohup node server.mjs >/tmp/preview-server.log 2>&1 & echo $! > /tmp/tt-preview-server.pid`,
+				'  echo "[tt-preview] server started"',
+				"fi",
+				'echo "[tt-preview] setup done"',
+			].join("\n"),
+		],
+	});
 
-		if (setup.exitCode !== 0) {
-			const [stderr, stdout, diag] = await Promise.all([
-				setup.stderr().catch(() => ""),
-				setup.stdout().catch(() => ""),
-				sandbox
-					.runCommand({
-						cmd: "bash",
-						args: [
-							"-lc",
-							[
-								"set -euo pipefail",
-								"echo \"[tt-preview] diag start\"",
-								"echo \"node: $(node -v 2>/dev/null || true)\"",
-								"echo \"npm: $(npm -v 2>/dev/null || true)\"",
-								"echo \"pwd: $(pwd)\"",
-								"ls -la /vercel/sandbox/.tt-preview || true",
-								"ls -la /vercel/sandbox/.tt-preview/src || true",
-								"ls -la /vercel/sandbox/.tt-preview/dist || true",
-								"echo \"--- /tmp/preview-server.log (tail) ---\"",
-								"test -f /tmp/preview-server.log && tail -n 200 /tmp/preview-server.log || true",
-								"echo \"[tt-preview] diag done\"",
-							].join("\n"),
-						],
-					})
-					.then((r) => r.stdout().catch(() => ""))
-					.catch(() => ""),
-			]);
+	if (setup.exitCode !== 0) {
+		const [stderr, stdout, diag] = await Promise.all([
+			setup.stderr().catch(() => ""),
+			setup.stdout().catch(() => ""),
+			sandbox
+				.runCommand({
+					cmd: "bash",
+					args: [
+						"-lc",
+						[
+							"set -euo pipefail",
+							'echo "[tt-preview] diag start"',
+							'echo "node: $(node -v 2>/dev/null || true)"',
+							'echo "npm: $(npm -v 2>/dev/null || true)"',
+							'echo "pwd: $(pwd)"',
+							"ls -la /vercel/sandbox/.tt-preview || true",
+							"ls -la /vercel/sandbox/.tt-preview/src || true",
+							"ls -la /vercel/sandbox/.tt-preview/dist || true",
+							'echo "--- /tmp/preview-server.log (tail) ---"',
+							"test -f /tmp/preview-server.log && tail -n 200 /tmp/preview-server.log || true",
+							'echo "[tt-preview] diag done"',
+						].join("\n"),
+					],
+				})
+				.then((r) => r.stdout().catch(() => ""))
+				.catch(() => ""),
+		]);
 
-			const truncate = (s: string, max = 8000) =>
-				s.length > max ? `${s.slice(0, max)}\n...[truncated ${s.length - max} chars]` : s;
+		const truncate = (s: string, max = 8000) =>
+			s.length > max
+				? `${s.slice(0, max)}\n...[truncated ${s.length - max} chars]`
+				: s;
 
-			const details = [
-				stderr ? `stderr:\n${truncate(stderr)}` : "",
-				stdout ? `stdout:\n${truncate(stdout)}` : "",
-				diag ? `diag:\n${truncate(diag)}` : "",
-			]
-				.filter(Boolean)
-				.join("\n\n");
+		const details = [
+			stderr ? `stderr:\n${truncate(stderr)}` : "",
+			stdout ? `stdout:\n${truncate(stdout)}` : "",
+			diag ? `diag:\n${truncate(diag)}` : "",
+		]
+			.filter(Boolean)
+			.join("\n\n");
 
-			throw new Error(`Sandbox setup failed${details ? `\n\n${details}` : ": unknown error"}`);
-		}
+		throw new Error(
+			`Sandbox setup failed${details ? `\n\n${details}` : ": unknown error"}`,
+		);
+	}
 
-	globalThis.__themeTokenPreviewSandbox = { sandbox, expiresAt: Date.now() + SANDBOX_TTL_MS };
+	globalThis.__themeTokenPreviewSandbox = {
+		sandbox,
+		expiresAt: Date.now() + SANDBOX_TTL_MS,
+	};
 	return sandbox;
 }
 
@@ -317,7 +338,9 @@ export async function createSandboxPreview(params: {
 	const mainImport = `./${mainRel.replace(/\.(tsx|ts|jsx|js)$/, "")}`;
 
 	// If the generated code uses `@/` imports, we need a seeded sandbox with the repo source.
-	const needsRepo = params.files.some((f) => /(^|\n)\s*import\s+[^;]*from\s+['"]@\//m.test(f.content));
+	const needsRepo = params.files.some((f) =>
+		/(^|\n)\s*import\s+[^;]*from\s+['"]@\//m.test(f.content),
+	);
 	if (needsRepo && !process.env.SANDBOX_PREVIEW_SOURCE_URL) {
 		return {
 			success: false,
@@ -343,7 +366,10 @@ export async function createSandboxPreview(params: {
 	} catch (error) {
 		return {
 			success: false,
-			error: error instanceof Error ? error.message : "Sandbox dependency install failed",
+			error:
+				error instanceof Error
+					? error.message
+					: "Sandbox dependency install failed",
 		};
 	}
 

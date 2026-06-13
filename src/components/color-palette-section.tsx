@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Check, Copy, Loader2, Pipette } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -16,6 +16,7 @@ import {
 	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { oklchToHex, parseOklch } from "@/lib/color-utils";
 import {
 	fetchTintsPalette,
 	getComplementaryColor,
@@ -23,7 +24,6 @@ import {
 	paletteToArray,
 	type TintsPalette,
 } from "@/lib/tints";
-import { oklchToHex, parseOklch } from "@/lib/color-utils";
 
 // Helper to convert any color format to hex
 function toHex(color: string): string {
@@ -40,30 +40,58 @@ function toHex(color: string): string {
 const THEME_COLOR_KEYS = [
 	// Primary colors
 	{ key: "primary", label: "Primary", category: "Primary" },
-	{ key: "primary-foreground", label: "Primary Foreground", category: "Primary" },
+	{
+		key: "primary-foreground",
+		label: "Primary Foreground",
+		category: "Primary",
+	},
 	// Secondary colors
 	{ key: "secondary", label: "Secondary", category: "Secondary" },
-	{ key: "secondary-foreground", label: "Secondary Foreground", category: "Secondary" },
+	{
+		key: "secondary-foreground",
+		label: "Secondary Foreground",
+		category: "Secondary",
+	},
 	// Background & Foreground
 	{ key: "background", label: "Background", category: "Background" },
 	{ key: "foreground", label: "Foreground", category: "Background" },
 	// Card & Popover
 	{ key: "card", label: "Card", category: "Card & Popover" },
-	{ key: "card-foreground", label: "Card Foreground", category: "Card & Popover" },
+	{
+		key: "card-foreground",
+		label: "Card Foreground",
+		category: "Card & Popover",
+	},
 	{ key: "popover", label: "Popover", category: "Card & Popover" },
-	{ key: "popover-foreground", label: "Popover Foreground", category: "Card & Popover" },
+	{
+		key: "popover-foreground",
+		label: "Popover Foreground",
+		category: "Card & Popover",
+	},
 	// Accent & Muted
 	{ key: "accent", label: "Accent", category: "Accent & Muted" },
-	{ key: "accent-foreground", label: "Accent Foreground", category: "Accent & Muted" },
+	{
+		key: "accent-foreground",
+		label: "Accent Foreground",
+		category: "Accent & Muted",
+	},
 	{ key: "muted", label: "Muted", category: "Accent & Muted" },
-	{ key: "muted-foreground", label: "Muted Foreground", category: "Accent & Muted" },
+	{
+		key: "muted-foreground",
+		label: "Muted Foreground",
+		category: "Accent & Muted",
+	},
 	// Borders & Input
 	{ key: "border", label: "Border", category: "Borders & Input" },
 	{ key: "input", label: "Input", category: "Borders & Input" },
 	{ key: "ring", label: "Ring", category: "Borders & Input" },
 	// Destructive
 	{ key: "destructive", label: "Destructive", category: "Destructive" },
-	{ key: "destructive-foreground", label: "Destructive Foreground", category: "Destructive" },
+	{
+		key: "destructive-foreground",
+		label: "Destructive Foreground",
+		category: "Destructive",
+	},
 	// Chart colors
 	{ key: "chart-1", label: "Chart 1", category: "Chart" },
 	{ key: "chart-2", label: "Chart 2", category: "Chart" },
@@ -72,11 +100,23 @@ const THEME_COLOR_KEYS = [
 	{ key: "chart-5", label: "Chart 5", category: "Chart" },
 	// Sidebar colors
 	{ key: "sidebar", label: "Sidebar", category: "Sidebar" },
-	{ key: "sidebar-foreground", label: "Sidebar Foreground", category: "Sidebar" },
+	{
+		key: "sidebar-foreground",
+		label: "Sidebar Foreground",
+		category: "Sidebar",
+	},
 	{ key: "sidebar-primary", label: "Sidebar Primary", category: "Sidebar" },
-	{ key: "sidebar-primary-foreground", label: "Sidebar Primary FG", category: "Sidebar" },
+	{
+		key: "sidebar-primary-foreground",
+		label: "Sidebar Primary FG",
+		category: "Sidebar",
+	},
 	{ key: "sidebar-accent", label: "Sidebar Accent", category: "Sidebar" },
-	{ key: "sidebar-accent-foreground", label: "Sidebar Accent FG", category: "Sidebar" },
+	{
+		key: "sidebar-accent-foreground",
+		label: "Sidebar Accent FG",
+		category: "Sidebar",
+	},
 	{ key: "sidebar-border", label: "Sidebar Border", category: "Sidebar" },
 	{ key: "sidebar-ring", label: "Sidebar Ring", category: "Sidebar" },
 ] as const;
@@ -163,6 +203,7 @@ function PaletteSwatch({
 
 	const buttonContent = (
 		<button
+			type="button"
 			onClick={handleCopy}
 			className="group relative inline-flex size-7 shrink-0 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
 			style={{ backgroundColor: color }}
@@ -189,23 +230,27 @@ function PaletteSwatch({
 						<span className="text-xs">Apply as...</span>
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48 max-h-80 overflow-y-auto">
-						{Array.from(new Set(THEME_COLOR_KEYS.map(k => k.category))).map((category, idx) => (
-							<div key={category}>
-								{idx > 0 && <ContextMenuSeparator />}
-								<ContextMenuLabel className="text-[10px] text-muted-foreground">
-									{category}
-								</ContextMenuLabel>
-								{THEME_COLOR_KEYS.filter(k => k.category === category).map(({ key, label: keyLabel }) => (
-									<ContextMenuItem
-										key={key}
-										onClick={() => handleApply(key)}
-										className="text-xs"
-									>
-										{keyLabel}
-									</ContextMenuItem>
-								))}
-							</div>
-						))}
+						{Array.from(new Set(THEME_COLOR_KEYS.map((k) => k.category))).map(
+							(category, idx) => (
+								<div key={category}>
+									{idx > 0 && <ContextMenuSeparator />}
+									<ContextMenuLabel className="text-[10px] text-muted-foreground">
+										{category}
+									</ContextMenuLabel>
+									{THEME_COLOR_KEYS.filter((k) => k.category === category).map(
+										({ key, label: keyLabel }) => (
+											<ContextMenuItem
+												key={key}
+												onClick={() => handleApply(key)}
+												className="text-xs"
+											>
+												{keyLabel}
+											</ContextMenuItem>
+										),
+									)}
+								</div>
+							),
+						)}
 					</ContextMenuSubContent>
 				</ContextMenuSub>
 			</ContextMenuContent>
@@ -239,11 +284,14 @@ function ThemeSwatch({
 
 	const handleApplyFromPalette = (paletteColor: string) => {
 		onApplyFromPalette?.(cssVar, paletteColor);
-		toast.success("Applied", { description: `Set ${cssVar} to ${paletteColor}` });
+		toast.success("Applied", {
+			description: `Set ${cssVar} to ${paletteColor}`,
+		});
 	};
 
 	const buttonContent = (
 		<button
+			type="button"
 			onClick={handleCopy}
 			className="group relative inline-flex size-7 shrink-0 items-center justify-center rounded border border-border/30 text-[8px] font-medium transition-all hover:scale-105 hover:border-border hover:z-10"
 			style={color ? { backgroundColor: color } : undefined}
@@ -275,9 +323,10 @@ function ThemeSwatch({
 				{/* Color grid - 11 colors per row to match palette */}
 				<div className="px-2 pb-2 pt-1">
 					<div className="grid grid-cols-11 gap-0.5">
-						{paletteColors.map((paletteColor, idx) => (
+						{paletteColors.map((paletteColor) => (
 							<button
-								key={idx}
+								type="button"
+								key={paletteColor}
 								onClick={() => handleApplyFromPalette(paletteColor)}
 								className="h-5 w-5 rounded border border-border/50 transition-all hover:scale-110 hover:border-border hover:z-10"
 								style={{ backgroundColor: paletteColor }}
@@ -291,13 +340,22 @@ function ThemeSwatch({
 	);
 }
 
-export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }: ColorPaletteSectionProps) {
+export function ColorPaletteSection({
+	onUpdateColor,
+	primaryColor,
+	themeColors,
+}: ColorPaletteSectionProps) {
 	// Derive initial color from prop
 	const initialColor = primaryColor ? toHex(primaryColor) : "#3B82F6";
 	const [color, setColor] = useState(initialColor);
-	const [primaryPalette, setPrimaryPalette] = useState<TintsPalette | null>(null);
-	const [complementaryPalette, setComplementaryPalette] = useState<TintsPalette | null>(null);
-	const [triadicPalette, setTriadicPalette] = useState<TintsPalette | null>(null);
+	const [primaryPalette, setPrimaryPalette] = useState<TintsPalette | null>(
+		null,
+	);
+	const [complementaryPalette, setComplementaryPalette] =
+		useState<TintsPalette | null>(null);
+	const [triadicPalette, setTriadicPalette] = useState<TintsPalette | null>(
+		null,
+	);
 	const [isLoading, setIsLoading] = useState(false);
 
 	// Track prop changes to sync color
@@ -309,6 +367,7 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 	}
 
 	// Auto-generate on mount only
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally run once on mount with initial color
 	useEffect(() => {
 		const generate = async (inputColor: string) => {
 			const hex = inputColor.replace(/^#/, "");
@@ -318,9 +377,15 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 
 			const primary = await fetchTintsPalette("primary", hex);
 			const complementaryHex = getComplementaryColor(inputColor);
-			const complementary = await fetchTintsPalette("complementary", complementaryHex.replace("#", ""));
+			const complementary = await fetchTintsPalette(
+				"complementary",
+				complementaryHex.replace("#", ""),
+			);
 			const triadicHex = getTriadicColor(inputColor);
-			const triadic = await fetchTintsPalette("triadic", triadicHex.replace("#", ""));
+			const triadic = await fetchTintsPalette(
+				"triadic",
+				triadicHex.replace("#", ""),
+			);
 
 			if (primary) setPrimaryPalette(primary);
 			if (complementary) setComplementaryPalette(complementary);
@@ -330,7 +395,6 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 		};
 
 		generate(color);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once on mount with initial color
 	}, []);
 
 	const handleGenerate = async () => {
@@ -341,9 +405,15 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 
 		const primary = await fetchTintsPalette("primary", hex);
 		const complementaryHex = getComplementaryColor(color);
-		const complementary = await fetchTintsPalette("complementary", complementaryHex.replace("#", ""));
+		const complementary = await fetchTintsPalette(
+			"complementary",
+			complementaryHex.replace("#", ""),
+		);
 		const triadicHex = getTriadicColor(color);
-		const triadic = await fetchTintsPalette("triadic", triadicHex.replace("#", ""));
+		const triadic = await fetchTintsPalette(
+			"triadic",
+			triadicHex.replace("#", ""),
+		);
 
 		if (primary) setPrimaryPalette(primary);
 		if (complementary) setComplementaryPalette(complementary);
@@ -353,14 +423,16 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 	};
 
 	const primaryArray = primaryPalette ? paletteToArray(primaryPalette) : [];
-	const complementaryArray = complementaryPalette ? paletteToArray(complementaryPalette) : [];
+	const complementaryArray = complementaryPalette
+		? paletteToArray(complementaryPalette)
+		: [];
 	const triadicArray = triadicPalette ? paletteToArray(triadicPalette) : [];
 
 	// All palette colors combined for theme swatch picker (3 rows x 11 colors = 33 total)
 	const allPaletteColors = [
-		...primaryArray.map(p => p.color),
-		...triadicArray.map(p => p.color),
-		...complementaryArray.map(p => p.color),
+		...primaryArray.map((p) => p.color),
+		...triadicArray.map((p) => p.color),
+		...complementaryArray.map((p) => p.color),
 	];
 
 	return (
@@ -368,7 +440,9 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 			{/* Palette Generator - 2/3 width */}
 			<Card className="@2xl:col-span-2">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
-					<CardTitle className="text-xs font-medium">Palette Generator</CardTitle>
+					<CardTitle className="text-xs font-medium">
+						Palette Generator
+					</CardTitle>
 					<div className="flex items-center gap-1.5">
 						<ColorPicker
 							value={color}
@@ -382,6 +456,7 @@ export function ColorPaletteSection({ onUpdateColor, primaryColor, themeColors }
 							className="h-6 w-20 rounded border border-border bg-background px-1.5 font-mono text-[10px] uppercase focus:border-primary focus:outline-none"
 						/>
 						<button
+							type="button"
 							onClick={handleGenerate}
 							disabled={isLoading}
 							className="flex h-6 items-center gap-1 rounded bg-primary px-2 text-[10px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"

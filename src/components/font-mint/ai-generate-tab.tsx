@@ -1,11 +1,11 @@
 "use client";
 
-import { Loader2, RotateCcw, Sparkles, Wand2, Wallet } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { Loader2, RotateCcw, Sparkles, Wallet, Wand2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { FONT_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
+import { FEE_ADDRESS, FONT_GENERATION_COST_SATS } from "@/lib/yours-wallet";
 
 interface Glyph {
 	char: string;
@@ -59,7 +59,8 @@ const AI_MODELS: { id: AIModel; name: string; description: string }[] = [
 	{
 		id: "gemini-3-pro",
 		name: "Gemini 3 Pro",
-		description: "Google's latest multimodal model with strong visual understanding",
+		description:
+			"Google's latest multimodal model with strong visual understanding",
 	},
 	{
 		id: "claude-opus-4.5",
@@ -69,18 +70,46 @@ const AI_MODELS: { id: AIModel; name: string; description: string }[] = [
 ];
 
 const STYLE_PRESETS = [
-	{ id: "modern-sans", label: "Modern Sans", prompt: "Clean, geometric sans-serif with modern proportions and even stroke weights" },
-	{ id: "cyber-gothic", label: "Cyber Gothic", prompt: "Futuristic gothic typeface with sharp angles, digital aesthetic, and technical feel" },
-	{ id: "organic-script", label: "Organic Script", prompt: "Flowing handwritten script with natural letterforms and calligraphic flourishes" },
-	{ id: "brutalist", label: "Brutalist", prompt: "Heavy, bold industrial typeface with stark geometry and commanding presence" },
-	{ id: "retro-display", label: "Retro Display", prompt: "1970s inspired display font with rounded corners and groovy vibes" },
-	{ id: "pixel-art", label: "Pixel Art", prompt: "8-bit inspired bitmap-style font for games and digital nostalgia" },
+	{
+		id: "modern-sans",
+		label: "Modern Sans",
+		prompt:
+			"Clean, geometric sans-serif with modern proportions and even stroke weights",
+	},
+	{
+		id: "cyber-gothic",
+		label: "Cyber Gothic",
+		prompt:
+			"Futuristic gothic typeface with sharp angles, digital aesthetic, and technical feel",
+	},
+	{
+		id: "organic-script",
+		label: "Organic Script",
+		prompt:
+			"Flowing handwritten script with natural letterforms and calligraphic flourishes",
+	},
+	{
+		id: "brutalist",
+		label: "Brutalist",
+		prompt:
+			"Heavy, bold industrial typeface with stark geometry and commanding presence",
+	},
+	{
+		id: "retro-display",
+		label: "Retro Display",
+		prompt: "1970s inspired display font with rounded corners and groovy vibes",
+	},
+	{
+		id: "pixel-art",
+		label: "Pixel Art",
+		prompt: "8-bit inspired bitmap-style font for games and digital nostalgia",
+	},
 ];
 
 const STORAGE_KEY = "font:activeGeneration";
 
 // Fetcher for SWR
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // Generation status type from API
 interface GenerationStatus {
@@ -102,10 +131,10 @@ const formatBsv = (sats: number) => {
 	return bsv.toFixed(2);
 };
 
-export function AIGenerateTab({ 
-	onFontGenerated, 
-	generatedFont: externalFont, 
-	compiledFont: externalCompiled, 
+export function AIGenerateTab({
+	onFontGenerated,
+	generatedFont: externalFont,
+	compiledFont: externalCompiled,
 	onClear,
 	initialModel = "gemini-3-pro",
 	initialPrompt = "",
@@ -114,32 +143,33 @@ export function AIGenerateTab({
 	onPromptChange,
 	onPresetChange,
 }: AIGenerateTabProps) {
-	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
+	const { status, connect, sendPayment, isSending } = useYoursWallet();
 	const [selectedModel, setSelectedModel] = useState<AIModel>(initialModel);
 	const [prompt, setPrompt] = useState(initialPrompt);
-	const [selectedPreset, setSelectedPreset] = useState<string | null>(initialPreset ?? null);
+	const [selectedPreset, setSelectedPreset] = useState<string | null>(
+		initialPreset ?? null,
+	);
 	const [jobId, setJobId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
-	
+
 	// Sync controlled changes to parent
 	const handleModelChange = (model: AIModel) => {
 		setSelectedModel(model);
 		onModelChange?.(model);
 	};
-	
+
 	const handlePromptChange = (value: string) => {
 		setPrompt(value);
 		onPromptChange?.(value);
 	};
-	
+
 	const handlePresetChange = (preset: string | null) => {
 		setSelectedPreset(preset);
 		onPresetChange?.(preset);
 	};
 
 	const isConnected = status === "connected";
-	const hasEnoughBalance = (balance?.satoshis ?? 0) >= FONT_GENERATION_COST_SATS;
 
 	// Poll for generation status when we have a jobId
 	const { data: statusData } = useSWR<GenerationStatus>(
@@ -150,7 +180,11 @@ export function AIGenerateTab({
 			refreshInterval: (data) => {
 				if (!data) return 3000;
 				// Stop polling when complete, failed, not found, OR when we have font data
-				if (data.status === "complete" || data.status === "failed" || data.status === "not_found") {
+				if (
+					data.status === "complete" ||
+					data.status === "failed" ||
+					data.status === "not_found"
+				) {
 					return 0;
 				}
 				// Also stop if we're "compiling" but already have font data
@@ -160,7 +194,7 @@ export function AIGenerateTab({
 				return 3000;
 			},
 			revalidateOnFocus: true,
-		}
+		},
 	);
 
 	// Check localStorage for active generation on mount
@@ -203,7 +237,7 @@ export function AIGenerateTab({
 		}
 	}, [statusData, onFontGenerated]);
 
-	const handlePresetClick = (preset: typeof STYLE_PRESETS[0]) => {
+	const handlePresetClick = (preset: (typeof STYLE_PRESETS)[0]) => {
 		handlePresetChange(preset.id);
 		handlePromptChange(preset.prompt);
 	};
@@ -222,12 +256,6 @@ export function AIGenerateTab({
 			return; // Let user click again after connecting
 		}
 
-		// Check balance
-		if (!hasEnoughBalance) {
-			setError(`Insufficient balance. You need at least ${formatBsv(FONT_GENERATION_COST_SATS)} BSV to generate a font.`);
-			return;
-		}
-
 		setError(null);
 		// Clear parent's font state when starting new generation
 		onClear?.();
@@ -235,7 +263,10 @@ export function AIGenerateTab({
 		try {
 			// Step 1: Process payment first
 			setIsPaying(true);
-			const paymentResult = await sendPayment(FEE_ADDRESS, FONT_GENERATION_COST_SATS);
+			const paymentResult = await sendPayment(
+				FEE_ADDRESS,
+				FONT_GENERATION_COST_SATS,
+			);
 			setIsPaying(false);
 
 			if (!paymentResult) {
@@ -260,14 +291,16 @@ export function AIGenerateTab({
 			}
 
 			setJobId(data.jobId);
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({
-				jobId: data.jobId,
-				prompt,
-				model: selectedModel,
-				paymentTxid: paymentResult.txid,
-				startedAt: Date.now(),
-			}));
-
+			localStorage.setItem(
+				STORAGE_KEY,
+				JSON.stringify({
+					jobId: data.jobId,
+					prompt,
+					model: selectedModel,
+					paymentTxid: paymentResult.txid,
+					startedAt: Date.now(),
+				}),
+			);
 		} catch (err) {
 			console.error("[AIGenerateTab] Error:", err);
 			setError(err instanceof Error ? err.message : "Generation failed");
@@ -283,8 +316,14 @@ export function AIGenerateTab({
 	}, [onClear]);
 
 	// Determine UI state
-	const isGenerating = jobId !== null && statusData?.status !== "complete" && statusData?.status !== "failed";
-	const progressStage = statusData?.status === "compiling" ? "COMPILING_FONT..." : "GENERATING_GLYPHS...";
+	const isGenerating =
+		jobId !== null &&
+		statusData?.status !== "complete" &&
+		statusData?.status !== "failed";
+	const progressStage =
+		statusData?.status === "compiling"
+			? "COMPILING_FONT..."
+			: "GENERATING_GLYPHS...";
 	const hasFontReady = externalFont !== null && externalFont !== undefined;
 	const isProcessing = isPaying || isSending || isGenerating;
 
@@ -360,15 +399,6 @@ export function AIGenerateTab({
 			);
 		}
 
-		if (!hasEnoughBalance) {
-			return (
-				<>
-					<Wallet className="mr-2 h-4 w-4" />
-					Insufficient Balance
-				</>
-			);
-		}
-
 		if (isPaying || isSending) {
 			return (
 				<>
@@ -389,8 +419,8 @@ export function AIGenerateTab({
 
 		return (
 			<>
-				<Wand2 className="mr-2 h-4 w-4" />
-				[ GENERATE_FONT ] ({formatBsv(FONT_GENERATION_COST_SATS)} BSV)
+				<Wand2 className="mr-2 h-4 w-4" />[ GENERATE_FONT ] (
+				{formatBsv(FONT_GENERATION_COST_SATS)} BSV)
 			</>
 		);
 	};
@@ -483,16 +513,21 @@ export function AIGenerateTab({
 					<div className="space-y-2 rounded border border-border bg-muted/30 p-3">
 						<div className="flex justify-between font-mono text-xs">
 							<span className="text-primary">{progressStage}</span>
-							<span className="tabular-nums text-muted-foreground animate-pulse">...</span>
+							<span className="tabular-nums text-muted-foreground animate-pulse">
+								...
+							</span>
 						</div>
 						<div className="h-1.5 overflow-hidden rounded-full bg-border">
 							<div
 								className="h-full bg-primary animate-pulse"
-								style={{ width: statusData?.status === "compiling" ? "80%" : "40%" }}
+								style={{
+									width: statusData?.status === "compiling" ? "80%" : "40%",
+								}}
 							/>
 						</div>
 						<p className="font-mono text-[10px] text-muted-foreground">
-							Generation continues in background. You can navigate away and return.
+							Generation continues in background. You can navigate away and
+							return.
 						</p>
 					</div>
 				)}
@@ -511,22 +546,10 @@ export function AIGenerateTab({
 					</div>
 				)}
 
-				{/* Balance info when connected */}
-				{isConnected && balance && (
-					<div className="rounded border border-border bg-muted/30 px-3 py-2 text-center font-mono text-xs text-muted-foreground">
-						Balance: {formatBsv(balance.satoshis)} BSV
-						{!hasEnoughBalance && (
-							<span className="ml-2 text-destructive">
-								(need {formatBsv(FONT_GENERATION_COST_SATS)} BSV)
-							</span>
-						)}
-					</div>
-				)}
-
 				{/* Generate Button */}
 				<Button
 					onClick={handleGenerate}
-					disabled={!prompt.trim() || isProcessing || (isConnected && !hasEnoughBalance)}
+					disabled={!prompt.trim() || isProcessing}
 					className="w-full font-mono"
 				>
 					{getButtonContent()}
@@ -534,18 +557,23 @@ export function AIGenerateTab({
 
 				{/* Info Note */}
 				<div className="rounded border border-dashed border-border p-3 font-mono text-[10px] text-muted-foreground/70">
-					<p className="mb-1 font-medium text-muted-foreground">How it works:</p>
+					<p className="mb-1 font-medium text-muted-foreground">
+						How it works:
+					</p>
 					<ol className="list-inside list-decimal space-y-0.5">
 						<li>AI analyzes your style description</li>
 						<li>Generates SVG path data for each glyph</li>
 						<li>You preview and approve the design</li>
 						<li>Font is compiled and ready to inscribe</li>
 					</ol>
-					<p className="mt-2">Generation typically takes 30-90 seconds. You can navigate away and return.</p>
+					<p className="mt-2">
+						Generation typically takes 30-90 seconds. You can navigate away and
+						return.
+					</p>
 				</div>
 			</div>
 		</div>
 	);
 }
 
-export type { GeneratedFont, CompiledFont };
+export type { CompiledFont, GeneratedFont };

@@ -1,4 +1,8 @@
-import { toShadcnRegistry, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
+import {
+	getOrdfsUrl,
+	toShadcnRegistry,
+	validateThemeToken,
+} from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -18,7 +22,9 @@ export async function GET(
 
 		// New format: ord-fs/json manifest — fetch theme.json via directory path
 		if (contentType.includes("ord-fs/json") || contentType.includes("ord-fs")) {
-			const themeJsonResponse = await fetch(getOrdfsUrl(`${origin}/theme.json`));
+			const themeJsonResponse = await fetch(
+				getOrdfsUrl(`${origin}/theme.json`),
+			);
 			if (!themeJsonResponse.ok) {
 				return NextResponse.json(
 					{ error: "Theme manifest found but theme.json not accessible" },

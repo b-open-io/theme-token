@@ -1,11 +1,11 @@
 "use client";
 
 import {
+	type ThemeToken,
 	toCss,
 	toJson,
-	toTailwindConfig,
 	toShadcnCliCommand,
-	type ThemeToken,
+	toTailwindConfig,
 } from "@theme-token/sdk";
 import { Check, Copy, Download, Terminal } from "lucide-react";
 import { useState } from "react";

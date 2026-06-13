@@ -1,6 +1,10 @@
 "use client";
 
-import { parseCss, validateThemeToken, type ThemeToken } from "@theme-token/sdk";
+import {
+	parseCss,
+	type ThemeToken,
+	validateThemeToken,
+} from "@theme-token/sdk";
 import { AlertCircle, Check, Upload } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -122,11 +126,16 @@ export function ImportModal({ onImport, trigger }: ImportModalProps) {
 							<div className="mt-2 flex items-center gap-2">
 								<div className="flex h-5 overflow-hidden rounded-md border border-green-500/30">
 									{[
-										importedTheme.styles.light?.primary || importedTheme.styles.dark?.primary,
-										importedTheme.styles.light?.secondary || importedTheme.styles.dark?.secondary,
-										importedTheme.styles.light?.accent || importedTheme.styles.dark?.accent,
-										importedTheme.styles.light?.muted || importedTheme.styles.dark?.muted,
-										importedTheme.styles.light?.background || importedTheme.styles.dark?.background,
+										importedTheme.styles.light?.primary ||
+											importedTheme.styles.dark?.primary,
+										importedTheme.styles.light?.secondary ||
+											importedTheme.styles.dark?.secondary,
+										importedTheme.styles.light?.accent ||
+											importedTheme.styles.dark?.accent,
+										importedTheme.styles.light?.muted ||
+											importedTheme.styles.dark?.muted,
+										importedTheme.styles.light?.background ||
+											importedTheme.styles.dark?.background,
 									].map((color, i) => (
 										<div
 											key={i}

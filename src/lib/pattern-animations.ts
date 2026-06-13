@@ -1,6 +1,6 @@
 /**
  * Pattern Animations - inject CSS @keyframes into SVG
- * 
+ *
  * Injects a <defs><style> section with animations that can be applied
  * to pattern elements (rotation, scale, opacity, translation).
  */
@@ -112,16 +112,16 @@ function generateAnimationProps(opts: AnimationOptions): string {
 
 /**
  * Inject CSS animations into an SVG string
- * 
+ *
  * This adds a <defs><style> block with @keyframes and applies
  * animations to a wrapper <g> element around the pattern content.
  */
 export function injectAnimations(svg: string, opts: AnimationOptions): string {
 	// Check if any animation is enabled
-	const hasAnimation = 
-		opts.rotate?.enabled || 
-		opts.scale?.enabled || 
-		opts.opacity?.enabled || 
+	const hasAnimation =
+		opts.rotate?.enabled ||
+		opts.scale?.enabled ||
+		opts.opacity?.enabled ||
 		opts.translate?.enabled;
 
 	if (!hasAnimation) return svg;
@@ -142,7 +142,7 @@ ${keyframes}
 	// Find the closing </svg> tag
 	const closingTag = "</svg>";
 	const closingIndex = svg.lastIndexOf(closingTag);
-	
+
 	if (closingIndex === -1) {
 		console.warn("Invalid SVG: no closing </svg> tag found");
 		return svg;
@@ -156,7 +156,7 @@ ${keyframes}
 	}
 
 	const svgOpenTag = svgOpenMatch[0];
-	const svgOpenEnd = svgOpenMatch.index! + svgOpenTag.length;
+	const svgOpenEnd = (svgOpenMatch.index ?? 0) + svgOpenTag.length;
 	const innerContent = svg.slice(svgOpenEnd, closingIndex);
 
 	// Check if there's already a <defs> section
@@ -177,7 +177,10 @@ ${keyframes}
 
 		// Wrap inner content (excluding defs) in animated group
 		// This is more complex, so for simplicity we'll just add a new wrapper
-		return result.replace(closingTag, `<g class="pattern-animated">${innerContent}</g>${closingTag}`);
+		return result.replace(
+			closingTag,
+			`<g class="pattern-animated">${innerContent}</g>${closingTag}`,
+		);
 	}
 
 	// Build new SVG with injected style and animated wrapper
@@ -193,4 +196,3 @@ export const DEFAULT_ANIMATION_OPTIONS: AnimationOptions = {
 	opacity: { enabled: false, duration: 5, min: 0.3, max: 1 },
 	translate: { enabled: false, duration: 5, x: 10, y: 10 },
 };
-

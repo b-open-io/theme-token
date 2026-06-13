@@ -20,9 +20,9 @@ function parsePathData(d: string): PathCommand[] {
 
 	// Match command letter followed by numbers (with optional decimals and negatives)
 	const regex = /([MmLlHhVvCcSsQqTtAaZz])([^MmLlHhVvCcSsQqTtAaZz]*)/g;
-	let match: RegExpExecArray | null;
+	let match: RegExpExecArray | null = regex.exec(d);
 
-	while ((match = regex.exec(d)) !== null) {
+	while (match !== null) {
 		const type = match[1];
 		const argsString = match[2].trim();
 
@@ -31,13 +31,15 @@ function parsePathData(d: string): PathCommand[] {
 		if (argsString) {
 			// Match numbers including negative and decimal
 			const numRegex = /-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g;
-			let numMatch: RegExpExecArray | null;
-			while ((numMatch = numRegex.exec(argsString)) !== null) {
+			let numMatch: RegExpExecArray | null = numRegex.exec(argsString);
+			while (numMatch !== null) {
 				values.push(Number.parseFloat(numMatch[0]));
+				numMatch = numRegex.exec(argsString);
 			}
 		}
 
 		commands.push({ type, values });
+		match = regex.exec(d);
 	}
 
 	return commands;
@@ -484,8 +486,12 @@ export function getPathBounds(d: string): {
 		maxX: maxX === Number.NEGATIVE_INFINITY ? 0 : maxX,
 		maxY: maxY === Number.NEGATIVE_INFINITY ? 0 : maxY,
 		width:
-			maxX === Number.NEGATIVE_INFINITY ? 0 : maxX - (minX === Number.POSITIVE_INFINITY ? 0 : minX),
+			maxX === Number.NEGATIVE_INFINITY
+				? 0
+				: maxX - (minX === Number.POSITIVE_INFINITY ? 0 : minX),
 		height:
-			maxY === Number.NEGATIVE_INFINITY ? 0 : maxY - (minY === Number.POSITIVE_INFINITY ? 0 : minY),
+			maxY === Number.NEGATIVE_INFINITY
+				? 0
+				: maxY - (minY === Number.POSITIVE_INFINITY ? 0 : minY),
 	};
 }

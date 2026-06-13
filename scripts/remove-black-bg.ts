@@ -12,12 +12,12 @@ import sharp from "sharp";
 async function removeBlackBackground(
 	inputPath: string,
 	outputPath: string,
-	threshold = 15
+	threshold = 15,
 ) {
 	const input = sharp(inputPath);
 	const meta = await input.metadata();
-	const width = meta.width!;
-	const height = meta.height!;
+	const { width, height } = meta;
+	if (!width || !height) throw new Error("Input image has no dimensions");
 
 	// Get raw RGBA buffer
 	const buffer = await input.ensureAlpha().raw().toBuffer();
@@ -50,7 +50,7 @@ const threshold = thresholdStr ? Number.parseInt(thresholdStr, 10) : 15;
 
 if (!inputPath || !outputPath) {
 	console.error(
-		"Usage: bun scripts/remove-black-bg.ts <input> <output.png> [threshold]"
+		"Usage: bun scripts/remove-black-bg.ts <input> <output.png> [threshold]",
 	);
 	process.exit(1);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Palette, Sparkles, Blocks } from "lucide-react";
+import { Blocks, Palette, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

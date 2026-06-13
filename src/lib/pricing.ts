@@ -103,7 +103,9 @@ export function getPrice(tool: PricingTool, hasPrismPass = false): number {
  * @param hasPrismPass - Whether to show discounted prices
  * @returns Object with tool prices
  */
-export function getAllPrices(hasPrismPass = false): Record<PricingTool, number> {
+export function getAllPrices(
+	hasPrismPass = false,
+): Record<PricingTool, number> {
 	const prices = {} as Record<PricingTool, number>;
 
 	for (const tool of Object.keys(BASE_PRICES) as PricingTool[]) {

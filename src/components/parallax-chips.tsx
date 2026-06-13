@@ -1,6 +1,11 @@
 "use client";
 
-import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import {
+	type MotionValue,
+	motion,
+	useScroll,
+	useTransform,
+} from "framer-motion";
 import { useRef } from "react";
 
 interface Chip {
@@ -17,18 +22,67 @@ interface Chip {
 const chips: Chip[] = [
 	{ color: "bg-primary", x: "8%", y: 50, speed: 0.6, scale: 1.2, rotation: 12 },
 	{ color: "bg-chart-1", x: "85%", y: 120, speed: 1.4, scale: 0.7, blur: true },
-	{ color: "bg-chart-2", x: "35%", y: 200, speed: 0.9, scale: 1.0, rotation: -8 },
+	{
+		color: "bg-chart-2",
+		x: "35%",
+		y: 200,
+		speed: 0.9,
+		scale: 1.0,
+		rotation: -8,
+	},
 	{ color: "bg-chart-3", x: "72%", y: 80, speed: 1.1, scale: 0.85 },
 	{ color: "bg-chart-4", x: "18%", y: 280, speed: 1.6, scale: 0.6, blur: true },
-	{ color: "bg-chart-5", x: "55%", y: 150, speed: 0.7, scale: 1.1, rotation: 20 },
-	{ color: "bg-primary", x: "92%", y: 320, speed: 1.3, scale: 0.55, blur: true },
-	{ color: "bg-chart-1", x: "42%", y: 380, speed: 0.8, scale: 0.9, rotation: -15 },
+	{
+		color: "bg-chart-5",
+		x: "55%",
+		y: 150,
+		speed: 0.7,
+		scale: 1.1,
+		rotation: 20,
+	},
+	{
+		color: "bg-primary",
+		x: "92%",
+		y: 320,
+		speed: 1.3,
+		scale: 0.55,
+		blur: true,
+	},
+	{
+		color: "bg-chart-1",
+		x: "42%",
+		y: 380,
+		speed: 0.8,
+		scale: 0.9,
+		rotation: -15,
+	},
 	{ color: "bg-chart-2", x: "5%", y: 180, speed: 1.5, scale: 0.65, blur: true },
-	{ color: "bg-chart-3", x: "68%", y: 420, speed: 0.5, scale: 1.3, rotation: 5 },
+	{
+		color: "bg-chart-3",
+		x: "68%",
+		y: 420,
+		speed: 0.5,
+		scale: 1.3,
+		rotation: 5,
+	},
 	{ color: "bg-chart-4", x: "28%", y: 100, speed: 1.2, scale: 0.75 },
-	{ color: "bg-chart-5", x: "78%", y: 280, speed: 0.95, scale: 0.8, rotation: -10 },
+	{
+		color: "bg-chart-5",
+		x: "78%",
+		y: 280,
+		speed: 0.95,
+		scale: 0.8,
+		rotation: -10,
+	},
 	{ color: "bg-primary", x: "48%", y: 350, speed: 1.0, scale: 0.7, blur: true },
-	{ color: "bg-chart-1", x: "12%", y: 450, speed: 0.75, scale: 1.0, rotation: 18 },
+	{
+		color: "bg-chart-1",
+		x: "12%",
+		y: 450,
+		speed: 0.75,
+		scale: 1.0,
+		rotation: 18,
+	},
 	{ color: "bg-chart-2", x: "62%", y: 30, speed: 1.35, scale: 0.6, blur: true },
 ];
 
@@ -116,7 +170,11 @@ export function FloatingChips() {
 					key={`float-${i}`}
 					animate={{
 						y: [0, -20, 0],
-						rotate: [chip.rotation || 0, (chip.rotation || 0) + 10, chip.rotation || 0],
+						rotate: [
+							chip.rotation || 0,
+							(chip.rotation || 0) + 10,
+							chip.rotation || 0,
+						],
 					}}
 					transition={{
 						duration: 4 + i * 0.5,
@@ -125,7 +183,7 @@ export function FloatingChips() {
 					}}
 					style={{
 						left: chip.x,
-						top: `${20 + (i * 10)}%`,
+						top: `${20 + i * 10}%`,
 						scale: chip.scale * 0.6,
 					}}
 					className={`

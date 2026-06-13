@@ -11,9 +11,9 @@
  * }
  */
 
-import { type NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
-import { deleteDraft, type DraftMetadata, type DraftType } from "@/lib/storage";
+import { type NextRequest, NextResponse } from "next/server";
+import { type DraftMetadata, type DraftType, deleteDraft } from "@/lib/storage";
 
 // Vercel Cron authorization
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 					const drafts = await kv.mget<DraftMetadata[]>(...keys);
 
 					for (const draft of drafts) {
-						if (draft && draft.expiresAt && draft.expiresAt < now) {
+						if (draft?.expiresAt && draft.expiresAt < now) {
 							try {
 								await deleteDraft(draft.userId, draft.type, draft.id);
 								totalDeleted++;
@@ -69,10 +69,7 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Cleanup cron error:", error);
-		return NextResponse.json(
-			{ error: "Cleanup failed" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Cleanup failed" }, { status: 500 });
 	}
 }
 

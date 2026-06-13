@@ -1,7 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import Link from "next/link";
+import { motion } from "framer-motion";
 import {
 	Check,
 	Code2,
@@ -15,20 +14,24 @@ import {
 	Wallet,
 	Wand2,
 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useState } from "react";
 import { AmbientMesh } from "@/components/ambient-mesh";
-import { ColorSectionDivider, ColorBleed, GlowingDivider } from "@/components/color-section-divider";
+import {
+	ColorBleed,
+	ColorSectionDivider,
+} from "@/components/color-section-divider";
 import { HeroOrbs } from "@/components/hero-orbs";
 import { JsonSyntax } from "@/components/json-syntax";
 import { PageContainer } from "@/components/page-container";
 import { ParallaxChips } from "@/components/parallax-chips";
 import { StatsBar } from "@/components/stats-bar";
+import { SwatchyHeroController } from "@/components/swatchy/swatchy-hero-controller";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Testimonials } from "@/components/testimonials";
 import { ThemeGallery } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SwatchyHeroController } from "@/components/swatchy/swatchy-hero-controller";
-import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 
 const fadeIn = {
 	initial: { opacity: 0, y: 20 },
@@ -74,7 +77,9 @@ export default function Home() {
 	const { openChat, setPendingMessage } = useSwatchyStore();
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage("I want to create a new theme. Can you help me design something?");
+		setPendingMessage(
+			"I want to create a new theme. Can you help me design something?",
+		);
 		openChat();
 	}, [openChat, setPendingMessage]);
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}`;
@@ -133,7 +138,12 @@ export default function Home() {
 									Browse Themes
 								</Link>
 							</Button>
-							<Button size="lg" variant="outline" className="gap-2" onClick={handleCreateWithSwatchy}>
+							<Button
+								size="lg"
+								variant="outline"
+								className="gap-2"
+								onClick={handleCreateWithSwatchy}
+							>
 								<Wand2 className="h-5 w-5" />
 								Create Theme
 							</Button>

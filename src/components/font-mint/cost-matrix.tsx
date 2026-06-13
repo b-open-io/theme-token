@@ -13,7 +13,11 @@ const SATS_PER_BYTE = 0.5; // Current BSV mining fee rate
 const ORDFS_INDEX_FEE = 1000; // Satoshis for ORDFS indexing
 const TX_OVERHEAD_BYTES = 250; // Base transaction overhead
 
-export function CostMatrix({ totalBytes, metadataBytes, previewBytes = 0 }: CostMatrixProps) {
+export function CostMatrix({
+	totalBytes,
+	metadataBytes,
+	previewBytes = 0,
+}: CostMatrixProps) {
 	const { formatUsd, rate } = useBsvRateContext();
 
 	const hasPreview = previewBytes > 0;
@@ -22,7 +26,7 @@ export function CostMatrix({ totalBytes, metadataBytes, previewBytes = 0 }: Cost
 	const totalTxBytes = payloadBytes + TX_OVERHEAD_BYTES;
 	const networkFee = Math.ceil(totalTxBytes * SATS_PER_BYTE);
 	// ORDFS index fee per output
-	const totalSats = networkFee + (ORDFS_INDEX_FEE * outputCount);
+	const totalSats = networkFee + ORDFS_INDEX_FEE * outputCount;
 	const totalBsv = totalSats / 100_000_000;
 
 	const formatBytes = (bytes: number): string => {
@@ -37,7 +41,9 @@ export function CostMatrix({ totalBytes, metadataBytes, previewBytes = 0 }: Cost
 		<div className="rounded border border-border bg-background font-mono text-xs">
 			{/* Header */}
 			<div className="border-b border-border px-3 py-2">
-				<span className="text-muted-foreground">{"// ESTIMATED_COST_BREAKDOWN"}</span>
+				<span className="text-muted-foreground">
+					{"// ESTIMATED_COST_BREAKDOWN"}
+				</span>
 			</div>
 
 			{/* Cost Lines */}
@@ -65,13 +71,20 @@ export function CostMatrix({ totalBytes, metadataBytes, previewBytes = 0 }: Cost
 
 				<div className="flex justify-between text-muted-foreground">
 					<span>&gt; NETWORK_FEE:</span>
-					<span className="tabular-nums">{networkFee.toLocaleString()} sats</span>
+					<span className="tabular-nums">
+						{networkFee.toLocaleString()} sats
+					</span>
 				</div>
 				<div className="flex justify-between text-muted-foreground">
 					<span>&gt; ORDFS_INDEX_FEE:</span>
 					<span className="tabular-nums">
 						{(ORDFS_INDEX_FEE * outputCount).toLocaleString()} sats
-						{hasPreview && <span className="text-muted-foreground/60"> ({outputCount} outputs)</span>}
+						{hasPreview && (
+							<span className="text-muted-foreground/60">
+								{" "}
+								({outputCount} outputs)
+							</span>
+						)}
 					</span>
 				</div>
 

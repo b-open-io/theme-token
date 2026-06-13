@@ -1,21 +1,28 @@
 "use client";
 
-import { AlertTriangle, Archive, CheckCircle, Loader2, Upload, X } from "lucide-react";
-import { useCallback, useRef, useState, useEffect } from "react";
+import {
+	AlertTriangle,
+	Archive,
+	CheckCircle,
+	Loader2,
+	Upload,
+	X,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FontFile } from "@/app/studio/font/font-mint-client";
 import type { FontValidationResult } from "@/lib/font-validation";
 import {
+	createUploadedFontFromFile,
+	useFontUploadStore,
+} from "@/lib/stores/font-upload-store";
+import {
+	type ExtractedFontFile,
+	extractedFontToFile,
 	isZipFile,
 	loadFontZip,
-	extractedFontToFile,
-	type ZipFontPackage,
-	type ExtractedFontFile,
 	type ZipFontMetadata,
+	type ZipFontPackage,
 } from "@/lib/zip-font-loader";
-import {
-	useFontUploadStore,
-	createUploadedFontFromFile,
-} from "@/lib/stores/font-upload-store";
 
 export interface FontFileWithValidation extends FontFile {
 	validation?: FontValidationResult;
@@ -36,7 +43,12 @@ function parseWeightFromName(filename: string): number {
 	if (name.includes("thin") || name.includes("100")) return 100;
 	if (name.includes("extralight") || name.includes("200")) return 200;
 	if (name.includes("light") || name.includes("300")) return 300;
-	if (name.includes("regular") || name.includes("400") || name.includes("normal")) return 400;
+	if (
+		name.includes("regular") ||
+		name.includes("400") ||
+		name.includes("normal")
+	)
+		return 400;
 	if (name.includes("medium") || name.includes("500")) return 500;
 	if (name.includes("semibold") || name.includes("600")) return 600;
 	if (name.includes("bold") || name.includes("700")) return 700;
@@ -56,14 +68,20 @@ function formatSize(bytes: number): string {
 	return `${(bytes / 1024).toFixed(1)}kb`;
 }
 
-export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: DropZoneCLIProps) {
+export function DropZoneCLI({
+	files,
+	onFilesChange,
+	onZipMetadataDetected,
+}: DropZoneCLIProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isLoadingZip, setIsLoadingZip] = useState(false);
 	const [zipPackage, setZipPackage] = useState<ZipFontPackage | null>(null);
 
 	// Font upload store for cross-studio sharing
 	const addFontToStore = useFontUploadStore((state) => state.addFont);
-	const loadFontForPreview = useFontUploadStore((state) => state.loadFontForPreview);
+	const loadFontForPreview = useFontUploadStore(
+		(state) => state.loadFontForPreview,
+	);
 
 	// Use ref to always have current files without causing re-renders
 	// This fixes stale closure issues in async callbacks
@@ -73,16 +91,19 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 	}, [files]);
 
 	// Add font to shared store for cross-studio preview
-	const syncToUploadStore = useCallback(async (file: File, familyName?: string) => {
-		try {
-			const fontData = await createUploadedFontFromFile(file, familyName);
-			const id = addFontToStore(fontData);
-			// Load it for immediate preview
-			await loadFontForPreview(id);
-		} catch (err) {
-			console.warn("[DropZone] Failed to sync font to upload store:", err);
-		}
-	}, [addFontToStore, loadFontForPreview]);
+	const syncToUploadStore = useCallback(
+		async (file: File, familyName?: string) => {
+			try {
+				const fontData = await createUploadedFontFromFile(file, familyName);
+				const id = addFontToStore(fontData);
+				// Load it for immediate preview
+				await loadFontForPreview(id);
+			} catch (err) {
+				console.warn("[DropZone] Failed to sync font to upload store:", err);
+			}
+		},
+		[addFontToStore, loadFontForPreview],
+	);
 
 	// Validate a single font file via API
 	const validateFont = useCallback(
@@ -113,9 +134,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 				// Update file with validation result - use ref for current files
 				onFilesChange(
 					filesRef.current.map((f, i) =>
-						i === index
-							? { ...f, isValidating: false, validation: result }
-							: f,
+						i === index ? { ...f, isValidating: false, validation: result } : f,
 					),
 				);
 			} catch (error) {
@@ -162,7 +181,9 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 			validateFont(fontFile, currentFiles.length);
 
 			// Sync to upload store for cross-studio sharing
-			const familyName = zipPackage?.metadata?.name || font.name.replace(/\.(woff2?|ttf|otf)$/i, "");
+			const familyName =
+				zipPackage?.metadata?.name ||
+				font.name.replace(/\.(woff2?|ttf|otf)$/i, "");
 			syncToUploadStore(file, familyName);
 
 			// Clear zip picker
@@ -250,7 +271,13 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 				}
 			}
 		},
-		[onFilesChange, validateFont, handleSelectFromZip, syncToUploadStore, onZipMetadataDetected],
+		[
+			onFilesChange,
+			validateFont,
+			handleSelectFromZip,
+			syncToUploadStore,
+			onZipMetadataDetected,
+		],
 	);
 
 	const handleDrop = useCallback(
@@ -282,7 +309,8 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 	// Zip picker modal
 	if (zipPackage) {
 		const { metadata } = zipPackage;
-		const hasMetadata = metadata.name || metadata.authors || metadata.license || metadata.website;
+		const hasMetadata =
+			metadata.name || metadata.authors || metadata.license || metadata.website;
 
 		return (
 			<div className="rounded border border-border bg-background">
@@ -319,14 +347,18 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 								LICENSE: {metadata.license}
 								{metadata.licenseSource && (
 									<span className="text-muted-foreground">
-										{" "}(from {metadata.licenseSource})
+										{" "}
+										(from {metadata.licenseSource})
 									</span>
 								)}
 							</div>
 						)}
 						{metadata.website && (
 							<div className="text-green-600 dark:text-green-400">
-								WEBSITE: <span className="text-muted-foreground">{metadata.website}</span>
+								WEBSITE:{" "}
+								<span className="text-muted-foreground">
+									{metadata.website}
+								</span>
 							</div>
 						)}
 					</div>
@@ -350,7 +382,10 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 						))}
 						{zipPackage.otherFileCount > 0 && (
 							<div className="flex w-full items-center justify-between px-2 py-2 text-muted-foreground/50 cursor-not-allowed">
-								<span className="italic">and {zipPackage.otherFileCount} other {zipPackage.otherFileCount === 1 ? "item" : "items"}</span>
+								<span className="italic">
+									and {zipPackage.otherFileCount} other{" "}
+									{zipPackage.otherFileCount === 1 ? "item" : "items"}
+								</span>
 							</div>
 						)}
 					</div>
@@ -396,6 +431,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 			</div>
 
 			{/* Drop Area */}
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop region; keyboard/click file selection is handled by the nested label+input, drag events have no semantic role */}
 			<div
 				onDrop={handleDrop}
 				onDragOver={handleDragOver}
@@ -437,11 +473,13 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 
 						{/* File Rows */}
 						{files.map((f, i) => {
-							const hasError = f.validation?.errors?.length || f.validationError;
+							const hasError =
+								f.validation?.errors?.length || f.validationError;
 							const hasWarning = f.validation?.warnings?.length && !hasError;
 							const isValid = f.validation && !hasError;
 
 							return (
+								// biome-ignore lint/suspicious/noArrayIndexKey: files can share an identical name; index disambiguates duplicates and the list is append/replace only, not reordered
 								<div key={`${f.name}-${i}`}>
 									<div
 										className={`grid grid-cols-[24px_1fr_80px_60px_60px_24px] items-center gap-2 py-1 ${
@@ -485,7 +523,7 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 									</div>
 
 									{/* Validation Messages */}
-									{(f.validationError || f.validation?.errors?.length) ? (
+									{f.validationError || f.validation?.errors?.length ? (
 										<div className="mb-2 ml-6 rounded border border-destructive/50 bg-destructive/10 px-2 py-1.5 text-[10px] text-destructive">
 											{f.validationError || f.validation?.errors?.join(" ")}
 										</div>
@@ -505,16 +543,18 @@ export function DropZoneCLI({ files, onFilesChange, onZipMetadataDetected }: Dro
 									)}
 
 									{/* Zip-detected metadata */}
-									{f.zipMetadata?.license && !f.validation?.checks?.isGoogleFont && (
-										<div className="mb-2 ml-6 rounded border border-green-500/50 bg-green-500/10 px-2 py-1.5 text-[10px] text-green-600 dark:text-green-400">
-											License: {f.zipMetadata.license}
-											{f.zipMetadata.licenseSource && (
-												<span className="text-muted-foreground">
-													{" "}(from {f.zipMetadata.licenseSource})
-												</span>
-											)}
-										</div>
-									)}
+									{f.zipMetadata?.license &&
+										!f.validation?.checks?.isGoogleFont && (
+											<div className="mb-2 ml-6 rounded border border-green-500/50 bg-green-500/10 px-2 py-1.5 text-[10px] text-green-600 dark:text-green-400">
+												License: {f.zipMetadata.license}
+												{f.zipMetadata.licenseSource && (
+													<span className="text-muted-foreground">
+														{" "}
+														(from {f.zipMetadata.licenseSource})
+													</span>
+												)}
+											</div>
+										)}
 								</div>
 							);
 						})}

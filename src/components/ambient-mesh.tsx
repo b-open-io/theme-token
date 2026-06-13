@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 
 /**
  * AmbientMesh - A fixed background layer with animated gradient orbs
@@ -22,8 +22,8 @@ export function AmbientMesh() {
 	const orb3Y = useTransform(smoothProgress, [0, 1], ["0%", "80%"]);
 
 	// Hue shifts for color morphing
-	const orb1Hue = useTransform(smoothProgress, [0, 0.5, 1], [0, 20, 40]);
-	const orb2Hue = useTransform(smoothProgress, [0, 0.5, 1], [0, -30, -60]);
+	const _orb1Hue = useTransform(smoothProgress, [0, 0.5, 1], [0, 20, 40]);
+	const _orb2Hue = useTransform(smoothProgress, [0, 0.5, 1], [0, -30, -60]);
 
 	return (
 		<div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

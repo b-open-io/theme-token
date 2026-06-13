@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FontCard } from "@/components/market/font-card";
+import { FontFilterSidebar } from "@/components/market/font-filter-sidebar";
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,21 +25,21 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import {
-	fetchFontMarketListings,
-	type FontMarketListing,
-} from "@/lib/yours-wallet";
-import { FontCard } from "@/components/market/font-card";
-import { FontFilterSidebar } from "@/components/market/font-filter-sidebar";
 import type { FontFilterState } from "@/lib/font-market";
 import { DEFAULT_FONT_FILTERS } from "@/lib/font-market";
+import {
+	type FontMarketListing,
+	fetchFontMarketListings,
+} from "@/lib/yours-wallet";
 
 export default function FontBrowsePage() {
 	const { status, connect } = useYoursWallet();
 	const { openChat, setPendingMessage } = useSwatchyStore();
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage("I want to create a custom font. Can you help me design something?");
+		setPendingMessage(
+			"I want to create a custom font. Can you help me design something?",
+		);
 		openChat();
 	}, [openChat, setPendingMessage]);
 	const [listings, setListings] = useState<FontMarketListing[]>([]);
@@ -48,6 +50,7 @@ export default function FontBrowsePage() {
 
 	const isConnected = status === "connected";
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: load listings once on mount
 	useEffect(() => {
 		loadListings();
 	}, []);
@@ -149,7 +152,7 @@ export default function FontBrowsePage() {
 		if (filters.glyphCountMin > 0) {
 			result = result.filter(
 				(listing) =>
-					(listing.metadata.glyphCount || 0) >= filters.glyphCountMin
+					(listing.metadata.glyphCount || 0) >= filters.glyphCountMin,
 			);
 		}
 
@@ -172,7 +175,7 @@ export default function FontBrowsePage() {
 				maxPrice={maxPrice}
 			/>
 		),
-		[filters, maxPrice]
+		[filters, maxPrice],
 	);
 
 	return (
@@ -294,9 +297,9 @@ export default function FontBrowsePage() {
 												Be the first to create and list an AI-generated font!
 											</p>
 											<Button onClick={handleCreateWithSwatchy}>
-											<MessageCircle className="mr-2 h-4 w-4" />
-											Create Font
-										</Button>
+												<MessageCircle className="mr-2 h-4 w-4" />
+												Create Font
+											</Button>
 										</div>
 									</motion.div>
 								</div>

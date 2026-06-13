@@ -1,15 +1,33 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Code2, Copy, Check, FileCode, Package, Blocks, ChevronDown, ChevronRight, CheckCircle2, Play, X, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useSwatchyStore, type GeneratedRegistryItem } from "./swatchy-store";
-import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+	AlertTriangle,
+	Blocks,
+	Check,
+	CheckCircle2,
+	ChevronDown,
+	ChevronRight,
+	Code2,
+	Copy,
+	FileCode,
+	Loader2,
+	Package,
+	Play,
+	RefreshCw,
+	X,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { InscribeBundleDialog } from "@/components/inscribe-bundle-dialog";
-import { buildRegistryBundle, type RegistryManifest } from "@/lib/bundle-builder";
+import { Button } from "@/components/ui/button";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import {
+	buildRegistryBundle,
+	type RegistryManifest,
+} from "@/lib/bundle-builder";
 import { featureFlags } from "@/lib/feature-flags";
+import { cn } from "@/lib/utils";
+import { type GeneratedRegistryItem, useSwatchyStore } from "./swatchy-store";
 
 interface BlockPreviewProps {
 	item: GeneratedRegistryItem;
@@ -23,11 +41,17 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
 	const [showPreview, setShowPreview] = useState(false);
 	const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(item.previewUrl ?? null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(
+		item.previewUrl ?? null,
+	);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [previewError, setPreviewError] = useState<string | null>(null);
 	const { clearGeneratedRegistryItem } = useSwatchyStore();
-	const { inscribeBundle, isInscribing, status: walletStatus } = useYoursWallet();
+	const {
+		inscribeBundle,
+		isInscribing,
+		status: walletStatus,
+	} = useYoursWallet();
 
 	const isBlock = manifest.type === "registry:block";
 	const Icon = isBlock ? Blocks : FileCode;
@@ -55,7 +79,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 		setPreviewError(null);
 		setPreviewLoading(false);
 		setShowPreview(false);
-	}, [item.txid, item.timestamp, item.previewUrl]);
+	}, [item.previewUrl]);
 
 	const containsModuleSyntax = useCallback((code: string) => {
 		return /(^|\n)\s*import\s/m.test(code) || /(^|\n)\s*export\s/m.test(code);
@@ -133,19 +157,27 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 				}
 			}
 
-			const sandboxResponse = await fetch("/api/preview-registry-item-sandbox", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					files: manifest.files.map((f) => ({ path: f.path, content: f.content })),
-					mainFilePath: mainFile.path,
-				}),
-			});
+			const sandboxResponse = await fetch(
+				"/api/preview-registry-item-sandbox",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						files: manifest.files.map((f) => ({
+							path: f.path,
+							content: f.content,
+						})),
+						mainFilePath: mainFile.path,
+					}),
+				},
+			);
 
 			const sandboxData = await sandboxResponse.json();
 
 			if (!sandboxResponse.ok || !sandboxData.success || !sandboxData.url) {
-				throw new Error(sandboxData.error || "Failed to generate sandbox preview");
+				throw new Error(
+					sandboxData.error || "Failed to generate sandbox preview",
+				);
 			}
 
 			setPreviewUrl(sandboxData.url);
@@ -221,7 +253,10 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 						<AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
 						<div className="space-y-0.5">
 							{validation?.warnings.map((warning, idx) => (
-								<p key={idx} className="text-[10px] text-amber-600 dark:text-amber-400">
+								<p
+									key={idx}
+									className="text-[10px] text-amber-600 dark:text-amber-400"
+								>
 									{warning}
 								</p>
 							))}
@@ -275,7 +310,8 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 			)}
 
 			{/* Dependencies */}
-			{(manifest.dependencies.length > 0 || manifest.registryDependencies.length > 0) && (
+			{(manifest.dependencies.length > 0 ||
+				manifest.registryDependencies.length > 0) && (
 				<div className="px-3 py-2 border-b flex flex-wrap gap-1.5">
 					{manifest.registryDependencies.map((dep) => (
 						<span
@@ -321,7 +357,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 								size="sm"
 								className={cn(
 									"h-8 w-8 p-0 mr-1 opacity-0 group-hover:opacity-100 transition-opacity",
-									copiedFile === index && "opacity-100"
+									copiedFile === index && "opacity-100",
 								)}
 								onClick={() => copyToClipboard(file.content, index)}
 							>

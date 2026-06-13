@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
 import type { ThemeToken } from "@theme-token/sdk";
+import { Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -58,7 +58,10 @@ export function InscribeDialog({
 	}, [isOpen, theme.name, themeName, profileDisplayName]);
 
 	const handleConfirm = async () => {
-		await onConfirm({ name: name.trim() || theme.name, author: author.trim() || "Anonymous" });
+		await onConfirm({
+			name: name.trim() || theme.name,
+			author: author.trim() || "Anonymous",
+		});
 	};
 
 	// Extract palette colors from theme

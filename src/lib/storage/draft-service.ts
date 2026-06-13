@@ -9,12 +9,6 @@ import { kv } from "@vercel/kv";
 import { deleteBlob, generateDraftId, uploadBase64Blob } from "./blob-service";
 import { calculateExpiresAt } from "./tier-limits";
 import {
-	canCreateDraft,
-	decrementDraftCount,
-	getUserStorageRecord,
-	incrementDraftCount,
-} from "./user-storage";
-import {
 	type CreateDraftRequest,
 	type Draft,
 	type DraftListResponse,
@@ -22,6 +16,12 @@ import {
 	type DraftType,
 	KV_KEYS,
 } from "./types";
+import {
+	canCreateDraft,
+	decrementDraftCount,
+	getUserStorageRecord,
+	incrementDraftCount,
+} from "./user-storage";
 
 /**
  * Create a new draft
@@ -276,7 +276,13 @@ export async function updateDraftMetadata(
  */
 export async function deleteExpiredDrafts(userId: string): Promise<number> {
 	let deletedCount = 0;
-	const types: DraftType[] = ["theme", "wallpaper", "pattern", "font", "registry"];
+	const types: DraftType[] = [
+		"theme",
+		"wallpaper",
+		"pattern",
+		"font",
+		"registry",
+	];
 
 	for (const type of types) {
 		const { drafts } = await listDrafts(userId, type, { limit: 100 });
@@ -300,7 +306,13 @@ export async function getAllDraftIds(
 	userId: string,
 ): Promise<{ type: DraftType; id: string }[]> {
 	const results: { type: DraftType; id: string }[] = [];
-	const types: DraftType[] = ["theme", "wallpaper", "pattern", "font", "registry"];
+	const types: DraftType[] = [
+		"theme",
+		"wallpaper",
+		"pattern",
+		"font",
+		"registry",
+	];
 
 	for (const type of types) {
 		const { drafts } = await listDrafts(userId, type, { limit: 100 });

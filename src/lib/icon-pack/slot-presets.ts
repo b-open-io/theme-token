@@ -92,4 +92,3 @@ export const ICON_SLOT_PRESETS: Record<IconSlotPresetId, readonly string[]> = {
 		"zap",
 	],
 };
-

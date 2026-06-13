@@ -151,7 +151,10 @@ export const useIconStudioStore = create<IconStudioStore>()(
 
 		setIconSetParams: (params) =>
 			set((state) => ({
-				iconSet: { ...state.iconSet, params: { ...state.iconSet.params, ...params } },
+				iconSet: {
+					...state.iconSet,
+					params: { ...state.iconSet.params, ...params },
+				},
 			})),
 
 		setIconSetParam: (key, value) =>
@@ -191,7 +194,10 @@ export const useIconStudioStore = create<IconStudioStore>()(
 
 		setFaviconParams: (params) =>
 			set((state) => ({
-				favicon: { ...state.favicon, params: { ...state.favicon.params, ...params } },
+				favicon: {
+					...state.favicon,
+					params: { ...state.favicon.params, ...params },
+				},
 			})),
 
 		setFaviconParam: (key, value) =>

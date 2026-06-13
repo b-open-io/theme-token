@@ -14,29 +14,28 @@ import {
 	Wallet,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	type PatternDraft,
+	usePatternDrafts,
+} from "@/hooks/use-pattern-drafts";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { usePatternDrafts, type PatternDraft } from "@/hooks/use-pattern-drafts";
-import { toast } from "sonner";
 
 export default function MyPatternsPage() {
 	const { status, connect, inscribePattern, isInscribing } = useYoursWallet();
 	const { openChat, setPendingMessage } = useSwatchyStore();
 
 	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingMessage("I want to create a seamless pattern. Can you help me design something?");
+		setPendingMessage(
+			"I want to create a seamless pattern. Can you help me design something?",
+		);
 		openChat();
 	}, [openChat, setPendingMessage]);
-	const {
-		drafts,
-		loading,
-		usage,
-		isCloudEnabled,
-		fetchDrafts,
-		deleteDraft,
-	} = usePatternDrafts();
+	const { drafts, loading, usage, isCloudEnabled, fetchDrafts, deleteDraft } =
+		usePatternDrafts();
 
 	const [inscribingId, setInscribingId] = useState<string | null>(null);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -138,9 +137,9 @@ export default function MyPatternsPage() {
 						Generate some patterns in the studio
 					</p>
 					<Button onClick={handleCreateWithSwatchy}>
-					<MessageCircle className="mr-2 h-4 w-4" />
-					Create Pattern
-				</Button>
+						<MessageCircle className="mr-2 h-4 w-4" />
+						Create Pattern
+					</Button>
 				</div>
 			);
 		}
@@ -226,7 +225,9 @@ export default function MyPatternsPage() {
 										size="sm"
 										className="flex-1 h-8 text-xs"
 										onClick={() => handleInscribe(draft)}
-										disabled={isInscribing || inscribingId === draft.id || !draft.svg}
+										disabled={
+											isInscribing || inscribingId === draft.id || !draft.svg
+										}
 									>
 										{inscribingId === draft.id ? (
 											<>

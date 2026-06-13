@@ -1,13 +1,13 @@
 import { tool } from "ai";
 import { z } from "zod";
 import {
-	generateScatter as genScatter,
 	generateGrid as genGrid,
 	generateLines as genLines,
-	generateWaves as genWaves,
 	generateNoise as genNoise,
-	generateTopo as genTopo,
 	generateParallelogram as genParallelogram,
+	generateScatter as genScatter,
+	generateTopo as genTopo,
+	generateWaves as genWaves,
 } from "@/lib/pattern-generators";
 
 /**
@@ -41,35 +41,89 @@ export const tokenToCss: Record<Token, string> = {
  * Schemas for pattern tool parameters (reusable)
  */
 export const RemapColorsSchema = z.object({
-	targets: z.array(
-		z.object({
-			selector: z.string().optional().describe("CSS selector to target specific elements"),
-			role: z.enum(["fill", "stroke"]).optional().describe("Target all fills or strokes"),
-			fillToken: TokenEnum.optional().describe("Token to use for fill"),
-			strokeToken: TokenEnum.optional().describe("Token to use for stroke"),
-			opacity: z.number().min(0).max(1).optional().describe("Opacity 0-1"),
-		})
-	).describe("Array of color remapping targets"),
+	targets: z
+		.array(
+			z.object({
+				selector: z
+					.string()
+					.optional()
+					.describe("CSS selector to target specific elements"),
+				role: z
+					.enum(["fill", "stroke"])
+					.optional()
+					.describe("Target all fills or strokes"),
+				fillToken: TokenEnum.optional().describe("Token to use for fill"),
+				strokeToken: TokenEnum.optional().describe("Token to use for stroke"),
+				opacity: z.number().min(0).max(1).optional().describe("Opacity 0-1"),
+			}),
+		)
+		.describe("Array of color remapping targets"),
 });
 
 export const TransformPatternSchema = z.object({
-	tileScale: z.number().min(0.1).max(10).optional().describe("Scale factor for tile size"),
-	tileRotateDeg: z.number().min(-180).max(180).optional().describe("Rotation in degrees"),
-	tileOffsetX: z.number().optional().describe("Horizontal offset in pattern units"),
-	tileOffsetY: z.number().optional().describe("Vertical offset in pattern units"),
+	tileScale: z
+		.number()
+		.min(0.1)
+		.max(10)
+		.optional()
+		.describe("Scale factor for tile size"),
+	tileRotateDeg: z
+		.number()
+		.min(-180)
+		.max(180)
+		.optional()
+		.describe("Rotation in degrees"),
+	tileOffsetX: z
+		.number()
+		.optional()
+		.describe("Horizontal offset in pattern units"),
+	tileOffsetY: z
+		.number()
+		.optional()
+		.describe("Vertical offset in pattern units"),
 	keepSeamless: z.boolean().default(true).describe("Maintain seamless tiling"),
 });
 
 export const ScatterParamsSchema = z.object({
-	shape: z.enum(["circle", "polygon", "emoji", "symbol"]).describe("Shape type to scatter"),
-	symbol: z.string().optional().describe("Emoji or symbol character when shape is emoji/symbol"),
-	count: z.number().int().min(1).max(200).optional().describe("Number of shapes"),
-	density: z.number().min(0).max(1).optional().describe("Density 0-1, alternative to count"),
+	shape: z
+		.enum(["circle", "polygon", "emoji", "symbol"])
+		.describe("Shape type to scatter"),
+	symbol: z
+		.string()
+		.optional()
+		.describe("Emoji or symbol character when shape is emoji/symbol"),
+	count: z
+		.number()
+		.int()
+		.min(1)
+		.max(200)
+		.optional()
+		.describe("Number of shapes"),
+	density: z
+		.number()
+		.min(0)
+		.max(1)
+		.optional()
+		.describe("Density 0-1, alternative to count"),
 	sizeMin: z.number().min(1).max(50).optional().describe("Minimum shape size"),
 	sizeMax: z.number().min(1).max(100).optional().describe("Maximum shape size"),
-	jitter: z.number().min(0).max(1).optional().describe("Position randomization 0-1"),
-	rotationRange: z.number().min(0).max(360).optional().describe("Max random rotation degrees"),
-	spacing: z.number().min(0).optional().describe("Minimum spacing between shapes"),
+	jitter: z
+		.number()
+		.min(0)
+		.max(1)
+		.optional()
+		.describe("Position randomization 0-1"),
+	rotationRange: z
+		.number()
+		.min(0)
+		.max(360)
+		.optional()
+		.describe("Max random rotation degrees"),
+	spacing: z
+		.number()
+		.min(0)
+		.optional()
+		.describe("Minimum spacing between shapes"),
 	seed: z.string().optional().describe("Random seed for reproducibility"),
 	fillToken: TokenEnum.optional().describe("Fill color token"),
 	strokeToken: TokenEnum.optional().describe("Stroke color token"),
@@ -77,10 +131,30 @@ export const ScatterParamsSchema = z.object({
 });
 
 export const LineParamsSchema = z.object({
-	angleDeg: z.number().min(0).max(180).optional().describe("Line angle in degrees (0=horizontal, 90=vertical)"),
-	spacing: z.number().min(1).max(100).optional().describe("Space between lines"),
-	strokeWidth: z.number().min(0.1).max(20).optional().describe("Line thickness"),
-	jitter: z.number().min(0).max(1).optional().describe("Line position randomization"),
+	angleDeg: z
+		.number()
+		.min(0)
+		.max(180)
+		.optional()
+		.describe("Line angle in degrees (0=horizontal, 90=vertical)"),
+	spacing: z
+		.number()
+		.min(1)
+		.max(100)
+		.optional()
+		.describe("Space between lines"),
+	strokeWidth: z
+		.number()
+		.min(0.1)
+		.max(20)
+		.optional()
+		.describe("Line thickness"),
+	jitter: z
+		.number()
+		.min(0)
+		.max(1)
+		.optional()
+		.describe("Line position randomization"),
 	dash: z.string().optional().describe("SVG stroke-dasharray value"),
 	seed: z.string().optional().describe("Random seed for jitter"),
 	strokeToken: TokenEnum.optional().describe("Line color token"),
@@ -89,7 +163,12 @@ export const LineParamsSchema = z.object({
 
 export const NoiseParamsSchema = z.object({
 	intensity: z.number().min(0).max(1).optional().describe("Noise strength 0-1"),
-	granularity: z.number().min(0.1).max(10).optional().describe("Size of noise particles"),
+	granularity: z
+		.number()
+		.min(0.1)
+		.max(10)
+		.optional()
+		.describe("Size of noise particles"),
 	seed: z.string().optional().describe("Random seed for reproducibility"),
 	fillToken: TokenEnum.optional().describe("Noise color token"),
 	opacity: z.number().min(0).max(1).optional().describe("Overall opacity"),
@@ -97,29 +176,65 @@ export const NoiseParamsSchema = z.object({
 
 export const SymmetrySchema = z.object({
 	mode: z.enum(["mirrorX", "mirrorY", "rotate"]).describe("Symmetry type"),
-	segments: z.number().int().min(2).max(12).optional().describe("Number of rotational segments (for rotate mode)"),
+	segments: z
+		.number()
+		.int()
+		.min(2)
+		.max(12)
+		.optional()
+		.describe("Number of rotational segments (for rotate mode)"),
 });
 
 export const PaletteMapSchema = z.object({
-	fills: z.array(TokenEnum).optional().describe("Tokens to use for fills in order"),
-	strokes: z.array(TokenEnum).optional().describe("Tokens to use for strokes in order"),
+	fills: z
+		.array(TokenEnum)
+		.optional()
+		.describe("Tokens to use for fills in order"),
+	strokes: z
+		.array(TokenEnum)
+		.optional()
+		.describe("Tokens to use for strokes in order"),
 });
 
 export const TileScaleRotateSchema = z.object({
 	tileWidth: z.number().min(1).max(500).optional().describe("Tile width in px"),
-	tileHeight: z.number().min(1).max(500).optional().describe("Tile height in px"),
-	rotateDeg: z.number().min(-180).max(180).optional().describe("Pattern rotation"),
+	tileHeight: z
+		.number()
+		.min(1)
+		.max(500)
+		.optional()
+		.describe("Tile height in px"),
+	rotateDeg: z
+		.number()
+		.min(-180)
+		.max(180)
+		.optional()
+		.describe("Pattern rotation"),
 });
 
 export const SeedShuffleSchema = z.object({
-	seed: z.string().optional().describe("Specific seed to use, or omit for random"),
+	seed: z
+		.string()
+		.optional()
+		.describe("Specific seed to use, or omit for random"),
 });
 
 // Generator schemas for procedural pattern generation
 export const GridParamsSchema = z.object({
-	cols: z.number().int().min(1).max(20).optional().describe("Number of columns"),
+	cols: z
+		.number()
+		.int()
+		.min(1)
+		.max(20)
+		.optional()
+		.describe("Number of columns"),
 	rows: z.number().int().min(1).max(20).optional().describe("Number of rows"),
-	gap: z.number().min(4).max(100).optional().describe("Gap between dots in pixels"),
+	gap: z
+		.number()
+		.min(4)
+		.max(100)
+		.optional()
+		.describe("Gap between dots in pixels"),
 	dotSize: z.number().min(1).max(30).optional().describe("Size of each dot"),
 	fillToken: TokenEnum.optional().describe("Fill color token"),
 	strokeToken: TokenEnum.optional().describe("Stroke color token"),
@@ -128,26 +243,67 @@ export const GridParamsSchema = z.object({
 });
 
 export const WaveParamsSchema = z.object({
-	amplitude: z.number().min(1).max(50).optional().describe("Wave height/amplitude"),
-	frequency: z.number().min(0.5).max(5).optional().describe("Number of wave cycles"),
-	strokeWidth: z.number().min(0.5).max(10).optional().describe("Line thickness"),
+	amplitude: z
+		.number()
+		.min(1)
+		.max(50)
+		.optional()
+		.describe("Wave height/amplitude"),
+	frequency: z
+		.number()
+		.min(0.5)
+		.max(5)
+		.optional()
+		.describe("Number of wave cycles"),
+	strokeWidth: z
+		.number()
+		.min(0.5)
+		.max(10)
+		.optional()
+		.describe("Line thickness"),
 	strokeToken: TokenEnum.optional().describe("Line color token"),
 	opacity: z.number().min(0).max(1).optional().describe("Line opacity"),
 	seed: z.string().optional().describe("Random seed"),
 });
 
 export const TopoParamsSchema = z.object({
-	levels: z.number().int().min(2).max(10).optional().describe("Number of contour levels"),
-	strokeWidth: z.number().min(0.3).max(5).optional().describe("Contour line thickness"),
+	levels: z
+		.number()
+		.int()
+		.min(2)
+		.max(10)
+		.optional()
+		.describe("Number of contour levels"),
+	strokeWidth: z
+		.number()
+		.min(0.3)
+		.max(5)
+		.optional()
+		.describe("Contour line thickness"),
 	strokeToken: TokenEnum.optional().describe("Line color token"),
 	opacity: z.number().min(0).max(1).optional().describe("Line opacity"),
 	seed: z.string().optional().describe("Random seed"),
 });
 
 export const ParallelogramParamsSchema = z.object({
-	width: z.number().min(10).max(200).optional().describe("Width of the parallelogram"),
-	height: z.number().min(10).max(200).optional().describe("Height of the parallelogram"),
-	skew: z.number().min(-60).max(60).optional().describe("Skew angle in degrees"),
+	width: z
+		.number()
+		.min(10)
+		.max(200)
+		.optional()
+		.describe("Width of the parallelogram"),
+	height: z
+		.number()
+		.min(10)
+		.max(200)
+		.optional()
+		.describe("Height of the parallelogram"),
+	skew: z
+		.number()
+		.min(-60)
+		.max(60)
+		.optional()
+		.describe("Skew angle in degrees"),
 	gap: z.number().min(0).max(20).optional().describe("Gap between shapes"),
 	fillToken: TokenEnum.optional().describe("Fill color token"),
 	strokeToken: TokenEnum.optional().describe("Stroke color token"),
@@ -347,7 +503,7 @@ export const patternTools = {
 	paletteMap: paletteMapTool,
 	tileScaleRotate: tileScaleRotateTool,
 	seedShuffle: seedShuffleTool,
-	
+
 	// Generator tools (produce SVG output)
 	generateGrid: generateGridTool,
 	generateScatter: generateScatterTool,
@@ -356,7 +512,7 @@ export const patternTools = {
 	generateNoise: generateNoiseTool,
 	generateTopo: generateTopoTool,
 	generateParallelogram: generateParallelogramTool,
-	
+
 	// Deprecated param-only tools (kept for backwards compatibility)
 	scatterParams: scatterParamsTool,
 	lineParams: lineParamsTool,

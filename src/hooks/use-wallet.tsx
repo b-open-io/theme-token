@@ -1,7 +1,15 @@
 "use client";
 
+import {
+	type WalletStatus as OneSatWalletStatus,
+	useWallet as useOneSatWallet,
+} from "@1sat/react";
 import type { WalletInterface } from "@bsv/sdk";
-import { type ThemeToken, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
+import {
+	getOrdfsUrl,
+	type ThemeToken,
+	validateThemeToken,
+} from "@theme-token/sdk";
 import {
 	createContext,
 	type ReactNode,
@@ -12,41 +20,29 @@ import {
 	useRef,
 	useState,
 } from "react";
-import {
-	useWallet as useOneSatWallet,
-	type WalletStatus as OneSatWalletStatus,
-} from "@1sat/react";
 import { useTheme } from "@/components/theme-provider";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
+import { bundleItemsToPackage, publishPackage } from "@/lib/package-builder";
+// Import and re-export pricing constants
+import { PRISM_PASS_COLLECTION_ID, PRISM_PASS_DISCOUNT } from "@/lib/pricing";
 import {
-	type Addresses,
-	type Balance,
-	type InscribeResponse,
-	type Ordinal,
-	type SocialProfile,
-	type SendBsvResult,
-} from "@/lib/yours-wallet";
-import {
-	getOwnedOrdinals,
-	getOrdinalAddress,
-	getPaymentAddress,
 	getIdentityKey,
-	getBalance as getWalletBalance,
-	inscribeTheme as walletInscribeTheme,
-	inscribePattern as walletInscribePattern,
+	getOrdinalAddress,
+	getOwnedOrdinals,
+	getPaymentAddress,
 	inscribeImage as walletInscribeImage,
+	inscribePattern as walletInscribePattern,
+	inscribeTheme as walletInscribeTheme,
 	sendPayment as walletSendPayment,
 } from "@/lib/wallet-actions";
-import {
-	publishPackage,
-	bundleItemsToPackage,
-} from "@/lib/package-builder";
+import type {
+	Addresses,
+	InscribeResponse,
+	Ordinal,
+	SendBsvResult,
+	SocialProfile,
+} from "@/lib/yours-wallet";
 
-// Import and re-export pricing constants
-import {
-	PRISM_PASS_COLLECTION_ID,
-	PRISM_PASS_DISCOUNT,
-} from "@/lib/pricing";
 export { PRISM_PASS_COLLECTION_ID, PRISM_PASS_DISCOUNT };
 
 /**
@@ -159,7 +155,6 @@ interface WalletContextValue {
 	isLoading: boolean;
 	refresh: () => Promise<void>;
 	addresses: Addresses | null;
-	balance: Balance | null;
 	profile: SocialProfile | null;
 	inscribeTheme: (theme: ThemeToken) => Promise<InscribeResponse | null>;
 	inscribePattern: (
@@ -258,10 +253,7 @@ async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
 			const fileType = ordinal?.origin?.data?.insc?.file?.type;
 
 			// New registry format: registry:font
-			if (
-				mapData?.app === "theme-token" &&
-				mapData?.type === "registry:font"
-			) {
+			if (mapData?.app === "theme-token" && mapData?.type === "registry:font") {
 				fonts.push({
 					outpoint: ordinal.outpoint,
 					origin: ordinal.origin?.outpoint || ordinal.outpoint,
@@ -299,10 +291,7 @@ async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
 			}
 
 			// New registry format: registry:file with pattern categories
-			if (
-				mapData?.app === "theme-token" &&
-				mapData?.type === "registry:file"
-			) {
+			if (mapData?.app === "theme-token" && mapData?.type === "registry:file") {
 				try {
 					const categories = mapData.categories
 						? (JSON.parse(mapData.categories) as string[])
@@ -376,9 +365,7 @@ async function categorizeOrdinals(ordinals: Ordinal[]): Promise<{
 	if (registryStyleCandidates.length > 0) {
 		const results = await Promise.allSettled(
 			registryStyleCandidates.map(async (candidate) => {
-				const res = await fetch(
-					getOrdfsUrl(`${candidate.origin}/theme.json`),
-				);
+				const res = await fetch(getOrdfsUrl(`${candidate.origin}/theme.json`));
 				if (!res.ok) return null;
 				const themeJson = await res.json();
 				const validation = validateThemeToken(themeJson);
@@ -441,7 +428,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const [ownedPatterns, setOwnedPatterns] = useState<OwnedPattern[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [addresses, setAddresses] = useState<Addresses | null>(null);
-	const [balance, setBalance] = useState<Balance | null>(null);
 	const [profile, setProfile] = useState<SocialProfile | null>(null);
 	const [isInscribing, setIsInscribing] = useState(false);
 	const [isListing, setIsListing] = useState(false);
@@ -473,8 +459,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
 			try {
 				const ordinals = await getOwnedOrdinals(w);
-				const { tokens, owned, fonts, patterns, hasPrismPass: prismPass } =
-					await categorizeOrdinals(ordinals);
+				const {
+					tokens,
+					owned,
+					fonts,
+					patterns,
+					hasPrismPass: prismPass,
+				} = await categorizeOrdinals(ordinals);
 
 				setHasPrismPass(prismPass);
 				setThemeTokens(tokens);
@@ -497,12 +488,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	// Fetch wallet info (addresses, balance)
 	const fetchWalletInfo = useCallback(async (w: WalletInterface) => {
 		try {
-			console.log("[Wallet] Fetching addresses and balance...");
-			const [ordAddr, bsvAddr, idKey, bal] = await Promise.all([
+			console.log("[Wallet] Fetching addresses...");
+			// Note: spendable balance is intentionally not fetched. The new wallet's
+			// main funds basket ("default") is admin-only, so apps cannot read the
+			// user's BSV balance. Payment affordability is determined by attempting
+			// the payment and surfacing any wallet error (e.g. insufficient funds).
+			const [ordAddr, bsvAddr, idKey] = await Promise.all([
 				getOrdinalAddress(w),
 				getPaymentAddress(w),
 				getIdentityKey(w),
-				getWalletBalance(w),
 			]);
 
 			const addrs: Addresses = {
@@ -511,14 +505,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				identityAddress: idKey,
 			};
 			console.log("[Wallet] Addresses:", addrs);
-			console.log("[Wallet] Balance:", bal);
 
 			setAddresses(addrs);
-			setBalance({
-				bsv: bal.bsv,
-				satoshis: bal.satoshis,
-				usdInCents: 0, // CWI does not provide USD exchange rate
-			});
 
 			// CWI doesn't have social profiles; set a basic profile
 			setProfile({ displayName: "1Sat User", avatar: "" });
@@ -545,7 +533,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				setOwnedPatterns([]);
 				setHasPrismPass(false);
 				setAddresses(null);
-				setBalance(null);
 				setProfile(null);
 				setAvailableThemes([]);
 				resetTheme();
@@ -580,7 +567,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setOwnedPatterns([]);
 			setHasPrismPass(false);
 			setAddresses(null);
-			setBalance(null);
 			setProfile(null);
 			setAvailableThemes([]);
 			resetTheme();
@@ -826,8 +812,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setError(null);
 
 			try {
-				const primaryName =
-					items.find((i) => i.name)?.name || "bundle";
+				const primaryName = items.find((i) => i.name)?.name || "bundle";
 				const { files, metadata } = bundleItemsToPackage(
 					items,
 					primaryName,
@@ -847,9 +832,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				};
 			} catch (err) {
 				setError(
-					err instanceof Error
-						? err.message
-						: "Bundle inscription failed",
+					err instanceof Error ? err.message : "Bundle inscription failed",
 				);
 				return null;
 			} finally {
@@ -894,7 +877,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				isLoading,
 				refresh,
 				addresses,
-				balance,
 				profile,
 				inscribeTheme,
 				inscribePattern,

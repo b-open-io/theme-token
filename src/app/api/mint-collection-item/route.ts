@@ -7,9 +7,9 @@
 
 import { PrivateKey, Utils } from "@bsv/sdk";
 import {
-	createOrdinals,
-	type CreateOrdinalsCollectionItemConfig,
 	type CollectionItemSubTypeData,
+	type CreateOrdinalsCollectionItemConfig,
+	createOrdinals,
 } from "js-1sat-ord";
 import type { NextRequest } from "next/server";
 
@@ -179,7 +179,9 @@ export async function POST(req: NextRequest) {
 		return Response.json(
 			{
 				error:
-					error instanceof Error ? error.message : "Failed to build transaction",
+					error instanceof Error
+						? error.message
+						: "Failed to build transaction",
 			},
 			{ status: 500 },
 		);

@@ -1,25 +1,28 @@
 "use client";
 
-import { Blocks, MessageCircle, ExternalLink } from "lucide-react";
+import { Blocks, ExternalLink, MessageCircle } from "lucide-react";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { BlockPreview } from "@/components/swatchy/block-preview";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
+import { Button } from "@/components/ui/button";
 import {
 	Empty,
+	EmptyContent,
+	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
-	EmptyDescription,
-	EmptyContent,
 } from "@/components/ui/empty";
-import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function RegistryStudioPage() {
-	const { openChat, setPendingMessage, generatedRegistryItem } = useSwatchyStore();
+	const { openChat, setPendingMessage, generatedRegistryItem } =
+		useSwatchyStore();
 
 	const handleGenerateWithSwatchy = () => {
-		setPendingMessage("I want to create a new block component. Can you help me design something?");
+		setPendingMessage(
+			"I want to create a new block component. Can you help me design something?",
+		);
 		openChat();
 	};
 
@@ -34,7 +37,8 @@ export default function RegistryStudioPage() {
 									Component Studio
 								</h3>
 								<p className="text-xs text-muted-foreground">
-									Create shadcn blocks, components, and hooks for on-chain publishing.
+									Create shadcn blocks, components, and hooks for on-chain
+									publishing.
 								</p>
 							</div>
 
@@ -67,7 +71,8 @@ export default function RegistryStudioPage() {
 									CLI Installation
 								</h4>
 								<code className="block text-xs bg-muted p-2 rounded font-mono break-all">
-									bunx shadcn@latest add https://themetoken.dev/r/blocks/&#123;origin&#125;
+									bunx shadcn@latest add
+									https://themetoken.dev/r/blocks/&#123;origin&#125;
 								</code>
 							</div>
 						</div>
@@ -103,9 +108,9 @@ export default function RegistryStudioPage() {
 								</EmptyMedia>
 								<EmptyTitle>Component Studio</EmptyTitle>
 								<EmptyDescription className="max-w-md">
-									Create shadcn blocks, components, and hooks that live forever on
-									the blockchain. All items are theme-aware and installable via the
-									shadcn CLI.
+									Create shadcn blocks, components, and hooks that live forever
+									on the blockchain. All items are theme-aware and installable
+									via the shadcn CLI.
 								</EmptyDescription>
 							</EmptyHeader>
 							<EmptyContent className="flex gap-3">

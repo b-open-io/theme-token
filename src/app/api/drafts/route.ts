@@ -7,12 +7,12 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import {
+	type CreateDraftRequest,
 	createDraft,
-	listDrafts,
+	type DraftType,
 	getStorageUsage,
 	getTierLimits,
-	type DraftType,
-	type CreateDraftRequest,
+	listDrafts,
 } from "@/lib/storage";
 
 const VALID_TYPES: DraftType[] = ["theme", "wallpaper", "pattern", "font"];
@@ -53,10 +53,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!name || typeof name !== "string") {
-			return NextResponse.json(
-				{ error: "name is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "name is required" }, { status: 400 });
 		}
 
 		// Validate binary data
@@ -86,10 +83,7 @@ export async function POST(request: NextRequest) {
 		if (error instanceof Error) {
 			// Check if it's a limit error
 			if (error.message.includes("limit")) {
-				return NextResponse.json(
-					{ error: error.message },
-					{ status: 403 },
-				);
+				return NextResponse.json({ error: error.message }, { status: 403 });
 			}
 		}
 

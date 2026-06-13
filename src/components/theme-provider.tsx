@@ -7,8 +7,6 @@ import {
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
-import { loadThemeFonts } from "@/lib/fonts";
-import { setSessionTheme } from "@/app/actions/theme-session";
 import {
 	createContext,
 	type MouseEvent,
@@ -16,9 +14,11 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
-	useState,
 	useRef,
+	useState,
 } from "react";
+import { setSessionTheme } from "@/app/actions/theme-session";
+import { loadThemeFonts } from "@/lib/fonts";
 
 interface ThemeContextValue {
 	/** Currently active theme token */
@@ -195,7 +195,10 @@ interface StoredThemeSelection {
 /** Duration must match --theme-transition-duration in globals.css */
 const THEME_TRANSITION_DURATION = 400;
 
-function applyThemeToDocument(styles: ThemeStyleProps | null, animate = false): void {
+function applyThemeToDocument(
+	styles: ThemeStyleProps | null,
+	animate = false,
+): void {
 	if (animate && typeof document !== "undefined") {
 		// Add transition class before changing styles
 		document.documentElement.classList.add("theme-transitioning");
@@ -229,7 +232,9 @@ export function ThemeProvider({
 	const [activeTheme, setActiveTheme] = useState<ThemeToken | null>(null);
 	const [availableThemes, setAvailableThemes] = useState<ThemeToken[]>([]);
 	const [mode, setModeState] = useState<"light" | "dark">("light");
-	const [sessionThemeOrigin] = useState<string | null>(initialThemeOrigin ?? null);
+	const [sessionThemeOrigin] = useState<string | null>(
+		initialThemeOrigin ?? null,
+	);
 	const sessionPersisted = useRef(false);
 
 	// Persist session theme on first visit (when SSR picked a random theme)

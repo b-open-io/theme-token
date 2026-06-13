@@ -1,9 +1,15 @@
 "use client";
 
-import { type ThemeToken } from "@theme-token/sdk";
+import type { ThemeToken } from "@theme-token/sdk";
 import { DemoSection } from "./utils";
 
-export function ColorsDemo({ theme, mode }: { theme: ThemeToken; mode: "light" | "dark" }) {
+export function ColorsDemo({
+	theme,
+	mode,
+}: {
+	theme: ThemeToken;
+	mode: "light" | "dark";
+}) {
 	return (
 		<DemoSection title="Colors" description="Complete color palette">
 			<div className="grid gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
@@ -33,9 +39,7 @@ export function ColorsDemo({ theme, mode }: { theme: ThemeToken; mode: "light" |
 								}}
 							/>
 							<p className="mt-1.5 text-xs font-medium truncate">{key}</p>
-							<p
-								className="font-mono text-[10px] truncate text-muted-foreground"
-							>
+							<p className="font-mono text-[10px] truncate text-muted-foreground">
 								{value}
 							</p>
 						</div>
@@ -45,5 +49,3 @@ export function ColorsDemo({ theme, mode }: { theme: ThemeToken; mode: "light" |
 		</DemoSection>
 	);
 }
-
-

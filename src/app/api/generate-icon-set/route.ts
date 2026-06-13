@@ -88,12 +88,18 @@ export async function POST(request: NextRequest) {
 			: [];
 
 		if (iconNames.length === 0) {
-			return NextResponse.json({ error: "iconNames is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "iconNames is required" },
+				{ status: 400 },
+			);
 		}
 
 		const params = body.params;
-		if (!params || !params.style || !params.strokeWidth || params.padding === undefined) {
-			return NextResponse.json({ error: "params are required" }, { status: 400 });
+		if (!params?.style || !params.strokeWidth || params.padding === undefined) {
+			return NextResponse.json(
+				{ error: "params are required" },
+				{ status: 400 },
+			);
 		}
 
 		const iconsByName: Record<string, string> = {};
@@ -122,10 +128,11 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(
 			{
 				error:
-					error instanceof Error ? error.message : "Failed to generate icon set",
+					error instanceof Error
+						? error.message
+						: "Failed to generate icon set",
 			},
 			{ status: 500 },
 		);
 	}
 }
-

@@ -10,6 +10,7 @@ import {
 	Sparkles,
 	Square,
 } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import {
 	ASPECT_RATIOS,
@@ -142,6 +142,7 @@ export function WallpaperSidebar() {
 														: "border-transparent hover:border-muted-foreground/30",
 												)}
 											>
+												{/* biome-ignore lint/performance/noImgElement: dynamic/generated image (data URL or runtime dimensions); next/image not suitable */}
 												<img
 													src={`data:${wp.mimeType};base64,${wp.imageBase64}`}
 													alt=""
@@ -274,7 +275,9 @@ export function WallpaperSidebar() {
 									className="space-y-2"
 								>
 									<Select
-										value={selectedTheme?.name || (activeTheme ? "__active__" : "")}
+										value={
+											selectedTheme?.name || (activeTheme ? "__active__" : "")
+										}
 										onValueChange={handleThemeSelect}
 									>
 										<SelectTrigger className="w-full h-9">
@@ -286,12 +289,15 @@ export function WallpaperSidebar() {
 													<div className="flex items-center gap-2">
 														<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
 															{[
-																activeTheme.styles[mode].primary,
-																activeTheme.styles[mode].secondary,
-																activeTheme.styles[mode].accent,
-															].map((color, i) => (
+																["primary", activeTheme.styles[mode].primary],
+																[
+																	"secondary",
+																	activeTheme.styles[mode].secondary,
+																],
+																["accent", activeTheme.styles[mode].accent],
+															].map(([slot, color]) => (
 																<div
-																	key={i}
+																	key={slot}
 																	className="flex-1"
 																	style={{ backgroundColor: color }}
 																/>
@@ -308,12 +314,12 @@ export function WallpaperSidebar() {
 														<div className="flex items-center gap-2">
 															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
 																{[
-																	theme.styles[mode].primary,
-																	theme.styles[mode].secondary,
-																	theme.styles[mode].accent,
-																].map((color, i) => (
+																	["primary", theme.styles[mode].primary],
+																	["secondary", theme.styles[mode].secondary],
+																	["accent", theme.styles[mode].accent],
+																].map(([slot, color]) => (
 																	<div
-																		key={i}
+																		key={slot}
 																		className="flex-1"
 																		style={{ backgroundColor: color }}
 																	/>

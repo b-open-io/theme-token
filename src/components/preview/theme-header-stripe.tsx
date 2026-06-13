@@ -1,8 +1,8 @@
 "use client";
 
+import type { ThemeToken } from "@theme-token/sdk";
 import { useEffect, useState, ViewTransition } from "react";
 import { toast } from "sonner";
-import type { ThemeToken } from "@theme-token/sdk";
 
 interface ThemeHeaderStripeProps {
 	theme: ThemeToken;
@@ -50,12 +50,16 @@ export function ThemeHeaderStripe({
 	return (
 		<div className="relative h-8 w-full border-b border-border">
 			{/* Color stripes with hover interaction - wrapped in ViewTransition for shared element */}
-			<ViewTransition name={canTransition ? `theme-stripe-${origin}` : undefined}>
+			<ViewTransition
+				name={canTransition ? `theme-stripe-${origin}` : undefined}
+			>
 				<div className="absolute inset-0 flex">
 					{colorEntries.map(({ key, value }, index) => (
-						<div
+						<button
+							type="button"
 							key={key}
-							className="relative cursor-pointer"
+							aria-label={`Copy ${key} color`}
+							className="relative cursor-pointer appearance-none border-0 p-0"
 							style={{
 								flex: hoveredIndex === index ? 2 : 1,
 								backgroundColor: value,
@@ -82,7 +86,7 @@ export function ThemeHeaderStripe({
 									{key}
 								</span>
 							</div>
-						</div>
+						</button>
 					))}
 				</div>
 			</ViewTransition>

@@ -8,13 +8,13 @@
  */
 
 import { useCallback, useState } from "react";
-import { useYoursWallet } from "./use-yours-wallet";
 import type {
 	Draft,
 	DraftListResponse,
 	DraftMetadata,
 	DraftType,
 } from "@/lib/storage/types";
+import { useYoursWallet } from "./use-yours-wallet";
 
 interface UseCloudStorageOptions {
 	type: DraftType;
@@ -73,7 +73,8 @@ export function useCloudStorage({ type }: UseCloudStorageOptions) {
 			setUsage(data.usage);
 			return data.drafts;
 		} catch (err) {
-			const message = err instanceof Error ? err.message : "Failed to fetch drafts";
+			const message =
+				err instanceof Error ? err.message : "Failed to fetch drafts";
 			setError(message);
 			return [];
 		} finally {
@@ -117,7 +118,8 @@ export function useCloudStorage({ type }: UseCloudStorageOptions) {
 
 				return draft;
 			} catch (err) {
-				const message = err instanceof Error ? err.message : "Failed to create draft";
+				const message =
+					err instanceof Error ? err.message : "Failed to create draft";
 				setError(message);
 				return null;
 			} finally {
@@ -159,7 +161,8 @@ export function useCloudStorage({ type }: UseCloudStorageOptions) {
 
 				return true;
 			} catch (err) {
-				const message = err instanceof Error ? err.message : "Failed to delete draft";
+				const message =
+					err instanceof Error ? err.message : "Failed to delete draft";
 				setError(message);
 				return false;
 			} finally {
@@ -235,7 +238,8 @@ export function useCloudStorage({ type }: UseCloudStorageOptions) {
 
 				return draft;
 			} catch (err) {
-				const message = err instanceof Error ? err.message : "Failed to update draft";
+				const message =
+					err instanceof Error ? err.message : "Failed to update draft";
 				setError(message);
 				return null;
 			}

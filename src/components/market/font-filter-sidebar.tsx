@@ -32,7 +32,7 @@ export function FontFilterSidebar({
 }: FontFilterSidebarProps) {
 	const updateFilter = <K extends keyof FontFilterState>(
 		key: K,
-		value: FontFilterState[K]
+		value: FontFilterState[K],
 	) => {
 		onFiltersChange({ ...filters, [key]: value });
 	};
@@ -78,10 +78,7 @@ export function FontFilterSidebar({
 				</Button>
 			</div>
 
-			<Accordion
-				type="multiple"
-				defaultValue={["category", "price", "glyphs"]}
-			>
+			<Accordion type="multiple" defaultValue={["category", "price", "glyphs"]}>
 				{/* Category Filter */}
 				<AccordionItem value="category">
 					<AccordionTrigger className="text-sm">Category</AccordionTrigger>

@@ -16,7 +16,10 @@ export function RemixCard({ filters }: RemixCardProps) {
 		if (filters.primaryColor) {
 			// Convert OKLCH back to a string for the studio
 			const { l, c, h } = filters.primaryColor;
-			params.set("primaryColor", `oklch(${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(1)})`);
+			params.set(
+				"primaryColor",
+				`oklch(${l.toFixed(3)} ${c.toFixed(3)} ${h.toFixed(1)})`,
+			);
 		}
 
 		if (filters.radius) {

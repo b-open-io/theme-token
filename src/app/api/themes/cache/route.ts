@@ -1,5 +1,9 @@
+import {
+	getOrdfsUrl,
+	type ThemeToken,
+	validateThemeToken,
+} from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
-import { validateThemeToken, getOrdfsUrl, type ThemeToken } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 
 const THEMES_CACHE_KEY = "themes:published";
@@ -24,11 +28,16 @@ export async function GET(request: Request) {
 		const url = new URL(request.url);
 		const forceRefresh = url.searchParams.get("refresh") === "true";
 		const cursor = Number.parseInt(url.searchParams.get("cursor") || "0", 10);
-		const limit = Math.min(Number.parseInt(url.searchParams.get("limit") || "12", 10), 50);
+		const limit = Math.min(
+			Number.parseInt(url.searchParams.get("limit") || "12", 10),
+			50,
+		);
 
 		// Check if KV is configured
 		if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-			console.warn("[Themes Cache] KV not configured, fetching from chain directly");
+			console.warn(
+				"[Themes Cache] KV not configured, fetching from chain directly",
+			);
 			const freshThemes = await fetchFromChain();
 			const paginated = freshThemes.slice(cursor, cursor + limit);
 			return NextResponse.json({
@@ -44,7 +53,11 @@ export async function GET(request: Request) {
 		const existingCache: ThemesCache | null = await kv.get(THEMES_CACHE_KEY);
 
 		// If cache exists, is fresh (< 5 min old), and not force refreshing, use it
-		if (!forceRefresh && existingCache && Date.now() - existingCache.lastSynced < 5 * 60 * 1000) {
+		if (
+			!forceRefresh &&
+			existingCache &&
+			Date.now() - existingCache.lastSynced < 5 * 60 * 1000
+		) {
 			const allThemes = existingCache.themes;
 			const paginated = allThemes.slice(cursor, cursor + limit);
 			return NextResponse.json({
@@ -62,9 +75,8 @@ export async function GET(request: Request) {
 		// Merge: Keep ALL cached themes that aren't on-chain yet
 		// (they may just not be indexed by GorillaPool, but are valid inscriptions)
 		const chainOrigins = new Set(freshThemes.map((t) => t.origin));
-		const notOnChain = existingCache?.themes.filter(
-			(t) => !chainOrigins.has(t.origin)
-		) || [];
+		const notOnChain =
+			existingCache?.themes.filter((t) => !chainOrigins.has(t.origin)) || [];
 
 		const mergedThemes = [...notOnChain, ...freshThemes];
 
@@ -90,7 +102,10 @@ export async function GET(request: Request) {
 			const freshThemes = await fetchFromChain();
 			const url = new URL(request.url);
 			const cursor = Number.parseInt(url.searchParams.get("cursor") || "0", 10);
-			const limit = Math.min(Number.parseInt(url.searchParams.get("limit") || "12", 10), 50);
+			const limit = Math.min(
+				Number.parseInt(url.searchParams.get("limit") || "12", 10),
+				50,
+			);
 			const paginated = freshThemes.slice(cursor, cursor + limit);
 			return NextResponse.json({
 				themes: paginated,
@@ -104,7 +119,7 @@ export async function GET(request: Request) {
 			console.error("[Themes Cache] Chain fallback also failed:", chainError);
 			return NextResponse.json(
 				{ error: "Failed to fetch themes" },
-				{ status: 500 }
+				{ status: 500 },
 			);
 		}
 	}
@@ -122,7 +137,7 @@ export async function POST(request: Request) {
 		if (!origin || !theme) {
 			return NextResponse.json(
 				{ error: "Missing origin/txid or theme" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -131,7 +146,7 @@ export async function POST(request: Request) {
 		if (!result.valid) {
 			return NextResponse.json(
 				{ error: "Invalid theme format" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 		const newTheme: CachedTheme = {
@@ -164,7 +179,7 @@ export async function POST(request: Request) {
 		console.error("[Themes Cache] POST error:", error);
 		return NextResponse.json(
 			{ error: "Failed to add theme to cache" },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }
@@ -198,17 +213,16 @@ async function fetchFromChain(): Promise<CachedTheme[]> {
 			if (!originOutpoint || seenOrigins.has(originOutpoint)) continue;
 			seenOrigins.add(originOutpoint);
 
-			const contentResponse = await fetch(
-				getOrdfsUrl(originOutpoint),
-				{ next: { revalidate: 3600 } }
-			);
-			
+			const contentResponse = await fetch(getOrdfsUrl(originOutpoint), {
+				next: { revalidate: 3600 },
+			});
+
 			if (!contentResponse.ok) continue;
-			
+
 			const content = await contentResponse.json();
 			// Skip inscriptions without $schema (test/invalid inscriptions)
 			if (!content.$schema) continue;
-			
+
 			const result = validateThemeToken(content);
 			if (!result.valid) continue;
 
@@ -225,4 +239,3 @@ async function fetchFromChain(): Promise<CachedTheme[]> {
 
 	return themes;
 }
-

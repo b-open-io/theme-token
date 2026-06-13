@@ -1,8 +1,8 @@
 import type {
-	ScatterParams,
 	LineParams,
 	NoiseParams,
 	ParallelogramParams,
+	ScatterParams,
 	Token,
 } from "./tools/pattern-tools";
 import { tokenToCss } from "./tools/pattern-tools";
@@ -13,14 +13,14 @@ import { tokenToCss } from "./tools/pattern-tools";
 function seededRng(seed: string) {
 	let h = 0;
 	for (let i = 0; i < seed.length; i++) {
-		h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+		h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
 	}
 	return () => {
 		h |= 0;
-		h = h + 0x6d2b79f5 | 0;
-		let t = Math.imul(h ^ h >>> 15, 1 | h);
-		t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-		return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		h = (h + 0x6d2b79f5) | 0;
+		let t = Math.imul(h ^ (h >>> 15), 1 | h);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 	};
 }
 
@@ -44,7 +44,7 @@ function wrapPattern(
 	inner: string,
 	width: number,
 	height: number,
-	patternId = "p"
+	patternId = "p",
 ): string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
   <defs>
@@ -67,9 +67,11 @@ export function generateScatter(params: ScatterParams): GenResult {
 	const count = params.count ?? Math.round((params.density ?? 0.3) * 30);
 	const sizeMin = params.sizeMin ?? 8;
 	const sizeMax = params.sizeMax ?? 24;
-	const jitter = params.jitter ?? 0.5;
+	const _jitter = params.jitter ?? 0.5;
 	const fill = getColor(params.fillToken, "currentColor");
-	const stroke = params.strokeToken ? getColor(params.strokeToken, "none") : "none";
+	const stroke = params.strokeToken
+		? getColor(params.strokeToken, "none")
+		: "none";
 	const strokeWidth = params.strokeWidth ?? 0;
 
 	const tileSize = 80;
@@ -81,26 +83,30 @@ export function generateScatter(params: ScatterParams): GenResult {
 		const y = rng() * tileSize;
 		const rotation = params.rotationRange ? rng() * params.rotationRange : 0;
 
-		const transform = rotation ? ` transform="rotate(${rotation.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"` : "";
+		const transform = rotation
+			? ` transform="rotate(${rotation.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"`
+			: "";
 
 		if (shape === "circle") {
 			shapes.push(
-				`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(size / 2).toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${transform}/>`
+				`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(size / 2).toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${transform}/>`,
 			);
 		} else if (shape === "polygon") {
 			// Triangle
 			const r = size / 2;
-			const pts = [0, 1, 2].map((n) => {
-				const a = (n * 2 * Math.PI) / 3 - Math.PI / 2;
-				return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
-			}).join(" ");
+			const pts = [0, 1, 2]
+				.map((n) => {
+					const a = (n * 2 * Math.PI) / 3 - Math.PI / 2;
+					return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
+				})
+				.join(" ");
 			shapes.push(
-				`<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${transform}/>`
+				`<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"${transform}/>`,
 			);
 		} else if (shape === "emoji" || shape === "symbol") {
 			const sym = params.symbol || "●";
 			shapes.push(
-				`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size.toFixed(1)}" fill="${fill}" text-anchor="middle" dominant-baseline="central"${transform}>${sym}</text>`
+				`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size.toFixed(1)}" fill="${fill}" text-anchor="middle" dominant-baseline="central"${transform}>${sym}</text>`,
 			);
 		}
 	}
@@ -114,12 +120,22 @@ export function generateScatter(params: ScatterParams): GenResult {
 			const x = Number.parseFloat(match[1]);
 			const y = Number.parseFloat(yMatch[1]);
 			// Wrap shapes near edges for seamless tiling
-			if (x < 15) edgeShapes.push(s.replace(/(?:cx|x)="[\d.]+"/, `cx="${(x + tileSize).toFixed(1)}"`));
-			if (y < 15) edgeShapes.push(s.replace(/(?:cy|y)="[\d.]+"/, `cy="${(y + tileSize).toFixed(1)}"`));
+			if (x < 15)
+				edgeShapes.push(
+					s.replace(/(?:cx|x)="[\d.]+"/, `cx="${(x + tileSize).toFixed(1)}"`),
+				);
+			if (y < 15)
+				edgeShapes.push(
+					s.replace(/(?:cy|y)="[\d.]+"/, `cy="${(y + tileSize).toFixed(1)}"`),
+				);
 		}
 	}
 
-	const svg = wrapPattern([...shapes, ...edgeShapes].join("\n      "), tileSize, tileSize);
+	const svg = wrapPattern(
+		[...shapes, ...edgeShapes].join("\n      "),
+		tileSize,
+		tileSize,
+	);
 	return { svg, seed };
 }
 
@@ -153,10 +169,11 @@ function generateShapeSvg(
 	fill: string,
 	stroke: string,
 	strokeWidth: number,
-	filled: boolean
+	filled: boolean,
 ): string {
 	const r = size / 2;
-	const transform = rotation !== 0 ? ` transform="rotate(${rotation} ${x} ${y})"` : "";
+	const transform =
+		rotation !== 0 ? ` transform="rotate(${rotation} ${x} ${y})"` : "";
 	const fillAttr = filled ? fill : "none";
 	const strokeAttr = filled ? "none" : stroke;
 	const sw = filled ? 0 : strokeWidth;
@@ -164,38 +181,48 @@ function generateShapeSvg(
 	switch (shape) {
 		case "circle":
 			return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
-		
+
 		case "square":
 			return `<rect x="${x - r}" y="${y - r}" width="${size}" height="${size}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
-		
-		case "diamond":
+
+		case "diamond": {
 			// Square rotated 45 degrees
 			const dr = r * 0.7; // Slightly smaller to look proportional
 			return `<rect x="${x - dr}" y="${y - dr}" width="${dr * 2}" height="${dr * 2}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}" transform="rotate(45 ${x} ${y})${rotation !== 0 ? ` rotate(${rotation} ${x} ${y})` : ""}"/>`;
-		
-		case "triangle":
-			const triPts = [0, 1, 2].map((n) => {
-				const a = (n * 2 * Math.PI) / 3 - Math.PI / 2;
-				return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
-			}).join(" ");
+		}
+
+		case "triangle": {
+			const triPts = [0, 1, 2]
+				.map((n) => {
+					const a = (n * 2 * Math.PI) / 3 - Math.PI / 2;
+					return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
+				})
+				.join(" ");
 			return `<polygon points="${triPts}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
-		
-		case "hexagon":
-			const hexPts = [0, 1, 2, 3, 4, 5].map((n) => {
-				const a = (n * Math.PI) / 3;
-				return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
-			}).join(" ");
+		}
+
+		case "hexagon": {
+			const hexPts = [0, 1, 2, 3, 4, 5]
+				.map((n) => {
+					const a = (n * Math.PI) / 3;
+					return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
+				})
+				.join(" ");
 			return `<polygon points="${hexPts}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
-		
-		case "star":
+		}
+
+		case "star": {
 			const starPts: string[] = [];
 			for (let i = 0; i < 10; i++) {
 				const a = (i * Math.PI) / 5 - Math.PI / 2;
 				const sr = i % 2 === 0 ? r : r * 0.4;
-				starPts.push(`${(x + sr * Math.cos(a)).toFixed(1)},${(y + sr * Math.sin(a)).toFixed(1)}`);
+				starPts.push(
+					`${(x + sr * Math.cos(a)).toFixed(1)},${(y + sr * Math.sin(a)).toFixed(1)}`,
+				);
 			}
 			return `<polygon points="${starPts.join(" ")}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
-		
+		}
+
 		default:
 			return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${sw}"${transform}/>`;
 	}
@@ -222,7 +249,19 @@ export function generateGrid(params: GridParams): GenResult {
 		for (let c = 0; c < cols; c++) {
 			const x = c * gap + gap / 2;
 			const y = r * gap + gap / 2;
-			shapes.push(generateShapeSvg(shape, x, y, dotSize, rotation, fill, stroke, strokeWidth, filled));
+			shapes.push(
+				generateShapeSvg(
+					shape,
+					x,
+					y,
+					dotSize,
+					rotation,
+					fill,
+					stroke,
+					strokeWidth,
+					filled,
+				),
+			);
 		}
 	}
 
@@ -260,15 +299,16 @@ export function generateLines(params: LineParams): GenResult {
 	const numLines = Math.ceil(tileSize / spacing) + 2;
 
 	for (let i = -1; i < numLines; i++) {
-		const offset = i * spacing + (jitter > 0 ? (rng() - 0.5) * spacing * jitter : 0);
+		const offset =
+			i * spacing + (jitter > 0 ? (rng() - 0.5) * spacing * jitter : 0);
 
 		if (isHorizontal) {
 			lines.push(
-				`<line x1="0" y1="${offset.toFixed(1)}" x2="${tileSize}" y2="${offset.toFixed(1)}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`
+				`<line x1="0" y1="${offset.toFixed(1)}" x2="${tileSize}" y2="${offset.toFixed(1)}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`,
 			);
 		} else if (isVertical) {
 			lines.push(
-				`<line x1="${offset.toFixed(1)}" y1="0" x2="${offset.toFixed(1)}" y2="${tileSize}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`
+				`<line x1="${offset.toFixed(1)}" y1="0" x2="${offset.toFixed(1)}" y2="${tileSize}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`,
 			);
 		} else {
 			// Diagonal lines
@@ -277,7 +317,7 @@ export function generateLines(params: LineParams): GenResult {
 			const x1 = -tileSize + offset * Math.cos(rad + Math.PI / 2);
 			const y1 = offset * Math.sin(rad + Math.PI / 2);
 			lines.push(
-				`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${(x1 + dx).toFixed(1)}" y2="${(y1 + dy).toFixed(1)}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`
+				`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${(x1 + dx).toFixed(1)}" y2="${(y1 + dy).toFixed(1)}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`,
 			);
 		}
 	}
@@ -314,12 +354,13 @@ export function generateWaves(params: WaveParams): GenResult {
 	const points: string[] = [];
 
 	for (let x = 0; x <= tileWidth; x += 2) {
-		const y = cy + Math.sin((x / tileWidth) * Math.PI * 2 * frequency) * amplitude;
+		const y =
+			cy + Math.sin((x / tileWidth) * Math.PI * 2 * frequency) * amplitude;
 		points.push(`${x === 0 ? "M" : "L"}${x} ${y.toFixed(1)}`);
 	}
 
 	waves.push(
-		`<path d="${points.join(" ")}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`
+		`<path d="${points.join(" ")}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`,
 	);
 
 	const svg = wrapPattern(waves.join("\n      "), tileWidth, tileHeight);
@@ -348,7 +389,7 @@ export function generateNoise(params: NoiseParams): GenResult {
 		const size = 0.5 + rng() * granularity;
 		const particleOpacity = 0.3 + rng() * 0.7;
 		particles.push(
-			`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size.toFixed(2)}" fill="${fill}" opacity="${(particleOpacity * opacity).toFixed(2)}"/>`
+			`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size.toFixed(2)}" fill="${fill}" opacity="${(particleOpacity * opacity).toFixed(2)}"/>`,
 		);
 	}
 
@@ -397,7 +438,7 @@ export function generateTopo(params: TopoParams): GenResult {
 		}
 
 		paths.push(
-			`<path d="${points.join(" ")} Z" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`
+			`<path d="${points.join(" ")} Z" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`,
 		);
 	}
 
@@ -415,7 +456,9 @@ export function generateParallelogram(params: ParallelogramParams): GenResult {
 	const skew = params.skew ?? 20;
 	const gap = params.gap ?? 4;
 	const fill = getColor(params.fillToken, "currentColor");
-	const stroke = params.strokeToken ? getColor(params.strokeToken, "none") : "none";
+	const stroke = params.strokeToken
+		? getColor(params.strokeToken, "none")
+		: "none";
 	const strokeWidth = params.strokeWidth ?? 0;
 
 	// Calculate bounding box for the skewed shape
@@ -431,7 +474,7 @@ export function generateParallelogram(params: ParallelogramParams): GenResult {
 	// Center it in the tile
 	const cx = tileW / 2;
 	const cy = tileH / 2;
-	
+
 	const halfW = width / 2;
 	const halfH = height / 2;
 	const halfSkew = skewOffset / 2;
@@ -442,7 +485,7 @@ export function generateParallelogram(params: ParallelogramParams): GenResult {
 	const p4 = `${(cx - halfW - halfSkew).toFixed(1)},${(cy + halfH).toFixed(1)}`;
 
 	shapes.push(
-		`<polygon points="${p1} ${p2} ${p3} ${p4}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
+		`<polygon points="${p1} ${p2} ${p3} ${p4}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`,
 	);
 
 	const svg = wrapPattern(shapes.join("\n      "), tileW, tileH);

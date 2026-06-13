@@ -1,41 +1,41 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { usePatternContext } from "@/components/patterns/pattern-context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
-	Sparkles,
-	Library,
-	Wand2,
-	Search,
 	ChevronDown,
 	ChevronUp,
-	Loader2,
 	Cloud,
-	Save,
-	Trash2,
+	Library,
+	Loader2,
 	RefreshCw,
+	Save,
+	Search,
+	Sparkles,
+	Trash2,
+	Wand2,
 } from "lucide-react";
 import { useState } from "react";
-import {
-	GEO_GENERATORS,
-	FEATURED_HERO_PATTERNS,
-	HERO_PATTERNS,
-} from "@/lib/pattern-engine";
-import { getGeoGeneratorLabel } from "@/lib/pattern-sources/geopattern-adapter";
-import { getHeroPatternLabel } from "@/lib/pattern-sources/heropattern-adapter";
+import { usePatternContext } from "@/components/patterns/pattern-context";
+import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	FEATURED_HERO_PATTERNS,
+	GEO_GENERATORS,
+	HERO_PATTERNS,
+} from "@/lib/pattern-engine";
+import { getGeoGeneratorLabel } from "@/lib/pattern-sources/geopattern-adapter";
+import { getHeroPatternLabel } from "@/lib/pattern-sources/heropattern-adapter";
+import { cn } from "@/lib/utils";
 
 export function PatternSidebar() {
 	const {
@@ -77,11 +77,11 @@ export function PatternSidebar() {
 	// Filter hero patterns
 	const filteredHeroPatterns = heroSearch
 		? HERO_PATTERNS.filter((p) =>
-				getHeroPatternLabel(p).toLowerCase().includes(heroSearch.toLowerCase())
-		  )
+				getHeroPatternLabel(p).toLowerCase().includes(heroSearch.toLowerCase()),
+			)
 		: showAllHero
-		? [...HERO_PATTERNS]
-		: FEATURED_HERO_PATTERNS;
+			? [...HERO_PATTERNS]
+			: FEATURED_HERO_PATTERNS;
 
 	return (
 		<div className="w-80 border-r bg-background/95 backdrop-blur flex flex-col h-full overflow-hidden">
@@ -118,12 +118,13 @@ export function PatternSidebar() {
 							<div className="grid grid-cols-4 gap-2">
 								{GEO_GENERATORS.map((gen) => (
 									<button
+										type="button"
 										key={gen}
 										onClick={() => setGeoGenerator(gen)}
 										className={cn(
 											"aspect-square rounded-md border p-2 text-[10px] leading-tight transition-colors hover:bg-muted",
 											params.geoGenerator === gen &&
-												"border-primary bg-primary/10"
+												"border-primary bg-primary/10",
 										)}
 									>
 										{getGeoGeneratorLabel(gen)}
@@ -163,12 +164,13 @@ export function PatternSidebar() {
 						<div className="grid grid-cols-3 gap-2">
 							{filteredHeroPatterns.map((pattern) => (
 								<button
+									type="button"
 									key={pattern}
 									onClick={() => setHeroPattern(pattern)}
 									className={cn(
 										"rounded-md border p-2 text-[10px] leading-tight transition-colors hover:bg-muted text-left",
 										params.heroPattern === pattern &&
-											"border-primary bg-primary/10"
+											"border-primary bg-primary/10",
 									)}
 								>
 									{getHeroPatternLabel(pattern)}
@@ -304,9 +306,7 @@ export function PatternSidebar() {
 
 							<div>
 								<div className="flex items-center justify-between mb-2">
-									<Label className="text-xs text-muted-foreground">
-										Scale
-									</Label>
+									<Label className="text-xs text-muted-foreground">Scale</Label>
 									<span className="text-xs text-muted-foreground">
 										{params.scale}px
 									</span>
@@ -340,9 +340,7 @@ export function PatternSidebar() {
 						</CollapsibleTrigger>
 						<CollapsibleContent className="space-y-4 pb-4">
 							<div className="flex items-center justify-between">
-								<Label className="text-xs text-muted-foreground">
-									Rotate
-								</Label>
+								<Label className="text-xs text-muted-foreground">Rotate</Label>
 								<Switch
 									checked={params.animation.rotate?.enabled ?? false}
 									onCheckedChange={(checked) =>
@@ -461,17 +459,20 @@ export function PatternSidebar() {
 								</div>
 							)}
 
-							{isCloudEnabled && !isLoadingCloud && cloudDrafts.length === 0 && (
-								<p className="text-xs text-muted-foreground text-center py-2">
-									No saved patterns yet
-								</p>
-							)}
+							{isCloudEnabled &&
+								!isLoadingCloud &&
+								cloudDrafts.length === 0 && (
+									<p className="text-xs text-muted-foreground text-center py-2">
+										No saved patterns yet
+									</p>
+								)}
 
 							{isCloudEnabled && cloudDrafts.length > 0 && (
 								<div className="space-y-2">
 									<div className="flex items-center justify-between">
 										<span className="text-xs text-muted-foreground">
-											{cloudDrafts.length} saved pattern{cloudDrafts.length !== 1 ? "s" : ""}
+											{cloudDrafts.length} saved pattern
+											{cloudDrafts.length !== 1 ? "s" : ""}
 										</span>
 										<Button
 											variant="ghost"
@@ -484,10 +485,19 @@ export function PatternSidebar() {
 									</div>
 									<div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
 										{cloudDrafts.map((draft) => (
+											// biome-ignore lint/a11y/useSemanticElements: card contains a nested delete button, so it cannot itself be a button element
 											<div
 												key={draft.id}
+												role="button"
+												tabIndex={0}
 												className="group relative aspect-square rounded-md border bg-muted/50 cursor-pointer hover:border-primary transition-colors overflow-hidden"
 												onClick={() => loadDraft(draft)}
+												onKeyDown={(e) => {
+													if (e.key === "Enter" || e.key === " ") {
+														e.preventDefault();
+														loadDraft(draft);
+													}
+												}}
 											>
 												{draft.svg && (
 													<div
@@ -512,6 +522,7 @@ export function PatternSidebar() {
 													</div>
 												)}
 												<button
+													type="button"
 													onClick={(e) => {
 														e.stopPropagation();
 														deleteDraft(draft.id);

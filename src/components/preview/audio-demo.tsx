@@ -1,51 +1,54 @@
 "use client";
 
-import React from "react";
+import type { ThemeToken } from "@theme-token/sdk";
 import ParticlePlayerWidget from "@/components/audio/particles/particle-player-widget";
 import { AudioDemoProvider } from "./audio-demo-provider";
 import { AudioVisualizerFractal } from "./audio-visualizer-fractal";
-import { useAudioStore } from "@/lib/audio-store";
-import { DemoSection } from "./utils";
 
 const demoTracks = [
-  {
-    id: "tt-theme",
-    title: "Theme Token Theme",
-    artist: "Satchmo",
-    url: "/sounds/theme-token-theme.mp3",
-    artwork: "/sounds/theme-token-theme.jpg",
-    duration: 320,
-  },
-  {
-    id: "world-alchema",
-    title: "World of Alchema",
-    artist: "Satchmo",
-    url: "/sounds/world-of-alchema.mp3",
-    artwork: "/sounds/world-of-alchema.jpg",
-    duration: 204,
-  },
-  {
-    id: "kings-watch",
-    title: "King's Watch",
-    artist: "Satchmo",
-    url: "/sounds/kings-watch.mp3",
-    artwork: "/sounds/kings-watch.jpg",
-    duration: 199,
-  },
-  {
-    id: "cerro-sombras",
-    title: "Cerro Sombras",
-    artist: "Satchmo",
-    url: "/sounds/cerro-sombras.mp3",
-    artwork: "/sounds/cerro-sombras.jpg",
-    duration: 220,
-  },
+	{
+		id: "tt-theme",
+		title: "Theme Token Theme",
+		artist: "Satchmo",
+		url: "/sounds/theme-token-theme.mp3",
+		artwork: "/sounds/theme-token-theme.jpg",
+		duration: 320,
+	},
+	{
+		id: "world-alchema",
+		title: "World of Alchema",
+		artist: "Satchmo",
+		url: "/sounds/world-of-alchema.mp3",
+		artwork: "/sounds/world-of-alchema.jpg",
+		duration: 204,
+	},
+	{
+		id: "kings-watch",
+		title: "King's Watch",
+		artist: "Satchmo",
+		url: "/sounds/kings-watch.mp3",
+		artwork: "/sounds/kings-watch.jpg",
+		duration: 199,
+	},
+	{
+		id: "cerro-sombras",
+		title: "Cerro Sombras",
+		artist: "Satchmo",
+		url: "/sounds/cerro-sombras.mp3",
+		artwork: "/sounds/cerro-sombras.jpg",
+		duration: 220,
+	},
 ];
 
-
-export function AudioDemo({ theme, mode }: { theme?: any, mode?: 'light' | 'dark' }) {
-  // Pause audio on unmount removed to prevent interruptions
-  /*
+export function AudioDemo({
+	theme,
+	mode,
+}: {
+	theme?: ThemeToken;
+	mode?: "light" | "dark";
+}) {
+	// Pause audio on unmount removed to prevent interruptions
+	/*
   React.useEffect(() => {
     return () => {
       const state = useAudioStore.getState();
@@ -56,17 +59,20 @@ export function AudioDemo({ theme, mode }: { theme?: any, mode?: 'light' | 'dark
   }, []);
   */
 
-  return (
-    <AudioDemoProvider tracks={demoTracks}>
-      <div className="relative overflow-hidden rounded-xl" style={{ height: 'calc(100vh - 17.5rem)' }}>
-        {/* Fullscreen visualizer */}
-        <AudioVisualizerFractal theme={theme} mode={mode} />
+	return (
+		<AudioDemoProvider tracks={demoTracks}>
+			<div
+				className="relative overflow-hidden rounded-xl"
+				style={{ height: "calc(100vh - 17.5rem)" }}
+			>
+				{/* Fullscreen visualizer */}
+				<AudioVisualizerFractal theme={theme} mode={mode} />
 
-        {/* Player overlay at bottom center */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-10">
-          <ParticlePlayerWidget />
-        </div>
-      </div>
-    </AudioDemoProvider>
-  );
+				{/* Player overlay at bottom center */}
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-10">
+					<ParticlePlayerWidget />
+				</div>
+			</div>
+		</AudioDemoProvider>
+	);
 }

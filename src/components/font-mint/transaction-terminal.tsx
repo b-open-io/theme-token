@@ -1,21 +1,19 @@
 "use client";
 
-import { getOrdfsUrl } from "@theme-token/sdk";
+import { useWallet as useOneSatWallet } from "@1sat/react";
 import { Utils } from "@bsv/sdk";
-import type { PackageFile } from "@/lib/package-builder";
+import { getOrdfsUrl } from "@theme-token/sdk";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FontFile } from "@/app/studio/font/font-mint-client";
-import type { FontMetadata } from "./metadata-form";
-import type { CompiledFont } from "./ai-generate-tab";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-wallet";
 import { buildFontMetadata } from "@/lib/asset-metadata";
 import { generateFontPreviewFromData } from "@/lib/font-preview-generator";
+import type { PackageFile } from "@/lib/package-builder";
 import { publishPackage } from "@/lib/package-builder";
-import {
-	useWallet as useOneSatWallet,
-} from "@1sat/react";
+import type { CompiledFont } from "./ai-generate-tab";
+import type { FontMetadata } from "./metadata-form";
 
 interface TransactionTerminalProps {
 	files: FontFile[];
@@ -103,7 +101,8 @@ export function TransactionTerminal({
 					fontMimeType = "font/ttf";
 				}
 
-				fontName = metadata.name || fontFile.name.replace(/\.(woff2?|ttf)$/i, "");
+				fontName =
+					metadata.name || fontFile.name.replace(/\.(woff2?|ttf)$/i, "");
 			} else {
 				throw new Error("No font data available");
 			}
@@ -130,10 +129,19 @@ export function TransactionTerminal({
 					fontName,
 					fontMimeType,
 				);
-				addLog(`GENERATING_PREVIEW_IMAGE... ${(previewResult.sizeBytes / 1024).toFixed(1)}KB`, "success");
+				addLog(
+					`GENERATING_PREVIEW_IMAGE... ${(previewResult.sizeBytes / 1024).toFixed(1)}KB`,
+					"success",
+				);
 			} catch (previewError) {
-				console.warn("[TransactionTerminal] Preview generation failed:", previewError);
-				addLog("GENERATING_PREVIEW_IMAGE... SKIPPED (font loading error)", "info");
+				console.warn(
+					"[TransactionTerminal] Preview generation failed:",
+					previewError,
+				);
+				addLog(
+					"GENERATING_PREVIEW_IMAGE... SKIPPED (font loading error)",
+					"info",
+				);
 				previewResult = { base64: "", sizeBytes: 0 };
 			}
 
@@ -141,7 +149,9 @@ export function TransactionTerminal({
 			if (previewResult.base64.length > 0) {
 				packageFiles.push({
 					path: "preview.png",
-					content: new Uint8Array(Utils.toArray(previewResult.base64, "base64")),
+					content: new Uint8Array(
+						Utils.toArray(previewResult.base64, "base64"),
+					),
 					contentType: "image/png",
 				});
 			}
@@ -157,7 +167,9 @@ export function TransactionTerminal({
 			addLog("CALCULATING_TX_SIZE...", "info");
 			const fontBytes = compiledFont
 				? compiledFont.woff2Size
-				: files.length > 0 ? files[0].size : 0;
+				: files.length > 0
+					? files[0].size
+					: 0;
 			const totalBytes = fontBytes + previewResult.sizeBytes;
 			await new Promise((r) => setTimeout(r, 200));
 			addLog(
@@ -179,7 +191,11 @@ export function TransactionTerminal({
 				"font.weight": "400",
 			});
 
-			const result = await publishPackage(wallet, packageFiles, fontMapMetadata);
+			const result = await publishPackage(
+				wallet,
+				packageFiles,
+				fontMapMetadata,
+			);
 
 			addLog("[USER_SIGNATURE_RECEIVED]", "success");
 			await new Promise((r) => setTimeout(r, 300));
@@ -187,7 +203,10 @@ export function TransactionTerminal({
 			addLog("BROADCASTING_TO_NODES...", "info");
 			await new Promise((r) => setTimeout(r, 500));
 
-			addLog(`TXID: ${result.txid.slice(0, 12)}...${result.txid.slice(-8)}`, "success");
+			addLog(
+				`TXID: ${result.txid.slice(0, 12)}...${result.txid.slice(-8)}`,
+				"success",
+			);
 			await new Promise((r) => setTimeout(r, 300));
 
 			addLog("INDEXING_ORDFS...", "info");
@@ -213,7 +232,17 @@ export function TransactionTerminal({
 			await new Promise((r) => setTimeout(r, 500));
 			onError(errorMessage);
 		}
-	}, [addresses, wallet, files, metadata, compiledFont, addLog, fileToBase64, onComplete, onError]);
+	}, [
+		addresses,
+		wallet,
+		files,
+		metadata,
+		compiledFont,
+		addLog,
+		fileToBase64,
+		onComplete,
+		onError,
+	]);
 
 	useEffect(() => {
 		if (hasStarted.current) return;
@@ -273,7 +302,11 @@ export function TransactionTerminal({
 				{/* Footer */}
 				{!isProcessing && (
 					<div className="border-t border-border p-4">
-						<Button onClick={onCancel} variant="outline" className="w-full font-mono">
+						<Button
+							onClick={onCancel}
+							variant="outline"
+							className="w-full font-mono"
+						>
 							[ CLOSE ]
 						</Button>
 					</div>

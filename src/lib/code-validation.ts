@@ -42,8 +42,7 @@ const PATTERN_CHECKS: PatternCheck[] = [
 	{
 		// Hardcoded rgb/hsl in className
 		pattern: /className="[^"]*(?:rgb|hsl)\([^)]+\)/,
-		message:
-			"Hardcoded rgb/hsl color in className - should use CSS variables",
+		message: "Hardcoded rgb/hsl color in className - should use CSS variables",
 		type: "warning",
 	},
 ];
@@ -168,9 +167,7 @@ export function validateMultipleFiles(
 		const result = validateCode(file.content, file.filename);
 		// Prefix errors with filename if multiple files
 		if (files.length > 1 && file.filename) {
-			allErrors.push(
-				...result.errors.map((e) => `[${file.filename}] ${e}`),
-			);
+			allErrors.push(...result.errors.map((e) => `[${file.filename}] ${e}`));
 			allWarnings.push(
 				...result.warnings.map((w) => `[${file.filename}] ${w}`),
 			);

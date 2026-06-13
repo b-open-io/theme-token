@@ -34,7 +34,9 @@ export async function POST(request: Request) {
 		const mainFilePath = pickMainFilePath(files, body.mainFilePath);
 		const mainFile = files.find((f) => f.path === mainFilePath);
 		const componentName =
-			body.componentName || (mainFile ? extractComponentName(mainFile.content) : null) || undefined;
+			body.componentName ||
+			(mainFile ? extractComponentName(mainFile.content) : null) ||
+			undefined;
 
 		const result = await createSandboxPreview({
 			files,
@@ -58,9 +60,13 @@ export async function POST(request: Request) {
 	} catch (error) {
 		console.error("[preview-registry-item-sandbox] Error:", error);
 		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : "Failed to generate sandbox preview" },
+			{
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to generate sandbox preview",
+			},
 			{ status: 500 },
 		);
 	}
 }
-

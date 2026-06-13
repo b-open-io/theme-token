@@ -1,9 +1,14 @@
 "use client";
 
-import type React from "react";
-import { motion, useMotionValue, animate, type AnimationPlaybackControls } from "framer-motion";
+import {
+	type AnimationPlaybackControls,
+	animate,
+	motion,
+	useMotionValue,
+} from "framer-motion";
 import Image from "next/image";
-import { useState, useEffect, useCallback, useRef } from "react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SwatchyPosition, SwatchySide } from "./swatchy-store";
 
 interface SwatchyAvatarProps {
@@ -45,7 +50,12 @@ function saveStoredOffsets(offsets: StoredOffsets): void {
 	}
 }
 
-export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvatarProps) {
+export function SwatchyAvatar({
+	position,
+	side,
+	onClick,
+	children,
+}: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
 	const isHero = position === "hero";
 	const isExpanded = position === "expanded";
@@ -69,13 +79,19 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 	const [isDragging, setIsDragging] = useState(false);
 	const [windowSize, setWindowSize] = useState({ w: 0, h: 0 });
 	// Keep track of active animations to stop them on drag
-	const controlsRef = useRef<{ x?: AnimationPlaybackControls; y?: AnimationPlaybackControls; w?: AnimationPlaybackControls; h?: AnimationPlaybackControls }>({});
+	const controlsRef = useRef<{
+		x?: AnimationPlaybackControls;
+		y?: AnimationPlaybackControls;
+		w?: AnimationPlaybackControls;
+		h?: AnimationPlaybackControls;
+	}>({});
 
 	// Handle window resize
 	useEffect(() => {
 		if (typeof window !== "undefined") {
 			setWindowSize({ w: window.innerWidth, h: window.innerHeight });
-			const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+			const handleResize = () =>
+				setWindowSize({ w: window.innerWidth, h: window.innerHeight });
 			window.addEventListener("resize", handleResize);
 			return () => window.removeEventListener("resize", handleResize);
 		}
@@ -92,57 +108,60 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 	}, []);
 
 	// Calculate base position for a given mode
-	const getBasePosition = useCallback((mode: SwatchyPosition, winW: number, winH: number) => {
-		const isMobile = winW < 640;
+	const getBasePosition = useCallback(
+		(mode: SwatchyPosition, winW: number, winH: number) => {
+			const isMobile = winW < 640;
 
-		if (mode === "expanded") {
-			const size = isMobile ? 140 : 280;
-			if (isMobile) {
-				// Mobile Expanded: Bottom Rightish
+			if (mode === "expanded") {
+				const size = isMobile ? 140 : 280;
+				if (isMobile) {
+					// Mobile Expanded: Bottom Rightish
+					return {
+						x: winW - 20 - size,
+						y: winH - 40 - size,
+						size,
+					};
+				}
+				// Desktop Expanded: Top Right
+				// top: 80, right: 40
 				return {
-					x: winW - 20 - size,
-					y: winH - 40 - size,
+					x: winW - 40 - size,
+					y: 80,
 					size,
 				};
 			}
-			// Desktop Expanded: Top Right
-			// top: 80, right: 40
-			return {
-				x: winW - 40 - size,
-				y: 80,
-				size,
-			};
-		}
 
-		if (mode === "hero") {
-			const size = isMobile ? 200 : 280;
-			// Desktop: bottom 25%, right 15%
-			// Mobile: bottom 20%, right 5%
-			const rightPct = isMobile ? 0.05 : 0.15;
-			const bottomPct = isMobile ? 0.20 : 0.25;
-			return {
-				x: winW - (winW * rightPct) - size,
-				y: winH - (winH * bottomPct) - size,
-				size,
-			};
-		}
+			if (mode === "hero") {
+				const size = isMobile ? 200 : 280;
+				// Desktop: bottom 25%, right 15%
+				// Mobile: bottom 20%, right 5%
+				const rightPct = isMobile ? 0.05 : 0.15;
+				const bottomPct = isMobile ? 0.2 : 0.25;
+				return {
+					x: winW - winW * rightPct - size,
+					y: winH - winH * bottomPct - size,
+					size,
+				};
+			}
 
-		// Corner (Default)
-		const size = 80;
-		// bottom: 16, right: 16 (or left: 16)
-		if (isLeft) {
+			// Corner (Default)
+			const size = 80;
+			// bottom: 16, right: 16 (or left: 16)
+			if (isLeft) {
+				return {
+					x: 16,
+					y: winH - 16 - size,
+					size,
+				};
+			}
 			return {
-				x: 16,
+				x: winW - 16 - size,
 				y: winH - 16 - size,
 				size,
 			};
-		}
-		return {
-			x: winW - 16 - size,
-			y: winH - 16 - size,
-			size,
-		};
-	}, [isLeft]);
+		},
+		[isLeft],
+	);
 
 	// Animate to target position whenever state changes
 	useEffect(() => {
@@ -161,14 +180,18 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 		controlsRef.current.h?.stop();
 
 		// Spring configuration for "Fly To" feel
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const spring: any = { type: "spring", stiffness: 120, damping: 20, mass: 1 };
+		// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
+		const spring: any = {
+			type: "spring",
+			stiffness: 120,
+			damping: 20,
+			mass: 1,
+		};
 
 		controlsRef.current.x = animate(x, targetX, spring);
 		controlsRef.current.y = animate(y, targetY, spring);
 		controlsRef.current.w = animate(width, base.size, spring);
 		controlsRef.current.h = animate(height, base.size, spring);
-
 	}, [position, windowSize, isDragging, getBasePosition, x, y, width, height]);
 
 	const handleDragStart = useCallback(() => {
@@ -192,7 +215,7 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 		// Save offset
 		offsetsRef.current[position] = newOffset;
 		saveStoredOffsets(offsetsRef.current);
-		
+
 		// Optional: Snap to bounds if dragging went too wild?
 		// For now we let it stay where dragged (as requested: "no matter where Swatchy is, he can be dragged")
 	}, [position, windowSize, getBasePosition, x, y]);
@@ -212,8 +235,17 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 
 	const getFloatTransition = () => {
 		if (isExpanded) return { duration: 0.5 };
-		if (isHero) return { duration: 6, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const };
-		return { duration: 5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const };
+		if (isHero)
+			return {
+				duration: 6,
+				repeat: Number.POSITIVE_INFINITY,
+				ease: "easeInOut" as const,
+			};
+		return {
+			duration: 5,
+			repeat: Number.POSITIVE_INFINITY,
+			ease: "easeInOut" as const,
+		};
 	};
 
 	// Hero constraints logic can be handled here if needed, but since we animate imperatively,
@@ -221,7 +253,7 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 	// Since x/y are absolute, we can constrain to window bounds.
 	const getConstraints = () => {
 		if (windowSize.w === 0) return undefined;
-		
+
 		if (isHero) {
 			// Hero: "draggable within the confines of the first visible view height"
 			// Assuming first view height is windowSize.h
@@ -250,7 +282,7 @@ export function SwatchyAvatar({ position, side, onClick, children }: SwatchyAvat
 				y,
 				width,
 				height,
-				zIndex: isCorner ? 60 : (isExpanded ? 50 : 40),
+				zIndex: isCorner ? 60 : isExpanded ? 50 : 40,
 			}}
 			className="overflow-visible"
 			drag={isDraggable}

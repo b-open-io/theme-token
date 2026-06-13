@@ -1,9 +1,9 @@
 import { getOrdfsUrl } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 import {
-	validateRegistryManifest,
 	hydrateRegistryManifest,
 	toShadcnRegistryItem,
+	validateRegistryManifest,
 } from "@/lib/registry-gateway";
 
 /**
@@ -49,7 +49,9 @@ export async function GET(
 		const validTypes = ["registry:component", "registry:ui"];
 		if (!validTypes.includes(result.manifest.type)) {
 			return NextResponse.json(
-				{ error: `Expected registry:component or registry:ui, got ${result.manifest.type}` },
+				{
+					error: `Expected registry:component or registry:ui, got ${result.manifest.type}`,
+				},
 				{ status: 400 },
 			);
 		}

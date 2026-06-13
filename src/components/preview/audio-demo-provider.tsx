@@ -15,7 +15,7 @@ export function AudioDemoProvider({
 	React.useEffect(() => {
 		// Initialize audio
 		$audio.init();
-		
+
 		// Set initial tracks
 		if (tracks.length > 0) {
 			useAudioStore.setState({
@@ -39,12 +39,12 @@ export function AudioDemoProvider({
 			const currentTime = audio.currentTime;
 			const duration = audio.duration || 0;
 			const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-			
+
 			// Update immediately for smooth progress bar
-			useAudioStore.setState({ 
-				currentTime, 
+			useAudioStore.setState({
+				currentTime,
 				duration,
-				progress 
+				progress,
 			});
 		};
 
@@ -61,9 +61,9 @@ export function AudioDemoProvider({
 		};
 
 		const handleCanPlay = () => {
-			useAudioStore.setState({ 
+			useAudioStore.setState({
 				isLoading: false,
-				duration: audio.duration || 0 
+				duration: audio.duration || 0,
 			});
 		};
 
@@ -77,11 +77,11 @@ export function AudioDemoProvider({
 		};
 
 		const handleError = () => {
-			useAudioStore.setState({ 
-				isPlaying: false, 
+			useAudioStore.setState({
+				isPlaying: false,
 				isLoading: false,
 				isError: true,
-				errorMessage: "Failed to load audio" 
+				errorMessage: "Failed to load audio",
 			});
 		};
 

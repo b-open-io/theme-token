@@ -32,7 +32,10 @@ const LICENSE_PATTERNS: Array<{ pattern: RegExp; license: string }> = [
 	{ pattern: /Apache Licen[sc]e.*?2\.0/i, license: "Apache-2.0" },
 	{ pattern: /\bAPACHE2?\b/i, license: "Apache-2.0" },
 	{ pattern: /MIT Licen[sc]e/i, license: "MIT" },
-	{ pattern: /\bMIT\b(?=\s+licen[sc]e|\s*\)|\s*,|\s*\.|\s*$)/i, license: "MIT" },
+	{
+		pattern: /\bMIT\b(?=\s+licen[sc]e|\s*\)|\s*,|\s*\.|\s*$)/i,
+		license: "MIT",
+	},
 	{ pattern: /BSD.*?Licen[sc]e/i, license: "BSD" },
 	{ pattern: /Creative Commons Zero/i, license: "CC0" },
 	{ pattern: /\bCC0\b/i, license: "CC0" },
@@ -246,14 +249,20 @@ function extractFromFontInfo(content: string): Partial<ZipFontMetadata> {
 
 	try {
 		// Handle JSON with comments by stripping them
-		const cleanJson = content.replace(/\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1");
+		const cleanJson = content
+			.replace(/\/\/.*$/gm, "")
+			.replace(/,(\s*[}\]])/g, "$1");
 		const info = JSON.parse(cleanJson);
 
 		// Handle nested typeface structure
 		const typeface = info.typeface || info;
 
 		// Extract license
-		const licenseField = typeface.license || typeface.License || typeface.licence || typeface.Licence;
+		const licenseField =
+			typeface.license ||
+			typeface.License ||
+			typeface.licence ||
+			typeface.Licence;
 		if (licenseField) {
 			result.license = extractLicenseFromText(String(licenseField));
 		}
@@ -262,8 +271,13 @@ function extractFromFontInfo(content: string): Partial<ZipFontMetadata> {
 		result.name = typeface.name || typeface.Name || info.name || null;
 
 		// Extract authors
-		const authors = typeface.authors || typeface.author || typeface.Authors || typeface.Author ||
-			typeface.designer || typeface.Designer;
+		const authors =
+			typeface.authors ||
+			typeface.author ||
+			typeface.Authors ||
+			typeface.Author ||
+			typeface.designer ||
+			typeface.Designer;
 		if (Array.isArray(authors)) {
 			result.authors = authors.map(String);
 		} else if (typeof authors === "string") {
@@ -297,10 +311,16 @@ function extractFromGenericJson(content: string): Partial<ZipFontMetadata> {
 		const data = JSON.parse(content);
 
 		// Try common field names
-		result.name = data.name || data.family || data.fontFamily || data.font_name || null;
+		result.name =
+			data.name || data.family || data.fontFamily || data.font_name || null;
 
 		// Author fields
-		const author = data.author || data.designer || data.creator || data.authors || data.designers;
+		const author =
+			data.author ||
+			data.designer ||
+			data.creator ||
+			data.authors ||
+			data.designers;
 		if (Array.isArray(author)) {
 			result.authors = author.map(String);
 		} else if (typeof author === "string") {
@@ -314,7 +334,8 @@ function extractFromGenericJson(content: string): Partial<ZipFontMetadata> {
 		}
 
 		// Website
-		result.website = data.website || data.homepage || data.url || data.repository || null;
+		result.website =
+			data.website || data.homepage || data.url || data.repository || null;
 	} catch {
 		// Invalid JSON
 	}
@@ -342,10 +363,17 @@ function extractAuthorFromReadme(readme: string): string[] | null {
 			const names: string[] = [];
 
 			// Match markdown links: [Name](url) or plain list items: - Name
-			const listMatches = section.matchAll(/[-*]\s*\[([^\]]+)\]|[-*]\s+([^\n\[]+)/g);
+			const listMatches = section.matchAll(
+				/[-*]\s*\[([^\]]+)\]|[-*]\s+([^\n[]+)/g,
+			);
 			for (const m of listMatches) {
 				const name = (m[1] || m[2])?.trim();
-				if (name && name.length > 1 && name.length < 50 && !/^http/i.test(name)) {
+				if (
+					name &&
+					name.length > 1 &&
+					name.length < 50 &&
+					!/^http/i.test(name)
+				) {
 					names.push(name);
 				}
 			}
@@ -358,7 +386,11 @@ function extractAuthorFromReadme(readme: string): string[] | null {
 					.replace(/\s*\([^)]*\)/g, "") // Remove parentheticals
 					.trim();
 
-				if (cleaned.length > 1 && cleaned.length < 100 && !/^http/i.test(cleaned)) {
+				if (
+					cleaned.length > 1 &&
+					cleaned.length < 100 &&
+					!/^http/i.test(cleaned)
+				) {
 					names.push(cleaned);
 				}
 			}
@@ -404,7 +436,10 @@ function extractNameFromFontFile(filename: string): string | null {
 	let name = filename.replace(/\.(woff2?|ttf|otf)$/i, "");
 
 	// Remove common suffixes like -Regular, -Bold, etc.
-	name = name.replace(/[-_]?(Regular|Bold|Italic|Light|Medium|Thin|Black|Heavy|Book|Normal|Variable|VF|Var).*$/i, "");
+	name = name.replace(
+		/[-_]?(Regular|Bold|Italic|Light|Medium|Thin|Black|Heavy|Book|Normal|Variable|VF|Var).*$/i,
+		"",
+	);
 
 	// Remove "Demo" suffix
 	name = name.replace(/[-_]?Demo$/i, "");
@@ -464,12 +499,16 @@ export async function loadFontZip(zipFile: File): Promise<ZipFontPackage> {
 
 		// Check if it's a metadata/license/readme file
 		const isMetadataFile = METADATA_FILE_NAMES.some(
-			(f) => upperName === f.toUpperCase() || fileName.toLowerCase() === f.toLowerCase(),
+			(f) =>
+				upperName === f.toUpperCase() ||
+				fileName.toLowerCase() === f.toLowerCase(),
 		);
 
 		// Also check for common patterns in subdirectories
-		const isInMiscFolder = /^misc\//i.test(relativePath) || /\/misc\//i.test(relativePath);
-		const isTextFile = /\.(txt|md|json|pb)$/i.test(fileName) || !/\./i.test(fileName);
+		const isInMiscFolder =
+			/^misc\//i.test(relativePath) || /\/misc\//i.test(relativePath);
+		const isTextFile =
+			/\.(txt|md|json|pb)$/i.test(fileName) || !/\./i.test(fileName);
 
 		if (isMetadataFile || (isInMiscFolder && isTextFile)) {
 			try {
@@ -531,7 +570,10 @@ export async function loadFontZip(zipFile: File): Promise<ZipFontPackage> {
 	// 5. Generic JSON files
 	for (const [path, content] of textFiles) {
 		const fileName = path.split("/").pop()?.toLowerCase();
-		if ((fileName === "metadata.json" || fileName === "font.json") && !processedFiles.has(path)) {
+		if (
+			(fileName === "metadata.json" || fileName === "font.json") &&
+			!processedFiles.has(path)
+		) {
 			const extracted = extractFromGenericJson(content);
 			mergeMetadata(metadata, extracted, fileName);
 			processedFiles.add(path);

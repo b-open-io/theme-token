@@ -8,8 +8,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useYoursWallet } from "./use-yours-wallet";
 import type { DraftMetadata } from "@/lib/storage/types";
+import { useYoursWallet } from "./use-yours-wallet";
 
 export type RegistryItemType = "registry:block" | "registry:component";
 
@@ -48,7 +48,9 @@ export function useRegistryDrafts() {
 
 	const [drafts, setDrafts] = useState<RegistryDraft[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(null);
+	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(
+		null,
+	);
 	const hasFetched = useRef(false);
 
 	/**
@@ -72,25 +74,28 @@ export function useRegistryDrafts() {
 
 			// Convert to RegistryDraft format
 			if (data.drafts && data.drafts.length > 0) {
-				const registryDrafts: RegistryDraft[] = data.drafts.map((draft: DraftMetadata) => {
-					// Registry-specific data is stored in draft.data
-					const registryData = (draft.data || {}) as {
-						manifest?: RegistryManifest;
-						paymentTxid?: string;
-						status?: "draft" | "inscribed" | "failed";
-					};
+				const registryDrafts: RegistryDraft[] = data.drafts.map(
+					(draft: DraftMetadata) => {
+						// Registry-specific data is stored in draft.data
+						const registryData = (draft.data || {}) as {
+							manifest?: RegistryManifest;
+							paymentTxid?: string;
+							status?: "draft" | "inscribed" | "failed";
+						};
 
-					return {
-						id: draft.id,
-						name: draft.name,
-						type: (registryData.manifest?.type || "registry:block") as RegistryItemType,
-						manifest: registryData.manifest as RegistryManifest,
-						paymentTxid: registryData.paymentTxid,
-						status: registryData.status || "draft",
-						createdAt: draft.createdAt,
-						expiresAt: draft.expiresAt,
-					};
-				});
+						return {
+							id: draft.id,
+							name: draft.name,
+							type: (registryData.manifest?.type ||
+								"registry:block") as RegistryItemType,
+							manifest: registryData.manifest as RegistryManifest,
+							paymentTxid: registryData.paymentTxid,
+							status: registryData.status || "draft",
+							createdAt: draft.createdAt,
+							expiresAt: draft.expiresAt,
+						};
+					},
+				);
 
 				setDrafts(registryDrafts);
 			}
@@ -116,13 +121,13 @@ export function useRegistryDrafts() {
 		async (
 			manifest: RegistryManifest,
 			paymentTxid?: string,
-			status: "draft" | "inscribed" | "failed" = "draft"
+			status: "draft" | "inscribed" | "failed" = "draft",
 		): Promise<RegistryDraft | null> => {
 			if (!ordAddress) return null;
 
 			try {
 				// Serialize the manifest to JSON
-				const manifestJson = JSON.stringify(manifest);
+				const _manifestJson = JSON.stringify(manifest);
 
 				const response = await fetch("/api/drafts", {
 					method: "POST",
@@ -180,7 +185,10 @@ export function useRegistryDrafts() {
 	 * Update a draft's status (e.g., after inscription)
 	 */
 	const updateDraftStatus = useCallback(
-		async (id: string, status: "draft" | "inscribed" | "failed"): Promise<boolean> => {
+		async (
+			id: string,
+			status: "draft" | "inscribed" | "failed",
+		): Promise<boolean> => {
 			if (!ordAddress) return false;
 
 			try {
@@ -204,7 +212,7 @@ export function useRegistryDrafts() {
 				if (!response.ok) return false;
 
 				setDrafts((prev) =>
-					prev.map((d) => (d.id === id ? { ...d, status } : d))
+					prev.map((d) => (d.id === id ? { ...d, status } : d)),
 				);
 
 				return true;

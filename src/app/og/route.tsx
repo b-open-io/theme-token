@@ -20,19 +20,11 @@ export async function GET(request: Request) {
 
 	// Redirect to dynamic OG if theme is specified
 	if (themeOrigin) {
-		return NextResponse.redirect(
-			new URL(`/og/${themeOrigin}`, url.origin),
-		);
+		return NextResponse.redirect(new URL(`/og/${themeOrigin}`, url.origin));
 	}
 
 	// Default homepage OG with branded stripes
-	const stripeColors = [
-		"#6366f1",
-		"#a855f7",
-		"#ec4899",
-		"#3b82f6",
-		"#10b981",
-	];
+	const stripeColors = ["#6366f1", "#a855f7", "#ec4899", "#3b82f6", "#10b981"];
 	const seed = 42; // Fixed seed for consistent default image
 
 	// Generate stripe widths
@@ -50,83 +42,81 @@ export async function GET(request: Request) {
 	}
 
 	return new ImageResponse(
-		(
+		<div
+			style={{
+				width: "100%",
+				height: "100%",
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				backgroundColor: "#0f172a",
+				position: "relative",
+				overflow: "hidden",
+			}}
+		>
+			{/* Diagonal stripes */}
 			<div
 				style={{
-					width: "100%",
-					height: "100%",
+					position: "absolute",
+					top: "-50%",
+					left: "-25%",
+					width: "150%",
+					height: "200%",
 					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					backgroundColor: "#0f172a",
-					position: "relative",
-					overflow: "hidden",
+					transform: "rotate(-35deg)",
 				}}
 			>
-				{/* Diagonal stripes */}
+				{stripes.map((stripe, i) => (
+					<div
+						key={i}
+						style={{
+							width: stripe.width,
+							height: "100%",
+							backgroundColor: stripe.color,
+							flexShrink: 0,
+						}}
+					/>
+				))}
+			</div>
+			{/* Text overlay */}
+			<div
+				style={{
+					position: "relative",
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					textAlign: "center",
+				}}
+			>
 				<div
 					style={{
-						position: "absolute",
-						top: "-50%",
-						left: "-25%",
-						width: "150%",
-						height: "200%",
 						display: "flex",
-						transform: "rotate(-35deg)",
+						fontSize: 96,
+						fontWeight: 700,
+						fontFamily: "Space Grotesk",
+						color: "#fafafa",
+						textShadow: "0 4px 20px rgba(0,0,0,0.5)",
+						letterSpacing: "-0.02em",
 					}}
 				>
-					{stripes.map((stripe, i) => (
-						<div
-							key={i}
-							style={{
-								width: stripe.width,
-								height: "100%",
-								backgroundColor: stripe.color,
-								flexShrink: 0,
-							}}
-						/>
-					))}
+					Theme Token
 				</div>
-				{/* Text overlay */}
 				<div
 					style={{
-						position: "relative",
 						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						textAlign: "center",
+						fontSize: 36,
+						fontWeight: 700,
+						fontFamily: "Space Grotesk",
+						color: "#fafafa",
+						textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+						marginTop: 8,
 					}}
 				>
-					<div
-						style={{
-							display: "flex",
-							fontSize: 96,
-							fontWeight: 700,
-							fontFamily: "Space Grotesk",
-							color: "#fafafa",
-							textShadow: "0 4px 20px rgba(0,0,0,0.5)",
-							letterSpacing: "-0.02em",
-						}}
-					>
-						Theme Token
-					</div>
-					<div
-						style={{
-							display: "flex",
-							fontSize: 36,
-							fontWeight: 700,
-							fontFamily: "Space Grotesk",
-							color: "#fafafa",
-							textShadow: "0 2px 10px rgba(0,0,0,0.5)",
-							marginTop: 8,
-						}}
-					>
-						themetoken.dev
-					</div>
+					themetoken.dev
 				</div>
 			</div>
-		),
+		</div>,
 		{
 			width: 1200,
 			height: 630,

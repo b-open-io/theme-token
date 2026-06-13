@@ -157,7 +157,10 @@ export function PurchaseSuccessModal({
 							animate={{ scale: 1 }}
 							transition={{ delay: 0.2 }}
 						>
-							<ShoppingBag className="h-8 w-8" style={{ color: primaryColor }} />
+							<ShoppingBag
+								className="h-8 w-8"
+								style={{ color: primaryColor }}
+							/>
 						</motion.div>
 					</motion.div>
 
@@ -171,7 +174,9 @@ export function PurchaseSuccessModal({
 							Theme Purchased!
 						</h2>
 						<p className="mt-2 text-sm text-muted-foreground">
-							<span className="font-semibold text-foreground">{theme.name}</span>{" "}
+							<span className="font-semibold text-foreground">
+								{theme.name}
+							</span>{" "}
 							is now in your collection.
 						</p>
 					</motion.div>
@@ -219,11 +224,7 @@ export function PurchaseSuccessModal({
 						>
 							Apply Now
 						</Button>
-						<Button
-							onClick={onClose}
-							variant="outline"
-							className="flex-1"
-						>
+						<Button onClick={onClose} variant="outline" className="flex-1">
 							Browse More
 						</Button>
 					</motion.div>

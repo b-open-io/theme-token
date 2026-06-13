@@ -6,7 +6,18 @@ import type { Token } from "./tools/pattern-tools";
 // Re-export Token as ThemeToken for UI
 export type ThemeToken = Token;
 
-export type GeneratorType = "ai" | "scatter" | "grid" | "waves" | "stripes" | "noise" | "topo" | "chevron" | "crosshatch" | "dots" | "hexagon";
+export type GeneratorType =
+	| "ai"
+	| "scatter"
+	| "grid"
+	| "waves"
+	| "stripes"
+	| "noise"
+	| "topo"
+	| "chevron"
+	| "crosshatch"
+	| "dots"
+	| "hexagon";
 export type SymmetryMode = "none" | "mirrorX" | "mirrorY" | "rotate";
 export type ShapeType = "circle" | "polygon" | "emoji" | "symbol" | "text";
 export type PatternStatus = "idle" | "generating" | "error";
@@ -15,36 +26,36 @@ export type AspectRatio = "1:1" | "16:9" | "4:3" | "3:2" | "2:1";
 
 export interface PatternParams {
 	// Size
-	sizeMin: number;      // 1-100
-	sizeMax: number;      // 1-100
-	spacing: number;      // 1-200
-	density: number;      // 1-100
+	sizeMin: number; // 1-100
+	sizeMax: number; // 1-100
+	spacing: number; // 1-200
+	density: number; // 1-100
 
 	// Transform
-	rotation: number;     // 0-360
-	jitter: number;       // 0-100 (position randomness)
-	strokeWidth: number;  // 0.1-20
+	rotation: number; // 0-360
+	jitter: number; // 0-100 (position randomness)
+	strokeWidth: number; // 0.1-20
 
 	// Opacity
-	opacity: number;           // 0-100
+	opacity: number; // 0-100
 	randomizeOpacity: boolean;
-	opacityMin: number;        // 0-100
-	opacityMax: number;        // 0-100
+	opacityMin: number; // 0-100
+	opacityMax: number; // 0-100
 
 	// Symmetry & copies
 	symmetry: SymmetryMode;
 	rotateCopies: boolean;
-	numberOfCopies: number;    // 1-12
-	rotateOffsetX: number;     // 0-100
-	rotateOffsetY: number;     // 0-100
+	numberOfCopies: number; // 1-12
+	rotateOffsetX: number; // 0-100
+	rotateOffsetY: number; // 0-100
 
 	// Shape
 	shape: ShapeType;
-	customSymbol: string;      // emoji or symbol
+	customSymbol: string; // emoji or symbol
 
 	// Text
 	textInput: string;
-	fontSize: number;          // 8-72
+	fontSize: number; // 8-72
 	fontWeight: "normal" | "bold";
 	fontStyle: "normal" | "italic";
 
@@ -67,16 +78,16 @@ export interface ColorConfig {
 
 	// Shape gradient
 	shapeGradientType: GradientType;
-	shapeGradientColor1: string;  // hex
-	shapeGradientColor2: string;  // hex
-	shapeGradientAngle: number;   // 0-360
+	shapeGradientColor1: string; // hex
+	shapeGradientColor2: string; // hex
+	shapeGradientAngle: number; // 0-360
 
 	// Background gradient
 	bgGradientType: GradientType;
-	bgGradientColor1: string;     // hex
-	bgGradientColor2: string;     // hex
-	bgGradientAngle: number;      // 0-360
-	bgGradientRadius: number;     // for radial, 0-100
+	bgGradientColor1: string; // hex
+	bgGradientColor2: string; // hex
+	bgGradientAngle: number; // 0-360
+	bgGradientRadius: number; // for radial, 0-100
 }
 
 export interface AnimationConfig {
@@ -84,32 +95,32 @@ export interface AnimationConfig {
 
 	// Rotation animation
 	animateRotation: boolean;
-	rotationDuration: number;     // seconds
-	rotationOffset: number;       // degrees
+	rotationDuration: number; // seconds
+	rotationOffset: number; // degrees
 
 	// Opacity animation
 	animateOpacity: boolean;
-	opacityDuration: number;      // seconds
-	opacityMin: number;           // 0-1
-	opacityMax: number;           // 0-1
+	opacityDuration: number; // seconds
+	opacityMin: number; // 0-1
+	opacityMax: number; // 0-1
 
 	// Scale animation
 	animateScale: boolean;
-	scaleDuration: number;        // seconds
-	scaleMin: number;             // 0.1-2
-	scaleMax: number;             // 0.1-2
+	scaleDuration: number; // seconds
+	scaleMin: number; // 0.1-2
+	scaleMax: number; // 0.1-2
 
 	// Translation animation
 	animateTranslation: boolean;
-	translationDuration: number;  // seconds
+	translationDuration: number; // seconds
 	translationDistanceX: number; // px
 	translationDistanceY: number; // px
 
 	// Blur animation
 	animateBlur: boolean;
-	blurDuration: number;         // seconds
-	blurMin: number;              // 0-20
-	blurMax: number;              // 0-20
+	blurDuration: number; // seconds
+	blurMin: number; // 0-20
+	blurMax: number; // 0-20
 }
 
 export interface PatternHistoryEntry {
@@ -120,7 +131,12 @@ export interface PatternHistoryEntry {
 }
 
 export interface PatternError {
-	code: "INVALID_SVG" | "TIMEOUT" | "RATE_LIMIT" | "PAYMENT_FAILED" | "GENERATION_FAILED";
+	code:
+		| "INVALID_SVG"
+		| "TIMEOUT"
+		| "RATE_LIMIT"
+		| "PAYMENT_FAILED"
+		| "GENERATION_FAILED";
 	message: string;
 	recoverable: boolean;
 }
@@ -245,14 +261,21 @@ function genSeed(): string {
 /**
  * Map unified params to generator-specific params
  */
-function mapToGeneratorParams(type: GeneratorType, params: PatternParams, colors: ColorConfig, seed: string) {
+function mapToGeneratorParams(
+	type: GeneratorType,
+	params: PatternParams,
+	colors: ColorConfig,
+	seed: string,
+) {
 	// For theme tokens, keep as-is; for hex colors, pass directly
-	const fillToken = typeof colors.fill === "string" && colors.fill.startsWith("#")
-		? undefined
-		: colors.fill as Token;
-	const strokeToken = typeof colors.stroke === "string" && colors.stroke.startsWith("#")
-		? undefined
-		: colors.stroke as Token;
+	const fillToken =
+		typeof colors.fill === "string" && colors.fill.startsWith("#")
+			? undefined
+			: (colors.fill as Token);
+	const strokeToken =
+		typeof colors.stroke === "string" && colors.stroke.startsWith("#")
+			? undefined
+			: (colors.stroke as Token);
 
 	const base = { seed, fillToken, strokeToken };
 
@@ -360,7 +383,7 @@ export const usePatternStore = create<PatternStore>()(
 				set({ status: "generating", error: null, prompt });
 
 				try {
-					const { seed, colors } = get();
+					const { seed } = get();
 					const res = await fetch("/api/generate-pattern", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -382,7 +405,12 @@ export const usePatternStore = create<PatternStore>()(
 						generatorType: "ai",
 						history: [
 							...state.history,
-							{ svg: data.svg, prompt, params: state.params, timestamp: Date.now() },
+							{
+								svg: data.svg,
+								prompt,
+								params: state.params,
+								timestamp: Date.now(),
+							},
 						],
 						historyIndex: state.history.length,
 					});
@@ -401,7 +429,12 @@ export const usePatternStore = create<PatternStore>()(
 			runGenerator: (type, overrideParams) => {
 				const state = get();
 				const params = { ...state.params, ...overrideParams };
-				const genParams = mapToGeneratorParams(type, params, state.colors, state.seed);
+				const genParams = mapToGeneratorParams(
+					type,
+					params,
+					state.colors,
+					state.seed,
+				);
 
 				if (type === "ai") return;
 
@@ -409,25 +442,37 @@ export const usePatternStore = create<PatternStore>()(
 				switch (type) {
 					case "scatter":
 					case "dots":
-						result = generators.scatter(genParams as Parameters<typeof generators.scatter>[0]);
+						result = generators.scatter(
+							genParams as Parameters<typeof generators.scatter>[0],
+						);
 						break;
 					case "grid":
 					case "hexagon":
-						result = generators.grid(genParams as Parameters<typeof generators.grid>[0]);
+						result = generators.grid(
+							genParams as Parameters<typeof generators.grid>[0],
+						);
 						break;
 					case "stripes":
 					case "chevron":
 					case "crosshatch":
-						result = generators.lines(genParams as Parameters<typeof generators.lines>[0]);
+						result = generators.lines(
+							genParams as Parameters<typeof generators.lines>[0],
+						);
 						break;
 					case "waves":
-						result = generators.waves(genParams as Parameters<typeof generators.waves>[0]);
+						result = generators.waves(
+							genParams as Parameters<typeof generators.waves>[0],
+						);
 						break;
 					case "noise":
-						result = generators.noise(genParams as Parameters<typeof generators.noise>[0]);
+						result = generators.noise(
+							genParams as Parameters<typeof generators.noise>[0],
+						);
 						break;
 					case "topo":
-						result = generators.topo(genParams as Parameters<typeof generators.topo>[0]);
+						result = generators.topo(
+							genParams as Parameters<typeof generators.topo>[0],
+						);
 						break;
 					default:
 						return;
@@ -442,7 +487,12 @@ export const usePatternStore = create<PatternStore>()(
 					error: null,
 					history: [
 						...state.history,
-						{ svg: result.svg, prompt: state.prompt, params, timestamp: Date.now() },
+						{
+							svg: result.svg,
+							prompt: state.prompt,
+							params,
+							timestamp: Date.now(),
+						},
 					],
 					historyIndex: state.history.length,
 				});
@@ -473,7 +523,9 @@ export const usePatternStore = create<PatternStore>()(
 			},
 
 			setAnimation: (newAnimation) => {
-				set((state) => ({ animation: { ...state.animation, ...newAnimation } }));
+				set((state) => ({
+					animation: { ...state.animation, ...newAnimation },
+				}));
 			},
 
 			shuffleSeed: () => {
@@ -568,8 +620,8 @@ export const usePatternStore = create<PatternStore>()(
 				seed: state.seed,
 				generatorType: state.generatorType,
 			}),
-		}
-	)
+		},
+	),
 );
 
 /**
@@ -601,7 +653,8 @@ export function serializeState(state: PatternState): URLSearchParams {
 
 	// Shape
 	p.set("shape", state.params.shape);
-	if (state.params.customSymbol) p.set("selectedEmoji", state.params.customSymbol);
+	if (state.params.customSymbol)
+		p.set("selectedEmoji", state.params.customSymbol);
 	if (state.params.textInput) p.set("textInput", state.params.textInput);
 	p.set("fontSize", String(state.params.fontSize));
 	p.set("fontWeight", state.params.fontWeight);
@@ -639,7 +692,10 @@ export function serializeState(state: PatternState): URLSearchParams {
 	p.set("minScale", String(state.animation.scaleMin));
 	p.set("maxScale", String(state.animation.scaleMax));
 	p.set("animateTranslation", String(state.animation.animateTranslation));
-	p.set("translationAnimationDuration", String(state.animation.translationDuration));
+	p.set(
+		"translationAnimationDuration",
+		String(state.animation.translationDuration),
+	);
 	p.set("translationDistanceX", String(state.animation.translationDistanceX));
 	p.set("translationDistanceY", String(state.animation.translationDistanceY));
 	p.set("animateBlur", String(state.animation.animateBlur));
@@ -653,9 +709,32 @@ export function serializeState(state: PatternState): URLSearchParams {
 	return p;
 }
 
-const VALID_GENERATORS: GeneratorType[] = ["ai", "scatter", "grid", "waves", "stripes", "noise", "topo", "chevron", "crosshatch", "dots", "hexagon"];
-const VALID_SHAPES: ShapeType[] = ["circle", "polygon", "emoji", "symbol", "text"];
-const VALID_SYMMETRY: SymmetryMode[] = ["none", "mirrorX", "mirrorY", "rotate"];
+const VALID_GENERATORS: GeneratorType[] = [
+	"ai",
+	"scatter",
+	"grid",
+	"waves",
+	"stripes",
+	"noise",
+	"topo",
+	"chevron",
+	"crosshatch",
+	"dots",
+	"hexagon",
+];
+const VALID_SHAPES: ShapeType[] = [
+	"circle",
+	"polygon",
+	"emoji",
+	"symbol",
+	"text",
+];
+const _VALID_SYMMETRY: SymmetryMode[] = [
+	"none",
+	"mirrorX",
+	"mirrorY",
+	"rotate",
+];
 
 /**
  * Deserialize URL params to partial state
@@ -714,9 +793,11 @@ export function deserializeState(p: URLSearchParams): Partial<PatternState> {
 	const fontSize = p.get("fontSize");
 	if (fontSize) params.fontSize = Number(fontSize);
 	const fontWeight = p.get("fontWeight");
-	if (fontWeight === "bold" || fontWeight === "normal") params.fontWeight = fontWeight;
+	if (fontWeight === "bold" || fontWeight === "normal")
+		params.fontWeight = fontWeight;
 	const fontStyle = p.get("fontStyle");
-	if (fontStyle === "italic" || fontStyle === "normal") params.fontStyle = fontStyle;
+	if (fontStyle === "italic" || fontStyle === "normal")
+		params.fontStyle = fontStyle;
 
 	// Copies
 	const rotateCopies = p.get("rotateCopies");
@@ -795,10 +876,12 @@ export function deserializeState(p: URLSearchParams): Partial<PatternState> {
 	}
 
 	// Assemble
-	if (Object.keys(params).length) state.params = { ...defaultParams, ...params };
-	if (Object.keys(colors).length) state.colors = { ...defaultColors, ...colors };
-	if (Object.keys(animation).length) state.animation = { ...defaultAnimation, ...animation };
+	if (Object.keys(params).length)
+		state.params = { ...defaultParams, ...params };
+	if (Object.keys(colors).length)
+		state.colors = { ...defaultColors, ...colors };
+	if (Object.keys(animation).length)
+		state.animation = { ...defaultAnimation, ...animation };
 
 	return state;
 }
-

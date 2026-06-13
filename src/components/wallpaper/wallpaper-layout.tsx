@@ -1,13 +1,25 @@
 "use client";
 
 import { getOrdfsUrl } from "@theme-token/sdk";
-import { Check, Download, ExternalLink, Loader2, PenLine, RefreshCw, Trash2 } from "lucide-react";
+import {
+	Check,
+	Download,
+	ExternalLink,
+	Loader2,
+	PenLine,
+	RefreshCw,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { downloadWallpaper } from "@/lib/wallpaper-engine";
 import { useWallpaperContext } from "./wallpaper-context";
@@ -16,7 +28,8 @@ import { WallpaperPreview } from "./wallpaper-preview";
 import { WallpaperSidebar } from "./wallpaper-sidebar";
 
 export function WallpaperLayout() {
-	const { selectedWallpaper, removeWallpaper, setSourceWallpaper } = useWallpaperContext();
+	const { selectedWallpaper, removeWallpaper, setSourceWallpaper } =
+		useWallpaperContext();
 	const { status, connect, inscribeImage, isInscribing } = useYoursWallet();
 
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);

@@ -34,7 +34,11 @@ export function ColorSwatch({
 	name,
 	cssVar,
 	className,
-}: { name: string; cssVar: string; className?: string }) {
+}: {
+	name: string;
+	cssVar: string;
+	className?: string;
+}) {
 	const [copied, setCopied] = React.useState(false);
 
 	const copyToClipboard = () => {
@@ -72,5 +76,3 @@ export function ColorSwatch({
 		</button>
 	);
 }
-
-

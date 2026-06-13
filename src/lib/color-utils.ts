@@ -35,7 +35,10 @@ export function parseOklch(oklchString: string): OklchColor | null {
  * Calculate perceptual color distance between two OKLCH colors
  * Uses weighted Euclidean distance accounting for hue circularity
  */
-export function getColorDistance(colorA: OklchColor, colorB: OklchColor): number {
+export function getColorDistance(
+	colorA: OklchColor,
+	colorB: OklchColor,
+): number {
 	const dL = colorA.l - colorB.l;
 	const dC = colorA.c - colorB.c;
 
@@ -50,8 +53,8 @@ export function getColorDistance(colorA: OklchColor, colorB: OklchColor): number
 
 	return Math.sqrt(
 		(dL * 100) ** 2 + // Lightness: scale up for importance
-		(dC * 100) ** 2 + // Chroma: scale up
-		(dH * hueWeight) ** 2, // Hue: weighted by chroma
+			(dC * 100) ** 2 + // Chroma: scale up
+			(dH * hueWeight) ** 2, // Hue: weighted by chroma
 	);
 }
 
@@ -83,7 +86,7 @@ export function hexToOklch(hex: string): OklchColor {
 	// XYZ to OKLab
 	const l_ = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
 	const m_ = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
-	const s_ = 0.0482003018 * x + 0.2643662691 * y + 0.6338517070 * z;
+	const s_ = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
 
 	const l_3 = Math.cbrt(l_);
 	const m_3 = Math.cbrt(m_);

@@ -3,7 +3,13 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 
-type ColorVariant = "primary" | "chart-1" | "chart-2" | "chart-3" | "chart-4" | "chart-5";
+type ColorVariant =
+	| "primary"
+	| "chart-1"
+	| "chart-2"
+	| "chart-3"
+	| "chart-4"
+	| "chart-5";
 
 interface ColorSectionDividerProps {
 	color?: ColorVariant;

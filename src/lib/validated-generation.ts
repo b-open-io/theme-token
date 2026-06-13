@@ -8,9 +8,9 @@
 import { generateObject } from "ai";
 import type { z } from "zod";
 import {
+	type CodeValidationResult,
 	validateCode,
 	validateMultipleFiles,
-	type CodeValidationResult,
 } from "./code-validation";
 
 /** Configuration for validated generation */
@@ -22,7 +22,9 @@ export interface ValidatedGenerationConfig<T> {
 	/** User prompt describing what to generate */
 	userPrompt: string;
 	/** Function to extract code string(s) from the generated object */
-	codeExtractor: (result: T) => string | Array<{ content: string; filename?: string }>;
+	codeExtractor: (
+		result: T,
+	) => string | Array<{ content: string; filename?: string }>;
 	/** Maximum retry attempts (default: 3) */
 	maxRetries?: number;
 	/** Model ID to use (default: google/gemini-3.1-pro-preview) */

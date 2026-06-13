@@ -13,10 +13,10 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { Slider } from "@/components/ui/slider";
 import {
 	colorPresets,
-	radiusPresets,
 	hexToOklch,
-	oklchToHex,
 	type OklchColor,
+	oklchToHex,
+	radiusPresets,
 } from "@/lib/color-utils";
 
 export interface FilterState {
@@ -115,7 +115,8 @@ export function FilterSidebar({
 				<div className="grid grid-cols-5 gap-2">
 					{colorPresets.slice(0, 5).map((preset) => {
 						const presetOklch = hexToOklch(preset.hex);
-						const isSelected = filters.primaryColor &&
+						const isSelected =
+							filters.primaryColor &&
 							Math.abs(filters.primaryColor.h - presetOklch.h) < 10 &&
 							Math.abs(filters.primaryColor.c - presetOklch.c) < 0.05;
 						return (
@@ -137,7 +138,8 @@ export function FilterSidebar({
 				<div className="grid grid-cols-4 gap-2">
 					{colorPresets.slice(5).map((preset) => {
 						const presetOklch = hexToOklch(preset.hex);
-						const isSelected = filters.primaryColor &&
+						const isSelected =
+							filters.primaryColor &&
 							Math.abs(filters.primaryColor.h - presetOklch.h) < 10 &&
 							Math.abs(filters.primaryColor.c - presetOklch.c) < 0.05;
 						return (
@@ -160,8 +162,16 @@ export function FilterSidebar({
 				{/* Custom Color Picker */}
 				<div className="flex items-center gap-2 pt-1">
 					<ColorPicker
-						value={filters.primaryColor ? oklchToHex(filters.primaryColor) : "#3b82f6"}
-						onChange={(hex) => handleCustomColor({ target: { value: hex } } as React.ChangeEvent<HTMLInputElement>)}
+						value={
+							filters.primaryColor
+								? oklchToHex(filters.primaryColor)
+								: "#3b82f6"
+						}
+						onChange={(hex) =>
+							handleCustomColor({
+								target: { value: hex },
+							} as React.ChangeEvent<HTMLInputElement>)
+						}
 						className="h-8 w-8"
 					/>
 					<span className="text-xs text-muted-foreground">
@@ -257,9 +267,7 @@ export function FilterSidebar({
 					<AccordionContent>
 						<Slider
 							value={[filters.priceRange[1]]}
-							onValueChange={([v]) =>
-								updateFilter("priceRange", [0, v])
-							}
+							onValueChange={([v]) => updateFilter("priceRange", [0, v])}
 							max={maxPrice}
 							step={0.01}
 							className="mt-2"

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ThemeToken } from "@theme-token/sdk";
 import { Loader2, Paperclip, Sparkles, Wallet, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -8,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { FEE_ADDRESS } from "@/lib/yours-wallet";
-import type { ThemeToken } from "@theme-token/sdk";
 
 // Types for font data (from ai-generate-tab)
 export interface GeneratedFont {
@@ -102,7 +102,7 @@ export function UnifiedRemixDialog({
 	previousTheme,
 	onThemeRemixComplete,
 }: UnifiedRemixDialogProps) {
-	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
+	const { status, connect, sendPayment, isSending } = useYoursWallet();
 	const [state, setState] = useState<RemixState>("idle");
 	const [prompt, setPrompt] = useState("");
 	const [model, setModel] = useState<ModelOption>("gemini");
@@ -110,7 +110,6 @@ export function UnifiedRemixDialog({
 
 	const isConnected = status === "connected";
 	const currentCost = MODEL_COSTS[model][type];
-	const hasEnoughBalance = (balance?.satoshis ?? 0) >= currentCost;
 	const isProcessing = state !== "idle" || isSending;
 
 	// Calculate attachment size
@@ -147,13 +146,6 @@ export function UnifiedRemixDialog({
 	const handleRemix = async () => {
 		if (!isConnected) {
 			await handleConnect();
-			return;
-		}
-
-		if (!hasEnoughBalance) {
-			toast.error("Insufficient Balance", {
-				description: `You need at least ${formatBsv(currentCost)} BSV to remix.`,
-			});
 			return;
 		}
 
@@ -296,15 +288,6 @@ export function UnifiedRemixDialog({
 			);
 		}
 
-		if (!hasEnoughBalance) {
-			return (
-				<>
-					<Wallet className="h-4 w-4" />
-					Insufficient Balance
-				</>
-			);
-		}
-
 		if (state === "paying" || isSending) {
 			return (
 				<>
@@ -364,10 +347,14 @@ export function UnifiedRemixDialog({
 				<div className="space-y-4 p-4">
 					{/* Prompt Input */}
 					<div>
-						<label className="mb-2 block font-mono text-xs text-muted-foreground">
+						<label
+							htmlFor="remix-prompt"
+							className="mb-2 block font-mono text-xs text-muted-foreground"
+						>
 							Describe how to modify this {typeLabel.toLowerCase()}:
 						</label>
 						<textarea
+							id="remix-prompt"
 							value={prompt}
 							onChange={(e) => setPrompt(e.target.value)}
 							placeholder={
@@ -393,10 +380,14 @@ export function UnifiedRemixDialog({
 
 					{/* Model Selector */}
 					<div className="space-y-2">
-						<label className="font-mono text-xs text-muted-foreground">
+						<label
+							htmlFor="remix-model"
+							className="font-mono text-xs text-muted-foreground"
+						>
 							Model:
 						</label>
 						<RadioGroup
+							id="remix-model"
 							value={model}
 							onValueChange={(v) => setModel(v as ModelOption)}
 							disabled={isProcessing}
@@ -467,13 +458,6 @@ export function UnifiedRemixDialog({
 							{error}
 						</div>
 					)}
-
-					{/* Balance Info */}
-					{isConnected && balance && (
-						<div className="text-center font-mono text-xs text-muted-foreground">
-							Balance: {formatBsv(balance.satoshis)} BSV
-						</div>
-					)}
 				</div>
 
 				{/* Footer */}
@@ -484,7 +468,7 @@ export function UnifiedRemixDialog({
 						</span>
 						<Button
 							onClick={handleRemix}
-							disabled={isProcessing || (isConnected && !hasEnoughBalance)}
+							disabled={isProcessing}
 							className="gap-2 font-mono text-xs"
 						>
 							{getButtonContent()}

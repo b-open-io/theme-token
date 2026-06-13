@@ -45,23 +45,15 @@ export type ToolName =
 	| "setFaviconRadius"
 	| "prepareInscribe"
 	| "prepareListing"
-	| "getWalletBalance"
 	| "getExchangeRate";
 
 /**
  * Tools available on every page
  */
-export const GLOBAL_TOOLS: ToolName[] = [
-	"navigate",
-	"getWalletBalance",
-	"getExchangeRate",
-];
+export const GLOBAL_TOOLS: ToolName[] = ["navigate", "getExchangeRate"];
 
 /** Tools that work with the wallet but don't require a specific page */
-export const WALLET_TOOLS: ToolName[] = [
-	"prepareInscribe",
-	"prepareListing",
-];
+export const WALLET_TOOLS: ToolName[] = ["prepareInscribe", "prepareListing"];
 
 /**
  * Generation tools that are available on every page.
@@ -80,11 +72,7 @@ export const GENERATION_TOOLS: ToolName[] = [
  * These tools manipulate the *current* studio state
  */
 export const STUDIO_TOOLS: Record<string, ToolName[]> = {
-	"/studio/theme": [
-		"setThemeColor",
-		"setThemeRadius",
-		"setThemeFont",
-	],
+	"/studio/theme": ["setThemeColor", "setThemeRadius", "setThemeFont"],
 	"/studio/patterns": ["setPatternParams"],
 	"/studio/icon": [
 		"setIconStudioTab",
@@ -149,7 +137,10 @@ export function getToolsForPage(pathname: string): Set<ToolName> {
 /**
  * Check if a tool is valid for the current page
  */
-export function isToolValidForPage(toolName: ToolName, pathname: string): boolean {
+export function isToolValidForPage(
+	toolName: ToolName,
+	pathname: string,
+): boolean {
 	// Global, wallet, and globally-allowed generation tools work everywhere
 	if (
 		GLOBAL_TOOLS.includes(toolName) ||
@@ -193,7 +184,9 @@ export function getNavigationHints(currentPathname: string): string {
 		if (unavailableTools.length === 0) continue;
 
 		const pageName = PAGE_NAMES[page] || page;
-		hints.push(`Navigate to ${pageName} (${page}) to use: ${unavailableTools.join(", ")}`);
+		hints.push(
+			`Navigate to ${pageName} (${page}) to use: ${unavailableTools.join(", ")}`,
+		);
 	}
 
 	return hints.join("\n");
@@ -202,7 +195,10 @@ export function getNavigationHints(currentPathname: string): string {
 /**
  * Get a helpful error message for invalid tool usage
  */
-export function getToolValidationError(toolName: ToolName, currentPathname: string): string {
+export function getToolValidationError(
+	toolName: ToolName,
+	currentPathname: string,
+): string {
 	const requiredPage = getRequiredPageForTool(toolName);
 	if (!requiredPage) {
 		return `Tool "${toolName}" is not a valid tool.`;

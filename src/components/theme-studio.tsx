@@ -1,17 +1,12 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
 	applyTheme as applyThemeToDOM,
-	parseCss,
 	getOrdfsUrl,
+	parseCss,
 	type ThemeToken,
 } from "@theme-token/sdk";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
-import { fetchThemeMarketListings, submitToIndexer, type ThemeMarketListing } from "@/lib/yours-wallet";
-import { BuyThemeModal } from "@/components/market/buy-theme-modal";
-import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
-import { storeRemixTheme } from "@/components/theme-gallery";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -33,27 +28,27 @@ import {
 	Type,
 	Upload,
 } from "lucide-react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExportModal } from "@/components/export-modal";
+import { FontSelector } from "@/components/font-selector";
 import { ImportModal } from "@/components/import-modal";
 import { InscribeDialog } from "@/components/inscribe-dialog";
 import { InscribedSuccessModal } from "@/components/inscribed-success-modal";
+import { BuyThemeModal } from "@/components/market/buy-theme-modal";
+import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
+import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import {
 	getAndClearRemixTheme,
 	REMIX_THEME_EVENT,
+	storeRemixTheme,
 } from "@/components/theme-gallery";
-import {
-	useStudioStore,
-	selectPendingColorChange,
-	selectPendingRadiusChange,
-	selectPendingFontChange,
-} from "@/lib/stores/studio-store";
 import { ThemePreviewPanel } from "@/components/theme-preview-panel";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
+import { ConfettiExplosion } from "@/components/ui/confetti";
 import {
 	Dialog,
 	DialogContent,
@@ -72,10 +67,19 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { FontSelector } from "@/components/font-selector";
 import { loadThemeFonts } from "@/lib/fonts";
-import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
-import { ConfettiExplosion } from "@/components/ui/confetti";
+import {
+	selectPendingColorChange,
+	selectPendingRadiusChange,
+	useStudioStore,
+} from "@/lib/stores/studio-store";
+import { fetchCachedThemes } from "@/lib/themes-cache";
+import {
+	fetchThemeMarketListings,
+	submitToIndexer,
+	type ThemeMarketListing,
+} from "@/lib/yours-wallet";
+
 // No hardcoded fallback - use activeTheme from SSR or first cached theme
 
 const DRAFTS_STORAGE_KEY = "theme-token-drafts";
@@ -181,7 +185,6 @@ export function ThemeStudio() {
 	const {
 		status,
 		connect,
-		balance,
 		profile,
 		inscribeTheme,
 		isInscribing,
@@ -191,25 +194,36 @@ export function ThemeStudio() {
 		useTheme();
 
 	// Use wallet's active theme as default - will be set from SSR or first cached theme
-	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(activeTheme);
+	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(
+		activeTheme,
+	);
 	// Track the original theme for dirty detection and reset
-	const [originalTheme, setOriginalTheme] = useState<ThemeToken | null>(activeTheme);
+	const [originalTheme, setOriginalTheme] = useState<ThemeToken | null>(
+		activeTheme,
+	);
 	const [txid, setTxid] = useState<string | null>(null);
 	const [customName, setCustomName] = useState("");
-	
+
 	// URL sync refs
 	const isInitialized = useRef(false);
 	const urlSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// Dirty state detection - compare selectedTheme styles with originalTheme styles
-	const isDirty = selectedTheme && originalTheme
-		? JSON.stringify(selectedTheme.styles) !== JSON.stringify(originalTheme.styles)
-		: false;
+	const isDirty =
+		selectedTheme && originalTheme
+			? JSON.stringify(selectedTheme.styles) !==
+				JSON.stringify(originalTheme.styles)
+			: false;
 	const [drafts, setDrafts] = useState<ThemeDraft[]>([]);
 	const [savedNotice, setSavedNotice] = useState(false);
-	const [selectedThemeOrigin, setSelectedThemeOrigin] = useState<string | null>(null);
+	const [selectedThemeOrigin, setSelectedThemeOrigin] = useState<string | null>(
+		null,
+	);
 	const [showBuyModal, setShowBuyModal] = useState(false);
-	const [purchaseSuccess, setPurchaseSuccess] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+	const [purchaseSuccess, setPurchaseSuccess] = useState<{
+		theme: ThemeToken;
+		txid: string;
+	} | null>(null);
 
 	// Fetch on-chain themes and market listings with TanStack Query
 	const { data: onChainThemes = [], isLoading: loadingThemes } = useQuery({
@@ -240,7 +254,9 @@ export function ThemeStudio() {
 	}
 
 	// Get listing for currently selected theme
-	const selectedListing = selectedThemeOrigin ? listingsByOrigin.get(selectedThemeOrigin) : null;
+	const selectedListing = selectedThemeOrigin
+		? listingsByOrigin.get(selectedThemeOrigin)
+		: null;
 	const [editorSubTab, setEditorSubTab] = useState<
 		"colors" | "typography" | "other"
 	>("colors");
@@ -344,7 +360,6 @@ export function ThemeStudio() {
 		syncToUrl();
 	}, [syncToUrl]);
 
-	
 	// Sync with wallet's active theme when it changes externally
 	useEffect(() => {
 		if (activeTheme) {
@@ -461,8 +476,12 @@ export function ThemeStudio() {
 	// Subscribe to Swatchy's pending color changes via store
 	const pendingColorChange = useStudioStore(selectPendingColorChange);
 	const pendingRadiusChange = useStudioStore(selectPendingRadiusChange);
-	const consumePendingColorChange = useStudioStore((s) => s.consumePendingColorChange);
-	const consumePendingRadiusChange = useStudioStore((s) => s.consumePendingRadiusChange);
+	const consumePendingColorChange = useStudioStore(
+		(s) => s.consumePendingColorChange,
+	);
+	const consumePendingRadiusChange = useStudioStore(
+		(s) => s.consumePendingRadiusChange,
+	);
 
 	useEffect(() => {
 		if (pendingColorChange && selectedTheme) {
@@ -509,7 +528,10 @@ export function ThemeStudio() {
 		}
 	}, [customName, selectedTheme]);
 
-	const handleConfirmInscribe = async (data: { name: string; author: string }) => {
+	const handleConfirmInscribe = async (data: {
+		name: string;
+		author: string;
+	}) => {
 		if (!selectedTheme) return;
 		const themeToMint: ThemeToken = {
 			...selectedTheme,
@@ -597,146 +619,190 @@ export function ThemeStudio() {
 				theme={selectedTheme}
 			/>
 
-		<div className="flex min-h-0 flex-1 flex-col">
-			{/* AI Generation Success Dialog */}
-			<Dialog
-				open={aiGenerationInfo !== null}
-				onOpenChange={(open) => !open && setAiGenerationInfo(null)}
-			>
-				<DialogContent className="sm:max-w-md overflow-visible">
-					{/* Confetti celebration using theme colors */}
-					{aiGenerationInfo && (
-						<ConfettiExplosion styles={selectedTheme.styles} />
-					)}
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2">
-							<Sparkles className="h-5 w-5 text-primary" />
-							Theme Generated!
-						</DialogTitle>
-						<DialogDescription>
-							Your AI-generated theme "{aiGenerationInfo?.themeName}" is ready.
-							It has been saved as a draft.
-						</DialogDescription>
-					</DialogHeader>
+			<div className="flex min-h-0 flex-1 flex-col">
+				{/* AI Generation Success Dialog */}
+				<Dialog
+					open={aiGenerationInfo !== null}
+					onOpenChange={(open) => !open && setAiGenerationInfo(null)}
+				>
+					<DialogContent className="sm:max-w-md overflow-visible">
+						{/* Confetti celebration using theme colors */}
+						{aiGenerationInfo && (
+							<ConfettiExplosion styles={selectedTheme.styles} />
+						)}
+						<DialogHeader>
+							<DialogTitle className="flex items-center gap-2">
+								<Sparkles className="h-5 w-5 text-primary" />
+								Theme Generated!
+							</DialogTitle>
+							<DialogDescription>
+								Your AI-generated theme "{aiGenerationInfo?.themeName}" is
+								ready. It has been saved as a draft.
+							</DialogDescription>
+						</DialogHeader>
 
-					<div className="space-y-4">
-						{/* Transaction Link */}
-						<div className="rounded-lg border border-border bg-muted/50 p-3">
-							<p className="mb-1 text-xs font-medium text-muted-foreground">
-								Payment Transaction
-							</p>
-							<a
-								href={`https://whatsonchain.com/tx/${aiGenerationInfo?.txid}`}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center gap-2 text-sm text-primary hover:underline"
-							>
-								<span className="truncate font-mono">
-									{aiGenerationInfo?.txid?.slice(0, 20)}...
-								</span>
-								<ExternalLink className="h-3 w-3 shrink-0" />
-							</a>
-						</div>
-
-						{/* Action Buttons */}
-						<div className="flex gap-3">
-							<Button
-								variant="outline"
-								className="flex-1"
-								onClick={() => setAiGenerationInfo(null)}
-							>
-								Edit First
-							</Button>
-							<Button
-								className="flex-1"
-								onClick={() => {
-									setAiGenerationInfo(null);
-									// Trigger inscription flow via dialog
-									if (status === "connected") {
-										setShowInscribeDialog(true);
-									} else {
-										connect();
-									}
-								}}
-							>
-								Publish Now
-							</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
-
-			{/* Main content area */}
-			<div className="flex min-h-0 flex-1 overflow-hidden">
-				{/* Left Panel: Controls (fixed width, scrollable) */}
-				<div className="flex min-h-0 w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
-					<div className="min-h-0 flex-1 overflow-y-auto p-4">
-						{/* Editor Content */}
 						<div className="space-y-4">
-							{/* Theme selector */}
-							<Select
-								value={selectedTheme.name}
-								onValueChange={async (value) => {
-									// Find theme from all sources (including drafts)
-									const onChain = onChainThemes.find(
-										(t) => t.theme.name === value,
-									);
-									const wallet = availableThemes.find((t) => t.name === value);
-									const draft = drafts.find((d) => d.theme.name === value);
-									const theme =
-										onChain?.theme || wallet || draft?.theme;
-									if (theme) {
-										loadThemeFonts(theme);
-										isAnimatingRef.current = true;
-										setSelectedTheme(theme);
-										setOriginalTheme(theme); // Reset original when selecting a new theme
-										setSelectedThemeOrigin(onChain?.origin || null); // Track origin for on-chain themes
-										setCustomName("");
-										await applyThemeAnimated(theme);
-										isAnimatingRef.current = false;
-									}
-								}}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue>
-										<div className="flex items-center gap-2">
-											<div className="flex h-4 w-12 overflow-hidden rounded-sm border border-border">
-												{[
-													selectedTheme.styles[mode].primary,
-													selectedTheme.styles[mode].secondary,
-													selectedTheme.styles[mode].accent,
-												].map((color, i) => (
-													<div
-														key={i}
-														className="flex-1"
-														style={{ backgroundColor: color }}
-													/>
-												))}
+							{/* Transaction Link */}
+							<div className="rounded-lg border border-border bg-muted/50 p-3">
+								<p className="mb-1 text-xs font-medium text-muted-foreground">
+									Payment Transaction
+								</p>
+								<a
+									href={`https://whatsonchain.com/tx/${aiGenerationInfo?.txid}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center gap-2 text-sm text-primary hover:underline"
+								>
+									<span className="truncate font-mono">
+										{aiGenerationInfo?.txid?.slice(0, 20)}...
+									</span>
+									<ExternalLink className="h-3 w-3 shrink-0" />
+								</a>
+							</div>
+
+							{/* Action Buttons */}
+							<div className="flex gap-3">
+								<Button
+									variant="outline"
+									className="flex-1"
+									onClick={() => setAiGenerationInfo(null)}
+								>
+									Edit First
+								</Button>
+								<Button
+									className="flex-1"
+									onClick={() => {
+										setAiGenerationInfo(null);
+										// Trigger inscription flow via dialog
+										if (status === "connected") {
+											setShowInscribeDialog(true);
+										} else {
+											connect();
+										}
+									}}
+								>
+									Publish Now
+								</Button>
+							</div>
+						</div>
+					</DialogContent>
+				</Dialog>
+
+				{/* Main content area */}
+				<div className="flex min-h-0 flex-1 overflow-hidden">
+					{/* Left Panel: Controls (fixed width, scrollable) */}
+					<div className="flex min-h-0 w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
+						<div className="min-h-0 flex-1 overflow-y-auto p-4">
+							{/* Editor Content */}
+							<div className="space-y-4">
+								{/* Theme selector */}
+								<Select
+									value={selectedTheme.name}
+									onValueChange={async (value) => {
+										// Find theme from all sources (including drafts)
+										const onChain = onChainThemes.find(
+											(t) => t.theme.name === value,
+										);
+										const wallet = availableThemes.find(
+											(t) => t.name === value,
+										);
+										const draft = drafts.find((d) => d.theme.name === value);
+										const theme = onChain?.theme || wallet || draft?.theme;
+										if (theme) {
+											loadThemeFonts(theme);
+											isAnimatingRef.current = true;
+											setSelectedTheme(theme);
+											setOriginalTheme(theme); // Reset original when selecting a new theme
+											setSelectedThemeOrigin(onChain?.origin || null); // Track origin for on-chain themes
+											setCustomName("");
+											await applyThemeAnimated(theme);
+											isAnimatingRef.current = false;
+										}
+									}}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue>
+											<div className="flex items-center gap-2">
+												<div className="flex h-4 w-12 overflow-hidden rounded-sm border border-border">
+													{[
+														selectedTheme.styles[mode].primary,
+														selectedTheme.styles[mode].secondary,
+														selectedTheme.styles[mode].accent,
+													].map((color, i) => (
+														<div
+															key={i}
+															className="flex-1"
+															style={{ backgroundColor: color }}
+														/>
+													))}
+												</div>
+												<span className="truncate">{selectedTheme.name}</span>
 											</div>
-											<span className="truncate">{selectedTheme.name}</span>
-										</div>
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent className="max-h-80">
-									{/* On-Chain Themes */}
-									{onChainThemes.length > 0 && (
-										<SelectGroup>
-											<SelectLabel className="text-xs text-primary">
-												On-Chain Themes
-											</SelectLabel>
-											{onChainThemes.map((published) => {
-												const listing = listingsByOrigin.get(published.origin);
-												return (
-													<SelectItem
-														key={published.origin}
-														value={published.theme.name}
-													>
+										</SelectValue>
+									</SelectTrigger>
+									<SelectContent className="max-h-80">
+										{/* On-Chain Themes */}
+										{onChainThemes.length > 0 && (
+											<SelectGroup>
+												<SelectLabel className="text-xs text-primary">
+													On-Chain Themes
+												</SelectLabel>
+												{onChainThemes.map((published) => {
+													const listing = listingsByOrigin.get(
+														published.origin,
+													);
+													return (
+														<SelectItem
+															key={published.origin}
+															value={published.theme.name}
+														>
+															<div className="flex items-center gap-2">
+																<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+																	{[
+																		published.theme.styles[mode].primary,
+																		published.theme.styles[mode].secondary,
+																		published.theme.styles[mode].accent,
+																	].map((color, i) => (
+																		<div
+																			key={i}
+																			className="flex-1"
+																			style={{ backgroundColor: color }}
+																		/>
+																	))}
+																</div>
+																<span>{published.theme.name}</span>
+																{listing && (
+																	<ShoppingCart
+																		className="h-3 w-3 text-primary ml-auto"
+																		fill="currentColor"
+																	/>
+																)}
+															</div>
+														</SelectItem>
+													);
+												})}
+											</SelectGroup>
+										)}
+										{loadingThemes && (
+											<div className="flex items-center justify-center py-2 text-xs text-muted-foreground">
+												<Loader2 className="mr-2 h-3 w-3 animate-spin" />
+												Loading on-chain themes...
+											</div>
+										)}
+										{/* Wallet Themes */}
+										{availableThemes.length > 0 && (
+											<SelectGroup>
+												<SelectLabel className="text-xs text-muted-foreground">
+													My Themes
+												</SelectLabel>
+												{availableThemes.map((theme) => (
+													<SelectItem key={theme.name} value={theme.name}>
 														<div className="flex items-center gap-2">
 															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
 																{[
-																	published.theme.styles[mode].primary,
-																	published.theme.styles[mode].secondary,
-																	published.theme.styles[mode].accent,
+																	theme.styles[mode].primary,
+																	theme.styles[mode].secondary,
+																	theme.styles[mode].accent,
 																].map((color, i) => (
 																	<div
 																		key={i}
@@ -745,561 +811,517 @@ export function ThemeStudio() {
 																	/>
 																))}
 															</div>
-															<span>{published.theme.name}</span>
-															{listing && (
-																<ShoppingCart className="h-3 w-3 text-primary ml-auto" fill="currentColor" />
-															)}
+															<span>{theme.name}</span>
 														</div>
 													</SelectItem>
-												);
-											})}
-										</SelectGroup>
-									)}
-									{loadingThemes && (
-										<div className="flex items-center justify-center py-2 text-xs text-muted-foreground">
-											<Loader2 className="mr-2 h-3 w-3 animate-spin" />
-											Loading on-chain themes...
-										</div>
-									)}
-									{/* Wallet Themes */}
-									{availableThemes.length > 0 && (
-										<SelectGroup>
-											<SelectLabel className="text-xs text-muted-foreground">
-												My Themes
-											</SelectLabel>
-											{availableThemes.map((theme) => (
-												<SelectItem key={theme.name} value={theme.name}>
-													<div className="flex items-center gap-2">
-														<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
-															{[
-																theme.styles[mode].primary,
-																theme.styles[mode].secondary,
-																theme.styles[mode].accent,
-															].map((color, i) => (
-																<div
-																	key={i}
-																	className="flex-1"
-																	style={{ backgroundColor: color }}
-																/>
-															))}
+												))}
+											</SelectGroup>
+										)}
+										{/* Drafts */}
+										{drafts.length > 0 && (
+											<SelectGroup>
+												<SelectLabel className="text-xs text-muted-foreground">
+													Drafts
+												</SelectLabel>
+												{drafts.map((draft) => (
+													<SelectItem key={draft.id} value={draft.theme.name}>
+														<div className="flex items-center gap-2">
+															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+																{[
+																	draft.theme.styles[mode].primary,
+																	draft.theme.styles[mode].secondary,
+																	draft.theme.styles[mode].accent,
+																].map((color, i) => (
+																	<div
+																		key={i}
+																		className="flex-1"
+																		style={{ backgroundColor: color }}
+																	/>
+																))}
+															</div>
+															<span>{draft.theme.name}</span>
 														</div>
-														<span>{theme.name}</span>
-													</div>
-												</SelectItem>
-											))}
-										</SelectGroup>
-									)}
-									{/* Drafts */}
-									{drafts.length > 0 && (
-										<SelectGroup>
-											<SelectLabel className="text-xs text-muted-foreground">
-												Drafts
-											</SelectLabel>
-											{drafts.map((draft) => (
-												<SelectItem key={draft.id} value={draft.theme.name}>
-													<div className="flex items-center gap-2">
-														<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
-															{[
-																draft.theme.styles[mode].primary,
-																draft.theme.styles[mode].secondary,
-																draft.theme.styles[mode].accent,
-															].map((color, i) => (
-																<div
-																	key={i}
-																	className="flex-1"
-																	style={{ backgroundColor: color }}
-																/>
-															))}
-														</div>
-														<span>{draft.theme.name}</span>
-													</div>
-												</SelectItem>
-											))}
-										</SelectGroup>
-									)}
-								</SelectContent>
-							</Select>
+													</SelectItem>
+												))}
+											</SelectGroup>
+										)}
+									</SelectContent>
+								</Select>
 
-							{/* Sub-tabs for editor sections */}
-							<div className="flex gap-1 rounded-lg bg-muted/50 p-1">
-								{(
-									[
-										{ id: "colors", label: "Colors", icon: Pipette },
-										{ id: "typography", label: "Type", icon: Type },
-										{ id: "other", label: "Other", icon: Settings2 },
-									] as const
-								).map((tab) => {
-									const Icon = tab.icon;
-									const isActive = editorSubTab === tab.id;
-									return (
-										<button
-											key={tab.id}
-											type="button"
-											onClick={() => setEditorSubTab(tab.id)}
-											className="relative flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors"
-										>
-											{isActive && (
-												<motion.div
-													layoutId="studio-editor-tab"
-													className="absolute inset-0 rounded-md bg-background shadow-sm"
-													transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+								{/* Sub-tabs for editor sections */}
+								<div className="flex gap-1 rounded-lg bg-muted/50 p-1">
+									{(
+										[
+											{ id: "colors", label: "Colors", icon: Pipette },
+											{ id: "typography", label: "Type", icon: Type },
+											{ id: "other", label: "Other", icon: Settings2 },
+										] as const
+									).map((tab) => {
+										const Icon = tab.icon;
+										const isActive = editorSubTab === tab.id;
+										return (
+											<button
+												key={tab.id}
+												type="button"
+												onClick={() => setEditorSubTab(tab.id)}
+												className="relative flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors"
+											>
+												{isActive && (
+													<motion.div
+														layoutId="studio-editor-tab"
+														className="absolute inset-0 rounded-md bg-background shadow-sm"
+														transition={{
+															type: "spring",
+															bounce: 0.15,
+															duration: 0.5,
+														}}
+													/>
+												)}
+												<Icon
+													className={`relative z-10 h-3 w-3 ${isActive ? "text-foreground" : "text-muted-foreground"}`}
 												/>
-											)}
-											<Icon className={`relative z-10 h-3 w-3 ${isActive ? "text-foreground" : "text-muted-foreground"}`} />
-											<span className={`relative z-10 ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-												{tab.label}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* Colors Sub-tab */}
-							{editorSubTab === "colors" && (
-								<div className="space-y-1">
-									<ColorSection title="Primary Colors" defaultOpen>
-										<ColorControl
-											label="primary"
-											value={selectedTheme.styles[mode].primary}
-											onChange={(v) => updateColor("primary", v)}
-										/>
-										<ColorControl
-											label="primary-fg"
-											value={selectedTheme.styles[mode]["primary-foreground"]}
-											onChange={(v) => updateColor("primary-foreground", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Secondary Colors">
-										<ColorControl
-											label="secondary"
-											value={selectedTheme.styles[mode].secondary}
-											onChange={(v) => updateColor("secondary", v)}
-										/>
-										<ColorControl
-											label="secondary-fg"
-											value={selectedTheme.styles[mode]["secondary-foreground"]}
-											onChange={(v) => updateColor("secondary-foreground", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Background & Foreground">
-										<ColorControl
-											label="background"
-											value={selectedTheme.styles[mode].background}
-											onChange={(v) => updateColor("background", v)}
-										/>
-										<ColorControl
-											label="foreground"
-											value={selectedTheme.styles[mode].foreground}
-											onChange={(v) => updateColor("foreground", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Card & Popover">
-										<ColorControl
-											label="card"
-											value={selectedTheme.styles[mode].card}
-											onChange={(v) => updateColor("card", v)}
-										/>
-										<ColorControl
-											label="card-fg"
-											value={selectedTheme.styles[mode]["card-foreground"]}
-											onChange={(v) => updateColor("card-foreground", v)}
-										/>
-										<ColorControl
-											label="popover"
-											value={selectedTheme.styles[mode].popover}
-											onChange={(v) => updateColor("popover", v)}
-										/>
-										<ColorControl
-											label="popover-fg"
-											value={selectedTheme.styles[mode]["popover-foreground"]}
-											onChange={(v) => updateColor("popover-foreground", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Accent & Muted">
-										<ColorControl
-											label="accent"
-											value={selectedTheme.styles[mode].accent}
-											onChange={(v) => updateColor("accent", v)}
-										/>
-										<ColorControl
-											label="accent-fg"
-											value={selectedTheme.styles[mode]["accent-foreground"]}
-											onChange={(v) => updateColor("accent-foreground", v)}
-										/>
-										<ColorControl
-											label="muted"
-											value={selectedTheme.styles[mode].muted}
-											onChange={(v) => updateColor("muted", v)}
-										/>
-										<ColorControl
-											label="muted-fg"
-											value={selectedTheme.styles[mode]["muted-foreground"]}
-											onChange={(v) => updateColor("muted-foreground", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Borders & Input">
-										<ColorControl
-											label="border"
-											value={selectedTheme.styles[mode].border}
-											onChange={(v) => updateColor("border", v)}
-										/>
-										<ColorControl
-											label="input"
-											value={selectedTheme.styles[mode].input}
-											onChange={(v) => updateColor("input", v)}
-										/>
-										<ColorControl
-											label="ring"
-											value={selectedTheme.styles[mode].ring}
-											onChange={(v) => updateColor("ring", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Destructive">
-										<ColorControl
-											label="destructive"
-											value={selectedTheme.styles[mode].destructive}
-											onChange={(v) => updateColor("destructive", v)}
-										/>
-										<ColorControl
-											label="destructive-fg"
-											value={
-												selectedTheme.styles[mode]["destructive-foreground"]
-											}
-											onChange={(v) => updateColor("destructive-foreground", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Chart Colors">
-										<ColorControl
-											label="chart-1"
-											value={
-												selectedTheme.styles[mode]["chart-1"] ||
-												"oklch(0.646 0.222 41.116)"
-											}
-											onChange={(v) => updateColor("chart-1", v)}
-										/>
-										<ColorControl
-											label="chart-2"
-											value={
-												selectedTheme.styles[mode]["chart-2"] ||
-												"oklch(0.6 0.118 184.704)"
-											}
-											onChange={(v) => updateColor("chart-2", v)}
-										/>
-										<ColorControl
-											label="chart-3"
-											value={
-												selectedTheme.styles[mode]["chart-3"] ||
-												"oklch(0.398 0.07 227.392)"
-											}
-											onChange={(v) => updateColor("chart-3", v)}
-										/>
-										<ColorControl
-											label="chart-4"
-											value={
-												selectedTheme.styles[mode]["chart-4"] ||
-												"oklch(0.828 0.189 84.429)"
-											}
-											onChange={(v) => updateColor("chart-4", v)}
-										/>
-										<ColorControl
-											label="chart-5"
-											value={
-												selectedTheme.styles[mode]["chart-5"] ||
-												"oklch(0.769 0.188 70.08)"
-											}
-											onChange={(v) => updateColor("chart-5", v)}
-										/>
-									</ColorSection>
-
-									<ColorSection title="Sidebar Colors">
-										<ColorControl
-											label="sidebar"
-											value={
-												selectedTheme.styles[mode].sidebar ||
-												selectedTheme.styles[mode].background
-											}
-											onChange={(v) => updateColor("sidebar", v)}
-										/>
-										<ColorControl
-											label="sidebar-fg"
-											value={
-												selectedTheme.styles[mode]["sidebar-foreground"] ||
-												selectedTheme.styles[mode].foreground
-											}
-											onChange={(v) => updateColor("sidebar-foreground", v)}
-										/>
-										<ColorControl
-											label="sidebar-primary"
-											value={
-												selectedTheme.styles[mode]["sidebar-primary"] ||
-												selectedTheme.styles[mode].primary
-											}
-											onChange={(v) => updateColor("sidebar-primary", v)}
-										/>
-										<ColorControl
-											label="sidebar-primary-fg"
-											value={
-												selectedTheme.styles[mode][
-													"sidebar-primary-foreground"
-												] || selectedTheme.styles[mode]["primary-foreground"]
-											}
-											onChange={(v) =>
-												updateColor("sidebar-primary-foreground", v)
-											}
-										/>
-										<ColorControl
-											label="sidebar-accent"
-											value={
-												selectedTheme.styles[mode]["sidebar-accent"] ||
-												selectedTheme.styles[mode].accent
-											}
-											onChange={(v) => updateColor("sidebar-accent", v)}
-										/>
-										<ColorControl
-											label="sidebar-accent-fg"
-											value={
-												selectedTheme.styles[mode][
-													"sidebar-accent-foreground"
-												] || selectedTheme.styles[mode]["accent-foreground"]
-											}
-											onChange={(v) =>
-												updateColor("sidebar-accent-foreground", v)
-											}
-										/>
-										<ColorControl
-											label="sidebar-border"
-											value={
-												selectedTheme.styles[mode]["sidebar-border"] ||
-												selectedTheme.styles[mode].border
-											}
-											onChange={(v) => updateColor("sidebar-border", v)}
-										/>
-										<ColorControl
-											label="sidebar-ring"
-											value={
-												selectedTheme.styles[mode]["sidebar-ring"] ||
-												selectedTheme.styles[mode].ring
-											}
-											onChange={(v) => updateColor("sidebar-ring", v)}
-										/>
-									</ColorSection>
+												<span
+													className={`relative z-10 ${isActive ? "text-foreground" : "text-muted-foreground"}`}
+												>
+													{tab.label}
+												</span>
+											</button>
+										);
+									})}
 								</div>
-							)}
 
-							{/* Typography Sub-tab */}
-							{editorSubTab === "typography" && (
-								<div className="space-y-4">
-									{/* Font Families */}
-									<div className="rounded-lg border border-border p-3">
-										<div className="mb-3 text-xs font-medium">
-											Font Families
-										</div>
-										<div className="space-y-4">
-											<FontSelector
-												slot="sans"
-												value={selectedTheme.styles[mode]["font-sans"] || ""}
-												onChange={(value) => updateColor("font-sans", value)}
-												label="Sans-Serif (--font-sans)"
-											/>
-											<FontSelector
-												slot="serif"
-												value={selectedTheme.styles[mode]["font-serif"] || ""}
-												onChange={(value) => updateColor("font-serif", value)}
-												label="Serif (--font-serif)"
-											/>
-											<FontSelector
-												slot="mono"
-												value={selectedTheme.styles[mode]["font-mono"] || ""}
-												onChange={(value) => updateColor("font-mono", value)}
-												label="Monospace (--font-mono)"
-											/>
-										</div>
-									</div>
-
-									{/* Letter Spacing */}
-									<div className="rounded-lg border border-border p-3">
-										<div className="mb-2 flex items-center justify-between">
-											<span className="text-xs font-medium">
-												Letter Spacing
-											</span>
-											<span className="font-mono text-xs text-muted-foreground">
-												{selectedTheme.styles[mode]["letter-spacing"] || "0em"}
-											</span>
-										</div>
-										<Slider
-											value={[
-												parseFloat(
-													selectedTheme.styles[mode]["letter-spacing"]?.replace(
-														"em",
-														"",
-													) || "0",
-												),
-											]}
-											min={-0.05}
-											max={0.2}
-											step={0.01}
-											onValueChange={([v]) =>
-												updateColor("letter-spacing", `${v}em`)
-											}
-										/>
-									</div>
-
-									{/* Spacing */}
-									<div className="rounded-lg border border-border p-3">
-										<div className="mb-2 flex items-center justify-between">
-											<span className="text-xs font-medium">Base Spacing</span>
-											<span className="font-mono text-xs text-muted-foreground">
-												{selectedTheme.styles[mode].spacing || "0.25rem"}
-											</span>
-										</div>
-										<Slider
-											value={[
-												parseFloat(
-													selectedTheme.styles[mode].spacing?.replace(
-														"rem",
-														"",
-													) || "0.25",
-												),
-											]}
-											min={0.125}
-											max={0.5}
-											step={0.025}
-											onValueChange={([v]) => updateColor("spacing", `${v}rem`)}
-										/>
-									</div>
-
-									<p className="text-[10px] text-muted-foreground">
-										Tip: Font families must be installed/imported in your
-										project to work.
-									</p>
-								</div>
-							)}
-
-							{/* Other Sub-tab */}
-							{editorSubTab === "other" && (
-								<div className="space-y-4">
-									{/* Radius */}
-									<div className="rounded-lg border border-border p-3">
-										<div className="mb-2 flex items-center justify-between">
-											<span className="text-xs font-medium">Border Radius</span>
-											<span className="font-mono text-xs text-muted-foreground">
-												{selectedTheme.styles[mode].radius}
-											</span>
-										</div>
-										<Slider
-											value={[
-												parseFloat(selectedTheme.styles[mode].radius) || 0.5,
-											]}
-											min={0}
-											max={2}
-											step={0.125}
-											onValueChange={([v]) => updateColor("radius", `${v}rem`)}
-										/>
-									</div>
-
-									{/* Shadow Controls */}
-									<div className="rounded-lg border border-border p-3">
-										<div className="mb-3 text-xs font-medium">Shadow</div>
-										<div className="space-y-3">
+								{/* Colors Sub-tab */}
+								{editorSubTab === "colors" && (
+									<div className="space-y-1">
+										<ColorSection title="Primary Colors" defaultOpen>
 											<ColorControl
-												label="shadow-color"
-												value={
-													selectedTheme.styles[mode]["shadow-color"] ||
-													"oklch(0 0 0)"
-												}
-												onChange={(v) => updateColor("shadow-color", v)}
+												label="primary"
+												value={selectedTheme.styles[mode].primary}
+												onChange={(v) => updateColor("primary", v)}
 											/>
-											<div>
-												<div className="mb-1.5 flex items-center justify-between">
-													<span className="text-[10px] text-muted-foreground">
-														Opacity
-													</span>
-													<span className="font-mono text-[10px] text-muted-foreground">
-														{selectedTheme.styles[mode]["shadow-opacity"] ||
-															"0.1"}
-													</span>
-												</div>
-												<Slider
-													value={[
-														parseFloat(
-															selectedTheme.styles[mode]["shadow-opacity"] ||
-																"0.1",
-														),
-													]}
-													min={0}
-													max={1}
-													step={0.05}
-													onValueChange={([v]) =>
-														updateColor("shadow-opacity", v.toString())
-													}
+											<ColorControl
+												label="primary-fg"
+												value={selectedTheme.styles[mode]["primary-foreground"]}
+												onChange={(v) => updateColor("primary-foreground", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Secondary Colors">
+											<ColorControl
+												label="secondary"
+												value={selectedTheme.styles[mode].secondary}
+												onChange={(v) => updateColor("secondary", v)}
+											/>
+											<ColorControl
+												label="secondary-fg"
+												value={
+													selectedTheme.styles[mode]["secondary-foreground"]
+												}
+												onChange={(v) => updateColor("secondary-foreground", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Background & Foreground">
+											<ColorControl
+												label="background"
+												value={selectedTheme.styles[mode].background}
+												onChange={(v) => updateColor("background", v)}
+											/>
+											<ColorControl
+												label="foreground"
+												value={selectedTheme.styles[mode].foreground}
+												onChange={(v) => updateColor("foreground", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Card & Popover">
+											<ColorControl
+												label="card"
+												value={selectedTheme.styles[mode].card}
+												onChange={(v) => updateColor("card", v)}
+											/>
+											<ColorControl
+												label="card-fg"
+												value={selectedTheme.styles[mode]["card-foreground"]}
+												onChange={(v) => updateColor("card-foreground", v)}
+											/>
+											<ColorControl
+												label="popover"
+												value={selectedTheme.styles[mode].popover}
+												onChange={(v) => updateColor("popover", v)}
+											/>
+											<ColorControl
+												label="popover-fg"
+												value={selectedTheme.styles[mode]["popover-foreground"]}
+												onChange={(v) => updateColor("popover-foreground", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Accent & Muted">
+											<ColorControl
+												label="accent"
+												value={selectedTheme.styles[mode].accent}
+												onChange={(v) => updateColor("accent", v)}
+											/>
+											<ColorControl
+												label="accent-fg"
+												value={selectedTheme.styles[mode]["accent-foreground"]}
+												onChange={(v) => updateColor("accent-foreground", v)}
+											/>
+											<ColorControl
+												label="muted"
+												value={selectedTheme.styles[mode].muted}
+												onChange={(v) => updateColor("muted", v)}
+											/>
+											<ColorControl
+												label="muted-fg"
+												value={selectedTheme.styles[mode]["muted-foreground"]}
+												onChange={(v) => updateColor("muted-foreground", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Borders & Input">
+											<ColorControl
+												label="border"
+												value={selectedTheme.styles[mode].border}
+												onChange={(v) => updateColor("border", v)}
+											/>
+											<ColorControl
+												label="input"
+												value={selectedTheme.styles[mode].input}
+												onChange={(v) => updateColor("input", v)}
+											/>
+											<ColorControl
+												label="ring"
+												value={selectedTheme.styles[mode].ring}
+												onChange={(v) => updateColor("ring", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Destructive">
+											<ColorControl
+												label="destructive"
+												value={selectedTheme.styles[mode].destructive}
+												onChange={(v) => updateColor("destructive", v)}
+											/>
+											<ColorControl
+												label="destructive-fg"
+												value={
+													selectedTheme.styles[mode]["destructive-foreground"]
+												}
+												onChange={(v) =>
+													updateColor("destructive-foreground", v)
+												}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Chart Colors">
+											<ColorControl
+												label="chart-1"
+												value={
+													selectedTheme.styles[mode]["chart-1"] ||
+													"oklch(0.646 0.222 41.116)"
+												}
+												onChange={(v) => updateColor("chart-1", v)}
+											/>
+											<ColorControl
+												label="chart-2"
+												value={
+													selectedTheme.styles[mode]["chart-2"] ||
+													"oklch(0.6 0.118 184.704)"
+												}
+												onChange={(v) => updateColor("chart-2", v)}
+											/>
+											<ColorControl
+												label="chart-3"
+												value={
+													selectedTheme.styles[mode]["chart-3"] ||
+													"oklch(0.398 0.07 227.392)"
+												}
+												onChange={(v) => updateColor("chart-3", v)}
+											/>
+											<ColorControl
+												label="chart-4"
+												value={
+													selectedTheme.styles[mode]["chart-4"] ||
+													"oklch(0.828 0.189 84.429)"
+												}
+												onChange={(v) => updateColor("chart-4", v)}
+											/>
+											<ColorControl
+												label="chart-5"
+												value={
+													selectedTheme.styles[mode]["chart-5"] ||
+													"oklch(0.769 0.188 70.08)"
+												}
+												onChange={(v) => updateColor("chart-5", v)}
+											/>
+										</ColorSection>
+
+										<ColorSection title="Sidebar Colors">
+											<ColorControl
+												label="sidebar"
+												value={
+													selectedTheme.styles[mode].sidebar ||
+													selectedTheme.styles[mode].background
+												}
+												onChange={(v) => updateColor("sidebar", v)}
+											/>
+											<ColorControl
+												label="sidebar-fg"
+												value={
+													selectedTheme.styles[mode]["sidebar-foreground"] ||
+													selectedTheme.styles[mode].foreground
+												}
+												onChange={(v) => updateColor("sidebar-foreground", v)}
+											/>
+											<ColorControl
+												label="sidebar-primary"
+												value={
+													selectedTheme.styles[mode]["sidebar-primary"] ||
+													selectedTheme.styles[mode].primary
+												}
+												onChange={(v) => updateColor("sidebar-primary", v)}
+											/>
+											<ColorControl
+												label="sidebar-primary-fg"
+												value={
+													selectedTheme.styles[mode][
+														"sidebar-primary-foreground"
+													] || selectedTheme.styles[mode]["primary-foreground"]
+												}
+												onChange={(v) =>
+													updateColor("sidebar-primary-foreground", v)
+												}
+											/>
+											<ColorControl
+												label="sidebar-accent"
+												value={
+													selectedTheme.styles[mode]["sidebar-accent"] ||
+													selectedTheme.styles[mode].accent
+												}
+												onChange={(v) => updateColor("sidebar-accent", v)}
+											/>
+											<ColorControl
+												label="sidebar-accent-fg"
+												value={
+													selectedTheme.styles[mode][
+														"sidebar-accent-foreground"
+													] || selectedTheme.styles[mode]["accent-foreground"]
+												}
+												onChange={(v) =>
+													updateColor("sidebar-accent-foreground", v)
+												}
+											/>
+											<ColorControl
+												label="sidebar-border"
+												value={
+													selectedTheme.styles[mode]["sidebar-border"] ||
+													selectedTheme.styles[mode].border
+												}
+												onChange={(v) => updateColor("sidebar-border", v)}
+											/>
+											<ColorControl
+												label="sidebar-ring"
+												value={
+													selectedTheme.styles[mode]["sidebar-ring"] ||
+													selectedTheme.styles[mode].ring
+												}
+												onChange={(v) => updateColor("sidebar-ring", v)}
+											/>
+										</ColorSection>
+									</div>
+								)}
+
+								{/* Typography Sub-tab */}
+								{editorSubTab === "typography" && (
+									<div className="space-y-4">
+										{/* Font Families */}
+										<div className="rounded-lg border border-border p-3">
+											<div className="mb-3 text-xs font-medium">
+												Font Families
+											</div>
+											<div className="space-y-4">
+												<FontSelector
+													slot="sans"
+													value={selectedTheme.styles[mode]["font-sans"] || ""}
+													onChange={(value) => updateColor("font-sans", value)}
+													label="Sans-Serif (--font-sans)"
+												/>
+												<FontSelector
+													slot="serif"
+													value={selectedTheme.styles[mode]["font-serif"] || ""}
+													onChange={(value) => updateColor("font-serif", value)}
+													label="Serif (--font-serif)"
+												/>
+												<FontSelector
+													slot="mono"
+													value={selectedTheme.styles[mode]["font-mono"] || ""}
+													onChange={(value) => updateColor("font-mono", value)}
+													label="Monospace (--font-mono)"
 												/>
 											</div>
-											<div>
-												<div className="mb-1.5 flex items-center justify-between">
-													<span className="text-[10px] text-muted-foreground">
-														Blur
-													</span>
-													<span className="font-mono text-[10px] text-muted-foreground">
-														{selectedTheme.styles[mode]["shadow-blur"] || "8px"}
-													</span>
-												</div>
-												<Slider
-													value={[
-														parseFloat(
-															selectedTheme.styles[mode][
-																"shadow-blur"
-															]?.replace("px", "") || "8",
-														),
-													]}
-													min={0}
-													max={50}
-													step={1}
-													onValueChange={([v]) =>
-														updateColor("shadow-blur", `${v}px`)
-													}
-												/>
+										</div>
+
+										{/* Letter Spacing */}
+										<div className="rounded-lg border border-border p-3">
+											<div className="mb-2 flex items-center justify-between">
+												<span className="text-xs font-medium">
+													Letter Spacing
+												</span>
+												<span className="font-mono text-xs text-muted-foreground">
+													{selectedTheme.styles[mode]["letter-spacing"] ||
+														"0em"}
+												</span>
 											</div>
-											<div>
-												<div className="mb-1.5 flex items-center justify-between">
-													<span className="text-[10px] text-muted-foreground">
-														Spread
-													</span>
-													<span className="font-mono text-[10px] text-muted-foreground">
-														{selectedTheme.styles[mode]["shadow-spread"] ||
-															"0px"}
-													</span>
-												</div>
-												<Slider
-													value={[
-														parseFloat(
-															selectedTheme.styles[mode][
-																"shadow-spread"
-															]?.replace("px", "") || "0",
-														),
-													]}
-													min={-10}
-													max={20}
-													step={1}
-													onValueChange={([v]) =>
-														updateColor("shadow-spread", `${v}px`)
-													}
-												/>
+											<Slider
+												value={[
+													parseFloat(
+														selectedTheme.styles[mode][
+															"letter-spacing"
+														]?.replace("em", "") || "0",
+													),
+												]}
+												min={-0.05}
+												max={0.2}
+												step={0.01}
+												onValueChange={([v]) =>
+													updateColor("letter-spacing", `${v}em`)
+												}
+											/>
+										</div>
+
+										{/* Spacing */}
+										<div className="rounded-lg border border-border p-3">
+											<div className="mb-2 flex items-center justify-between">
+												<span className="text-xs font-medium">
+													Base Spacing
+												</span>
+												<span className="font-mono text-xs text-muted-foreground">
+													{selectedTheme.styles[mode].spacing || "0.25rem"}
+												</span>
 											</div>
-											<div className="grid grid-cols-2 gap-2">
+											<Slider
+												value={[
+													parseFloat(
+														selectedTheme.styles[mode].spacing?.replace(
+															"rem",
+															"",
+														) || "0.25",
+													),
+												]}
+												min={0.125}
+												max={0.5}
+												step={0.025}
+												onValueChange={([v]) =>
+													updateColor("spacing", `${v}rem`)
+												}
+											/>
+										</div>
+
+										<p className="text-[10px] text-muted-foreground">
+											Tip: Font families must be installed/imported in your
+											project to work.
+										</p>
+									</div>
+								)}
+
+								{/* Other Sub-tab */}
+								{editorSubTab === "other" && (
+									<div className="space-y-4">
+										{/* Radius */}
+										<div className="rounded-lg border border-border p-3">
+											<div className="mb-2 flex items-center justify-between">
+												<span className="text-xs font-medium">
+													Border Radius
+												</span>
+												<span className="font-mono text-xs text-muted-foreground">
+													{selectedTheme.styles[mode].radius}
+												</span>
+											</div>
+											<Slider
+												value={[
+													parseFloat(selectedTheme.styles[mode].radius) || 0.5,
+												]}
+												min={0}
+												max={2}
+												step={0.125}
+												onValueChange={([v]) =>
+													updateColor("radius", `${v}rem`)
+												}
+											/>
+										</div>
+
+										{/* Shadow Controls */}
+										<div className="rounded-lg border border-border p-3">
+											<div className="mb-3 text-xs font-medium">Shadow</div>
+											<div className="space-y-3">
+												<ColorControl
+													label="shadow-color"
+													value={
+														selectedTheme.styles[mode]["shadow-color"] ||
+														"oklch(0 0 0)"
+													}
+													onChange={(v) => updateColor("shadow-color", v)}
+												/>
 												<div>
 													<div className="mb-1.5 flex items-center justify-between">
 														<span className="text-[10px] text-muted-foreground">
-															Offset X
+															Opacity
 														</span>
 														<span className="font-mono text-[10px] text-muted-foreground">
-															{selectedTheme.styles[mode]["shadow-offset-x"] ||
+															{selectedTheme.styles[mode]["shadow-opacity"] ||
+																"0.1"}
+														</span>
+													</div>
+													<Slider
+														value={[
+															parseFloat(
+																selectedTheme.styles[mode]["shadow-opacity"] ||
+																	"0.1",
+															),
+														]}
+														min={0}
+														max={1}
+														step={0.05}
+														onValueChange={([v]) =>
+															updateColor("shadow-opacity", v.toString())
+														}
+													/>
+												</div>
+												<div>
+													<div className="mb-1.5 flex items-center justify-between">
+														<span className="text-[10px] text-muted-foreground">
+															Blur
+														</span>
+														<span className="font-mono text-[10px] text-muted-foreground">
+															{selectedTheme.styles[mode]["shadow-blur"] ||
+																"8px"}
+														</span>
+													</div>
+													<Slider
+														value={[
+															parseFloat(
+																selectedTheme.styles[mode][
+																	"shadow-blur"
+																]?.replace("px", "") || "8",
+															),
+														]}
+														min={0}
+														max={50}
+														step={1}
+														onValueChange={([v]) =>
+															updateColor("shadow-blur", `${v}px`)
+														}
+													/>
+												</div>
+												<div>
+													<div className="mb-1.5 flex items-center justify-between">
+														<span className="text-[10px] text-muted-foreground">
+															Spread
+														</span>
+														<span className="font-mono text-[10px] text-muted-foreground">
+															{selectedTheme.styles[mode]["shadow-spread"] ||
 																"0px"}
 														</span>
 													</div>
@@ -1307,298 +1329,334 @@ export function ThemeStudio() {
 														value={[
 															parseFloat(
 																selectedTheme.styles[mode][
-																	"shadow-offset-x"
+																	"shadow-spread"
 																]?.replace("px", "") || "0",
 															),
 														]}
-														min={-20}
+														min={-10}
 														max={20}
 														step={1}
 														onValueChange={([v]) =>
-															updateColor("shadow-offset-x", `${v}px`)
+															updateColor("shadow-spread", `${v}px`)
 														}
 													/>
 												</div>
-												<div>
-													<div className="mb-1.5 flex items-center justify-between">
-														<span className="text-[10px] text-muted-foreground">
-															Offset Y
-														</span>
-														<span className="font-mono text-[10px] text-muted-foreground">
-															{selectedTheme.styles[mode]["shadow-offset-y"] ||
-																"4px"}
-														</span>
+												<div className="grid grid-cols-2 gap-2">
+													<div>
+														<div className="mb-1.5 flex items-center justify-between">
+															<span className="text-[10px] text-muted-foreground">
+																Offset X
+															</span>
+															<span className="font-mono text-[10px] text-muted-foreground">
+																{selectedTheme.styles[mode][
+																	"shadow-offset-x"
+																] || "0px"}
+															</span>
+														</div>
+														<Slider
+															value={[
+																parseFloat(
+																	selectedTheme.styles[mode][
+																		"shadow-offset-x"
+																	]?.replace("px", "") || "0",
+																),
+															]}
+															min={-20}
+															max={20}
+															step={1}
+															onValueChange={([v]) =>
+																updateColor("shadow-offset-x", `${v}px`)
+															}
+														/>
 													</div>
-													<Slider
-														value={[
-															parseFloat(
-																selectedTheme.styles[mode][
+													<div>
+														<div className="mb-1.5 flex items-center justify-between">
+															<span className="text-[10px] text-muted-foreground">
+																Offset Y
+															</span>
+															<span className="font-mono text-[10px] text-muted-foreground">
+																{selectedTheme.styles[mode][
 																	"shadow-offset-y"
-																]?.replace("px", "") || "4",
-															),
-														]}
-														min={-20}
-														max={20}
-														step={1}
-														onValueChange={([v]) =>
-															updateColor("shadow-offset-y", `${v}px`)
-														}
-													/>
+																] || "4px"}
+															</span>
+														</div>
+														<Slider
+															value={[
+																parseFloat(
+																	selectedTheme.styles[mode][
+																		"shadow-offset-y"
+																	]?.replace("px", "") || "4",
+																),
+															]}
+															min={-20}
+															max={20}
+															step={1}
+															onValueChange={([v]) =>
+																updateColor("shadow-offset-y", `${v}px`)
+															}
+														/>
+													</div>
 												</div>
 											</div>
 										</div>
-									</div>
 
-									{/* Mode indicator */}
-									<div className="rounded-lg border border-border p-3">
-										<div className="flex items-center justify-between">
-											<span className="text-xs font-medium">Editing Mode</span>
-											<Badge variant="secondary" className="text-xs">
-												{mode === "light" ? (
-													<>
-														<Sun className="mr-1 h-3 w-3" /> Light
-													</>
-												) : (
-													<>
-														<Moon className="mr-1 h-3 w-3" /> Dark
-													</>
-												)}
-											</Badge>
+										{/* Mode indicator */}
+										<div className="rounded-lg border border-border p-3">
+											<div className="flex items-center justify-between">
+												<span className="text-xs font-medium">
+													Editing Mode
+												</span>
+												<Badge variant="secondary" className="text-xs">
+													{mode === "light" ? (
+														<>
+															<Sun className="mr-1 h-3 w-3" /> Light
+														</>
+													) : (
+														<>
+															<Moon className="mr-1 h-3 w-3" /> Dark
+														</>
+													)}
+												</Badge>
+											</div>
+											<p className="mt-2 text-[10px] text-muted-foreground">
+												Use the mode toggle in the preview panel to switch
+												between light and dark modes.
+											</p>
 										</div>
-										<p className="mt-2 text-[10px] text-muted-foreground">
-											Use the mode toggle in the preview panel to switch between
-											light and dark modes.
-										</p>
 									</div>
-								</div>
-							)}
-						</div>
-					</div>
-					{/* Close scrollable area */}
-				</div>
-				{/* Close left panel */}
-
-				{/* Right Panel: Preview (scrollable) */}
-				<div className="hidden flex-1 flex-col overflow-hidden lg:flex">
-					{/* Toolbar */}
-					<div className="flex shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
-						<div className="flex items-center gap-2">
-							<span className="text-sm font-medium">Preview</span>
-							{/* Mode Toggle */}
-							<button
-								type="button"
-								onClick={(e) => toggleMode(e)}
-								className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
-							>
-								{mode === "light" ? (
-									<>
-										<Sun className="h-3 w-3" />
-										Light
-									</>
-								) : (
-									<>
-										<Moon className="h-3 w-3" />
-										Dark
-									</>
 								)}
-							</button>
+							</div>
 						</div>
-						<div className="flex items-center gap-1">
-							{/* Import Button */}
-							<ImportModal
-								onImport={async (theme) => {
-									isAnimatingRef.current = true;
-									setSelectedTheme(theme);
-									setOriginalTheme(theme); // Reset original when importing
-									setCustomName(theme.name);
-									await applyThemeAnimated(theme);
-									isAnimatingRef.current = false;
-								}}
-								trigger={
-									<button
-										type="button"
-										className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
-									>
-										<Upload className="h-3 w-3" />
-										Import
-									</button>
-								}
-							/>
-							{/* Export Button */}
-							<ExportModal
-								theme={selectedTheme}
-								trigger={
-									<button
-										type="button"
-										className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
-									>
-										<Copy className="h-3 w-3" />
-										Export
-									</button>
-								}
-							/>
-							{/* Reset Button - only show when dirty */}
-							{isDirty && originalTheme && (
+						{/* Close scrollable area */}
+					</div>
+					{/* Close left panel */}
+
+					{/* Right Panel: Preview (scrollable) */}
+					<div className="hidden flex-1 flex-col overflow-hidden lg:flex">
+						{/* Toolbar */}
+						<div className="flex shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
+							<div className="flex items-center gap-2">
+								<span className="text-sm font-medium">Preview</span>
+								{/* Mode Toggle */}
 								<button
 									type="button"
-									onClick={handleReset}
-									className="flex items-center gap-1.5 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs text-destructive transition-colors hover:bg-destructive/20"
-									title={`Reset to ${originalTheme.name}`}
+									onClick={(e) => toggleMode(e)}
+									className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
 								>
-									<RotateCcw className="h-3 w-3" />
-									Reset
+									{mode === "light" ? (
+										<>
+											<Sun className="h-3 w-3" />
+											Light
+										</>
+									) : (
+										<>
+											<Moon className="h-3 w-3" />
+											Dark
+										</>
+									)}
 								</button>
-							)}
-						</div>
-					</div>
-					{/* Scrollable Preview Area */}
-					<div className="flex-1 overflow-y-auto bg-background">
-						<ThemePreviewPanel onUpdateColor={updateColor} primaryColor={selectedTheme.styles[mode].primary} themeColors={selectedTheme.styles[mode]} />
-					</div>
-				</div>
-			</div>
-			{/* Close main content area */}
-
-			{/* Bottom Bar: Mint Action */}
-			<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
-				<div className="flex items-center gap-2">
-					{/* Dirty indicator and base theme name */}
-					{isDirty && originalTheme && (
-						<div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400">
-							<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-							Modified from {originalTheme.name}
-						</div>
-					)}
-					{/* Theme Name Input */}
-					<input
-						type="text"
-						value={customName}
-						onChange={(e) => setCustomName(e.target.value)}
-						placeholder={selectedTheme.name}
-						className={`h-9 w-40 rounded-lg border bg-background px-3 text-sm focus:border-primary focus:outline-none ${isDirty ? "border-amber-500/50" : "border-border"}`}
-					/>
-
-					{/* Save Draft Button */}
-					<button
-						type="button"
-						onClick={handleSaveDraft}
-						className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm transition-colors hover:bg-muted"
-					>
-						{savedNotice ? (
-							<>
-								<Check className="h-4 w-4 text-green-500" />
-								Saved!
-							</>
-						) : (
-							<>
-								<Save className="h-4 w-4" />
-								Save
-							</>
-						)}
-					</button>
-
-					{/* Wallet info */}
-					{isConnected && balance && (
-						<div className="hidden sm:block">
-							<p className="text-xs font-medium">
-								{profile?.displayName && (
-									<span className="text-primary">{profile.displayName}</span>
+							</div>
+							<div className="flex items-center gap-1">
+								{/* Import Button */}
+								<ImportModal
+									onImport={async (theme) => {
+										isAnimatingRef.current = true;
+										setSelectedTheme(theme);
+										setOriginalTheme(theme); // Reset original when importing
+										setCustomName(theme.name);
+										await applyThemeAnimated(theme);
+										isAnimatingRef.current = false;
+									}}
+									trigger={
+										<button
+											type="button"
+											className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+										>
+											<Upload className="h-3 w-3" />
+											Import
+										</button>
+									}
+								/>
+								{/* Export Button */}
+								<ExportModal
+									theme={selectedTheme}
+									trigger={
+										<button
+											type="button"
+											className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs transition-colors hover:bg-muted"
+										>
+											<Copy className="h-3 w-3" />
+											Export
+										</button>
+									}
+								/>
+								{/* Reset Button - only show when dirty */}
+								{isDirty && originalTheme && (
+									<button
+										type="button"
+										onClick={handleReset}
+										className="flex items-center gap-1.5 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs text-destructive transition-colors hover:bg-destructive/20"
+										title={`Reset to ${originalTheme.name}`}
+									>
+										<RotateCcw className="h-3 w-3" />
+										Reset
+									</button>
 								)}
-								{profile?.displayName && " · "}
-								{balance.bsv.toFixed(8)} BSV
-							</p>
+							</div>
+						</div>
+						{/* Scrollable Preview Area */}
+						<div className="flex-1 overflow-y-auto bg-background">
+							<ThemePreviewPanel
+								onUpdateColor={updateColor}
+								primaryColor={selectedTheme.styles[mode].primary}
+								themeColors={selectedTheme.styles[mode]}
+							/>
+						</div>
+					</div>
+				</div>
+				{/* Close main content area */}
+
+				{/* Bottom Bar: Mint Action */}
+				<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
+					<div className="flex items-center gap-2">
+						{/* Dirty indicator and base theme name */}
+						{isDirty && originalTheme && (
+							<div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400">
+								<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+								Modified from {originalTheme.name}
+							</div>
+						)}
+						{/* Theme Name Input */}
+						<input
+							type="text"
+							value={customName}
+							onChange={(e) => setCustomName(e.target.value)}
+							placeholder={selectedTheme.name}
+							className={`h-9 w-40 rounded-lg border bg-background px-3 text-sm focus:border-primary focus:outline-none ${isDirty ? "border-amber-500/50" : "border-border"}`}
+						/>
+
+						{/* Save Draft Button */}
+						<button
+							type="button"
+							onClick={handleSaveDraft}
+							className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm transition-colors hover:bg-muted"
+						>
+							{savedNotice ? (
+								<>
+									<Check className="h-4 w-4 text-green-500" />
+									Saved!
+								</>
+							) : (
+								<>
+									<Save className="h-4 w-4" />
+									Save
+								</>
+							)}
+						</button>
+
+						{/* Wallet info */}
+						{isConnected && profile?.displayName && (
+							<div className="hidden sm:block">
+								<p className="text-xs font-medium">
+									<span className="text-primary">{profile.displayName}</span>
+								</p>
+							</div>
+						)}
+					</div>
+
+					{walletError && (
+						<div className="flex items-center gap-2 text-sm text-destructive">
+							<AlertCircle className="h-4 w-4" />
+							{walletError}
 						</div>
 					)}
-				</div>
 
-				{walletError && (
-					<div className="flex items-center gap-2 text-sm text-destructive">
-						<AlertCircle className="h-4 w-4" />
-						{walletError}
-					</div>
-				)}
+					<div className="flex items-center gap-2">
+						{/* Buy Button - only show when selected theme is for sale */}
+						{selectedListing && (
+							<Button
+								size="lg"
+								onClick={() => setShowBuyModal(true)}
+								className="gap-2"
+							>
+								<ShoppingCart className="h-5 w-5" />
+								Buy
+							</Button>
+						)}
 
-				<div className="flex items-center gap-2">
-					{/* Buy Button - only show when selected theme is for sale */}
-					{selectedListing && (
 						<Button
 							size="lg"
-							onClick={() => setShowBuyModal(true)}
+							variant={selectedListing ? "outline" : "default"}
+							disabled={!canMint}
+							onClick={
+								isConnected ? () => setShowInscribeDialog(true) : connect
+							}
 							className="gap-2"
 						>
-							<ShoppingCart className="h-5 w-5" />
-							Buy
+							{isConnected ? (
+								<>
+									<PenLine className="h-5 w-5" />
+									Inscribe Theme
+								</>
+							) : status === "connecting" ? (
+								<>
+									<Loader2 className="h-5 w-5 animate-spin" />
+									Connecting...
+								</>
+							) : (
+								<>
+									<PenLine className="h-5 w-5" />
+									Connect to Inscribe
+								</>
+							)}
 						</Button>
-					)}
-
-					<Button
-						size="lg"
-						variant={selectedListing ? "outline" : "default"}
-						disabled={!canMint}
-						onClick={isConnected ? () => setShowInscribeDialog(true) : connect}
-						className="gap-2"
-					>
-						{isConnected ? (
-							<>
-								<PenLine className="h-5 w-5" />
-								Inscribe Theme
-							</>
-						) : status === "connecting" ? (
-							<>
-								<Loader2 className="h-5 w-5 animate-spin" />
-								Connecting...
-							</>
-						) : (
-							<>
-								<PenLine className="h-5 w-5" />
-								Connect to Inscribe
-							</>
-						)}
-					</Button>
+					</div>
 				</div>
+
+				{/* Inscribe Confirmation Dialog */}
+				<InscribeDialog
+					isOpen={showInscribeDialog}
+					onClose={() => setShowInscribeDialog(false)}
+					theme={selectedTheme}
+					themeName={customName}
+					profileDisplayName={profile?.displayName || null}
+					onConfirm={handleConfirmInscribe}
+					isInscribing={isInscribing}
+					mode={mode}
+				/>
+
+				{/* Buy Modal */}
+				{selectedListing && (
+					<BuyThemeModal
+						isOpen={showBuyModal}
+						onClose={() => setShowBuyModal(false)}
+						listing={selectedListing}
+						onPurchaseComplete={(purchaseTxid) => {
+							setPurchaseSuccess({
+								theme: selectedListing.theme,
+								txid: purchaseTxid,
+							});
+							setShowBuyModal(false);
+							refetchListings(); // Refresh listings after purchase
+						}}
+					/>
+				)}
+
+				{/* Purchase Success Modal */}
+				{purchaseSuccess && (
+					<PurchaseSuccessModal
+						isOpen={true}
+						onClose={() => setPurchaseSuccess(null)}
+						theme={purchaseSuccess.theme}
+						txid={purchaseSuccess.txid}
+						onApplyNow={() => {
+							storeRemixTheme(purchaseSuccess.theme);
+							router.push("/studio/theme");
+							setPurchaseSuccess(null);
+						}}
+					/>
+				)}
 			</div>
-
-			{/* Inscribe Confirmation Dialog */}
-			<InscribeDialog
-				isOpen={showInscribeDialog}
-				onClose={() => setShowInscribeDialog(false)}
-				theme={selectedTheme}
-				themeName={customName}
-				profileDisplayName={profile?.displayName || null}
-				onConfirm={handleConfirmInscribe}
-				isInscribing={isInscribing}
-				mode={mode}
-			/>
-
-			{/* Buy Modal */}
-			{selectedListing && (
-				<BuyThemeModal
-					isOpen={showBuyModal}
-					onClose={() => setShowBuyModal(false)}
-					listing={selectedListing}
-					onPurchaseComplete={(purchaseTxid) => {
-						setPurchaseSuccess({ theme: selectedListing.theme, txid: purchaseTxid });
-						setShowBuyModal(false);
-						refetchListings(); // Refresh listings after purchase
-					}}
-				/>
-			)}
-
-			{/* Purchase Success Modal */}
-			{purchaseSuccess && (
-				<PurchaseSuccessModal
-					isOpen={true}
-					onClose={() => setPurchaseSuccess(null)}
-					theme={purchaseSuccess.theme}
-					txid={purchaseSuccess.txid}
-					onApplyNow={() => {
-						storeRemixTheme(purchaseSuccess.theme);
-						router.push("/studio/theme");
-						setPurchaseSuccess(null);
-					}}
-				/>
-			)}
-		</div>
 		</>
 	);
 }

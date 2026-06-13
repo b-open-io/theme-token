@@ -52,8 +52,6 @@ export const featureFlags = {
 /**
  * Check if a feature is enabled
  */
-export function isFeatureEnabled(
-	feature: keyof typeof featureFlags,
-): boolean {
+export function isFeatureEnabled(feature: keyof typeof featureFlags): boolean {
 	return featureFlags[feature];
 }

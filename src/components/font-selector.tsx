@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, ChevronDown, Link as LinkIcon, Type, Upload, Wallet } from "lucide-react";
+import {
+	Check,
+	ChevronDown,
+	Link as LinkIcon,
+	Type,
+	Upload,
+	Wallet,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,14 +21,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useYoursWallet, type OwnedFont } from "@/hooks/use-yours-wallet";
-import { loadFontByOrigin, getCachedFont, isOnChainFont, extractOriginFromPath } from "@/lib/font-loader";
+import { type OwnedFont, useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
-	useFontUploadStore,
+	extractOriginFromPath,
+	getCachedFont,
+	isOnChainFont,
+	loadFontByOrigin,
+} from "@/lib/font-loader";
+import {
 	createUploadedFontFromFile,
-	isUploadedFontPath,
-	extractUploadedFontId,
 	createUploadedFontPath,
+	extractUploadedFontId,
+	isUploadedFontPath,
+	useFontUploadStore,
 } from "@/lib/stores/font-upload-store";
 
 type FontSource = "google" | "onchain" | "uploaded" | "custom";
@@ -35,18 +47,47 @@ interface FontSelectorProps {
 
 // Common Google Fonts for quick selection
 const SUGGESTED_FONTS: Record<string, string[]> = {
-	sans: ["Inter", "Roboto", "Open Sans", "Lato", "Poppins", "Montserrat", "Nunito", "Work Sans"],
-	serif: ["Playfair Display", "Merriweather", "Lora", "Crimson Text", "Libre Baskerville", "Source Serif Pro"],
-	mono: ["JetBrains Mono", "Fira Code", "Source Code Pro", "IBM Plex Mono", "Roboto Mono", "Space Mono"],
+	sans: [
+		"Inter",
+		"Roboto",
+		"Open Sans",
+		"Lato",
+		"Poppins",
+		"Montserrat",
+		"Nunito",
+		"Work Sans",
+	],
+	serif: [
+		"Playfair Display",
+		"Merriweather",
+		"Lora",
+		"Crimson Text",
+		"Libre Baskerville",
+		"Source Serif Pro",
+	],
+	mono: [
+		"JetBrains Mono",
+		"Fira Code",
+		"Source Code Pro",
+		"IBM Plex Mono",
+		"Roboto Mono",
+		"Space Mono",
+	],
 };
 
-export function FontSelector({ slot, value, onChange, label }: FontSelectorProps) {
+export function FontSelector({
+	slot,
+	value,
+	onChange,
+	label,
+}: FontSelectorProps) {
 	const { ownedFonts, status: walletStatus, connect } = useYoursWallet();
 	const isConnected = walletStatus === "connected";
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Font upload store
-	const { uploadedFonts, addFont, loadFontForPreview, getFont } = useFontUploadStore();
+	const { uploadedFonts, addFont, loadFontForPreview, getFont } =
+		useFontUploadStore();
 
 	// Determine current source based on value
 	const getCurrentSource = (): FontSource => {
@@ -64,11 +105,17 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 	const [isUploading, setIsUploading] = useState(false);
 
 	// Get current on-chain origin if applicable
-	const currentOrigin = isOnChainFont(value) ? extractOriginFromPath(value) : null;
+	const currentOrigin = isOnChainFont(value)
+		? extractOriginFromPath(value)
+		: null;
 
 	// Get current uploaded font ID if applicable
-	const currentUploadedId = isUploadedFontPath(value) ? extractUploadedFontId(value) : null;
-	const currentUploadedFont = currentUploadedId ? getFont(currentUploadedId) : null;
+	const currentUploadedId = isUploadedFontPath(value)
+		? extractUploadedFontId(value)
+		: null;
+	const currentUploadedFont = currentUploadedId
+		? getFont(currentUploadedId)
+		: null;
 
 	// Find the owned font matching current value
 	const currentOwnedFont = currentOrigin
@@ -113,40 +160,46 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 	}, [loadCurrentFont]);
 
 	// Handle file upload
-	const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
+	const handleFileUpload = useCallback(
+		async (e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (!file) return;
 
-		setIsUploading(true);
-		try {
-			const fontData = await createUploadedFontFromFile(file);
-			const id = addFont(fontData);
+			setIsUploading(true);
+			try {
+				const fontData = await createUploadedFontFromFile(file);
+				const id = addFont(fontData);
 
-			// Load the font for preview
-			await loadFontForPreview(id);
+				// Load the font for preview
+				await loadFontForPreview(id);
 
-			// Set the value to the uploaded font path
-			onChange(createUploadedFontPath(id));
-		} catch (err) {
-			console.error("[FontSelector] Upload error:", err);
-		} finally {
-			setIsUploading(false);
-			// Reset file input
-			if (fileInputRef.current) {
-				fileInputRef.current.value = "";
+				// Set the value to the uploaded font path
+				onChange(createUploadedFontPath(id));
+			} catch (err) {
+				console.error("[FontSelector] Upload error:", err);
+			} finally {
+				setIsUploading(false);
+				// Reset file input
+				if (fileInputRef.current) {
+					fileInputRef.current.value = "";
+				}
 			}
-		}
-	}, [addFont, loadFontForPreview, onChange]);
+		},
+		[addFont, loadFontForPreview, onChange],
+	);
 
 	// Handle selecting an already-uploaded font
-	const handleUploadedFontSelect = useCallback(async (id: string) => {
-		try {
-			await loadFontForPreview(id);
-			onChange(createUploadedFontPath(id));
-		} catch (err) {
-			console.error("[FontSelector] Error loading uploaded font:", err);
-		}
-	}, [loadFontForPreview, onChange]);
+	const handleUploadedFontSelect = useCallback(
+		async (id: string) => {
+			try {
+				await loadFontForPreview(id);
+				onChange(createUploadedFontPath(id));
+			} catch (err) {
+				console.error("[FontSelector] Error loading uploaded font:", err);
+			}
+		},
+		[loadFontForPreview, onChange],
+	);
 
 	// Handle source change
 	const handleSourceChange = (newSource: FontSource) => {
@@ -183,9 +236,11 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 	// Display label for current value
 	const getDisplayLabel = (): string => {
 		if (!value) return "Select font...";
-		if (currentUploadedFont) return `${currentUploadedFont.familyName} (uploaded)`;
+		if (currentUploadedFont)
+			return `${currentUploadedFont.familyName} (uploaded)`;
 		if (currentOwnedFont) return currentOwnedFont.metadata.name;
-		if (isOnChainFont(value)) return `On-chain: ${currentOrigin?.slice(0, 8)}...`;
+		if (isOnChainFont(value))
+			return `On-chain: ${currentOrigin?.slice(0, 8)}...`;
 		// Extract primary font name from font stack (e.g., '"Space Grotesk", "Inter", ...' -> 'Space Grotesk')
 		const match = value.match(/^["']?([^"',]+)["']?/);
 		return match?.[1] || value;
@@ -193,9 +248,7 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 
 	return (
 		<div className="space-y-3">
-			{label && (
-				<Label className="text-sm font-medium">{label}</Label>
-			)}
+			{label && <Label className="text-sm font-medium">{label}</Label>}
 
 			{/* Source Selection */}
 			<RadioGroup
@@ -211,7 +264,10 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 				</div>
 				<div className="flex items-center space-x-2">
 					<RadioGroupItem value="uploaded" id={`${slot}-uploaded`} />
-					<Label htmlFor={`${slot}-uploaded`} className="text-xs cursor-pointer">
+					<Label
+						htmlFor={`${slot}-uploaded`}
+						className="text-xs cursor-pointer"
+					>
 						Upload
 					</Label>
 				</div>
@@ -310,7 +366,9 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 													{(font.sizeBytes / 1024).toFixed(1)} KB
 												</span>
 											</div>
-											{currentUploadedId === font.id && <Check className="h-4 w-4" />}
+											{currentUploadedId === font.id && (
+												<Check className="h-4 w-4" />
+											)}
 										</DropdownMenuItem>
 									))}
 									<DropdownMenuSeparator />
@@ -333,59 +391,58 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 			)}
 
 			{/* On-Chain Fonts (Owned) */}
-			{source === "onchain" && (
-				<>
-					{!isConnected ? (
-						<Button variant="outline" className="w-full" onClick={connect}>
-							<Wallet className="mr-2 h-4 w-4" />
-							Connect to see your fonts
-						</Button>
-					) : ownedFonts.length === 0 ? (
-						<div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-							<Type className="mx-auto mb-2 h-6 w-6 opacity-50" />
-							<p>No fonts owned</p>
-							<a
-								href="/market/fonts"
-								className="text-primary hover:underline text-xs"
+			{source === "onchain" &&
+				(!isConnected ? (
+					<Button variant="outline" className="w-full" onClick={connect}>
+						<Wallet className="mr-2 h-4 w-4" />
+						Connect to see your fonts
+					</Button>
+				) : ownedFonts.length === 0 ? (
+					<div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+						<Type className="mx-auto mb-2 h-6 w-6 opacity-50" />
+						<p>No fonts owned</p>
+						<a
+							href="/market/fonts"
+							className="text-primary hover:underline text-xs"
+						>
+							Browse marketplace
+						</a>
+					</div>
+				) : (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="outline"
+								className="w-full justify-between font-normal"
+								style={{ fontFamily: loadedFontFamily || undefined }}
 							>
-								Browse marketplace
-							</a>
-						</div>
-					) : (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="outline"
-									className="w-full justify-between font-normal"
-									style={{ fontFamily: loadedFontFamily || undefined }}
+								<span className="truncate">{getDisplayLabel()}</span>
+								<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent className="w-64 max-h-64 overflow-y-auto">
+							<DropdownMenuLabel>Your Fonts</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							{ownedFonts.map((font) => (
+								<DropdownMenuItem
+									key={font.origin}
+									onClick={() => handleOwnedFontSelect(font)}
+									className="justify-between"
 								>
-									<span className="truncate">{getDisplayLabel()}</span>
-									<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent className="w-64 max-h-64 overflow-y-auto">
-								<DropdownMenuLabel>Your Fonts</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								{ownedFonts.map((font) => (
-									<DropdownMenuItem
-										key={font.origin}
-										onClick={() => handleOwnedFontSelect(font)}
-										className="justify-between"
-									>
-										<div className="flex flex-col">
-											<span>{font.metadata.name}</span>
-											<span className="text-[10px] text-muted-foreground font-mono">
-												{font.origin.slice(0, 12)}...
-											</span>
-										</div>
-										{currentOrigin === font.origin && <Check className="h-4 w-4" />}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					)}
-				</>
-			)}
+									<div className="flex flex-col">
+										<span>{font.metadata.name}</span>
+										<span className="text-[10px] text-muted-foreground font-mono">
+											{font.origin.slice(0, 12)}...
+										</span>
+									</div>
+									{currentOrigin === font.origin && (
+										<Check className="h-4 w-4" />
+									)}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				))}
 
 			{/* Custom Origin Input */}
 			{source === "custom" && (
@@ -412,11 +469,14 @@ export function FontSelector({ slot, value, onChange, label }: FontSelectorProps
 				<div
 					className="mt-2 rounded-md border bg-muted/30 p-3 text-center"
 					style={{
-						fontFamily: loadedFontFamily || (!isOnChainFont(value) ? value : undefined),
+						fontFamily:
+							loadedFontFamily || (!isOnChainFont(value) ? value : undefined),
 					}}
 				>
 					<div className="text-2xl">Aa Bb Cc</div>
-					<div className="text-xs text-muted-foreground mt-1">The quick brown fox</div>
+					<div className="text-xs text-muted-foreground mt-1">
+						The quick brown fox
+					</div>
 				</div>
 			)}
 		</div>

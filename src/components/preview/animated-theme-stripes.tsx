@@ -1,5 +1,3 @@
-import React from "react";
-
 export function AnimatedThemeStripes() {
 	const colors = [
 		{ name: "background", var: "background", fg: "foreground" },

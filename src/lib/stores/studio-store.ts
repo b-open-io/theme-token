@@ -23,7 +23,13 @@ export type ThemeColorKey =
 
 export type ThemeMode = "light" | "dark" | "both";
 export type FontSlot = "sans" | "serif" | "mono";
-export type ActiveStudio = "theme" | "font" | "pattern" | "icon" | "wallpaper" | null;
+export type ActiveStudio =
+	| "theme"
+	| "font"
+	| "pattern"
+	| "icon"
+	| "wallpaper"
+	| null;
 
 export interface ThemeColors {
 	light: Record<ThemeColorKey, string>;
@@ -63,7 +69,11 @@ export interface StudioActions {
 	setActiveStudio: (studio: ActiveStudio) => void;
 
 	// Theme actions (for Swatchy to control)
-	setThemeColor: (colorKey: ThemeColorKey, value: string, mode?: ThemeMode) => void;
+	setThemeColor: (
+		colorKey: ThemeColorKey,
+		value: string,
+		mode?: ThemeMode,
+	) => void;
 	setThemeRadius: (radius: string) => void;
 	setThemeFont: (slot: FontSlot, fontFamily: string) => void;
 
@@ -73,7 +83,11 @@ export interface StudioActions {
 	consumePendingFontChange: () => void;
 
 	// Sync theme state from studio
-	syncThemeState: (colors: ThemeColors, radius: string, fonts: ThemeFonts) => void;
+	syncThemeState: (
+		colors: ThemeColors,
+		radius: string,
+		fonts: ThemeFonts,
+	) => void;
 
 	// Reset
 	reset: () => void;
@@ -162,11 +176,14 @@ export const useStudioStore = create<StudioStore>()(
 		reset: () => {
 			set(defaultState);
 		},
-	}))
+	})),
 );
 
 // Selector helpers for subscribing to specific changes
-export const selectPendingColorChange = (state: StudioStore) => state.pendingColorChange;
-export const selectPendingRadiusChange = (state: StudioStore) => state.pendingRadiusChange;
-export const selectPendingFontChange = (state: StudioStore) => state.pendingFontChange;
+export const selectPendingColorChange = (state: StudioStore) =>
+	state.pendingColorChange;
+export const selectPendingRadiusChange = (state: StudioStore) =>
+	state.pendingRadiusChange;
+export const selectPendingFontChange = (state: StudioStore) =>
+	state.pendingFontChange;
 export const selectActiveStudio = (state: StudioStore) => state.activeStudio;

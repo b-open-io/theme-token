@@ -8,10 +8,10 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import {
+	type DraftType,
 	deleteDraft,
 	getDraft,
 	updateDraftMetadata,
-	type DraftType,
 } from "@/lib/storage";
 
 const VALID_TYPES: DraftType[] = ["theme", "wallpaper", "pattern", "font"];
@@ -48,19 +48,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		const draft = await getDraft(userId, type, id);
 
 		if (!draft) {
-			return NextResponse.json(
-				{ error: "Draft not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Draft not found" }, { status: 404 });
 		}
 
 		return NextResponse.json({ draft });
 	} catch (error) {
 		console.error("Get draft error:", error);
-		return NextResponse.json(
-			{ error: "Failed to get draft" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to get draft" }, { status: 500 });
 	}
 }
 
@@ -92,10 +86,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		const deleted = await deleteDraft(userId, type, id);
 
 		if (!deleted) {
-			return NextResponse.json(
-				{ error: "Draft not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Draft not found" }, { status: 404 });
 		}
 
 		return NextResponse.json({ success: true });
@@ -144,10 +135,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		const updated = await updateDraftMetadata(userId, type, id, updates);
 
 		if (!updated) {
-			return NextResponse.json(
-				{ error: "Draft not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Draft not found" }, { status: 404 });
 		}
 
 		return NextResponse.json({ draft: updated });

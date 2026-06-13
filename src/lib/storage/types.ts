@@ -154,8 +154,7 @@ export const KV_KEYS = {
 	draft: (type: DraftType, userId: string, id: string) =>
 		`drafts:${type}:${userId}:${id}`,
 	draftList: (type: DraftType, userId: string) => `drafts:${type}:${userId}:*`,
-	inscribed: (type: DraftType, userId: string) =>
-		`inscribed:${type}:${userId}`,
+	inscribed: (type: DraftType, userId: string) => `inscribed:${type}:${userId}`,
 } as const;
 
 /**

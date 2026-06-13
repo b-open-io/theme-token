@@ -14,7 +14,7 @@ async function applyMask(
 	inputPath: string,
 	maskPath: string,
 	outputPath: string,
-	invert = false
+	invert = false,
 ) {
 	// Load the input image
 	const input = sharp(inputPath);
@@ -36,19 +36,16 @@ async function applyMask(
 	const mask = await maskPipeline.raw().toBuffer();
 
 	// Get the input as raw RGBA
-	const inputBuffer = await input
-		.ensureAlpha()
-		.raw()
-		.toBuffer();
+	const inputBuffer = await input.ensureAlpha().raw().toBuffer();
 
 	// Apply mask as alpha channel
-	const width = inputMeta.width!;
-	const height = inputMeta.height!;
+	const { width, height } = inputMeta;
+	if (!width || !height) throw new Error("Input image has no dimensions");
 	const outputBuffer = Buffer.alloc(width * height * 4);
 
 	for (let i = 0; i < width * height; i++) {
 		// Copy RGB from input
-		outputBuffer[i * 4] = inputBuffer[i * 4];     // R
+		outputBuffer[i * 4] = inputBuffer[i * 4]; // R
 		outputBuffer[i * 4 + 1] = inputBuffer[i * 4 + 1]; // G
 		outputBuffer[i * 4 + 2] = inputBuffer[i * 4 + 2]; // B
 		// Use mask value as alpha
@@ -77,7 +74,7 @@ const [inputPath, maskPath, outputPath] = paths;
 
 if (!inputPath || !maskPath || !outputPath) {
 	console.error(
-		"Usage: bun scripts/apply-mask.ts <input> <mask> <output.png> [--invert]"
+		"Usage: bun scripts/apply-mask.ts <input> <mask> <output.png> [--invert]",
 	);
 	process.exit(1);
 }

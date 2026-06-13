@@ -1,25 +1,53 @@
 "use client";
 
-import {
-	motion,
-	useMotionValue,
-	useSpring,
-	useTransform,
-} from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Image, ShoppingCart, Tag, Type, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useMemo } from "react";
-import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
-import { fetchThemeMarketListings, fetchFontMarketListings, type ThemeMarketListing, type FontMarketListing } from "@/lib/yours-wallet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	BsvRateProvider,
+	useBsvRateContext,
+} from "@/hooks/use-bsv-rate-context";
 import { featureFlags } from "@/lib/feature-flags";
+import {
+	type FontMarketListing,
+	fetchFontMarketListings,
+	fetchThemeMarketListings,
+	type ThemeMarketListing,
+} from "@/lib/yours-wallet";
 
 const allTabs = [
-	{ href: "/market/browse", label: "Themes", icon: ShoppingCart, feature: null },
-	{ href: "/market/fonts", label: "Fonts", icon: Type, feature: "fonts" as const },
-	{ href: "/market/images", label: "Images", icon: Image, feature: "images" as const },
-	{ href: "/market/my-themes", label: "My Themes", icon: Wallet, feature: null },
-	{ href: "/market/my-fonts", label: "My Fonts", icon: Type, feature: "fonts" as const },
+	{
+		href: "/market/browse",
+		label: "Themes",
+		icon: ShoppingCart,
+		feature: null,
+	},
+	{
+		href: "/market/fonts",
+		label: "Fonts",
+		icon: Type,
+		feature: "fonts" as const,
+	},
+	{
+		href: "/market/images",
+		label: "Images",
+		icon: Image,
+		feature: "images" as const,
+	},
+	{
+		href: "/market/my-themes",
+		label: "My Themes",
+		icon: Wallet,
+		feature: null,
+	},
+	{
+		href: "/market/my-fonts",
+		label: "My Fonts",
+		icon: Type,
+		feature: "fonts" as const,
+	},
 	{ href: "/market/sell", label: "Sell", icon: Tag, feature: null },
 ];
 
@@ -31,11 +59,7 @@ function formatBSV(sats: number): string {
 	return bsv.toFixed(2);
 }
 
-function MarketLayoutInner({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
 	const barRef = useRef<HTMLDivElement>(null);
 	const [themeListings, setThemeListings] = useState<ThemeMarketListing[]>([]);
@@ -103,7 +127,8 @@ function MarketLayoutInner({
 
 	const { listings, label } = getStats();
 	const totalCount = listings.length;
-	const floorPrice = listings.length > 0 ? Math.min(...listings.map(l => l.price)) : 0;
+	const floorPrice =
+		listings.length > 0 ? Math.min(...listings.map((l) => l.price)) : 0;
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-background">
@@ -141,7 +166,11 @@ function MarketLayoutInner({
 											<motion.div
 												layoutId="market-active-tab"
 												className="absolute inset-0 rounded-md bg-muted/60"
-												transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+												transition={{
+													type: "spring",
+													bounce: 0.15,
+													duration: 0.5,
+												}}
 											/>
 										)}
 										<Icon className="relative z-10 h-3.5 w-3.5" />
@@ -160,19 +189,20 @@ function MarketLayoutInner({
 								<span className="text-muted-foreground/60">{label}</span>
 							</div>
 							<div className="flex items-center gap-1 sm:gap-1.5">
-								<span className="hidden text-muted-foreground/60 sm:inline">floor</span>
+								<span className="hidden text-muted-foreground/60 sm:inline">
+									floor
+								</span>
 								<span className="tabular-nums text-foreground">
-									{totalCount > 0 ? (formatUsd(floorPrice) || formatBSV(floorPrice)) : "$0.00"}
+									{totalCount > 0
+										? formatUsd(floorPrice) || formatBSV(floorPrice)
+										: "$0.00"}
 								</span>
 							</div>
 						</div>
 					</div>
 
 					{/* Animated Gradient Bar with Spotlight */}
-					<div
-						ref={barRef}
-						className="relative h-0.5 w-full overflow-hidden"
-					>
+					<div ref={barRef} className="relative h-0.5 w-full overflow-hidden">
 						{/* Base: Dim animated gradient */}
 						<motion.div
 							className="absolute inset-0 opacity-30"

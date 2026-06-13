@@ -79,7 +79,10 @@ function collectModuleSpecifiers(code: string, filename: string): string[] {
 	const specs: string[] = [];
 
 	function visit(node: ts.Node) {
-		if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+		if (
+			ts.isImportDeclaration(node) &&
+			ts.isStringLiteral(node.moduleSpecifier)
+		) {
 			specs.push(node.moduleSpecifier.text);
 		}
 		if (
@@ -148,7 +151,11 @@ export function validateGeneratedRegistryCode(params: {
 	declaredDependencies?: string[];
 	registryDependencies?: string[];
 }): ValidationResult {
-	const { files, declaredDependencies = [], registryDependencies = [] } = params;
+	const {
+		files,
+		declaredDependencies = [],
+		registryDependencies = [],
+	} = params;
 
 	const errors: string[] = [];
 	const warnings: string[] = [];
@@ -176,7 +183,9 @@ export function validateGeneratedRegistryCode(params: {
 			}
 		}
 	} else if (registryDependencies.length > 0) {
-		warnings.push("Could not verify registryDependencies (missing src/components/ui)");
+		warnings.push(
+			"Could not verify registryDependencies (missing src/components/ui)",
+		);
 	}
 
 	for (const file of files) {
@@ -186,7 +195,9 @@ export function validateGeneratedRegistryCode(params: {
 		for (const spec of specs) {
 			// Disallow next.js runtime imports in registry items (breaks preview & portability)
 			if (spec === "next" || spec.startsWith("next/")) {
-				errors.push(`[${filename}] Import "${spec}" is not allowed in registry items`);
+				errors.push(
+					`[${filename}] Import "${spec}" is not allowed in registry items`,
+				);
 				continue;
 			}
 

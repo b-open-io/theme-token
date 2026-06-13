@@ -15,7 +15,7 @@
  * - Result: 100% theme-reactive patterns
  */
 
-import { isOnChainPath, extractOrigin, getOrdfsUrl } from "@theme-token/sdk";
+import { extractOrigin, getOrdfsUrl, isOnChainPath } from "@theme-token/sdk";
 
 // Re-export SDK functions with image-specific names for backwards compatibility
 export const isOnChainImage = isOnChainPath;
@@ -60,10 +60,7 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
  */
 export function svgToEncodedUrl(svg: string): string {
 	// Minify SVG slightly
-	const minified = svg
-		.replace(/\s+/g, " ")
-		.replace(/>\s+</g, "><")
-		.trim();
+	const minified = svg.replace(/\s+/g, " ").replace(/>\s+</g, "><").trim();
 
 	// URL encode for CSS
 	const encoded = encodeURIComponent(minified)

@@ -7,8 +7,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useYoursWallet } from "./use-yours-wallet";
 import type { StorageTier, StorageUsage } from "@/lib/storage/types";
+import { useYoursWallet } from "./use-yours-wallet";
 
 interface TierInfo {
 	name: string;
@@ -53,7 +53,8 @@ export function useStorageTier() {
 			setUsage(data);
 			return data;
 		} catch (err) {
-			const message = err instanceof Error ? err.message : "Failed to fetch usage";
+			const message =
+				err instanceof Error ? err.message : "Failed to fetch usage";
 			setError(message);
 			return null;
 		} finally {
@@ -72,7 +73,10 @@ export function useStorageTier() {
 	 * Check if user can create a draft of a given type and size
 	 */
 	const canCreate = useCallback(
-		(type: "theme" | "wallpaper" | "pattern" | "font", sizeBytes = 0): boolean => {
+		(
+			type: "theme" | "wallpaper" | "pattern" | "font",
+			sizeBytes = 0,
+		): boolean => {
 			if (!usage) return false;
 
 			const typeUsage = usage.usage[`${type}s` as keyof typeof usage.usage];
@@ -81,7 +85,10 @@ export function useStorageTier() {
 			}
 
 			if (sizeBytes > 0) {
-				if (usage.usage.blob.bytesUsed + sizeBytes > usage.usage.blob.bytesLimit) {
+				if (
+					usage.usage.blob.bytesUsed + sizeBytes >
+					usage.usage.blob.bytesLimit
+				) {
 					return false;
 				}
 			}

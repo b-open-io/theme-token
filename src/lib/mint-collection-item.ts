@@ -8,7 +8,7 @@
  * 4. Applying signatures and broadcasting
  */
 
-import { Script, UnlockingScript, Utils } from "@bsv/sdk";
+import { UnlockingScript, Utils } from "@bsv/sdk";
 import type { SignatureRequest, Utxo, YoursWallet } from "./yours-wallet";
 
 export interface MintCollectionItemConfig {

@@ -1,7 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Copy, FileCode, FolderKanban, Image, Palette, Shapes, Type } from "lucide-react";
+import {
+	Check,
+	Copy,
+	FileCode,
+	FolderKanban,
+	Image,
+	Palette,
+	Shapes,
+	Type,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import { CodeBlock } from "@/components/code-block";
 
@@ -14,7 +23,7 @@ interface FieldDef {
 }
 
 const FIELDS: FieldDef[] = [
-	{ key: "app", type: "string", description: "Always \"theme-token\"" },
+	{ key: "app", type: "string", description: 'Always "theme-token"' },
 	{ key: "type", type: "string", description: "Asset type identifier" },
 	{ key: "name", type: "string", description: "Display name" },
 	{ key: "author", type: "string", description: "Creator name" },
@@ -34,15 +43,42 @@ const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 		required: ["app", "type"],
 	},
 	tile: {
-		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
+		active: [
+			"app",
+			"type",
+			"name",
+			"author",
+			"license",
+			"prompt",
+			"provider",
+			"model",
+		],
 		required: ["app", "type"],
 	},
 	wallpaper: {
-		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
+		active: [
+			"app",
+			"type",
+			"name",
+			"author",
+			"license",
+			"prompt",
+			"provider",
+			"model",
+		],
 		required: ["app", "type"],
 	},
 	icon: {
-		active: ["app", "type", "name", "author", "license", "prompt", "provider", "model"],
+		active: [
+			"app",
+			"type",
+			"name",
+			"author",
+			"license",
+			"prompt",
+			"provider",
+			"model",
+		],
 		required: ["app", "type"],
 	},
 	project: {
@@ -106,7 +142,10 @@ const JSON_DATA: Record<AssetType, string> = {
 }`,
 };
 
-const ASSET_META: Record<AssetType, { icon: typeof Palette; label: string; format: string }> = {
+const ASSET_META: Record<
+	AssetType,
+	{ icon: typeof Palette; label: string; format: string }
+> = {
 	theme: { icon: FileCode, label: "Theme", format: "JSON" },
 	font: { icon: Type, label: "Font", format: "WOFF2" },
 	tile: { icon: Palette, label: "Tile", format: "SVG" },
@@ -135,7 +174,16 @@ export function OnChainProtocol() {
 			{/* Compact Tab Strip */}
 			<div className="flex justify-center">
 				<div className="inline-flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
-					{(["theme", "font", "tile", "wallpaper", "icon", "project"] as AssetType[]).map((tab) => {
+					{(
+						[
+							"theme",
+							"font",
+							"tile",
+							"wallpaper",
+							"icon",
+							"project",
+						] as AssetType[]
+					).map((tab) => {
 						const meta = ASSET_META[tab];
 						const Icon = meta.icon;
 						return (
@@ -152,8 +200,12 @@ export function OnChainProtocol() {
 										transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
 									/>
 								)}
-								<Icon className={`relative z-10 h-3.5 w-3.5 ${active === tab ? "text-primary" : "text-muted-foreground"}`} />
-								<span className={`relative z-10 hidden sm:inline ${active === tab ? "text-foreground" : "text-muted-foreground"}`}>
+								<Icon
+									className={`relative z-10 h-3.5 w-3.5 ${active === tab ? "text-primary" : "text-muted-foreground"}`}
+								/>
+								<span
+									className={`relative z-10 hidden sm:inline ${active === tab ? "text-foreground" : "text-muted-foreground"}`}
+								>
 									{meta.label}
 								</span>
 							</button>
@@ -178,6 +230,7 @@ export function OnChainProtocol() {
 								{visibleFields.map((field) => {
 									const isRequired = requiredFields.includes(field.key);
 									return (
+										// biome-ignore lint/a11y/noStaticElementInteractions: hover only toggles a row highlight; no click/keyboard interaction to expose
 										<div
 											key={field.key}
 											onMouseEnter={() => setHoveredField(field.key)}
@@ -208,8 +261,14 @@ export function OnChainProtocol() {
 								})}
 							</div>
 							{/* Spacer rows to maintain consistent height - each row ~36px */}
-							{Array.from({ length: FIELDS.length - visibleFields.length }).map((_, i) => (
-								<div key={`spacer-${i}`} className="h-9 border-t border-transparent" />
+							{Array.from(
+								{ length: FIELDS.length - visibleFields.length },
+								(_, i) => `spacer-${i}`,
+							).map((spacerKey) => (
+								<div
+									key={spacerKey}
+									className="h-9 border-t border-transparent"
+								/>
 							))}
 						</div>
 					</div>
@@ -229,7 +288,11 @@ export function OnChainProtocol() {
 									onClick={copyToClipboard}
 									className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 								>
-									{copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+									{copied ? (
+										<Check className="h-3 w-3 text-green-500" />
+									) : (
+										<Copy className="h-3 w-3" />
+									)}
 									{copied ? "copied" : "copy"}
 								</button>
 							</div>
@@ -254,8 +317,9 @@ export function OnChainProtocol() {
 
 			{/* Compact Footer Note */}
 			<p className="mx-auto max-w-2xl text-center text-[10px] text-muted-foreground">
-				MAP (Magic Attribute Protocol) metadata is inscribed alongside the asset content.
-				Theme JSON includes name, author, cssVars. Font metadata is embedded in the binary.
+				MAP (Magic Attribute Protocol) metadata is inscribed alongside the asset
+				content. Theme JSON includes name, author, cssVars. Font metadata is
+				embedded in the binary.
 			</p>
 		</div>
 	);

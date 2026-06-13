@@ -28,9 +28,17 @@ interface ImageFilterSidebarProps {
 	maxPrice: number;
 }
 
-const ASSET_TYPE_OPTIONS: { id: AssetType; label: string; description: string }[] = [
+const ASSET_TYPE_OPTIONS: {
+	id: AssetType;
+	label: string;
+	description: string;
+}[] = [
 	{ id: "tile", label: "Tiles", description: "Seamless repeating patterns" },
-	{ id: "wallpaper", label: "Wallpapers", description: "Full-screen backgrounds" },
+	{
+		id: "wallpaper",
+		label: "Wallpapers",
+		description: "Full-screen backgrounds",
+	},
 	{ id: "icon", label: "Icons", description: "Centered graphic elements" },
 ];
 
@@ -41,7 +49,7 @@ export function ImageFilterSidebar({
 }: ImageFilterSidebarProps) {
 	const updateFilter = <K extends keyof ImageFilterState>(
 		key: K,
-		value: ImageFilterState[K]
+		value: ImageFilterState[K],
 	) => {
 		onFiltersChange({ ...filters, [key]: value });
 	};
@@ -85,10 +93,7 @@ export function ImageFilterSidebar({
 				</Button>
 			</div>
 
-			<Accordion
-				type="multiple"
-				defaultValue={["type", "price"]}
-			>
+			<Accordion type="multiple" defaultValue={["type", "price"]}>
 				{/* Asset Type Filter */}
 				<AccordionItem value="type">
 					<AccordionTrigger className="text-sm">Asset Type</AccordionTrigger>
@@ -100,10 +105,7 @@ export function ImageFilterSidebar({
 									checked={filters.assetTypes.includes(option.id)}
 									onCheckedChange={() => handleAssetTypeToggle(option.id)}
 								/>
-								<label
-									htmlFor={option.id}
-									className="cursor-pointer"
-								>
+								<label htmlFor={option.id} className="cursor-pointer">
 									<span className="text-sm font-medium">{option.label}</span>
 									<span className="block text-xs text-muted-foreground">
 										{option.description}

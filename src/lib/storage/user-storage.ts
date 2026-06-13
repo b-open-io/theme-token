@@ -8,8 +8,8 @@
 import { kv } from "@vercel/kv";
 import { getTierLimits } from "./tier-limits";
 import {
-	KV_KEYS,
 	type DraftType,
+	KV_KEYS,
 	type StorageTier,
 	type StorageUsage,
 	type UserStorageRecord,
@@ -28,7 +28,7 @@ export async function getUserStorageRecord(
 
 	if (existing) {
 		// Migrate old records that don't have registries field
-		if (existing.draftsCount && !('registries' in existing.draftsCount)) {
+		if (existing.draftsCount && !("registries" in existing.draftsCount)) {
 			// Type assertion for old record format
 			const oldDraftsCount = existing.draftsCount as unknown as {
 				themes: number;
@@ -172,7 +172,9 @@ export async function getStorageUsage(userId: string): Promise<StorageUsage> {
 		record.draftsCount.registries;
 
 	const totalDraftLimit =
-		limits.draftsPerType === null ? Number.POSITIVE_INFINITY : limits.draftsPerType * 5;
+		limits.draftsPerType === null
+			? Number.POSITIVE_INFINITY
+			: limits.draftsPerType * 5;
 
 	return {
 		tier: record.tier,
@@ -190,9 +192,7 @@ export async function getStorageUsage(userId: string): Promise<StorageUsage> {
 
 		totalDrafts,
 		totalDraftLimit,
-		percentUsed: Math.round(
-			(record.blobBytesUsed / bytesLimit) * 100,
-		),
+		percentUsed: Math.round((record.blobBytesUsed / bytesLimit) * 100),
 	};
 }
 

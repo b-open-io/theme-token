@@ -1,12 +1,22 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { motion } from "framer-motion";
-import { ExternalLink, Loader2, ShoppingCart, Sparkles, Wallet } from "lucide-react";
+import {
+	ExternalLink,
+	Loader2,
+	ShoppingCart,
+	Sparkles,
+	Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import type { ThemeMarketListing } from "@/lib/yours-wallet";
@@ -19,13 +29,19 @@ interface BuyThemeModalProps {
 	onPurchaseComplete?: (txid: string) => void;
 }
 
-function ThemePreview({ theme, mode }: { theme: ThemeToken; mode: "light" | "dark" }) {
+function ThemePreview({
+	theme,
+	mode,
+}: {
+	theme: ThemeToken;
+	mode: "light" | "dark";
+}) {
 	const styles = theme.styles[mode];
-	
+
 	return (
 		<div
 			className="relative aspect-video w-full overflow-hidden rounded-lg border"
-			style={{ 
+			style={{
 				backgroundColor: styles.background,
 				borderColor: styles.border,
 			}}
@@ -39,11 +55,20 @@ function ThemePreview({ theme, mode }: { theme: ThemeToken; mode: "light" | "dar
 				>
 					<div
 						className="h-2 w-16 rounded-full"
-						style={{ backgroundColor: styles["muted-foreground"], opacity: 0.3 }}
+						style={{
+							backgroundColor: styles["muted-foreground"],
+							opacity: 0.3,
+						}}
 					/>
 					<div className="flex gap-1.5">
-						<div className="h-3 w-3 rounded-full" style={{ backgroundColor: styles.primary }} />
-						<div className="h-3 w-3 rounded-full" style={{ backgroundColor: styles.secondary }} />
+						<div
+							className="h-3 w-3 rounded-full"
+							style={{ backgroundColor: styles.primary }}
+						/>
+						<div
+							className="h-3 w-3 rounded-full"
+							style={{ backgroundColor: styles.secondary }}
+						/>
 					</div>
 				</div>
 
@@ -51,12 +76,18 @@ function ThemePreview({ theme, mode }: { theme: ThemeToken; mode: "light" | "dar
 				<div className="flex-1 space-y-2">
 					<div
 						className="h-8 w-full border"
-						style={{ borderColor: styles.input, borderRadius: styles.radius || "0.5rem" }}
+						style={{
+							borderColor: styles.input,
+							borderRadius: styles.radius || "0.5rem",
+						}}
 					/>
 					<div className="flex gap-2">
 						<div
 							className="h-8 flex-1"
-							style={{ backgroundColor: styles.secondary, borderRadius: styles.radius || "0.5rem" }}
+							style={{
+								backgroundColor: styles.secondary,
+								borderRadius: styles.radius || "0.5rem",
+							}}
 						/>
 						<div
 							className="h-8 flex-[2] flex items-center justify-center text-xs font-medium"
@@ -73,9 +104,15 @@ function ThemePreview({ theme, mode }: { theme: ThemeToken; mode: "light" | "dar
 
 				{/* Color bar */}
 				<div className="flex h-2 gap-0.5 overflow-hidden rounded">
-					{[styles.primary, styles.secondary, styles.accent, styles.muted].map((color, i) => (
-						<div key={i} className="flex-1" style={{ backgroundColor: color }} />
-					))}
+					{[styles.primary, styles.secondary, styles.accent, styles.muted].map(
+						(color, i) => (
+							<div
+								key={i}
+								className="flex-1"
+								style={{ backgroundColor: color }}
+							/>
+						),
+					)}
 				</div>
 			</div>
 		</div>
@@ -118,7 +155,7 @@ export function BuyThemeModal({
 
 			// Add to pending themes for immediate ownership
 			addPendingTheme(theme, txid);
-			
+
 			onPurchaseComplete?.(txid);
 			onClose();
 		} catch (err) {
@@ -132,12 +169,12 @@ export function BuyThemeModal({
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent className="max-w-md">
-			<DialogHeader>
-				<DialogTitle className="flex items-center gap-2">
-					<ShoppingCart className="h-5 w-5 fill-current" />
-					Buy Theme
-				</DialogTitle>
-			</DialogHeader>
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2">
+						<ShoppingCart className="h-5 w-5 fill-current" />
+						Buy Theme
+					</DialogTitle>
+				</DialogHeader>
 
 				<div className="space-y-4">
 					{/* Theme Preview */}
@@ -148,7 +185,9 @@ export function BuyThemeModal({
 						<div>
 							<h3 className="font-semibold text-lg">{theme.name}</h3>
 							{theme.author && (
-								<p className="text-sm text-muted-foreground">by {theme.author}</p>
+								<p className="text-sm text-muted-foreground">
+									by {theme.author}
+								</p>
 							)}
 							<p className="text-xs font-mono text-muted-foreground mt-1">
 								{origin.slice(0, 12)}...{origin.slice(-6)}
@@ -182,19 +221,19 @@ export function BuyThemeModal({
 							disabled={isPurchasing}
 							onClick={handlePurchase}
 						>
-						{isPurchasing ? (
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						) : !isConnected ? (
-							<>
-								<Wallet className="mr-2 h-4 w-4 fill-current" />
-								Connect
-							</>
-						) : (
-							<>
-								<ShoppingCart className="mr-2 h-4 w-4 fill-current" />
-								Buy Now
-							</>
-						)}
+							{isPurchasing ? (
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							) : !isConnected ? (
+								<>
+									<Wallet className="mr-2 h-4 w-4 fill-current" />
+									Connect
+								</>
+							) : (
+								<>
+									<ShoppingCart className="mr-2 h-4 w-4 fill-current" />
+									Buy Now
+								</>
+							)}
 						</Button>
 					</div>
 
@@ -214,4 +253,3 @@ export function BuyThemeModal({
 		</Dialog>
 	);
 }
-

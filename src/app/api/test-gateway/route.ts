@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
 	const apiKey = process.env.AI_GATEWAY_API_KEY;
 	const hasKey = !!apiKey;
-	const keyPrefix = apiKey ? apiKey.substring(0, 10) + "..." : "NOT SET";
+	const keyPrefix = apiKey ? `${apiKey.substring(0, 10)}...` : "NOT SET";
 
 	// Test the credits endpoint
 	let credits = null;

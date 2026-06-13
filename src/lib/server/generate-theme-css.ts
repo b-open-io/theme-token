@@ -5,7 +5,7 @@
  * for zero-FOUC theme rendering.
  */
 
-import { toCss, type ThemeToken, type ThemeStyleProps } from "@theme-token/sdk";
+import { type ThemeStyleProps, type ThemeToken, toCss } from "@theme-token/sdk";
 
 /**
  * Generate inline CSS for a theme token
@@ -22,7 +22,7 @@ export function generateInlineThemeCss(theme: ThemeToken): string {
  */
 export function generateStylePropsCss(
 	styles: ThemeStyleProps,
-	selector: ":root" | ".dark"
+	selector: ":root" | ".dark",
 ): string {
 	const cssVars = Object.entries(styles)
 		.map(([key, value]) => `  --${key}: ${value};`)

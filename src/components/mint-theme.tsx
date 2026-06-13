@@ -1,12 +1,12 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
 	type ParseMetadata,
 	parseCss,
 	type ThemeToken,
 	validateThemeToken,
 } from "@theme-token/sdk";
-import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -31,7 +31,6 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 	const {
 		status,
 		connect,
-		balance,
 		inscribeTheme,
 		isInscribing,
 		error: walletError,
@@ -164,16 +163,10 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 				</div>
 			)}
 
-			{/* Balance Display */}
-			{isConnected && balance && (
+			{/* Wallet connection status */}
+			{isConnected && (
 				<div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
-					<div>
-						<p className="text-sm text-muted-foreground">Wallet Balance</p>
-						<p className="text-xl font-bold">{balance.bsv.toFixed(8)} BSV</p>
-						<p className="text-xs text-muted-foreground">
-							~${(balance.usdInCents / 100).toFixed(2)} USD
-						</p>
-					</div>
+					<p className="text-sm text-muted-foreground">Wallet</p>
 					<Badge variant="outline" className="gap-1">
 						<div className="h-2 w-2 rounded-full bg-green-500" />
 						Connected
@@ -236,11 +229,15 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 								<div className="flex -space-x-1">
 									<div
 										className="h-6 w-6 rounded-full border-2 border-background"
-										style={{ backgroundColor: cached.theme.styles[mode].primary }}
+										style={{
+											backgroundColor: cached.theme.styles[mode].primary,
+										}}
 									/>
 									<div
 										className="h-6 w-6 rounded-full border-2 border-background"
-										style={{ backgroundColor: cached.theme.styles[mode].background }}
+										style={{
+											backgroundColor: cached.theme.styles[mode].background,
+										}}
 									/>
 								</div>
 								<div>
@@ -372,7 +369,11 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			<Button
 				size="lg"
 				className="w-full gap-2"
-				disabled={isInscribing || !currentTheme || (isConnected && validationError !== null)}
+				disabled={
+					isInscribing ||
+					!currentTheme ||
+					(isConnected && validationError !== null)
+				}
 				onClick={isConnected ? handleMint : connect}
 			>
 				{isInscribing ? (

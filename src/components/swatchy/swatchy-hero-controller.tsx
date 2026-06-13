@@ -1,7 +1,7 @@
 "use client";
 
+import { useMotionValueEvent, useScroll } from "framer-motion";
 import { useEffect } from "react";
-import { useScroll, useMotionValueEvent } from "framer-motion";
 import { useSwatchyStore } from "./swatchy-store";
 
 /**

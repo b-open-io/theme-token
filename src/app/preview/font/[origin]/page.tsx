@@ -1,7 +1,6 @@
 "use client";
 
 import { getOrdfsUrl } from "@theme-token/sdk";
-import { use, useCallback, useEffect, useState } from "react";
 import {
 	ArrowLeft,
 	Copy,
@@ -15,6 +14,7 @@ import {
 	Type,
 } from "lucide-react";
 import Link from "next/link";
+import { use, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,12 +22,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import {
-	loadFontByOrigin,
-	getCachedFont,
-	fetchFontMetadata,
 	type FontMetadata,
+	fetchFontMetadata,
+	getCachedFont,
+	loadFontByOrigin,
 } from "@/lib/font-loader";
-import { fetchFontMarketListings, type FontMarketListing } from "@/lib/yours-wallet";
+import {
+	type FontMarketListing,
+	fetchFontMarketListings,
+} from "@/lib/yours-wallet";
 
 // Sample text for font preview
 const PANGRAM = "The quick brown fox jumps over the lazy dog";
@@ -153,7 +156,8 @@ export default function FontPreviewPage({
 		toast.success("Copied", { description: "Origin copied to clipboard" });
 	};
 
-	const displayName = metadata?.name || listing?.metadata?.name || `Font ${origin.slice(0, 8)}`;
+	const displayName =
+		metadata?.name || listing?.metadata?.name || `Font ${origin.slice(0, 8)}`;
 
 	return (
 		<div className="container mx-auto max-w-6xl px-4 py-8">
@@ -315,7 +319,8 @@ export default function FontPreviewPage({
 							<div className="rounded-xl border border-border bg-card p-4">
 								<div className="mb-4 text-center">
 									<p className="text-2xl font-bold">
-										{formatUsd(listing.price) || `${formatBSV(listing.price)} BSV`}
+										{formatUsd(listing.price) ||
+											`${formatBSV(listing.price)} BSV`}
 									</p>
 									{formatUsd(listing.price) && (
 										<p className="text-sm text-muted-foreground">
@@ -326,9 +331,7 @@ export default function FontPreviewPage({
 								<Button
 									className="w-full"
 									disabled={purchasing}
-									onClick={() =>
-										isConnected ? handlePurchase() : connect()
-									}
+									onClick={() => (isConnected ? handlePurchase() : connect())}
 								>
 									{purchasing ? (
 										<>
@@ -353,15 +356,11 @@ export default function FontPreviewPage({
 							<dl className="space-y-2 text-sm">
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">Style</dt>
-									<dd className="font-mono">
-										{metadata?.style || "normal"}
-									</dd>
+									<dd className="font-mono">{metadata?.style || "normal"}</dd>
 								</div>
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">Weight</dt>
-									<dd className="font-mono">
-										{metadata?.weight || "400"}
-									</dd>
+									<dd className="font-mono">{metadata?.weight || "400"}</dd>
 								</div>
 								{metadata?.glyphCount && (
 									<div className="flex justify-between">

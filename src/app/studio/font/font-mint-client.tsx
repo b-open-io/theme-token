@@ -1,27 +1,37 @@
 "use client";
 
-import { Suspense } from "react";
 import { Loader2, RotateCcw, Upload, Wallet, Wand2 } from "lucide-react";
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { AIGenerateTab, type GeneratedFont, type CompiledFont } from "@/components/font-mint/ai-generate-tab";
-import { DropZoneCLI, type FontFileWithValidation } from "@/components/font-mint/drop-zone-cli";
-import type { ZipFontMetadata } from "@/lib/zip-font-loader";
-import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
-import { GeneratedFontPreview } from "@/components/font-mint/generated-font-preview";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
-	MetadataForm,
-	type FontMetadata,
-	type FontAttestations,
-	areAttestationsComplete,
-	getDefaultAttestations,
-} from "@/components/font-mint/metadata-form";
+	AIGenerateTab,
+	type CompiledFont,
+	type GeneratedFont,
+} from "@/components/font-mint/ai-generate-tab";
 import { CostMatrix } from "@/components/font-mint/cost-matrix";
+import {
+	DropZoneCLI,
+	type FontFileWithValidation,
+} from "@/components/font-mint/drop-zone-cli";
+import { GeneratedFontPreview } from "@/components/font-mint/generated-font-preview";
+import { LiveTypeCanvas } from "@/components/font-mint/live-type-canvas";
+import {
+	areAttestationsComplete,
+	type FontAttestations,
+	type FontMetadata,
+	getDefaultAttestations,
+	MetadataForm,
+} from "@/components/font-mint/metadata-form";
 import { TransactionTerminal } from "@/components/font-mint/transaction-terminal";
-import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { Button } from "@/components/ui/button";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import type { ZipFontMetadata } from "@/lib/zip-font-loader";
 
 export interface FontFile {
 	file: File;
@@ -47,10 +57,12 @@ function FontMintPageContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	const { status, connect, balance, addresses } = useYoursWallet();
+	const { status, connect } = useYoursWallet();
 	const [inputMode, setInputMode] = useState<InputMode>("upload");
 	const [fontFiles, setFontFiles] = useState<FontFileWithValidation[]>([]);
-	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(null);
+	const [generatedFont, setGeneratedFont] = useState<GeneratedFont | null>(
+		null,
+	);
 	const [compiledFont, setCompiledFont] = useState<CompiledFont | null>(null);
 	const [metadata, setMetadata] = useState<FontMetadata>({
 		name: "",
@@ -58,13 +70,15 @@ function FontMintPageContent() {
 		license: "CC0_1.0",
 		website: "",
 	});
-	const [attestations, setAttestations] = useState<FontAttestations>(getDefaultAttestations());
+	const [attestations, setAttestations] = useState<FontAttestations>(
+		getDefaultAttestations(),
+	);
 	const [isMinting, setIsMinting] = useState(false);
 	const [mintResult, setMintResult] = useState<{
 		txid: string;
 		ordfsUrl: string;
 	} | null>(null);
-	
+
 	// AI generation settings (lifted for URL sync)
 	type AIModel = "gemini-3-pro" | "claude-opus-4.5";
 	const [aiModel, setAiModel] = useState<AIModel>("gemini-3-pro");
@@ -96,17 +110,22 @@ function FontMintPageContent() {
 		}
 
 		if (nameParam || authorParam || licenseParam || websiteParam) {
-			setMetadata(prev => ({
+			setMetadata((prev) => ({
 				...prev,
 				...(nameParam && { name: nameParam }),
 				...(authorParam && { author: authorParam }),
-				...(licenseParam && { license: licenseParam as FontMetadata["license"] }),
+				...(licenseParam && {
+					license: licenseParam as FontMetadata["license"],
+				}),
 				...(websiteParam && { website: websiteParam }),
 			}));
 		}
 
 		// AI settings
-		if (modelParam && ["gemini-3-pro", "claude-opus-4.5"].includes(modelParam)) {
+		if (
+			modelParam &&
+			["gemini-3-pro", "claude-opus-4.5"].includes(modelParam)
+		) {
 			setAiModel(modelParam as AIModel);
 		}
 		if (promptParam) setAiPrompt(promptParam);
@@ -117,19 +136,21 @@ function FontMintPageContent() {
 	const syncToUrl = useCallback(() => {
 		if (!isInitialized.current) return;
 		if (urlSyncTimeout.current) clearTimeout(urlSyncTimeout.current);
-		
+
 		urlSyncTimeout.current = setTimeout(() => {
 			const params = new URLSearchParams();
-			
+
 			// Add mode if not default
 			if (inputMode !== "upload") params.set("mode", inputMode);
-			
+
 			// Add metadata fields if set
 			if (metadata.name.trim()) params.set("name", metadata.name.trim());
 			if (metadata.author.trim()) params.set("author", metadata.author.trim());
-			if (metadata.license !== "CC0_1.0") params.set("license", metadata.license);
-			if (metadata.website?.trim()) params.set("website", metadata.website.trim());
-			
+			if (metadata.license !== "CC0_1.0")
+				params.set("license", metadata.license);
+			if (metadata.website?.trim())
+				params.set("website", metadata.website.trim());
+
 			// AI settings (only when in AI mode)
 			if (inputMode === "ai") {
 				if (aiModel !== "gemini-3-pro") params.set("model", aiModel);
@@ -159,7 +180,11 @@ function FontMintPageContent() {
 	const estimatedCost = totalBytes + 500;
 
 	const isAIGenerated = generatedFont !== null;
-	const attestationsComplete = areAttestationsComplete(attestations, metadata.license, isAIGenerated);
+	const attestationsComplete = areAttestationsComplete(
+		attestations,
+		metadata.license,
+		isAIGenerated,
+	);
 
 	// Check if any uploaded fonts have validation errors
 	const hasValidationErrors = fontFiles.some(
@@ -199,17 +224,20 @@ function FontMintPageContent() {
 		setMintResult(null);
 	};
 
-	const handleAIFontGenerated = useCallback((font: GeneratedFont, compiled?: CompiledFont) => {
-		setGeneratedFont(font);
-		setCompiledFont(compiled ?? null);
-		setMetadata((prev) => ({
-			...prev,
-			name: font.name,
-			author: `AI Generated (${font.generatedBy})`,
-			isAIGenerated: true,
-			prompt: font.prompt,
-		}));
-	}, []);
+	const handleAIFontGenerated = useCallback(
+		(font: GeneratedFont, compiled?: CompiledFont) => {
+			setGeneratedFont(font);
+			setCompiledFont(compiled ?? null);
+			setMetadata((prev) => ({
+				...prev,
+				name: font.name,
+				author: `AI Generated (${font.generatedBy})`,
+				isAIGenerated: true,
+				prompt: font.prompt,
+			}));
+		},
+		[],
+	);
 
 	// Clear generated font (called from AIGenerateTab when regenerating)
 	const handleClearGeneratedFont = useCallback(() => {
@@ -272,7 +300,10 @@ function FontMintPageContent() {
 	}, []);
 
 	// Check if there's content to clear
-	const hasContent = fontFiles.length > 0 || generatedFont !== null || metadata.name.trim() !== "";
+	const hasContent =
+		fontFiles.length > 0 ||
+		generatedFont !== null ||
+		metadata.name.trim() !== "";
 
 	if (mintResult) {
 		return (
@@ -298,7 +329,9 @@ function FontMintPageContent() {
 					<div className="mx-auto mb-6 max-w-lg rounded border border-border bg-muted/30 p-4 text-left font-mono text-xs">
 						<div className="mb-2">
 							<span className="text-muted-foreground">TXID: </span>
-							<span className="break-all text-foreground">{mintResult.txid}</span>
+							<span className="break-all text-foreground">
+								{mintResult.txid}
+							</span>
 						</div>
 						<div>
 							<span className="text-muted-foreground">ORDFS: </span>
@@ -322,7 +355,11 @@ function FontMintPageContent() {
 						>
 							[ COPY_URL ]
 						</Button>
-						<Button onClick={handleReset} size="sm" className="font-mono text-xs">
+						<Button
+							onClick={handleReset}
+							size="sm"
+							className="font-mono text-xs"
+						>
 							[ MINT_ANOTHER ]
 						</Button>
 					</div>
@@ -334,12 +371,23 @@ function FontMintPageContent() {
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* Main content area - resizable two panel layout */}
-			<ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1 overflow-hidden">
+			<ResizablePanelGroup
+				direction="horizontal"
+				className="min-h-0 flex-1 overflow-hidden"
+			>
 				{/* Left Panel: Controls (scrollable) */}
-				<ResizablePanel defaultSize={35} minSize={25} maxSize={50} className="flex min-h-0 flex-col bg-muted/5">
+				<ResizablePanel
+					defaultSize={35}
+					minSize={25}
+					maxSize={50}
+					className="flex min-h-0 flex-col bg-muted/5"
+				>
 					{/* Mode Tabs */}
 					<div className="flex items-center border-b border-border px-4 py-2">
-						<Tabs value={inputMode} onValueChange={(v) => setInputMode(v as InputMode)}>
+						<Tabs
+							value={inputMode}
+							onValueChange={(v) => setInputMode(v as InputMode)}
+						>
 							<TabsList>
 								<TabsTrigger value="upload">
 									<Upload className="h-3.5 w-3.5" />
@@ -394,7 +442,10 @@ function FontMintPageContent() {
 				<ResizableHandle withHandle />
 
 				{/* Right Panel: Preview (fixed, no scroll) */}
-				<ResizablePanel defaultSize={65} className="hidden min-h-0 flex-col overflow-hidden lg:flex">
+				<ResizablePanel
+					defaultSize={65}
+					className="hidden min-h-0 flex-col overflow-hidden lg:flex"
+				>
 					{generatedFont ? (
 						<GeneratedFontPreview
 							font={generatedFont}
@@ -443,11 +494,6 @@ function FontMintPageContent() {
 
 				{/* Right: Wallet + Action */}
 				<div className="flex shrink-0 items-center gap-3">
-					{isConnected && balance?.satoshis !== undefined && (
-						<span className="hidden font-mono text-xs text-muted-foreground sm:block">
-							{formatSats(balance.satoshis)}
-						</span>
-					)}
 					{isConnected ? (
 						<Button
 							onClick={handleMint}

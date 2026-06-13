@@ -8,8 +8,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useYoursWallet } from "./use-yours-wallet";
 import type { DraftMetadata } from "@/lib/storage/types";
+import { useYoursWallet } from "./use-yours-wallet";
 
 export interface PatternDraft {
 	id: string;
@@ -28,7 +28,9 @@ export function usePatternDrafts() {
 
 	const [drafts, setDrafts] = useState<PatternDraft[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(null);
+	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(
+		null,
+	);
 	const hasFetched = useRef(false);
 
 	/**
@@ -96,7 +98,11 @@ export function usePatternDrafts() {
 	 * Save a pattern SVG as a draft
 	 */
 	const saveDraft = useCallback(
-		async (svg: string, name: string, prompt?: string): Promise<PatternDraft | null> => {
+		async (
+			svg: string,
+			name: string,
+			prompt?: string,
+		): Promise<PatternDraft | null> => {
 			if (!ordAddress) return null;
 
 			try {

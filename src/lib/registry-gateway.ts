@@ -117,7 +117,9 @@ export async function hydrateRegistryManifest(
 			const content = await fetchTextFromOrdfs(`${origin}/${file.path}`);
 
 			if (!content) {
-				console.warn(`[Registry Gateway] Failed to fetch file at ${origin}/${file.path}`);
+				console.warn(
+					`[Registry Gateway] Failed to fetch file at ${origin}/${file.path}`,
+				);
 				return file;
 			}
 
@@ -139,7 +141,9 @@ export async function hydrateRegistryManifest(
 /**
  * Convert a hydrated registry manifest to shadcn CLI-compatible format
  */
-export function toShadcnRegistryItem(manifest: RegistryManifest): Record<string, unknown> {
+export function toShadcnRegistryItem(
+	manifest: RegistryManifest,
+): Record<string, unknown> {
 	return {
 		$schema: "https://ui.shadcn.com/schema/registry-item.json",
 		name: manifest.name,
@@ -163,7 +167,9 @@ export function toShadcnRegistryItem(manifest: RegistryManifest): Record<string,
  */
 export function validateRegistryManifest(
 	data: unknown,
-): { valid: true; manifest: RegistryManifest } | { valid: false; error: string } {
+):
+	| { valid: true; manifest: RegistryManifest }
+	| { valid: false; error: string } {
 	if (!data || typeof data !== "object") {
 		return { valid: false, error: "Invalid data: expected object" };
 	}
@@ -192,7 +198,10 @@ export function validateRegistryManifest(
 	];
 
 	if (!validTypes.includes(obj.type as RegistryItemType)) {
-		return { valid: false, error: `Invalid type: ${obj.type}. Expected one of: ${validTypes.join(", ")}` };
+		return {
+			valid: false,
+			error: `Invalid type: ${obj.type}. Expected one of: ${validTypes.join(", ")}`,
+		};
 	}
 
 	if (!Array.isArray(obj.files)) {

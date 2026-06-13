@@ -1,10 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createDraft } from "@/lib/storage";
-import { generateWithValidation } from "@/lib/validated-generation";
-import { getInstalledPackageNames, getUiComponentNames, validateGeneratedRegistryCode } from "@/lib/registry/validate-generated";
+import {
+	getInstalledPackageNames,
+	getUiComponentNames,
+	validateGeneratedRegistryCode,
+} from "@/lib/registry/validate-generated";
 import { extractComponentName } from "@/lib/sandbox";
 import { createSandboxPreview } from "@/lib/sandbox-preview";
+import { createDraft } from "@/lib/storage";
+import { generateWithValidation } from "@/lib/validated-generation";
 
 export const runtime = "nodejs";
 
@@ -144,7 +148,15 @@ Available shadcn ui components (sample): ${uiList}${ui.length > 80 ? ", ..." : "
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { prompt, name, includeHook, userId, paymentTxid, attempt, previousErrors } = body as {
+		const {
+			prompt,
+			name,
+			includeHook,
+			userId,
+			paymentTxid,
+			attempt,
+			previousErrors,
+		} = body as {
 			prompt?: string;
 			name?: string;
 			includeHook?: boolean;
@@ -155,7 +167,10 @@ export async function POST(request: NextRequest) {
 		};
 
 		if (!prompt) {
-			return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Prompt is required" },
+				{ status: 400 },
+			);
 		}
 
 		// Build the user prompt with optional constraints
@@ -169,8 +184,13 @@ export async function POST(request: NextRequest) {
 			userPrompt += `\n\nInclude a companion React hook to manage state/logic.`;
 		}
 
-		const attemptNumber = typeof attempt === "number" && attempt > 0 ? attempt : 1;
-		if (attemptNumber > 1 && Array.isArray(previousErrors) && previousErrors.length > 0) {
+		const attemptNumber =
+			typeof attempt === "number" && attempt > 0 ? attempt : 1;
+		if (
+			attemptNumber > 1 &&
+			Array.isArray(previousErrors) &&
+			previousErrors.length > 0
+		) {
 			userPrompt += `\n\nIMPORTANT: Your previous attempt failed to build/preview. Fix these issues exactly:\n${previousErrors.map((e, i) => `${i + 1}. ${e}`).join("\n")}\n\nRegenerate a complete, working block that only imports from packages already installed in this project and local shadcn components under @/components/ui.`;
 		}
 
@@ -211,7 +231,10 @@ export async function POST(request: NextRequest) {
 					validation: {
 						valid: false,
 						errors: importValidation.errors,
-						warnings: [...result.validation.warnings, ...importValidation.warnings],
+						warnings: [
+							...result.validation.warnings,
+							...importValidation.warnings,
+						],
 					},
 					attempts: attemptNumber,
 				},
@@ -221,7 +244,9 @@ export async function POST(request: NextRequest) {
 
 		// Pick the main file for preview bundling (prefer registry:block .tsx)
 		const mainFile =
-			block.files.find((f) => f.type === "registry:block" && f.path.endsWith(".tsx")) ??
+			block.files.find(
+				(f) => f.type === "registry:block" && f.path.endsWith(".tsx"),
+			) ??
 			block.files.find((f) => f.path.endsWith(".tsx")) ??
 			block.files[0];
 
@@ -229,7 +254,11 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json(
 				{
 					error: "Block validation failed",
-					validation: { valid: false, errors: ["No files returned for block"], warnings: [] },
+					validation: {
+						valid: false,
+						errors: ["No files returned for block"],
+						warnings: [],
+					},
 					attempts: attemptNumber,
 				},
 				{ status: 422 },
@@ -251,7 +280,10 @@ export async function POST(request: NextRequest) {
 					validation: {
 						valid: false,
 						errors: [sandboxPreview.error || "Sandbox bundling failed"],
-						warnings: [...result.validation.warnings, ...importValidation.warnings],
+						warnings: [
+							...result.validation.warnings,
+							...importValidation.warnings,
+						],
 					},
 					attempts: attemptNumber,
 				},

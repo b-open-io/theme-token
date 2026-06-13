@@ -321,9 +321,7 @@ export async function fetchThemeMarketListings(): Promise<
 	const themeListings: ThemeMarketListing[] = [];
 
 	// Filter for potential theme tokens first (by map metadata)
-	const potentialThemes = listings.filter(
-		(l) => l.data?.map?.type === "theme",
-	);
+	const potentialThemes = listings.filter((l) => l.data?.map?.type === "theme");
 
 	const { validateThemeToken } = await import("@theme-token/sdk");
 
@@ -357,9 +355,7 @@ export async function fetchThemeListingByOrigin(
 ): Promise<ThemeMarketListing | null> {
 	try {
 		// Query the market API for this specific origin
-		const response = await fetch(
-			`${ORDINALS_API}/market?origin=${origin}`,
-		);
+		const response = await fetch(`${ORDINALS_API}/market?origin=${origin}`);
 
 		if (!response.ok) {
 			return null;
@@ -417,7 +413,12 @@ export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 			);
 
 			if (!response.ok) {
-				console.error("[Font Market] API error for", fontType, ":", response.status);
+				console.error(
+					"[Font Market] API error for",
+					fontType,
+					":",
+					response.status,
+				);
 				continue;
 			}
 
@@ -437,9 +438,7 @@ export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 						};
 					}) => {
 						const mapData = item.origin?.data?.map || item.data?.map;
-						return (
-							mapData?.app === "theme-token" && mapData?.type === "font"
-						);
+						return mapData?.app === "theme-token" && mapData?.type === "font";
 					},
 				)
 				.map(
@@ -479,7 +478,7 @@ export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 								style: mapData.style || "normal",
 								prompt: mapData.prompt,
 								glyphCount: mapData.glyphCount
-									? parseInt(mapData.glyphCount)
+									? parseInt(mapData.glyphCount, 10)
 									: undefined,
 							},
 						};
@@ -574,7 +573,7 @@ export async function fetchAllInscribedFonts(): Promise<FontMarketListing[]> {
 							style: mapData.style || "normal",
 							prompt: mapData.prompt,
 							glyphCount: mapData.glyphCount
-								? parseInt(mapData.glyphCount)
+								? parseInt(mapData.glyphCount, 10)
 								: undefined,
 						},
 					};
@@ -643,10 +642,18 @@ export interface ImageMarketListing extends MarketListing {
  * Fetch curated theme-token image assets from the marketplace
  * Only returns assets with map.app === "theme-token" AND map.type in (tile, wallpaper, icon)
  */
-export async function fetchImageMarketListings(): Promise<ImageMarketListing[]> {
+export async function fetchImageMarketListings(): Promise<
+	ImageMarketListing[]
+> {
 	try {
 		// Query the market API for image types
-		const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
+		const imageTypes = [
+			"image/png",
+			"image/jpeg",
+			"image/gif",
+			"image/webp",
+			"image/svg+xml",
+		];
 		const allListings: ImageMarketListing[] = [];
 		const validAssetTypes: AssetType[] = ["tile", "wallpaper", "icon"];
 
@@ -656,7 +663,12 @@ export async function fetchImageMarketListings(): Promise<ImageMarketListing[]> 
 			);
 
 			if (!response.ok) {
-				console.error("[Image Market] API error for", imageType, ":", response.status);
+				console.error(
+					"[Image Market] API error for",
+					imageType,
+					":",
+					response.status,
+				);
 				continue;
 			}
 

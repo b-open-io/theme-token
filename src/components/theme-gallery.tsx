@@ -9,8 +9,11 @@ import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
-import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
-import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
+import { type CachedTheme, fetchCachedThemes } from "@/lib/themes-cache";
+import {
+	fetchThemeMarketListings,
+	type ThemeMarketListing,
+} from "@/lib/yours-wallet";
 
 function formatPrice(satoshis: number): string {
 	const bsv = satoshis / 100_000_000;
@@ -118,7 +121,10 @@ export function saveAIThemeToDrafts(theme: ThemeToken, txid: string): string {
 		if (txid) existingDraft.paymentTxid = txid;
 
 		// Move to front of array
-		drafts = [existingDraft, ...drafts.filter((d) => d.id !== existingDraft.id)];
+		drafts = [
+			existingDraft,
+			...drafts.filter((d) => d.id !== existingDraft.id),
+		];
 		localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
 		return existingDraft.id;
 	}
@@ -174,6 +180,7 @@ function ThemeCard({
 		<div className="absolute inset-0 flex">
 			{colors.map((color, i) => (
 				<div
+					// biome-ignore lint/suspicious/noArrayIndexKey: fixed-length stripe list with potentially duplicate color values; index is the only stable identity
 					key={i}
 					className="flex-1"
 					style={{ backgroundColor: color }}
@@ -184,7 +191,9 @@ function ThemeCard({
 
 	// Only assign the real ViewTransition name on hover to avoid duplicates
 	// Include index to ensure uniqueness in marquee (same origin appears twice)
-	const viewTransitionName = isHovered ? `theme-stripe-${origin}-${index}` : undefined;
+	const viewTransitionName = isHovered
+		? `theme-stripe-${origin}-${index}`
+		: undefined;
 
 	return (
 		<Link
@@ -236,7 +245,10 @@ export function ThemeGallery() {
 	const [listings, setListings] = useState<ThemeMarketListing[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
-	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+	const [successModal, setSuccessModal] = useState<{
+		theme: ThemeToken;
+		txid: string;
+	} | null>(null);
 	const [isHovered, setIsHovered] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -250,13 +262,12 @@ export function ThemeGallery() {
 	}, [listings]);
 
 	useEffect(() => {
-		Promise.all([
-			fetchCachedThemes(),
-			fetchThemeMarketListings(),
-		]).then(([themes, marketListings]) => {
-			setPublishedThemes(themes);
-			setListings(marketListings);
-		}).finally(() => setIsLoading(false));
+		Promise.all([fetchCachedThemes(), fetchThemeMarketListings()])
+			.then(([themes, marketListings]) => {
+				setPublishedThemes(themes);
+				setListings(marketListings);
+			})
+			.finally(() => setIsLoading(false));
 	}, []);
 
 	const handlePurchaseComplete = (txid: string) => {
@@ -288,6 +299,7 @@ export function ThemeGallery() {
 			</div>
 
 			{/* Marquee container */}
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: hover handlers only pause the auto-scroll marquee; no click/keyboard interaction to expose */}
 			<div
 				ref={containerRef}
 				className="relative"
@@ -296,19 +308,21 @@ export function ThemeGallery() {
 			>
 				{isLoading ? (
 					<div className="flex gap-3 px-3">
-						{Array.from({ length: 8 }).map((_, i) => (
-							<div
-								key={i}
-								className="flex-shrink-0 rounded-lg border border-border bg-card"
-							>
-								{/* Skeleton color stripes - matches h-16 w-40 */}
-								<div className="h-16 w-40 rounded-t-lg bg-muted animate-pulse" />
-								{/* Skeleton theme name - matches px-2 py-1.5 */}
-								<div className="px-2 py-1.5">
-									<div className="h-4 w-24 rounded bg-muted animate-pulse" />
+						{Array.from({ length: 8 }, (_, i) => `skeleton-${i}`).map(
+							(skeletonKey) => (
+								<div
+									key={skeletonKey}
+									className="flex-shrink-0 rounded-lg border border-border bg-card"
+								>
+									{/* Skeleton color stripes - matches h-16 w-40 */}
+									<div className="h-16 w-40 rounded-t-lg bg-muted animate-pulse" />
+									{/* Skeleton theme name - matches px-2 py-1.5 */}
+									<div className="px-2 py-1.5">
+										<div className="h-4 w-24 rounded bg-muted animate-pulse" />
+									</div>
 								</div>
-							</div>
-						))}
+							),
+						)}
 					</div>
 				) : publishedThemes.length === 0 ? (
 					<p className="text-center text-sm text-muted-foreground py-4">
@@ -339,7 +353,10 @@ export function ThemeGallery() {
 											theme={published.theme}
 											origin={published.origin}
 											listing={listing}
-											onBuy={() => listing && setBuyListing({ ...listing, origin: published.origin })}
+											onBuy={() =>
+												listing &&
+												setBuyListing({ ...listing, origin: published.origin })
+											}
 											index={setIndex * publishedThemes.length + i}
 										/>
 									);

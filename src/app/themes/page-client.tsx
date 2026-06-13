@@ -1,7 +1,19 @@
 "use client";
 
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, Loader2, MessageCircle, RefreshCw, ShoppingCart, Sparkles } from "lucide-react";
+import {
+	useInfiniteQuery,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import type { ThemeToken } from "@theme-token/sdk";
+import {
+	Eye,
+	Loader2,
+	MessageCircle,
+	RefreshCw,
+	ShoppingCart,
+	Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
@@ -9,13 +21,15 @@ import { BuyThemeModal } from "@/components/market/buy-theme-modal";
 import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal";
 import { PageContainer } from "@/components/page-container";
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
-import { useTheme } from "@/components/theme-provider";
 import { storeRemixTheme } from "@/components/theme-gallery";
+import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { type CachedTheme } from "@/lib/themes-cache";
-import { fetchThemeMarketListings, type ThemeMarketListing } from "@/lib/yours-wallet";
-import type { ThemeToken } from "@theme-token/sdk";
+import type { CachedTheme } from "@/lib/themes-cache";
+import {
+	fetchThemeMarketListings,
+	type ThemeMarketListing,
+} from "@/lib/yours-wallet";
 
 interface ThemesPageResponse {
 	themes: CachedTheme[];
@@ -79,6 +93,7 @@ function ThemeCard({
 	const viewTransitionName = isHovered ? `theme-stripe-${origin}` : undefined;
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: decorative hover state for ViewTransition naming, no interactive semantics
 		<div
 			className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg animate-in fade-in duration-300"
 			onMouseEnter={() => setIsHovered(true)}
@@ -91,7 +106,12 @@ function ThemeCard({
 					<ViewTransition name={viewTransitionName}>
 						<div className="absolute inset-0 flex">
 							{colors.map((color, i) => (
-								<div key={i} className="flex-1" style={{ backgroundColor: color }} />
+								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: fixed-order color stripes that never reorder
+									key={i}
+									className="flex-1"
+									style={{ backgroundColor: color }}
+								/>
 							))}
 						</div>
 					</ViewTransition>
@@ -160,11 +180,16 @@ export function ThemesPageClient() {
 	const queryClient = useQueryClient();
 	const { openChat, setPendingMessage } = useSwatchyStore();
 	const [buyListing, setBuyListing] = useState<ThemeMarketListing | null>(null);
-	const [successModal, setSuccessModal] = useState<{ theme: ThemeToken; txid: string } | null>(null);
+	const [successModal, setSuccessModal] = useState<{
+		theme: ThemeToken;
+		txid: string;
+	} | null>(null);
 	const loadMoreRef = useRef<HTMLDivElement>(null);
 
 	const handleCreateWithSwatchy = () => {
-		setPendingMessage("I want to create a new theme. Can you help me design something?");
+		setPendingMessage(
+			"I want to create a new theme. Can you help me design something?",
+		);
 		openChat();
 	};
 
@@ -179,7 +204,9 @@ export function ThemesPageClient() {
 	} = useInfiniteQuery({
 		queryKey: ["themes"],
 		queryFn: async ({ pageParam = 0 }) => {
-			const res = await fetch(`/api/themes/cache?cursor=${pageParam}&limit=${PAGE_SIZE}`);
+			const res = await fetch(
+				`/api/themes/cache?cursor=${pageParam}&limit=${PAGE_SIZE}`,
+			);
 			const data = await res.json();
 			return data as ThemesPageResponse;
 		},
@@ -203,7 +230,7 @@ export function ThemesPageClient() {
 					fetchNextPage();
 				}
 			},
-			{ threshold: 0.1 }
+			{ threshold: 0.1 },
 		);
 
 		if (loadMoreRef.current) {
@@ -256,7 +283,9 @@ export function ThemesPageClient() {
 	};
 
 	// Count how many are for sale
-	const forSaleCount = themes.filter(t => listingsByOrigin.has(t.origin)).length;
+	const forSaleCount = themes.filter((t) =>
+		listingsByOrigin.has(t.origin),
+	).length;
 
 	return (
 		<div className="min-h-screen">
@@ -276,7 +305,9 @@ export function ThemesPageClient() {
 							onClick={handleRefresh}
 							disabled={isRefreshing}
 						>
-							<RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+							<RefreshCw
+								className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+							/>
 							Refresh
 						</Button>
 						<Button size="sm" onClick={handleCreateWithSwatchy}>
@@ -289,9 +320,13 @@ export function ThemesPageClient() {
 				{/* Stats */}
 				<div className="mb-8 flex items-center gap-6 text-sm text-muted-foreground">
 					<span>
-						<strong className="text-foreground">{totalCount}</strong> themes inscribed
+						<strong className="text-foreground">{totalCount}</strong> themes
+						inscribed
 						{themes.length < totalCount && (
-							<span className="text-muted-foreground"> (showing {themes.length})</span>
+							<span className="text-muted-foreground">
+								{" "}
+								(showing {themes.length})
+							</span>
 						)}
 					</span>
 					{forSaleCount > 0 && (
@@ -306,6 +341,7 @@ export function ThemesPageClient() {
 				{themesLoading ? (
 					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{Array.from({ length: 8 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders with fixed count
 							<ThemeCardSkeleton key={i} />
 						))}
 					</div>
@@ -317,9 +353,9 @@ export function ThemesPageClient() {
 							Be the first to inscribe a theme on the blockchain
 						</p>
 						<Button onClick={handleCreateWithSwatchy}>
-						<MessageCircle className="mr-2 h-4 w-4" />
-						Create Theme
-					</Button>
+							<MessageCircle className="mr-2 h-4 w-4" />
+							Create Theme
+						</Button>
 					</div>
 				) : (
 					<>
@@ -332,7 +368,10 @@ export function ThemesPageClient() {
 										cached={cached}
 										listing={listing}
 										onRemix={() => handleRemix(cached)}
-										onBuy={() => listing && setBuyListing({ ...listing, origin: cached.origin })}
+										onBuy={() =>
+											listing &&
+											setBuyListing({ ...listing, origin: cached.origin })
+										}
 									/>
 								);
 							})}

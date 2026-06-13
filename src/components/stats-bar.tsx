@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Palette, Users, Coins, Zap } from "lucide-react";
+import { Coins, Palette, Users, Zap } from "lucide-react";
 import Image from "next/image";
 
 interface Stat {

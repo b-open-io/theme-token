@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface UseBsvRateResult {
 	rate: number | null;
@@ -14,7 +14,7 @@ export function useBsvRate(): UseBsvRateResult {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchRate = async () => {
+	const fetchRate = useCallback(async () => {
 		setIsLoading(true);
 		setError(null);
 
@@ -32,11 +32,11 @@ export function useBsvRate(): UseBsvRateResult {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		fetchRate();
-	}, []);
+	}, [fetchRate]);
 
 	return {
 		rate,

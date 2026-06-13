@@ -12,7 +12,7 @@
  */
 
 import { Utils } from "@bsv/sdk";
-import type { BundleItem, BundleAssetType } from "@/hooks/use-yours-wallet";
+import type { BundleAssetType, BundleItem } from "@/hooks/use-yours-wallet";
 
 // ============================================================================
 // Core Types
@@ -164,7 +164,8 @@ export function createBundle(options: BundlerOptions): BundleResult {
 		const manifestJson = JSON.stringify(manifest.content, null, 2);
 		const manifestBase64 = toBase64(manifestJson);
 
-		const size = estimateBase64Size(manifestBase64) + estimateInscriptionOverhead();
+		const size =
+			estimateBase64Size(manifestBase64) + estimateInscriptionOverhead();
 		totalSize += size;
 
 		items.push({
@@ -240,7 +241,9 @@ export interface ComponentBundleOptions {
 	author?: string;
 }
 
-export function buildComponentBundle(options: ComponentBundleOptions): BundleResult {
+export function buildComponentBundle(
+	options: ComponentBundleOptions,
+): BundleResult {
 	const {
 		name,
 		type,

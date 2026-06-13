@@ -1,10 +1,10 @@
 "use client";
 
-import { Loader2, Wallet, AlertCircle, Sparkles, Zap } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles, Wallet, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import type { PaymentRequest as PaymentRequestType } from "./swatchy-store";
 import { BASE_PRICES, type PricingTool } from "@/lib/pricing";
+import type { PaymentRequest as PaymentRequestType } from "./swatchy-store";
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	generateTheme: "Theme Generation",
@@ -13,7 +13,8 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 };
 
 const TOOL_DESCRIPTIONS: Record<string, string> = {
-	generateTheme: "Create a unique AI-generated theme with colors, typography, and styling",
+	generateTheme:
+		"Create a unique AI-generated theme with colors, typography, and styling",
 	generateFont: "Generate a custom display font with full character set",
 	generatePattern: "Create a seamless SVG pattern for backgrounds",
 };
@@ -23,6 +24,8 @@ interface PaymentRequestProps {
 	onConfirm: () => void;
 	onCancel: () => void;
 	isProcessing?: boolean;
+	/** Error from a previous payment attempt (e.g. insufficient funds). Enables retry. */
+	paymentError?: string | null;
 }
 
 export function PaymentRequestCard({
@@ -30,13 +33,13 @@ export function PaymentRequestCard({
 	onConfirm,
 	onCancel,
 	isProcessing = false,
+	paymentError = null,
 }: PaymentRequestProps) {
-	const { status, balance, connect, hasPrismPass } = useYoursWallet();
+	const { status, connect, hasPrismPass } = useYoursWallet();
 
 	const displayName = TOOL_DISPLAY_NAMES[payment.toolName] ?? payment.toolName;
 	const description = TOOL_DESCRIPTIONS[payment.toolName] ?? "";
 	const isFree = payment.isFree ?? false;
-	const hasBalance = isFree || (balance?.satoshis ?? 0) >= payment.cost;
 	const isConnected = status === "connected";
 
 	// Check if discount was applied by comparing to base price
@@ -61,7 +64,9 @@ export function PaymentRequestCard({
 				<div className="flex-1">
 					<h4 className="font-medium text-sm">{displayName}</h4>
 					{description && (
-						<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+						<p className="mt-0.5 text-xs text-muted-foreground">
+							{description}
+						</p>
 					)}
 				</div>
 			</div>
@@ -77,7 +82,9 @@ export function PaymentRequestCard({
 							<span className="font-mono text-sm font-medium text-green-500">
 								FREE
 							</span>
-							<div className="text-[10px] text-green-600/80">First generation gift 🎁</div>
+							<div className="text-[10px] text-green-600/80">
+								First generation gift 🎁
+							</div>
 						</div>
 					</div>
 				) : (
@@ -104,14 +111,6 @@ export function PaymentRequestCard({
 								</span>
 							</div>
 						</div>
-						{isConnected && (
-							<div className="mt-1 flex items-center justify-between border-t border-border/50 pt-1">
-								<span className="text-xs text-muted-foreground">Your Balance</span>
-								<span className="font-mono text-xs">
-									{(balance?.satoshis ?? 0).toLocaleString()} sats
-								</span>
-							</div>
-						)}
 					</>
 				)}
 			</div>
@@ -124,11 +123,11 @@ export function PaymentRequestCard({
 				</div>
 			)}
 
-			{/* Insufficient balance warning */}
-			{isConnected && !hasBalance && (
-				<div className="mb-3 flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
-					<AlertCircle className="h-4 w-4" />
-					<span>Insufficient balance</span>
+			{/* Payment error (e.g. insufficient funds) - user can deposit and retry */}
+			{isConnected && paymentError && (
+				<div className="mb-3 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+					<AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+					<span>{paymentError} Add funds to your wallet, then retry.</span>
 				</div>
 			)}
 
@@ -144,11 +143,7 @@ export function PaymentRequestCard({
 				</Button>
 
 				{!isConnected ? (
-					<Button
-						size="sm"
-						onClick={() => connect()}
-						className="flex-1 gap-2"
-					>
+					<Button size="sm" onClick={() => connect()} className="flex-1 gap-2">
 						<Wallet className="h-4 w-4" />
 						Connect Wallet
 					</Button>
@@ -156,7 +151,7 @@ export function PaymentRequestCard({
 					<Button
 						size="sm"
 						onClick={onConfirm}
-						disabled={!hasBalance || isProcessing}
+						disabled={isProcessing}
 						className="flex-1 gap-2"
 					>
 						{isProcessing ? (
@@ -167,7 +162,11 @@ export function PaymentRequestCard({
 						) : (
 							<>
 								<Sparkles className="h-4 w-4" />
-								{isFree ? "Claim Free Generation" : "Pay & Generate"}
+								{isFree
+									? "Claim Free Generation"
+									: paymentError
+										? "Retry Payment"
+										: "Pay & Generate"}
 							</>
 						)}
 					</Button>

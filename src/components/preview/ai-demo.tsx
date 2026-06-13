@@ -1,19 +1,43 @@
 "use client";
 
-import { Message, MessageAction, MessageActions, MessageContent } from "@/components/ai-elements/message";
-import { PromptInput, PromptInputFooter, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
-import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
+import {
+	Brain,
+	Copy,
+	Paperclip,
+	RefreshCw,
+	ThumbsDown,
+	ThumbsUp,
+} from "lucide-react";
+import {
+	Message,
+	MessageAction,
+	MessageActions,
+	MessageContent,
+} from "@/components/ai-elements/message";
+import {
+	PromptInput,
+	PromptInputFooter,
+	PromptInputTextarea,
+} from "@/components/ai-elements/prompt-input";
+import {
+	Reasoning,
+	ReasoningContent,
+	ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
 import { Suggestion } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Brain, Copy, Paperclip, RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
 import { DemoSection } from "./utils";
 
 export function AiDemo() {
 	return (
 		<div className="grid gap-6 lg:grid-cols-3 items-start">
 			<div className="lg:col-span-2">
-				<DemoSection title="Chat Interface" description="AI interaction elements" className="h-full">
+				<DemoSection
+					title="Chat Interface"
+					description="AI interaction elements"
+					className="h-full"
+				>
 					<Card className="h-full flex flex-col">
 						<div className="p-6 space-y-6 flex-1">
 							{/* User Message */}
@@ -34,17 +58,32 @@ export function AiDemo() {
 											</div>
 										</ReasoningTrigger>
 										<ReasoningContent>
-											The user wants to know about styling AI components. I should explain how the theme tokens (primary, secondary, muted, etc.) map to the AI elements like messages, reasoning blocks, and input fields.
+											The user wants to know about styling AI components. I
+											should explain how the theme tokens (primary, secondary,
+											muted, etc.) map to the AI elements like messages,
+											reasoning blocks, and input fields.
 										</ReasoningContent>
 									</Reasoning>
-									
+
 									<p>
-										AI components automatically inherit your theme's colors and typography. For example:
+										AI components automatically inherit your theme's colors and
+										typography. For example:
 									</p>
 									<ul className="ml-4 list-disc space-y-1">
-										<li>User messages use <code className="bg-muted px-1 rounded">secondary</code> background</li>
-										<li>Assistant messages use <code className="bg-muted px-1 rounded">background</code></li>
-										<li>Reasoning blocks use <code className="bg-muted px-1 rounded">muted</code> colors</li>
+										<li>
+											User messages use{" "}
+											<code className="bg-muted px-1 rounded">secondary</code>{" "}
+											background
+										</li>
+										<li>
+											Assistant messages use{" "}
+											<code className="bg-muted px-1 rounded">background</code>
+										</li>
+										<li>
+											Reasoning blocks use{" "}
+											<code className="bg-muted px-1 rounded">muted</code>{" "}
+											colors
+										</li>
 									</ul>
 								</MessageContent>
 								<MessageActions>
@@ -69,7 +108,10 @@ export function AiDemo() {
 			</div>
 
 			<div className="space-y-6">
-				<DemoSection title="Input Area" description="Prompt input with attachments">
+				<DemoSection
+					title="Input Area"
+					description="Prompt input with attachments"
+				>
 					<Card className="p-4">
 						<PromptInput onSubmit={() => {}}>
 							<PromptInputTextarea placeholder="Ask anything..." />
@@ -78,7 +120,9 @@ export function AiDemo() {
 									<Paperclip className="h-4 w-4" />
 								</Button>
 								<div className="flex-1" />
-								<Button size="sm" type="submit">Send</Button>
+								<Button size="sm" type="submit">
+									Send
+								</Button>
 							</PromptInputFooter>
 						</PromptInput>
 					</Card>
@@ -95,4 +139,3 @@ export function AiDemo() {
 		</div>
 	);
 }
-

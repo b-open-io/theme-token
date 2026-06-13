@@ -5,10 +5,10 @@
  * Accesses KV cache directly - no HTTP calls.
  */
 
+import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
-import { fetchThemeByOrigin, type ThemeToken, validateThemeToken, getOrdfsUrl } from "@theme-token/sdk";
-import type { CachedTheme } from "@/lib/themes-cache";
 import { DEFAULT_THEME_ORIGIN, fetchDefaultTheme } from "@/lib/default-theme";
+import type { CachedTheme } from "@/lib/themes-cache";
 
 /** Cookie name for theme session */
 export const THEME_SESSION_COOKIE = "theme-session";
@@ -44,7 +44,11 @@ async function getCachedThemesFromKV(): Promise<CachedTheme[]> {
 /**
  * Add a theme to KV cache directly
  */
-async function addThemeToKVCache(origin: string, theme: ThemeToken, owner?: string): Promise<void> {
+async function addThemeToKVCache(
+	origin: string,
+	theme: ThemeToken,
+	owner?: string,
+): Promise<void> {
 	try {
 		if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
 			return;
@@ -108,7 +112,9 @@ export async function getRandomCachedTheme(): Promise<CachedTheme | null> {
  * First checks KV cache directly, then falls back to direct fetch from chain.
  * Caches the result if fetched from chain.
  */
-export async function getThemeByOrigin(origin: string): Promise<ThemeToken | null> {
+export async function getThemeByOrigin(
+	origin: string,
+): Promise<ThemeToken | null> {
 	// Try KV cache first
 	const cachedThemes = await getCachedThemesFromKV();
 	const cached = cachedThemes.find((t) => t.origin === origin);
@@ -140,12 +146,17 @@ export interface ThemeSession {
 /**
  * Parse theme session from cookie value
  */
-export function parseThemeSession(cookieValue: string | undefined): ThemeSession | null {
+export function parseThemeSession(
+	cookieValue: string | undefined,
+): ThemeSession | null {
 	if (!cookieValue) return null;
 
 	try {
 		const parsed = JSON.parse(cookieValue);
-		if (typeof parsed.origin === "string" && typeof parsed.assignedAt === "number") {
+		if (
+			typeof parsed.origin === "string" &&
+			typeof parsed.assignedAt === "number"
+		) {
 			return parsed as ThemeSession;
 		}
 		return null;

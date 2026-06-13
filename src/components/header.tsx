@@ -50,7 +50,7 @@ export function Header() {
 	// Close menu on route change
 	useEffect(() => {
 		setMenuOpen(false);
-	}, [pathname]);
+	}, []);
 
 	// Prevent scroll when menu is open
 	useEffect(() => {
@@ -92,7 +92,7 @@ export function Header() {
 								href={link.href}
 								className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
 									pathname === link.href ||
-									pathname?.startsWith(link.href + "/")
+									pathname?.startsWith(`${link.href}/`)
 										? "text-foreground"
 										: "text-muted-foreground"
 								}`}
@@ -172,7 +172,7 @@ export function Header() {
 											onClick={() => setMenuOpen(false)}
 											className={`group flex flex-col rounded-xl px-4 py-4 transition-colors ${
 												pathname === link.href ||
-												pathname?.startsWith(link.href + "/")
+												pathname?.startsWith(`${link.href}/`)
 													? "bg-primary/10 text-primary"
 													: "hover:bg-muted"
 											}`}
@@ -202,6 +202,7 @@ export function Header() {
 								<div className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-3">
 									<span className="text-sm font-medium">Theme</span>
 									<button
+										type="button"
 										onClick={(e) => toggleMode(e)}
 										className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
 									>

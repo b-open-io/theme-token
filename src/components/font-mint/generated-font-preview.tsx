@@ -1,8 +1,8 @@
 "use client";
 
-import { Minus, Plus, X, Check, AlertCircle } from "lucide-react";
-import { useState, useEffect, useId } from "react";
-import type { GeneratedFont, CompiledFont } from "./ai-generate-tab";
+import { AlertCircle, Check, Minus, Plus, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import type { CompiledFont, GeneratedFont } from "./ai-generate-tab";
 
 interface GeneratedFontPreviewProps {
 	font: GeneratedFont;
@@ -15,7 +15,11 @@ const ALPHABET_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ALPHABET_LOWER = "abcdefghijklmnopqrstuvwxyz";
 const NUMBERS = "0123456789";
 
-export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedFontPreviewProps) {
+export function GeneratedFontPreview({
+	font,
+	compiledFont,
+	onClear,
+}: GeneratedFontPreviewProps) {
 	const [fontSize, setFontSize] = useState(48);
 	const [inverted, setInverted] = useState(false);
 	const [sampleText, setSampleText] = useState(PANGRAM);
@@ -63,7 +67,9 @@ export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedF
 			} catch (err) {
 				if (cancelled) return;
 				console.error("[GeneratedFontPreview] Font load error:", err);
-				setFontLoadError(err instanceof Error ? err.message : "Failed to load font");
+				setFontLoadError(
+					err instanceof Error ? err.message : "Failed to load font",
+				);
 				setFontLoaded(false);
 			}
 		};
@@ -88,7 +94,12 @@ export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedF
 	const glyphMap = new Map(font.glyphs.map((g) => [g.char, g]));
 
 	// Render text with proper positioning
-	const renderText = (text: string, startX: number, baselineY: number, scale: number) => {
+	const renderText = (
+		text: string,
+		startX: number,
+		baselineY: number,
+		scale: number,
+	) => {
 		let currentX = startX;
 		const elements: React.ReactNode[] = [];
 
@@ -104,7 +115,7 @@ export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedF
 						transform={`translate(${currentX}, ${baselineY}) scale(${scale}, -${scale})`}
 					>
 						<path d={glyph.path} fill={fgColor} />
-					</g>
+					</g>,
 				);
 			}
 
@@ -160,11 +171,17 @@ export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedF
 
 				{/* Compiled Font Status */}
 				{compiledFont && (
-					<span className={`flex items-center gap-1 font-mono text-xs ${fontLoaded ? "text-primary" : fontLoadError ? "text-destructive" : "text-muted-foreground"}`}>
+					<span
+						className={`flex items-center gap-1 font-mono text-xs ${fontLoaded ? "text-primary" : fontLoadError ? "text-destructive" : "text-muted-foreground"}`}
+					>
 						{fontLoaded ? (
-							<><Check className="h-3 w-3" /> WOFF2</>
+							<>
+								<Check className="h-3 w-3" /> WOFF2
+							</>
 						) : fontLoadError ? (
-							<><AlertCircle className="h-3 w-3" /> Load Error</>
+							<>
+								<AlertCircle className="h-3 w-3" /> Load Error
+							</>
 						) : (
 							"Loading..."
 						)}
@@ -376,7 +393,9 @@ export function GeneratedFontPreview({ font, compiledFont, onClear }: GeneratedF
 							{compiledFont && (
 								<>
 									<span>WOFF2 Size:</span>
-									<span className="text-primary">{formatBytes(compiledFont.woff2Size)}</span>
+									<span className="text-primary">
+										{formatBytes(compiledFont.woff2Size)}
+									</span>
 									<span>OTF Size:</span>
 									<span>{formatBytes(compiledFont.otfSize)}</span>
 								</>

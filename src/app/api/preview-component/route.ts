@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-	createInlinePreviewHtml,
-	extractComponentName,
-} from "@/lib/sandbox";
+import { createInlinePreviewHtml, extractComponentName } from "@/lib/sandbox";
 
 export const runtime = "edge";
 
@@ -16,9 +13,13 @@ interface PreviewRequest {
 function sanitizeCodeForPreview(code: string): string {
 	// Strip ANSI escape sequences and other control chars that sometimes sneak into LLM output.
 	// Keep \n \r \t for formatting.
-	return code
-		.replace(/\u001b\[[0-9;]*[a-zA-Z]/g, "")
-		.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\uFFFF]/g, "");
+	return (
+		code
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-character stripping
+			.replace(/\u001b\[[0-9;]*[a-zA-Z]/g, "")
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-character stripping
+			.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\uFFFF]/g, "")
+	);
 }
 
 function containsModuleSyntax(code: string): boolean {
@@ -62,7 +63,10 @@ export async function POST(request: Request) {
 
 		if (!componentName) {
 			return NextResponse.json(
-				{ error: "Could not determine component name. Please provide componentName." },
+				{
+					error:
+						"Could not determine component name. Please provide componentName.",
+				},
 				{ status: 400 },
 			);
 		}
@@ -79,7 +83,8 @@ export async function POST(request: Request) {
 		console.error("[preview-component] Error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to generate preview",
+				error:
+					error instanceof Error ? error.message : "Failed to generate preview",
 			},
 			{ status: 500 },
 		);

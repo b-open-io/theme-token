@@ -1,14 +1,14 @@
 "use client";
 
-import { Sparkles, Wand2, Wallet, RotateCcw } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import type { ThemeToken } from "@theme-token/sdk";
-import { Button } from "@/components/ui/button";
+import { RotateCcw, Sparkles, Wallet, Wand2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Loader } from "@/components/ai-elements/loader";
-import { Suggestions, Suggestion } from "@/components/ai-elements/suggestion";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { storeRemixTheme } from "@/components/theme-gallery";
+import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { AI_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import type { FilterState } from "./filter-sidebar";
@@ -79,11 +79,13 @@ function clearPendingPayment() {
 
 export function GenerateCard({ filters }: GenerateCardProps) {
 	const router = useRouter();
-	const { status, connect, balance, sendPayment, isSending } = useYoursWallet();
+	const { status, connect, sendPayment, isSending } = useYoursWallet();
 	const [state, setState] = useState<GenerationState>("idle");
 	const [prompt, setPrompt] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
+	const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(
+		null,
+	);
 	const [showRecovery, setShowRecovery] = useState(false);
 	const [recoveryTxid, setRecoveryTxid] = useState("");
 
@@ -97,7 +99,6 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 	}, []);
 
 	const isConnected = status === "connected";
-	const hasEnoughBalance = (balance?.satoshis ?? 0) >= AI_GENERATION_COST_SATS;
 	const isProcessing = state !== "idle" || isSending;
 
 	const hasFilters =
@@ -110,12 +111,16 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 		try {
 			await connect();
 		} catch (err) {
-			const message = err instanceof Error ? err.message : "Failed to connect wallet";
+			const message =
+				err instanceof Error ? err.message : "Failed to connect wallet";
 			toast.error("Connection Failed", { description: message });
 		}
 	};
 
-	const handleGenerate = async (stylePrompt?: string, existingTxid?: string) => {
+	const handleGenerate = async (
+		stylePrompt?: string,
+		existingTxid?: string,
+	) => {
 		if (!isConnected) {
 			await handleConnect();
 			return;
@@ -123,20 +128,16 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 		const DEV_BYPASS_PAYMENT = false;
 
-		// Skip balance check if we have an existing payment to retry
-		if (!existingTxid && !DEV_BYPASS_PAYMENT && !hasEnoughBalance) {
-			toast.error("Insufficient Balance", {
-				description: `You need at least ${formatBsv(AI_GENERATION_COST_SATS)} BSV to generate a theme.`,
-			});
-			return;
-		}
-
 		setError(null);
-		const finalPrompt = stylePrompt || prompt || "Generate a modern, professional theme";
+		const finalPrompt =
+			stylePrompt || prompt || "Generate a modern, professional theme";
 
 		// Create abort controller for timeout
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
+		const timeoutId = setTimeout(
+			() => controller.abort(),
+			GENERATION_TIMEOUT_MS,
+		);
 
 		try {
 			let paymentTxid = existingTxid || "dev-test-bypass";
@@ -144,7 +145,10 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			if (!existingTxid && !DEV_BYPASS_PAYMENT) {
 				// Step 1: Process payment
 				setState("paying");
-				const paymentResult = await sendPayment(FEE_ADDRESS, AI_GENERATION_COST_SATS);
+				const paymentResult = await sendPayment(
+					FEE_ADDRESS,
+					AI_GENERATION_COST_SATS,
+				);
 
 				if (!paymentResult?.txid) {
 					throw new Error("Payment failed or was cancelled");
@@ -158,7 +162,12 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 					filters,
 					timestamp: Date.now(),
 				});
-				setPendingPayment({ txid: paymentTxid, prompt: finalPrompt, filters, timestamp: Date.now() });
+				setPendingPayment({
+					txid: paymentTxid,
+					prompt: finalPrompt,
+					filters,
+					timestamp: Date.now(),
+				});
 			}
 
 			// Step 2: Generate theme
@@ -202,13 +211,14 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			let message = "Generation failed. Please try again.";
 			// Check localStorage directly since state might not be updated yet
 			const hasPending = loadPendingPayment() !== null;
-			
+
 			if (err instanceof Error) {
 				if (err.name === "AbortError") {
 					message = "Request timed out. The AI service may be busy.";
 					// Don't clear pending payment on timeout - user can retry
 					if (hasPending) {
-						message += " Your payment was saved - click 'Retry' to try again without paying.";
+						message +=
+							" Your payment was saved - click 'Retry' to try again without paying.";
 					}
 				} else {
 					message = err.message;
@@ -217,7 +227,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 			toast.error("Generation Failed", { description: message });
 			setError(message);
-			
+
 			// Refresh pending payment state from localStorage
 			setPendingPayment(loadPendingPayment());
 		} finally {
@@ -241,7 +251,9 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 	const handleManualRecovery = () => {
 		const txid = recoveryTxid.trim();
 		if (!txid || txid.length < 60) {
-			toast.error("Invalid TXID", { description: "Please enter a valid transaction ID" });
+			toast.error("Invalid TXID", {
+				description: "Please enter a valid transaction ID",
+			});
 			return;
 		}
 		// Use the current prompt or a default
@@ -270,15 +282,6 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				<>
 					<Wallet className="h-4 w-4" />
 					Connect Wallet
-				</>
-			);
-		}
-
-		if (!hasEnoughBalance) {
-			return (
-				<>
-					<Wallet className="h-4 w-4" />
-					Insufficient Balance
 				</>
 			);
 		}
@@ -318,9 +321,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				</div>
 				<div>
 					<h3 className="font-semibold text-sm sm:text-base">AI Generate</h3>
-					<p className="text-[10px] sm:text-xs text-muted-foreground">
-						Gemini
-					</p>
+					<p className="text-[10px] sm:text-xs text-muted-foreground">Gemini</p>
 				</div>
 			</div>
 
@@ -351,14 +352,16 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 
 			{/* Quick style suggestions */}
 			<div className="mb-2 sm:mb-4">
-				<p className="mb-1.5 sm:mb-2 text-[10px] sm:text-xs font-medium text-muted-foreground">Quick styles</p>
+				<p className="mb-1.5 sm:mb-2 text-[10px] sm:text-xs font-medium text-muted-foreground">
+					Quick styles
+				</p>
 				<Suggestions>
 					{STYLE_SUGGESTIONS.map((style) => (
 						<Suggestion
 							key={style.id}
 							suggestion={style.label}
 							onClick={handleSuggestionClick}
-							disabled={isProcessing || !isConnected || !hasEnoughBalance}
+							disabled={isProcessing || !isConnected}
 							className="text-[10px] sm:text-xs h-6 sm:h-auto px-2 sm:px-4"
 						/>
 					))}
@@ -381,9 +384,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				<div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
 					<div className="flex items-start justify-between gap-2">
 						<div className="flex-1">
-							<p className="text-xs font-medium">
-								Resume generation?
-							</p>
+							<p className="text-xs font-medium">Resume generation?</p>
 							<p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
 								{pendingPayment.txid?.slice(0, 12) ?? "unknown"}...
 							</p>
@@ -404,8 +405,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 								className="p-1 text-muted-foreground/50 hover:text-muted-foreground"
 								title="Dismiss"
 							>
-								<span className="sr-only">Dismiss</span>
-								×
+								<span className="sr-only">Dismiss</span>×
 							</button>
 						</div>
 					</div>
@@ -419,18 +419,11 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 				</div>
 			)}
 
-			{/* Balance info when connected */}
-			{isConnected && balance && (
-				<div className="mb-3 text-center text-xs text-muted-foreground">
-					Balance: {formatBsv(balance.satoshis)} BSV
-				</div>
-			)}
-
 			{/* Generate button */}
 			<div className="mt-auto">
 				<Button
 					onClick={() => handleGenerate()}
-					disabled={isProcessing || (isConnected && !hasEnoughBalance)}
+					disabled={isProcessing}
 					className="w-full gap-1.5 sm:gap-2 h-7 sm:h-8 text-xs sm:text-sm"
 					size="sm"
 				>

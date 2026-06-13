@@ -59,8 +59,8 @@ interface LegacyStoredGeneration {
 }
 
 export async function GET(
-	request: Request,
-	{ params }: { params: Promise<{ origin: string }> }
+	_request: Request,
+	{ params }: { params: Promise<{ origin: string }> },
 ) {
 	try {
 		const { origin } = await params;
@@ -68,7 +68,7 @@ export async function GET(
 		if (!origin) {
 			return NextResponse.json(
 				{ error: "Job ID is required" },
-				{ status: 400 }
+				{ status: 400 },
 			);
 		}
 
@@ -77,7 +77,9 @@ export async function GET(
 
 		// Fall back to legacy format (payment txids)
 		if (!cached) {
-			const legacyCached = await kv.get<LegacyStoredGeneration>(`font:generation:${origin}`);
+			const legacyCached = await kv.get<LegacyStoredGeneration>(
+				`font:generation:${origin}`,
+			);
 			if (legacyCached) {
 				// Convert legacy format to new format
 				cached = {
@@ -95,7 +97,7 @@ export async function GET(
 		if (!cached) {
 			return NextResponse.json(
 				{ error: "Generation not found or expired", status: "not_found" },
-				{ status: 404 }
+				{ status: 404 },
 			);
 		}
 
@@ -108,9 +110,12 @@ export async function GET(
 		console.error("[font-generation] Error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to retrieve generation",
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to retrieve generation",
 			},
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

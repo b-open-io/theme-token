@@ -102,9 +102,9 @@ export interface ProjectBundle {
  */
 export interface ProjectCss {
 	/** tw-animate-css import */
-	"@import \"tw-animate-css\""?: Record<string, unknown>;
+	'@import "tw-animate-css"'?: Record<string, unknown>;
 	/** shadcn tailwind import */
-	"@import \"shadcn/tailwind.css\""?: Record<string, unknown>;
+	'@import "shadcn/tailwind.css"'?: Record<string, unknown>;
 	/** Base layer rules */
 	"@layer base"?: Record<string, Record<string, string>>;
 }
@@ -161,8 +161,8 @@ export const ICON_LIBRARY_PACKAGES: Record<IconLibrary, string[]> = {
  * Default CSS rules for projects
  */
 export const DEFAULT_PROJECT_CSS: ProjectCss = {
-	"@import \"tw-animate-css\"": {},
-	"@import \"shadcn/tailwind.css\"": {},
+	'@import "tw-animate-css"': {},
+	'@import "shadcn/tailwind.css"': {},
 	"@layer base": {
 		"*": {
 			"@apply border-border outline-ring/50": "",
@@ -226,9 +226,10 @@ export function deriveChartColors(
 /**
  * Extend a ThemeToken to include sidebar and chart colors
  */
-export function extendThemeStyles(
-	theme: ThemeToken,
-): { light: ExtendedThemeStyleProps; dark: ExtendedThemeStyleProps } {
+export function extendThemeStyles(theme: ThemeToken): {
+	light: ExtendedThemeStyleProps;
+	dark: ExtendedThemeStyleProps;
+} {
 	const lightStyles = theme.styles.light;
 	const darkStyles = theme.styles.dark;
 

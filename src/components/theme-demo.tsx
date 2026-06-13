@@ -90,7 +90,7 @@ function AudioPlayerDemo() {
 	const [isMuted, setIsMuted] = React.useState(false);
 	const [volume, setVolume] = React.useState([70]);
 	const [currentTime, setCurrentTime] = React.useState([0]);
-	const [duration, setDuration] = React.useState(180); // 3 minutes demo
+	const [duration, _setDuration] = React.useState(180); // 3 minutes demo
 
 	const formatTime = (seconds: number) => {
 		const mins = Math.floor(seconds / 60);
@@ -110,7 +110,10 @@ function AudioPlayerDemo() {
 							stroke="currentColor"
 							strokeWidth="2"
 							className="h-8 w-8 text-primary-foreground"
+							role="img"
+							aria-label="Music note"
 						>
+							<title>Music note</title>
 							<path d="M9 18V5l12-2v13M9 13c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-1c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
 						</svg>
 					</div>
@@ -206,7 +209,10 @@ function AudioPlayerDemo() {
 function WaveformDemo() {
 	const bars = 40;
 	const [heights] = React.useState(
-		Array.from({ length: bars }, () => Math.random() * 100),
+		Array.from({ length: bars }, (_, i) => ({
+			id: `bar-${i}`,
+			height: Math.random() * 100,
+		})),
 	);
 
 	return (
@@ -219,9 +225,9 @@ function WaveformDemo() {
 					</p>
 				</div>
 				<div className="flex h-32 items-end justify-between gap-0.5">
-					{heights.map((height, i) => (
+					{heights.map(({ id, height }) => (
 						<div
-							key={i}
+							key={id}
 							className="w-full rounded-t-sm bg-primary/20 transition-all hover:bg-primary/40"
 							style={{ height: `${height}%` }}
 						/>
@@ -580,6 +586,7 @@ export function ThemeDemo() {
 							{ name: "Preferences", icon: Settings },
 						].map((item, i) => (
 							<button
+								type="button"
 								key={item.name}
 								className={`flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-muted ${
 									i !== 3 ? "border-b" : ""
@@ -633,9 +640,7 @@ export function ThemeDemo() {
 							<Check className="h-6 w-6 text-primary-foreground" />
 						</div>
 						<div>
-							<h4 className="font-semibold text-chart-3">
-								Payment Successful
-							</h4>
+							<h4 className="font-semibold text-chart-3">Payment Successful</h4>
 							<p className="text-sm text-chart-3/80">
 								Your transaction has been completed.
 							</p>
@@ -738,9 +743,10 @@ export function ThemeDemo() {
 									{ name: "Track One", duration: "3:24", active: true },
 									{ name: "Track Two", duration: "4:12", active: false },
 									{ name: "Track Three", duration: "2:58", active: false },
-								].map((track, i) => (
+								].map((track) => (
 									<button
-										key={i}
+										type="button"
+										key={track.name}
 										className={`flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors ${
 											track.active
 												? "bg-primary text-primary-foreground"

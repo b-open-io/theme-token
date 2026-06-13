@@ -14,6 +14,11 @@ import {
 	Wallet,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	DEFAULT_IMAGE_FILTERS,
+	ImageFilterSidebar,
+	type ImageFilterState,
+} from "@/components/market/image-filter-sidebar";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,
@@ -28,11 +33,6 @@ import {
 	fetchImageMarketListings,
 	type ImageMarketListing,
 } from "@/lib/yours-wallet";
-import {
-	ImageFilterSidebar,
-	type ImageFilterState,
-	DEFAULT_IMAGE_FILTERS,
-} from "@/components/market/image-filter-sidebar";
 
 // Format satoshis as BSV
 function formatBSV(sats: number): string {
@@ -58,10 +58,13 @@ export default function ImageBrowsePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [purchasing, setPurchasing] = useState<string | null>(null);
 	const [copiedOrigin, setCopiedOrigin] = useState<string | null>(null);
-	const [filters, setFilters] = useState<ImageFilterState>(DEFAULT_IMAGE_FILTERS);
+	const [filters, setFilters] = useState<ImageFilterState>(
+		DEFAULT_IMAGE_FILTERS,
+	);
 
 	const isConnected = status === "connected";
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: fetch listings once on mount; loadListings is a stable hoisted declaration
 	useEffect(() => {
 		loadListings();
 	}, []);
@@ -124,7 +127,9 @@ export default function ImageBrowsePage() {
 
 		// Filter by asset type
 		if (filters.assetTypes.length > 0) {
-			result = result.filter((l) => filters.assetTypes.includes(l.metadata.assetType));
+			result = result.filter((l) =>
+				filters.assetTypes.includes(l.metadata.assetType),
+			);
 		}
 
 		// Filter by price
@@ -152,7 +157,7 @@ export default function ImageBrowsePage() {
 				maxPrice={maxPrice}
 			/>
 		),
-		[filters, maxPrice]
+		[filters, maxPrice],
 	);
 
 	return (
@@ -173,7 +178,8 @@ export default function ImageBrowsePage() {
 						<div>
 							<h2 className="text-xl font-semibold">Curated Assets</h2>
 							<p className="text-sm text-muted-foreground">
-								{filteredListings.length} asset{filteredListings.length !== 1 ? "s" : ""} available
+								{filteredListings.length} asset
+								{filteredListings.length !== 1 ? "s" : ""} available
 							</p>
 						</div>
 						<div className="flex items-center gap-2">
@@ -232,7 +238,8 @@ export default function ImageBrowsePage() {
 												No assets match your filters
 											</p>
 											<p className="text-xs text-muted-foreground">
-												Try adjusting your filters or create assets in the Studio
+												Try adjusting your filters or create assets in the
+												Studio
 											</p>
 										</div>
 									</div>
@@ -277,7 +284,8 @@ export default function ImageBrowsePage() {
 										No assets available yet
 									</h3>
 									<p className="text-muted-foreground">
-										Create tiles, wallpapers, or icons in the Studio to see them here
+										Create tiles, wallpapers, or icons in the Studio to see them
+										here
 									</p>
 								</div>
 							)}
@@ -320,7 +328,6 @@ function ImageCard({
 				return "object-none"; // Will be tiled via background
 			case "icon":
 				return "object-contain p-4"; // Centered with padding
-			case "wallpaper":
 			default:
 				return "object-cover";
 		}
@@ -344,6 +351,7 @@ function ImageCard({
 						}}
 					/>
 				) : (
+					// biome-ignore lint/performance/noImgElement: dynamic/generated image (data URL or runtime dimensions); next/image not suitable
 					<img
 						src={listing.previewUrl}
 						alt={listing.metadata.name}
@@ -385,7 +393,10 @@ function ImageCard({
 
 			{/* Info */}
 			<div className="flex flex-1 flex-col p-3">
-				<p className="mb-1 truncate font-mono text-xs text-muted-foreground" title={listing.origin}>
+				<p
+					className="mb-1 truncate font-mono text-xs text-muted-foreground"
+					title={listing.origin}
+				>
 					{listing.origin.slice(0, 8)}...{listing.origin.slice(-4)}
 				</p>
 				<p className="text-[10px] text-muted-foreground">

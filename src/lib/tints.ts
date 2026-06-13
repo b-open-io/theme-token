@@ -21,7 +21,19 @@ export interface TintsPalette {
 	[key: string]: string;
 }
 
-const PALETTE_KEYS = ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"] as const;
+const PALETTE_KEYS = [
+	"50",
+	"100",
+	"200",
+	"300",
+	"400",
+	"500",
+	"600",
+	"700",
+	"800",
+	"900",
+	"950",
+] as const;
 
 /**
  * Type guard to validate that an object has all required palette keys
@@ -45,7 +57,7 @@ export function generateTintsPalette(
 
 		const result = createPaletteFromNameValue(name, cleanHex);
 
-		if (result && result[name] && isTintsPalette(result[name])) {
+		if (result?.[name] && isTintsPalette(result[name])) {
 			return result[name];
 		}
 		return null;
@@ -91,7 +103,9 @@ export function paletteToArray(
 /**
  * Convert hex to RGB
  */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+export function hexToRgb(
+	hex: string,
+): { r: number; g: number; b: number } | null {
 	const cleanHex = hex.replace(/^#/, "");
 	const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
 	if (!result) return null;
@@ -111,7 +125,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
 		[r, g, b]
 			.map((x) => {
 				const hex = Math.round(x).toString(16);
-				return hex.length === 1 ? "0" + hex : hex;
+				return hex.length === 1 ? `0${hex}` : hex;
 			})
 			.join("")
 	);
@@ -178,7 +192,7 @@ export function rotateHue(hex: string, degrees: number): string {
 	// RGB to Hex
 	const toHex = (x: number) => {
 		const hx = Math.round(x * 255).toString(16);
-		return hx.length === 1 ? "0" + hx : hx;
+		return hx.length === 1 ? `0${hx}` : hx;
 	};
 
 	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -211,4 +225,3 @@ export function getSplitComplementaryColors(hex: string): [string, string] {
 export function getAnalogousColors(hex: string): [string, string] {
 	return [rotateHue(hex, -30), rotateHue(hex, 30)];
 }
-

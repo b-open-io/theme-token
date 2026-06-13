@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
 
 		if (lowercaseMsg.includes("studio") || lowercaseMsg.includes("editor")) {
 			return NextResponse.json({
-				response: "I'll open the Theme Studio for you. Let's create something beautiful!",
+				response:
+					"I'll open the Theme Studio for you. Let's create something beautiful!",
 				action: { type: "navigate", payload: "/studio/theme" },
 			});
 		}
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
 	} catch {
 		return NextResponse.json(
 			{ response: "Oops! Something went wrong. Let me try that again..." },
-			{ status: 500 }
+			{ status: 500 },
 		);
 	}
 }

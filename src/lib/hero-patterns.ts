@@ -2,7 +2,10 @@
  * Hero Patterns integration
  * 87 professionally designed, seamless SVG patterns from heropatterns.com
  */
-import * as heroPatterns from "hero-patterns";
+import * as heroPatternsNs from "hero-patterns";
+
+type HeroPatternFn = (fillColor: string, opacity: number) => string;
+const heroPatterns = heroPatternsNs as unknown as Record<string, HeroPatternFn>;
 
 // All available pattern names
 export const HERO_PATTERN_NAMES = [
@@ -212,9 +215,9 @@ export const HERO_PATTERN_PRESETS: {
 export function getHeroPattern(
 	name: HeroPatternName,
 	fillColor = "#000000",
-	opacity = 0.4
+	opacity = 0.4,
 ): string {
-	const patternFn = heroPatterns[name as keyof typeof heroPatterns];
+	const patternFn = heroPatterns[name];
 	if (typeof patternFn !== "function") {
 		console.warn(`Unknown hero pattern: ${name}`);
 		return "";
@@ -232,7 +235,7 @@ export function getHeroPattern(
 export function getHeroPatternSvg(
 	name: HeroPatternName,
 	fillColor = "#000000",
-	opacity = 0.4
+	opacity = 0.4,
 ): string {
 	const url = getHeroPattern(name, fillColor, opacity);
 	// Extract SVG from url("data:image/svg+xml,...")
@@ -258,4 +261,3 @@ export function patternNameToLabel(name: HeroPatternName): string {
 		.replace(/^./, (str) => str.toUpperCase())
 		.trim();
 }
-

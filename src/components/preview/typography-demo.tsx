@@ -1,9 +1,15 @@
 "use client";
 
-import { type ThemeToken } from "@theme-token/sdk";
+import type { ThemeToken } from "@theme-token/sdk";
 import { DemoSection } from "./utils";
 
-export function TypographyDemo({ theme, mode }: { theme: ThemeToken; mode: "light" | "dark" }) {
+export function TypographyDemo({
+	theme,
+	mode,
+}: {
+	theme: ThemeToken;
+	mode: "light" | "dark";
+}) {
 	return (
 		<DemoSection title="Typography" description="Headings and body text">
 			<div className="space-y-6">
@@ -27,8 +33,8 @@ export function TypographyDemo({ theme, mode }: { theme: ThemeToken; mode: "ligh
 					<p className="text-sm font-medium text-muted-foreground">Body Text</p>
 					<p className="max-w-2xl text-base leading-7">
 						Theme tokens bring the benefits of blockchain to design systems.
-						Create beautiful, consistent experiences across your applications with
-						tokenized themes that you truly own.
+						Create beautiful, consistent experiences across your applications
+						with tokenized themes that you truly own.
 					</p>
 					<p className="text-sm text-muted-foreground">
 						Muted body tone for subdued copy.
@@ -64,5 +70,3 @@ export function TypographyDemo({ theme, mode }: { theme: ThemeToken; mode: "ligh
 		</DemoSection>
 	);
 }
-
-

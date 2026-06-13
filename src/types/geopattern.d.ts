@@ -14,9 +14,11 @@ declare module "geopattern" {
 		toDataUrl(): string;
 	}
 
-	function generate(string: string, options?: GeoPatternOptions): GeoPatternInstance;
+	function generate(
+		string: string,
+		options?: GeoPatternOptions,
+	): GeoPatternInstance;
 
 	export { generate };
 	export default { generate };
 }
-

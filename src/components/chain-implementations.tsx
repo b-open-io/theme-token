@@ -215,7 +215,6 @@ export function ChainImplementations() {
 					<div className="font-medium">{chain.speed}</div>
 				</div>
 			</div>
-
 		</div>
 	);
 }

@@ -114,7 +114,9 @@ export function JsonSyntax({ json, className = "" }: JsonSyntaxProps) {
 	const tokens = useMemo(() => tokenize(jsonString), [jsonString]);
 
 	return (
-		<pre className={`code-block overflow-x-auto rounded-lg p-4 w-full ${className}`}>
+		<pre
+			className={`code-block overflow-x-auto rounded-lg p-4 w-full ${className}`}
+		>
 			<code className="block w-max min-w-full">
 				{tokens.map((token, i) => (
 					<span key={i} className={`token-${token.type}`}>

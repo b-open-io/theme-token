@@ -7,32 +7,47 @@
  * to transform between pay-as-you-go (wireframe) and subscriber (holographic) modes.
  */
 
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
 	Bitcoin,
+	ChevronRight,
+	Clock,
+	ExternalLink,
+	Infinity as InfinityIcon,
+	Loader2,
+	Palette,
 	Sparkles,
 	Zap,
-	Palette,
-	Clock,
-	Infinity,
-	ChevronRight,
-	Loader2,
-	ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { PageContainer } from "@/components/page-container";
-import { BsvRateProvider, useBsvRateContext } from "@/hooks/use-bsv-rate-context";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+	BsvRateProvider,
+	useBsvRateContext,
+} from "@/hooks/use-bsv-rate-context";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { PRISM_PASS_COLLECTION_ID, PRISM_PASS_USD_PRICE, usdToSatoshis, formatBsv } from "@/lib/pricing";
+import {
+	formatBsv,
+	PRISM_PASS_COLLECTION_ID,
+	PRISM_PASS_USD_PRICE,
+	usdToSatoshis,
+} from "@/lib/pricing";
 
-
-function PerkRow({ icon, text, delay = 0 }: { icon: React.ReactNode; text: string; delay?: number }) {
+function PerkRow({
+	icon,
+	text,
+	delay = 0,
+}: {
+	icon: React.ReactNode;
+	text: string;
+	delay?: number;
+}) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, x: -20 }}
@@ -161,7 +176,11 @@ function TheArtifact({
 					{/* Animated Gradient Background */}
 					<motion.div
 						animate={{ rotate: 360 }}
-						transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+						transition={{
+							duration: 20,
+							repeat: Number.POSITIVE_INFINITY,
+							ease: "linear",
+						}}
 						className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-primary/40 via-purple-500/30 to-pink-500/40 blur-[80px]"
 					/>
 
@@ -232,7 +251,9 @@ function TheArtifact({
 								</p>
 							)}
 							<p className="mt-2 text-center text-xs text-muted-foreground">
-								{alreadyOwned ? "Your benefits are active" : "Tradeable NFT on Bitcoin SV"}
+								{alreadyOwned
+									? "Your benefits are active"
+									: "Tradeable NFT on Bitcoin SV"}
 							</p>
 						</div>
 
@@ -254,7 +275,7 @@ function TheArtifact({
 								delay={0.2}
 							/>
 							<PerkRow
-								icon={<Infinity className="h-4 w-4" />}
+								icon={<InfinityIcon className="h-4 w-4" />}
 								text="Inscribe to own forever"
 								delay={0.25}
 							/>
@@ -300,9 +321,7 @@ function MembershipToggle({
 				</Label>
 			</div>
 			<p className="text-center text-xs text-muted-foreground">
-				{active
-					? "See member benefits below"
-					: "Toggle to see member perks"}
+				{active ? "See member benefits below" : "Toggle to see member perks"}
 			</p>
 		</div>
 	);
@@ -366,13 +385,8 @@ function AmbientBackground({ active }: { active: boolean }) {
 function PricingPageInner() {
 	const [active, setActive] = useState(false);
 	const [mintedTxid, setMintedTxid] = useState<string | null>(null);
-	const {
-		status,
-		connect,
-		mintCollectionItem,
-		isInscribing,
-		hasPrismPass,
-	} = useYoursWallet();
+	const { status, connect, mintCollectionItem, isInscribing, hasPrismPass } =
+		useYoursWallet();
 	const { rate } = useBsvRateContext();
 
 	const isConnected = status === "connected";
@@ -468,7 +482,11 @@ function PricingPageInner() {
 						</AnimatePresence>
 					</h1>
 					<motion.p
-						animate={{ color: active ? "hsl(var(--muted-foreground))" : "hsl(var(--muted-foreground))" }}
+						animate={{
+							color: active
+								? "hsl(var(--muted-foreground))"
+								: "hsl(var(--muted-foreground))",
+						}}
 						className="mt-3 text-muted-foreground"
 					>
 						{active
@@ -509,8 +527,8 @@ function PricingPageInner() {
 								Prism Pass Activated!
 							</h3>
 							<p className="mt-2 text-sm text-muted-foreground">
-								Your membership benefits are now active. Enjoy 50% off AI generations
-								and expanded draft storage.
+								Your membership benefits are now active. Enjoy 50% off AI
+								generations and expanded draft storage.
 							</p>
 							<div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
 								<a
@@ -521,7 +539,9 @@ function PricingPageInner() {
 								>
 									View your Pass <ExternalLink className="h-3 w-3" />
 								</a>
-								<span className="hidden text-muted-foreground sm:inline">•</span>
+								<span className="hidden text-muted-foreground sm:inline">
+									•
+								</span>
 								<a
 									href={`https://whatsonchain.com/tx/${mintedTxid}`}
 									target="_blank"
@@ -550,7 +570,8 @@ function PricingPageInner() {
 					className="mt-12 text-center"
 				>
 					<p className="mb-4 text-sm text-muted-foreground">
-						Both options support BSV payments. Inscribe your creations to own them forever.
+						Both options support BSV payments. Inscribe your creations to own
+						them forever.
 					</p>
 					<Link
 						href="/studio/theme"

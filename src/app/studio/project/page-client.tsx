@@ -1,12 +1,32 @@
 "use client";
 
+import {
+	Check,
+	Copy,
+	ExternalLink,
+	FolderKanban,
+	Image,
+	Loader2,
+	Palette,
+	PenLine,
+	Shapes,
+	Sparkles,
+	Type,
+} from "lucide-react";
 import { useState } from "react";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
@@ -15,32 +35,23 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	type ShadcnPreset,
+	useShadcnPresets,
+} from "@/hooks/use-shadcn-presets";
 import {
-	Copy,
-	ExternalLink,
-	FolderKanban,
-	Palette,
-	Type,
-	Shapes,
-	Image,
-	Check,
-	Loader2,
-	PenLine,
-	Sparkles,
-} from "lucide-react";
+	getThemePreviewColors,
+	useStudioThemes,
+} from "@/hooks/use-studio-themes";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { useShadcnPresets, type ShadcnPreset } from "@/hooks/use-shadcn-presets";
-import { useStudioThemes, getThemePreviewColors } from "@/hooks/use-studio-themes";
-import type { CachedTheme } from "@/lib/themes-cache";
-import type { IconLibrary, BaseColor, MenuColor, MenuAccent } from "@/lib/project-types";
-import { ICON_LIBRARY_PACKAGES } from "@/lib/project-types";
 import { buildProjectBundle } from "@/lib/project-builder";
+import type {
+	BaseColor,
+	IconLibrary,
+	MenuAccent,
+	MenuColor,
+} from "@/lib/project-types";
+import { ICON_LIBRARY_PACKAGES } from "@/lib/project-types";
+import type { CachedTheme } from "@/lib/themes-cache";
 import { cn } from "@/lib/utils";
 
 interface ProjectConfig {
@@ -56,10 +67,12 @@ interface ProjectConfig {
 
 export function ProjectStudioPageClient() {
 	const { status, connect, isInscribing, inscribeBundle } = useYoursWallet();
-	const { presets, presetsByBase, isLoading: presetsLoading } = useShadcnPresets();
+	const { presetsByBase, isLoading: presetsLoading } = useShadcnPresets();
 	const { themes, mode, isLoading: themesLoading } = useStudioThemes();
 	const [copied, setCopied] = useState(false);
-	const [selectedPreset, setSelectedPreset] = useState<ShadcnPreset | null>(null);
+	const [selectedPreset, setSelectedPreset] = useState<ShadcnPreset | null>(
+		null,
+	);
 
 	const [config, setConfig] = useState<ProjectConfig>({
 		name: "my-project",
@@ -74,7 +87,9 @@ export function ProjectStudioPageClient() {
 
 	// Selected on-chain theme for the project
 	const [selectedTheme, setSelectedTheme] = useState<CachedTheme | null>(null);
-	const [selectedWallpaper, setSelectedWallpaper] = useState<string | null>(null);
+	const [selectedWallpaper, setSelectedWallpaper] = useState<string | null>(
+		null,
+	);
 
 	// Success dialog state
 	const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -87,7 +102,8 @@ export function ProjectStudioPageClient() {
 		: null;
 
 	// Get unique styles for the selected base
-	const availablePresets = config.base === "radix" ? presetsByBase.radix : presetsByBase.base;
+	const availablePresets =
+		config.base === "radix" ? presetsByBase.radix : presetsByBase.base;
 
 	// Apply a preset
 	const applyPreset = (preset: ShadcnPreset) => {
@@ -124,7 +140,7 @@ export function ProjectStudioPageClient() {
 		};
 
 		// Build the project bundle
-		const { items, manifest } = buildProjectBundle({
+		const { items } = buildProjectBundle({
 			theme: projectTheme,
 			config: {
 				style: config.style,
@@ -169,7 +185,8 @@ export function ProjectStudioPageClient() {
 									</h3>
 								</div>
 								<p className="text-xs text-muted-foreground">
-									Compose themes, fonts, and icons into complete shadcn/create presets.
+									Compose themes, fonts, and icons into complete shadcn/create
+									presets.
 								</p>
 							</div>
 
@@ -178,7 +195,9 @@ export function ProjectStudioPageClient() {
 								<Label className="text-xs font-medium">Project Name</Label>
 								<Input
 									value={config.name}
-									onChange={(e) => setConfig({ ...config, name: e.target.value })}
+									onChange={(e) =>
+										setConfig({ ...config, name: e.target.value })
+									}
 									placeholder="my-project"
 									className="h-9"
 								/>
@@ -202,7 +221,7 @@ export function ProjectStudioPageClient() {
 											"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors",
 											config.base === "radix"
 												? "bg-background text-foreground shadow-sm"
-												: "text-muted-foreground hover:text-foreground"
+												: "text-muted-foreground hover:text-foreground",
 										)}
 									>
 										Radix
@@ -214,7 +233,7 @@ export function ProjectStudioPageClient() {
 											"flex-1 py-1.5 text-xs font-medium rounded-md transition-colors",
 											config.base === "base"
 												? "bg-background text-foreground shadow-sm"
-												: "text-muted-foreground hover:text-foreground"
+												: "text-muted-foreground hover:text-foreground",
 										)}
 									>
 										Base UI
@@ -238,10 +257,12 @@ export function ProjectStudioPageClient() {
 													"flex flex-col items-start p-2.5 rounded-lg border text-left transition-colors",
 													selectedPreset?.name === preset.name
 														? "border-primary bg-primary/5"
-														: "border-border hover:border-primary/50 hover:bg-muted/50"
+														: "border-border hover:border-primary/50 hover:bg-muted/50",
 												)}
 											>
-												<span className="text-xs font-medium">{preset.title}</span>
+												<span className="text-xs font-medium">
+													{preset.title}
+												</span>
 												<span className="text-[10px] text-muted-foreground truncate w-full">
 													{preset.description}
 												</span>
@@ -266,7 +287,11 @@ export function ProjectStudioPageClient() {
 										}}
 									>
 										<SelectTrigger className="flex-1 h-9">
-											<SelectValue placeholder={themesLoading ? "Loading..." : "Select theme..."} />
+											<SelectValue
+												placeholder={
+													themesLoading ? "Loading..." : "Select theme..."
+												}
+											/>
 										</SelectTrigger>
 										<SelectContent>
 											{themesLoading ? (
@@ -282,9 +307,15 @@ export function ProjectStudioPageClient() {
 												</SelectItem>
 											) : (
 												themes.map((cached) => {
-													const colors = getThemePreviewColors(cached.theme, mode);
+													const colors = getThemePreviewColors(
+														cached.theme,
+														mode,
+													);
 													return (
-														<SelectItem key={cached.origin} value={cached.origin}>
+														<SelectItem
+															key={cached.origin}
+															value={cached.origin}
+														>
 															<span className="flex items-center gap-2">
 																<span
 																	className="h-3 w-3 rounded-full border border-border"
@@ -298,7 +329,12 @@ export function ProjectStudioPageClient() {
 											)}
 										</SelectContent>
 									</Select>
-									<Button variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="h-9 w-9 shrink-0"
+										asChild
+									>
 										<a href="/studio/theme">
 											<ExternalLink className="h-4 w-4" />
 										</a>
@@ -313,7 +349,10 @@ export function ProjectStudioPageClient() {
 									<Label className="text-xs font-medium">Font</Label>
 								</div>
 								<div className="flex gap-2">
-									<Select value={config.font} onValueChange={(v) => setConfig({ ...config, font: v })}>
+									<Select
+										value={config.font}
+										onValueChange={(v) => setConfig({ ...config, font: v })}
+									>
 										<SelectTrigger className="flex-1 h-9">
 											<SelectValue />
 										</SelectTrigger>
@@ -321,10 +360,17 @@ export function ProjectStudioPageClient() {
 											<SelectItem value="geist">Geist Sans</SelectItem>
 											<SelectItem value="inter">Inter</SelectItem>
 											<SelectItem value="figtree">Figtree</SelectItem>
-											<SelectItem value="jetbrains-mono">JetBrains Mono</SelectItem>
+											<SelectItem value="jetbrains-mono">
+												JetBrains Mono
+											</SelectItem>
 										</SelectContent>
 									</Select>
-									<Button variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="h-9 w-9 shrink-0"
+										asChild
+									>
 										<a href="/studio/font">
 											<ExternalLink className="h-4 w-4" />
 										</a>
@@ -340,7 +386,9 @@ export function ProjectStudioPageClient() {
 								</div>
 								<Select
 									value={config.iconLibrary}
-									onValueChange={(v) => setConfig({ ...config, iconLibrary: v as IconLibrary })}
+									onValueChange={(v) =>
+										setConfig({ ...config, iconLibrary: v as IconLibrary })
+									}
 								>
 									<SelectTrigger className="h-9">
 										<SelectValue />
@@ -361,12 +409,18 @@ export function ProjectStudioPageClient() {
 								<div className="flex items-center gap-2">
 									<Image className="h-4 w-4 text-primary" />
 									<Label className="text-xs font-medium">Wallpaper</Label>
-									<Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+									<Badge
+										variant="secondary"
+										className="text-[10px] px-1.5 py-0"
+									>
 										Optional
 									</Badge>
 								</div>
 								<div className="flex gap-2">
-									<Select value={selectedWallpaper ?? ""} onValueChange={setSelectedWallpaper}>
+									<Select
+										value={selectedWallpaper ?? ""}
+										onValueChange={setSelectedWallpaper}
+									>
 										<SelectTrigger className="flex-1 h-9">
 											<SelectValue placeholder="No wallpaper" />
 										</SelectTrigger>
@@ -375,7 +429,12 @@ export function ProjectStudioPageClient() {
 											<SelectItem value="generate">Generate New...</SelectItem>
 										</SelectContent>
 									</Select>
-									<Button variant="outline" size="icon" className="h-9 w-9 shrink-0" asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="h-9 w-9 shrink-0"
+										asChild
+									>
 										<a href="/studio/wallpaper">
 											<ExternalLink className="h-4 w-4" />
 										</a>
@@ -393,7 +452,9 @@ export function ProjectStudioPageClient() {
 									<Label className="text-xs">Base Color</Label>
 									<Select
 										value={config.baseColor}
-										onValueChange={(v) => setConfig({ ...config, baseColor: v as BaseColor })}
+										onValueChange={(v) =>
+											setConfig({ ...config, baseColor: v as BaseColor })
+										}
 									>
 										<SelectTrigger className="h-9">
 											<SelectValue />
@@ -412,7 +473,9 @@ export function ProjectStudioPageClient() {
 									<Label className="text-xs">Menu Color</Label>
 									<Select
 										value={config.menuColor}
-										onValueChange={(v) => setConfig({ ...config, menuColor: v as MenuColor })}
+										onValueChange={(v) =>
+											setConfig({ ...config, menuColor: v as MenuColor })
+										}
 									>
 										<SelectTrigger className="h-9">
 											<SelectValue />
@@ -429,7 +492,9 @@ export function ProjectStudioPageClient() {
 									<Label className="text-xs">Menu Accent</Label>
 									<Select
 										value={config.menuAccent}
-										onValueChange={(v) => setConfig({ ...config, menuAccent: v as MenuAccent })}
+										onValueChange={(v) =>
+											setConfig({ ...config, menuAccent: v as MenuAccent })
+										}
 									>
 										<SelectTrigger className="h-9">
 											<SelectValue />
@@ -494,7 +559,9 @@ export function ProjectStudioPageClient() {
 								<FolderKanban className="h-4 w-4" />
 								Project Preview
 							</div>
-							<h2 className="text-2xl font-bold">{config.name || "my-project"}</h2>
+							<h2 className="text-2xl font-bold">
+								{config.name || "my-project"}
+							</h2>
 							<p className="text-muted-foreground">
 								A complete shadcn/create preset with your custom configuration
 							</p>
@@ -511,7 +578,9 @@ export function ProjectStudioPageClient() {
 									<div>
 										<h3 className="font-medium text-sm">Theme</h3>
 										<p className="text-xs text-muted-foreground">
-											{selectedTheme ? selectedTheme.theme.name : "Not selected"}
+											{selectedTheme
+												? selectedTheme.theme.name
+												: "Not selected"}
 										</p>
 									</div>
 								</div>
@@ -586,12 +655,16 @@ export function ProjectStudioPageClient() {
 									<div>
 										<h3 className="font-medium text-sm">Wallpaper</h3>
 										<p className="text-xs text-muted-foreground">
-											{selectedWallpaper && selectedWallpaper !== "none" ? "Selected" : "None"}
+											{selectedWallpaper && selectedWallpaper !== "none"
+												? "Selected"
+												: "None"}
 										</p>
 									</div>
 								</div>
 								<div className="flex items-center justify-center h-8 rounded-md border border-dashed border-border text-xs text-muted-foreground">
-									{selectedWallpaper && selectedWallpaper !== "none" ? "Preview" : "Optional"}
+									{selectedWallpaper && selectedWallpaper !== "none"
+										? "Preview"
+										: "Optional"}
 								</div>
 							</div>
 						</div>
@@ -603,7 +676,9 @@ export function ProjectStudioPageClient() {
 									<Copy className="h-4 w-4" />
 								</div>
 								<h3 className="font-medium text-sm">CLI Command</h3>
-								<Badge variant="secondary" className="text-[10px]">After inscription</Badge>
+								<Badge variant="secondary" className="text-[10px]">
+									After inscription
+								</Badge>
 							</div>
 							<div className="relative">
 								<pre className="p-3 bg-background rounded-md text-xs overflow-x-auto font-mono border border-border">
@@ -623,29 +698,45 @@ export function ProjectStudioPageClient() {
 								</Button>
 							</div>
 							<p className="text-xs text-muted-foreground mt-2">
-								Replace <code className="px-1 py-0.5 rounded bg-muted font-mono">{"{origin}"}</code> with your inscription origin after publishing.
+								Replace{" "}
+								<code className="px-1 py-0.5 rounded bg-muted font-mono">
+									{"{origin}"}
+								</code>{" "}
+								with your inscription origin after publishing.
 							</p>
 						</div>
 
 						{/* Style Summary */}
 						<div className="rounded-lg border border-border bg-card p-4">
-							<h3 className="font-medium text-sm mb-3">Configuration Summary</h3>
+							<h3 className="font-medium text-sm mb-3">
+								Configuration Summary
+							</h3>
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
 								<div>
 									<p className="text-xs text-muted-foreground mb-1">Base</p>
-									<p className="text-sm font-medium capitalize">{config.base === "radix" ? "Radix" : "Base UI"}</p>
+									<p className="text-sm font-medium capitalize">
+										{config.base === "radix" ? "Radix" : "Base UI"}
+									</p>
 								</div>
 								<div>
 									<p className="text-xs text-muted-foreground mb-1">Style</p>
-									<p className="text-sm font-medium capitalize">{config.style}</p>
+									<p className="text-sm font-medium capitalize">
+										{config.style}
+									</p>
 								</div>
 								<div>
-									<p className="text-xs text-muted-foreground mb-1">Base Color</p>
-									<p className="text-sm font-medium capitalize">{config.baseColor}</p>
+									<p className="text-xs text-muted-foreground mb-1">
+										Base Color
+									</p>
+									<p className="text-sm font-medium capitalize">
+										{config.baseColor}
+									</p>
 								</div>
 								<div>
 									<p className="text-xs text-muted-foreground mb-1">Menu</p>
-									<p className="text-sm font-medium capitalize">{config.menuColor} / {config.menuAccent}</p>
+									<p className="text-sm font-medium capitalize">
+										{config.menuColor} / {config.menuAccent}
+									</p>
 								</div>
 							</div>
 						</div>
@@ -662,7 +753,8 @@ export function ProjectStudioPageClient() {
 							Project Inscribed
 						</DialogTitle>
 						<DialogDescription>
-							Your project has been inscribed on-chain. Use the command below to create a new project from this preset.
+							Your project has been inscribed on-chain. Use the command below to
+							create a new project from this preset.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4">
@@ -673,7 +765,9 @@ export function ProjectStudioPageClient() {
 							</code>
 						</div>
 						<div>
-							<Label className="text-xs text-muted-foreground">CLI Command</Label>
+							<Label className="text-xs text-muted-foreground">
+								CLI Command
+							</Label>
 							<div className="relative mt-1">
 								<pre className="p-3 bg-muted rounded-md text-xs overflow-x-auto font-mono">
 									{`bunx shadcn@latest create --preset "https://themetoken.dev/init?project=${inscribedOrigin}"`}
@@ -684,7 +778,7 @@ export function ProjectStudioPageClient() {
 									className="absolute top-1.5 right-1.5 h-7 px-2"
 									onClick={() => {
 										navigator.clipboard.writeText(
-											`bunx shadcn@latest create --preset "https://themetoken.dev/init?project=${inscribedOrigin}"`
+											`bunx shadcn@latest create --preset "https://themetoken.dev/init?project=${inscribedOrigin}"`,
 										);
 										setCommandCopied(true);
 										setTimeout(() => setCommandCopied(false), 2000);
@@ -699,7 +793,10 @@ export function ProjectStudioPageClient() {
 							</div>
 						</div>
 						<div className="flex justify-end gap-2">
-							<Button variant="outline" onClick={() => setShowSuccessDialog(false)}>
+							<Button
+								variant="outline"
+								onClick={() => setShowSuccessDialog(false)}
+							>
 								Close
 							</Button>
 							<Button asChild>

@@ -4,8 +4,8 @@
  */
 
 import {
-	isOnChainPath,
 	extractOrigin,
+	isOnChainPath,
 	loadFontByOrigin,
 } from "@theme-token/sdk";
 
@@ -15,14 +15,26 @@ export const FONT_CATALOG = {
 		{ name: "Inter", value: "Inter", weights: [400, 500, 600, 700] },
 		{ name: "DM Sans", value: "DM Sans", weights: [400, 500, 600, 700] },
 		{ name: "Geist", value: "Geist", weights: [400, 500, 600, 700] },
-		{ name: "IBM Plex Sans", value: "IBM Plex Sans", weights: [400, 500, 600, 700] },
+		{
+			name: "IBM Plex Sans",
+			value: "IBM Plex Sans",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Montserrat", value: "Montserrat", weights: [400, 500, 600, 700] },
 		{ name: "Open Sans", value: "Open Sans", weights: [400, 500, 600, 700] },
 		{ name: "Outfit", value: "Outfit", weights: [400, 500, 600, 700] },
-		{ name: "Plus Jakarta Sans", value: "Plus Jakarta Sans", weights: [400, 500, 600, 700] },
+		{
+			name: "Plus Jakarta Sans",
+			value: "Plus Jakarta Sans",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Poppins", value: "Poppins", weights: [400, 500, 600, 700] },
 		{ name: "Roboto", value: "Roboto", weights: [400, 500, 700] },
-		{ name: "Space Grotesk", value: "Space Grotesk", weights: [400, 500, 600, 700] },
+		{
+			name: "Space Grotesk",
+			value: "Space Grotesk",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Nunito", value: "Nunito", weights: [400, 500, 600, 700] },
 		{ name: "Lato", value: "Lato", weights: [400, 700] },
 		{ name: "Raleway", value: "Raleway", weights: [400, 500, 600, 700] },
@@ -31,13 +43,33 @@ export const FONT_CATALOG = {
 		{ name: "Sora", value: "Sora", weights: [400, 500, 600, 700] },
 	],
 	serif: [
-		{ name: "Libre Baskerville", value: "Libre Baskerville", weights: [400, 700] },
+		{
+			name: "Libre Baskerville",
+			value: "Libre Baskerville",
+			weights: [400, 700],
+		},
 		{ name: "Lora", value: "Lora", weights: [400, 500, 600, 700] },
 		{ name: "Merriweather", value: "Merriweather", weights: [400, 700] },
-		{ name: "Playfair Display", value: "Playfair Display", weights: [400, 500, 600, 700] },
-		{ name: "Source Serif 4", value: "Source Serif 4", weights: [400, 500, 600, 700] },
-		{ name: "Crimson Pro", value: "Crimson Pro", weights: [400, 500, 600, 700] },
-		{ name: "EB Garamond", value: "EB Garamond", weights: [400, 500, 600, 700] },
+		{
+			name: "Playfair Display",
+			value: "Playfair Display",
+			weights: [400, 500, 600, 700],
+		},
+		{
+			name: "Source Serif 4",
+			value: "Source Serif 4",
+			weights: [400, 500, 600, 700],
+		},
+		{
+			name: "Crimson Pro",
+			value: "Crimson Pro",
+			weights: [400, 500, 600, 700],
+		},
+		{
+			name: "EB Garamond",
+			value: "EB Garamond",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Cormorant", value: "Cormorant", weights: [400, 500, 600, 700] },
 		{ name: "Spectral", value: "Spectral", weights: [400, 500, 600, 700] },
 		{ name: "Bitter", value: "Bitter", weights: [400, 500, 600, 700] },
@@ -45,21 +77,45 @@ export const FONT_CATALOG = {
 	mono: [
 		{ name: "Fira Code", value: "Fira Code", weights: [400, 500, 600, 700] },
 		{ name: "Geist Mono", value: "Geist Mono", weights: [400, 500, 600, 700] },
-		{ name: "IBM Plex Mono", value: "IBM Plex Mono", weights: [400, 500, 600, 700] },
-		{ name: "JetBrains Mono", value: "JetBrains Mono", weights: [400, 500, 600, 700] },
+		{
+			name: "IBM Plex Mono",
+			value: "IBM Plex Mono",
+			weights: [400, 500, 600, 700],
+		},
+		{
+			name: "JetBrains Mono",
+			value: "JetBrains Mono",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Roboto Mono", value: "Roboto Mono", weights: [400, 500, 700] },
-		{ name: "Source Code Pro", value: "Source Code Pro", weights: [400, 500, 600, 700] },
+		{
+			name: "Source Code Pro",
+			value: "Source Code Pro",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Space Mono", value: "Space Mono", weights: [400, 700] },
-		{ name: "Inconsolata", value: "Inconsolata", weights: [400, 500, 600, 700] },
+		{
+			name: "Inconsolata",
+			value: "Inconsolata",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Ubuntu Mono", value: "Ubuntu Mono", weights: [400, 700] },
 	],
 	display: [
-		{ name: "Architects Daughter", value: "Architects Daughter", weights: [400] },
+		{
+			name: "Architects Daughter",
+			value: "Architects Daughter",
+			weights: [400],
+		},
 		{ name: "Oxanium", value: "Oxanium", weights: [400, 500, 600, 700] },
 		{ name: "Righteous", value: "Righteous", weights: [400] },
 		{ name: "Bebas Neue", value: "Bebas Neue", weights: [400] },
 		{ name: "Abril Fatface", value: "Abril Fatface", weights: [400] },
-		{ name: "Josefin Sans", value: "Josefin Sans", weights: [400, 500, 600, 700] },
+		{
+			name: "Josefin Sans",
+			value: "Josefin Sans",
+			weights: [400, 500, 600, 700],
+		},
 		{ name: "Fredoka", value: "Fredoka", weights: [400, 500, 600, 700] },
 	],
 } as const;
@@ -124,24 +180,23 @@ export function extractFontFamily(fontValue: string): string | null {
  * Check if a font is a Google Font we support
  */
 export function isGoogleFont(fontName: string): boolean {
-	return ALL_FONTS.some(
-		(f) => f.name.toLowerCase() === fontName.toLowerCase(),
-	);
+	return ALL_FONTS.some((f) => f.name.toLowerCase() === fontName.toLowerCase());
 }
 
 /**
  * Get font info by name
  */
 export function getFontInfo(fontName: string) {
-	return ALL_FONTS.find(
-		(f) => f.name.toLowerCase() === fontName.toLowerCase(),
-	);
+	return ALL_FONTS.find((f) => f.name.toLowerCase() === fontName.toLowerCase());
 }
 
 /**
  * Build Google Fonts URL for a font
  */
-export function buildGoogleFontUrl(fontName: string, weights?: readonly number[]): string {
+export function buildGoogleFontUrl(
+	fontName: string,
+	weights?: readonly number[],
+): string {
 	const fontInfo = getFontInfo(fontName);
 	const fontWeights = weights || fontInfo?.weights || [400, 500, 600, 700];
 
@@ -195,13 +250,16 @@ export async function loadThemeFonts(theme: {
 					onChainLoads.push(
 						loadFontByOrigin(origin).then((familyName) => {
 							// Update CSS custom property with the loaded font family
-							const slot = key.replace("font-", "") as "sans" | "serif" | "mono";
+							const slot = key.replace("font-", "") as
+								| "sans"
+								| "serif"
+								| "mono";
 							document.documentElement.style.setProperty(
 								`--font-${slot}`,
-								`"${familyName}", ${SYSTEM_FONTS[slot]}`
+								`"${familyName}", ${SYSTEM_FONTS[slot]}`,
 							);
 							return familyName;
-						})
+						}),
 					);
 				}
 			} else {

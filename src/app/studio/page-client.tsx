@@ -1,15 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-	ArrowRight,
-	Grid3X3,
-	Image,
-	Palette,
-	Shapes,
-	Terminal,
-	Type,
-} from "lucide-react";
+import { ArrowRight, Palette, Shapes, Terminal, Type } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { getStudioTabs } from "@/lib/routes";

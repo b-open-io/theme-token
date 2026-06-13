@@ -8,8 +8,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useYoursWallet } from "./use-yours-wallet";
 import type { DraftMetadata } from "@/lib/storage/types";
+import { useYoursWallet } from "./use-yours-wallet";
 
 export interface FontDraft {
 	id: string;
@@ -32,7 +32,9 @@ export function useFontDrafts() {
 
 	const [drafts, setDrafts] = useState<FontDraft[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(null);
+	const [usage, setUsage] = useState<{ count: number; limit: number } | null>(
+		null,
+	);
 	const hasFetched = useRef(false);
 
 	/**
@@ -56,24 +58,26 @@ export function useFontDrafts() {
 
 			// Convert to FontDraft format
 			if (data.drafts && data.drafts.length > 0) {
-				const fontDrafts: FontDraft[] = data.drafts.map((draft: DraftMetadata) => {
-					// Font-specific data is stored in draft.data
-					const fontData = (draft.data || {}) as {
-						familyName?: string;
-						fileName?: string;
-					};
-					return {
-						id: draft.id,
-						name: draft.name,
-						familyName: fontData.familyName || draft.name,
-						fileName: fontData.fileName || draft.name,
-						mimeType: draft.mimeType || "font/woff2",
-						sizeBytes: draft.sizeBytes,
-						// blobUrl will be created when loading the font
-						createdAt: draft.createdAt,
-						expiresAt: draft.expiresAt,
-					};
-				});
+				const fontDrafts: FontDraft[] = data.drafts.map(
+					(draft: DraftMetadata) => {
+						// Font-specific data is stored in draft.data
+						const fontData = (draft.data || {}) as {
+							familyName?: string;
+							fileName?: string;
+						};
+						return {
+							id: draft.id,
+							name: draft.name,
+							familyName: fontData.familyName || draft.name,
+							fileName: fontData.fileName || draft.name,
+							mimeType: draft.mimeType || "font/woff2",
+							sizeBytes: draft.sizeBytes,
+							// blobUrl will be created when loading the font
+							createdAt: draft.createdAt,
+							expiresAt: draft.expiresAt,
+						};
+					},
+				);
 
 				setDrafts(fontDrafts);
 			}
@@ -198,7 +202,9 @@ export function useFontDrafts() {
 	 * Load font data from cloud (for preview)
 	 */
 	const loadFontData = useCallback(
-		async (id: string): Promise<{ base64Data: string; blobUrl: string } | null> => {
+		async (
+			id: string,
+		): Promise<{ base64Data: string; blobUrl: string } | null> => {
 			if (!ordAddress) return null;
 
 			// Check if already loaded locally
@@ -237,9 +243,7 @@ export function useFontDrafts() {
 
 					// Update local state with loaded data
 					setDrafts((prev) =>
-						prev.map((d) =>
-							d.id === id ? { ...d, base64Data, blobUrl } : d,
-						),
+						prev.map((d) => (d.id === id ? { ...d, base64Data, blobUrl } : d)),
 					);
 
 					return { base64Data, blobUrl };

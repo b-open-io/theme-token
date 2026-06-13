@@ -6,7 +6,15 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { Blocks, FolderKanban, Grid3X3, Image, Palette, Shapes, Type } from "lucide-react";
+import {
+	Blocks,
+	FolderKanban,
+	Grid3X3,
+	Image,
+	Palette,
+	Shapes,
+	Type,
+} from "lucide-react";
 import { featureFlags } from "./feature-flags";
 
 export type RouteCategory = "main" | "studio" | "market" | "user";
@@ -103,8 +111,7 @@ export const routes: RouteInfo[] = [
 	{
 		path: "/studio/wallpaper",
 		label: "Wallpaper",
-		description:
-			"Generate AI wallpapers for desktop (16:9) and mobile (9:16)",
+		description: "Generate AI wallpapers for desktop (16:9) and mobile (9:16)",
 		category: "studio",
 		feature: "wallpapers",
 		icon: Image,
@@ -114,7 +121,8 @@ export const routes: RouteInfo[] = [
 	{
 		path: "/studio/registry",
 		label: "Component",
-		description: "Create shadcn blocks, components, and hooks for on-chain publishing",
+		description:
+			"Create shadcn blocks, components, and hooks for on-chain publishing",
 		category: "studio",
 		feature: "registry",
 		icon: Blocks,
@@ -123,7 +131,8 @@ export const routes: RouteInfo[] = [
 	{
 		path: "/studio/project",
 		label: "Project",
-		description: "Compose themes, fonts, icons into complete shadcn/create presets",
+		description:
+			"Compose themes, fonts, icons into complete shadcn/create presets",
 		category: "studio",
 		icon: FolderKanban,
 		tools: ["createProject"],

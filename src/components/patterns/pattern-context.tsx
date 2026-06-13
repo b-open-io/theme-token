@@ -2,35 +2,43 @@
 
 import {
 	createContext,
-	useContext,
-	useState,
-	useCallback,
-	useMemo,
 	type ReactNode,
+	useCallback,
+	useContext,
 	useEffect,
-	useRef,
+	useMemo,
+	useState,
 } from "react";
-import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { usePatternDrafts, type PatternDraft } from "@/hooks/use-pattern-drafts";
-import { PATTERN_GENERATION_COST_SATS, FEE_ADDRESS } from "@/lib/yours-wallet";
 import { toast } from "sonner";
 import {
-	generatePattern,
-	randomSeed,
-	DEFAULT_PATTERN_PARAMS,
-	type PatternParams,
-	type PatternSource,
-	type PatternResult,
-	type GeoGeneratorType,
-	type HeroPatternName,
+	type PatternDraft,
+	usePatternDrafts,
+} from "@/hooks/use-pattern-drafts";
+import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import {
 	type AnimationOptions,
 	DEFAULT_ANIMATION_OPTIONS,
+	DEFAULT_PATTERN_PARAMS,
+	type GeoGeneratorType,
+	generatePattern,
+	type HeroPatternName,
+	type PatternParams,
+	type PatternResult,
+	type PatternSource,
+	randomSeed,
 } from "@/lib/pattern-engine";
+import { FEE_ADDRESS, PATTERN_GENERATION_COST_SATS } from "@/lib/yours-wallet";
 
 // Re-export types for convenience
-export type { PatternParams, PatternSource, GeoGeneratorType, HeroPatternName, AnimationOptions };
-export type { PatternDraft };
-export { DEFAULT_PATTERN_PARAMS, DEFAULT_ANIMATION_OPTIONS };
+export type {
+	AnimationOptions,
+	GeoGeneratorType,
+	HeroPatternName,
+	PatternDraft,
+	PatternParams,
+	PatternSource,
+};
+export { DEFAULT_ANIMATION_OPTIONS, DEFAULT_PATTERN_PARAMS };
 
 export interface PatternHistoryItem {
 	id: string;
@@ -49,7 +57,9 @@ export interface UIState {
 interface PatternContextType {
 	// State
 	params: PatternParams;
-	setParams: (params: PatternParams | ((prev: PatternParams) => PatternParams)) => void;
+	setParams: (
+		params: PatternParams | ((prev: PatternParams) => PatternParams),
+	) => void;
 	result: PatternResult | null;
 	history: PatternHistoryItem[];
 	isGenerating: boolean;
@@ -73,8 +83,14 @@ interface PatternContextType {
 
 	// Actions
 	regenerate: () => void;
-	updateParam: <K extends keyof PatternParams>(key: K, value: PatternParams[K]) => void;
-	updateAnimation: <K extends keyof AnimationOptions>(key: K, value: AnimationOptions[K]) => void;
+	updateParam: <K extends keyof PatternParams>(
+		key: K,
+		value: PatternParams[K],
+	) => void;
+	updateAnimation: <K extends keyof AnimationOptions>(
+		key: K,
+		value: AnimationOptions[K],
+	) => void;
 	setSource: (source: PatternSource) => void;
 	setGeoGenerator: (gen: GeoGeneratorType) => void;
 	setHeroPattern: (pattern: HeroPatternName) => void;
@@ -105,7 +121,7 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 	// Payment
 	const [requirePayment, setRequirePayment] = useState(false);
 	const [isPaying, setIsPaying] = useState(false);
-	const { status, connect, balance, sendPayment } = useYoursWallet();
+	const { status, connect, sendPayment } = useYoursWallet();
 	const isConnected = status === "connected";
 
 	// Cloud storage
@@ -124,7 +140,7 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 		try {
 			const newResult = generatePattern(params);
 			setResult(newResult);
-			
+
 			// Add to history
 			setHistory((prev) => [
 				{
@@ -152,18 +168,19 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 		params.opacity,
 		params.scale,
 	]);
-	
+
 	// Track if we're mounted (client-side)
 	const [isMounted, setIsMounted] = useState(false);
-	
+
 	useEffect(() => {
 		setIsMounted(true);
 	}, []);
-	
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: regenerate only when mount state or serialized params change
 	useEffect(() => {
 		// Only run on client-side after mount
 		if (!isMounted) return;
-		
+
 		if (params.source !== "ai") {
 			try {
 				const newResult = generatePattern(params);
@@ -172,21 +189,26 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 				console.error("Pattern generation error:", error);
 			}
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isMounted, paramsKey]);
 
 	// Update a single param
-	const updateParam = useCallback(<K extends keyof PatternParams>(key: K, value: PatternParams[K]) => {
-		setParams((prev) => ({ ...prev, [key]: value }));
-	}, []);
+	const updateParam = useCallback(
+		<K extends keyof PatternParams>(key: K, value: PatternParams[K]) => {
+			setParams((prev) => ({ ...prev, [key]: value }));
+		},
+		[],
+	);
 
 	// Update animation options
-	const updateAnimation = useCallback(<K extends keyof AnimationOptions>(key: K, value: AnimationOptions[K]) => {
-		setParams((prev) => ({
-			...prev,
-			animation: { ...prev.animation, [key]: value },
-		}));
-	}, []);
+	const updateAnimation = useCallback(
+		<K extends keyof AnimationOptions>(key: K, value: AnimationOptions[K]) => {
+			setParams((prev) => ({
+				...prev,
+				animation: { ...prev.animation, [key]: value },
+			}));
+		},
+		[],
+	);
 
 	// Source switching helpers
 	const setSource = useCallback((source: PatternSource) => {
@@ -292,77 +314,79 @@ export function PatternProvider({ children }: { children: ReactNode }) {
 	}, [fetchCloudDrafts]);
 
 	// AI generation
-	const generateAI = useCallback(async (prompt: string) => {
-		if (!prompt.trim()) return;
+	const generateAI = useCallback(
+		async (prompt: string) => {
+			if (!prompt.trim()) return;
 
-		// Check wallet if payment required
-		if (requirePayment) {
-			if (!isConnected) {
-				try {
-					await connect();
-				} catch {
-					toast.error("Please connect your wallet");
+			// Check wallet if payment required
+			if (requirePayment) {
+				if (!isConnected) {
+					try {
+						await connect();
+					} catch {
+						toast.error("Please connect your wallet");
+						return;
+					}
 					return;
 				}
-				return;
 			}
 
-			const hasBalance = (balance?.satoshis ?? 0) >= PATTERN_GENERATION_COST_SATS;
-			if (!hasBalance) {
-				toast.error("Insufficient balance");
-				return;
-			}
-		}
+			setIsGenerating(true);
 
-		setIsGenerating(true);
+			try {
+				let paymentTxid = "free-tier";
 
-		try {
-			let paymentTxid = "free-tier";
+				if (requirePayment) {
+					setIsPaying(true);
+					const paymentResult = await sendPayment(
+						FEE_ADDRESS,
+						PATTERN_GENERATION_COST_SATS,
+					);
+					setIsPaying(false);
 
-			if (requirePayment) {
-				setIsPaying(true);
-				const paymentResult = await sendPayment(FEE_ADDRESS, PATTERN_GENERATION_COST_SATS);
-				setIsPaying(false);
-
-				if (!paymentResult) {
-					throw new Error("Payment failed");
+					if (!paymentResult) {
+						throw new Error("Payment failed");
+					}
+					paymentTxid = paymentResult.txid;
 				}
-				paymentTxid = paymentResult.txid;
+
+				const response = await fetch("/api/generate-pattern", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						prompt: prompt.trim(),
+						colorMode: "currentColor",
+						paymentTxid,
+					}),
+				});
+
+				if (!response.ok) {
+					throw new Error("Failed to generate pattern");
+				}
+
+				const data = await response.json();
+
+				// Update params with AI result
+				setParams((prev) => ({
+					...prev,
+					source: "ai",
+					aiPrompt: prompt,
+					aiSvg: data.svg,
+				}));
+
+				toast.success("Pattern generated!");
+			} catch (error) {
+				console.error("AI generation error:", error);
+				toast.error(
+					error instanceof Error ? error.message : "Generation failed",
+				);
+			} finally {
+				setIsGenerating(false);
+				setIsPaying(false);
 			}
-
-			const response = await fetch("/api/generate-pattern", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					prompt: prompt.trim(),
-					colorMode: "currentColor",
-					paymentTxid,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error("Failed to generate pattern");
-			}
-
-			const data = await response.json();
-			
-			// Update params with AI result
-			setParams((prev) => ({
-				...prev,
-				source: "ai",
-				aiPrompt: prompt,
-				aiSvg: data.svg,
-			}));
-
-			toast.success("Pattern generated!");
-		} catch (error) {
-			console.error("AI generation error:", error);
-			toast.error(error instanceof Error ? error.message : "Generation failed");
-		} finally {
-			setIsGenerating(false);
-			setIsPaying(false);
-		}
-	}, [requirePayment, isConnected, connect, balance, sendPayment]);
+		},
+		[requirePayment, isConnected, connect, sendPayment],
+	);
 
 	// Derived values
 	const svgDataUrl = useMemo(() => {

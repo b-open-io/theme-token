@@ -61,7 +61,8 @@ export interface FontUploadActions {
 export type FontUploadStore = FontUploadState & FontUploadActions;
 
 // Generate unique ID
-const generateId = () => `upload-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const generateId = () =>
+	`upload-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 // Track loaded fonts to avoid duplicate loading
 const loadedFonts = new Set<string>();
@@ -138,10 +139,7 @@ export const useFontUploadStore = create<FontUploadStore>()((set, get) => ({
 		}
 
 		// Create FontFace and add to document
-		const fontFace = new FontFace(
-			font.familyName,
-			`url(${font.blobUrl})`,
-		);
+		const fontFace = new FontFace(font.familyName, `url(${font.blobUrl})`);
 
 		await fontFace.load();
 		document.fonts.add(fontFace);
@@ -183,7 +181,8 @@ export async function createUploadedFontFromFile(
 	const blobUrl = URL.createObjectURL(file);
 
 	// Extract family name from filename if not provided
-	const extractedName = familyName || file.name.replace(/\.(woff2?|ttf|otf)$/i, "");
+	const extractedName =
+		familyName || file.name.replace(/\.(woff2?|ttf|otf)$/i, "");
 
 	return {
 		fileName: file.name,

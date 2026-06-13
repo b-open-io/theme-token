@@ -1,9 +1,9 @@
 import { getOrdfsUrl } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 import {
-	validateRegistryManifest,
 	hydrateRegistryManifest,
 	toShadcnRegistryItem,
+	validateRegistryManifest,
 } from "@/lib/registry-gateway";
 
 /**
@@ -27,10 +27,7 @@ export async function GET(
 		// Fetch the manifest from ORDFS
 		const response = await fetch(getOrdfsUrl(origin));
 		if (!response.ok) {
-			return NextResponse.json(
-				{ error: "Block not found" },
-				{ status: 404 },
-			);
+			return NextResponse.json({ error: "Block not found" }, { status: 404 });
 		}
 
 		// ORDFS resolves _N refs natively — no client-side resolution needed

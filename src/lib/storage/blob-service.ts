@@ -101,10 +101,10 @@ export async function deleteBlobs(urls: string[]): Promise<void> {
 export async function listUserBlobs(
 	userId: string,
 	type?: DraftType,
-): Promise<{ url: string; pathname: string; size: number; uploadedAt: Date }[]> {
-	const prefix = type
-		? `drafts/${userId}/${type}/`
-		: `drafts/${userId}/`;
+): Promise<
+	{ url: string; pathname: string; size: number; uploadedAt: Date }[]
+> {
+	const prefix = type ? `drafts/${userId}/${type}/` : `drafts/${userId}/`;
 
 	const result = await list({ prefix });
 

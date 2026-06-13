@@ -2,7 +2,7 @@
 
 import { WalletProvider as OneSatWalletProvider } from "@1sat/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BsvRateProvider } from "@/hooks/use-bsv-rate-context";
 import { WalletProvider } from "@/hooks/use-yours-wallet";
@@ -39,15 +39,15 @@ export function Providers({
 				hasExistingSession={hasExistingSession}
 			>
 				<OneSatWalletProvider
-				autoDetect
-				providers={[
-					{
-						type: "onesat",
-						name: "1Sat Wallet",
-						url: "https://1satwallet.com",
-					},
-				]}
-			>
+					autoDetect
+					providers={[
+						{
+							type: "onesat",
+							name: "1Sat Wallet",
+							url: "https://1satwallet.com",
+						},
+					]}
+				>
 					<WalletProvider>
 						<BsvRateProvider>{children}</BsvRateProvider>
 					</WalletProvider>

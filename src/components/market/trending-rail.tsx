@@ -4,10 +4,10 @@ import type { ThemeToken } from "@theme-token/sdk";
 import { motion } from "framer-motion";
 import { Flame, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useBsvRateContext } from "@/hooks/use-bsv-rate-context";
 import type { ThemeWithChange } from "@/hooks/use-market-history";
 import { formatBSV } from "./theme-stripes";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface TrendingItem extends ThemeWithChange {
 	theme: ThemeToken;
@@ -54,7 +54,9 @@ function TrendingCard({
 					/>
 					<div className="min-w-0 flex-1">
 						<div className="flex items-start justify-between gap-1">
-							<p className="truncate text-sm font-medium leading-tight">{item.theme.name}</p>
+							<p className="truncate text-sm font-medium leading-tight">
+								{item.theme.name}
+							</p>
 							{/* Change badge */}
 							{hasChange && (
 								<span
@@ -95,7 +97,9 @@ function TrendingCard({
 
 				{/* Bottom: price */}
 				<div className="mt-auto flex items-end justify-between gap-2">
-					<span className="shrink-0 text-[10px] text-muted-foreground">Price</span>
+					<span className="shrink-0 text-[10px] text-muted-foreground">
+						Price
+					</span>
 					<div className="min-w-0 text-right">
 						<span className="truncate font-mono text-sm font-bold">
 							{usdPrice || `${formatBSV(item.price)} BSV`}
@@ -167,11 +171,7 @@ export function TrendingRail({ items, mode }: TrendingRailProps) {
 			<div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5 xl:grid-cols-6">
 				{items.map((item, index) => (
 					<div key={item.origin} className="w-40 shrink-0 md:w-auto">
-						<TrendingCard
-							item={item}
-							mode={mode}
-							index={index}
-						/>
+						<TrendingCard item={item} mode={mode} index={index} />
 					</div>
 				))}
 			</div>

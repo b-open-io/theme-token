@@ -44,15 +44,15 @@ function buildFaviconSvg(prompt: string, params: FaviconParams): string {
 
 	const glyph = getPromptGlyph(prompt);
 	const glyphFontSize = Math.floor(size * 0.56);
-	const glyphY = Math.floor(size * 0.70);
+	const glyphY = Math.floor(size * 0.7);
 
 	const glyphNode =
 		params.shape === "glyph"
 			? `<text x="${Math.floor(size / 2)}" y="${glyphY}" text-anchor="middle" font-size="${glyphFontSize}" font-family="ui-sans-serif, system-ui, -apple-system" fill="${fg}">${glyph}</text>`
 			: `<g>
   <circle cx="${Math.floor(size / 2)}" cy="${Math.floor(size / 2)}" r="${Math.floor((size - pad * 2) / 2)}" fill="${fg}" opacity="0.12"/>
-  <path d="M${Math.floor(size * 0.32)} ${Math.floor(size * 0.58)} L${Math.floor(size * 0.50)} ${Math.floor(size * 0.30)} L${Math.floor(size * 0.68)} ${Math.floor(size * 0.58)}" fill="none" stroke="${fg}" stroke-width="${Math.max(2, Math.floor(size * 0.06))}" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M${Math.floor(size * 0.50)} ${Math.floor(size * 0.30)} V${Math.floor(size * 0.76)}" fill="none" stroke="${fg}" stroke-width="${Math.max(2, Math.floor(size * 0.06))}" stroke-linecap="round"/>
+  <path d="M${Math.floor(size * 0.32)} ${Math.floor(size * 0.58)} L${Math.floor(size * 0.5)} ${Math.floor(size * 0.3)} L${Math.floor(size * 0.68)} ${Math.floor(size * 0.58)}" fill="none" stroke="${fg}" stroke-width="${Math.max(2, Math.floor(size * 0.06))}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M${Math.floor(size * 0.5)} ${Math.floor(size * 0.3)} V${Math.floor(size * 0.76)}" fill="none" stroke="${fg}" stroke-width="${Math.max(2, Math.floor(size * 0.06))}" stroke-linecap="round"/>
 </g>`;
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${bgRect}${glyphNode}</svg>`;
@@ -68,7 +68,10 @@ export async function POST(request: NextRequest) {
 		const params = body.params;
 
 		if (!params) {
-			return NextResponse.json({ error: "params are required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "params are required" },
+				{ status: 400 },
+			);
 		}
 
 		const svg = buildFaviconSvg(body.prompt || "", params);
@@ -91,7 +94,8 @@ export async function POST(request: NextRequest) {
 		console.error("Favicon generation error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to generate favicon",
+				error:
+					error instanceof Error ? error.message : "Failed to generate favicon",
 			},
 			{ status: 500 },
 		);

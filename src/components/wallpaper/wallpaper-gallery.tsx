@@ -101,6 +101,7 @@ export function WallpaperGallery() {
 													height: 60,
 												}}
 											>
+												{/* biome-ignore lint/performance/noImgElement: dynamic/generated image (data URL or runtime dimensions); next/image not suitable */}
 												<img
 													src={createImageDataUrl(
 														wallpaper.imageBase64,

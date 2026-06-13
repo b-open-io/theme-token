@@ -1,10 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { compileFont, fontToBase64, type FontData } from "@/lib/font-compiler";
-import {
-	optimizeFont,
-	validateAndFixGlyphs,
-	generateKerningPairs,
-} from "@/lib/font-optimizer";
+import { compileFont, type FontData, fontToBase64 } from "@/lib/font-compiler";
+import { optimizeFont, validateAndFixGlyphs } from "@/lib/font-optimizer";
 
 /**
  * Font Compilation API
@@ -65,7 +61,8 @@ export async function POST(request: NextRequest) {
 		console.error("[compile-font] Error:", error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : "Failed to compile font",
+				error:
+					error instanceof Error ? error.message : "Failed to compile font",
 				details: error instanceof Error ? error.stack : undefined,
 			},
 			{ status: 500 },

@@ -175,7 +175,9 @@ export function WallpaperPreview() {
 									boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
 								}}
 							>
+								{/* biome-ignore lint/performance/noImgElement: dynamic/generated image (data URL or runtime dimensions); next/image not suitable */}
 								<img
+									// biome-ignore lint/style/noNonNullAssertion: rendered only when selectedWallpaper exists, which guarantees selectedImageDataUrl is set
 									src={selectedImageDataUrl!}
 									alt={selectedWallpaper.prompt}
 									className="max-w-[80vw] max-h-[70vh] object-contain"

@@ -98,4 +98,3 @@ export function buildThemeMetadata(params: {
 		...(params.model && { model: params.model }),
 	};
 }
-

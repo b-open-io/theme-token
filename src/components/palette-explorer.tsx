@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
-import { Pipette, Loader2 } from "lucide-react";
+import { Loader2, Pipette } from "lucide-react";
+import { type MouseEvent, useState } from "react";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
 	fetchTintsPalette,
@@ -15,7 +15,7 @@ interface PaletteExplorerProps {
 }
 
 // Calculate max radius for circular reveal animation
-function getMaxRadius(x: number, y: number, element: HTMLElement): number {
+function _getMaxRadius(x: number, y: number, element: HTMLElement): number {
 	const rect = element.getBoundingClientRect();
 	const right = rect.width - (x - rect.left);
 	const bottom = rect.height - (y - rect.top);
@@ -81,6 +81,7 @@ export function PaletteExplorer({
 					className="h-10 flex-1 rounded-lg border border-border bg-background px-3 font-mono text-sm uppercase focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 				/>
 				<button
+					type="button"
 					onClick={handleColorPick}
 					disabled={isLoading}
 					className="flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"

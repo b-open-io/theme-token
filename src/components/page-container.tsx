@@ -16,8 +16,6 @@ export function PageContainer({
 	const widthClass = WIDTH_CONFIG[widthVariant];
 
 	return (
-		<div className={cn("mx-auto px-4", widthClass, className)}>
-			{children}
-		</div>
+		<div className={cn("mx-auto px-4", widthClass, className)}>{children}</div>
 	);
 }

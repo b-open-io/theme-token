@@ -6,8 +6,8 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchCachedThemes, type CachedTheme } from "@/lib/themes-cache";
 import { useTheme } from "@/components/theme-provider";
+import { type CachedTheme, fetchCachedThemes } from "@/lib/themes-cache";
 
 /**
  * Hook for accessing all on-chain themes and current theme state

@@ -1,9 +1,9 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import type { UIMessage } from "ai";
-import type { ToolName } from "@/lib/agent/tools";
 import type { ThemeToken } from "@theme-token/sdk";
+import type { UIMessage } from "ai";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { SwatchyContext } from "@/lib/agent/config";
+import type { ToolName } from "@/lib/agent/tools";
 
 export type SwatchyPosition = "corner" | "expanded" | "hero";
 export type SwatchySide = "left" | "right";
@@ -210,8 +210,10 @@ export const useSwatchyStore = create<SwatchyStore>()(
 			closeChat: () => {
 				// Determine if we should return to hero or corner based on scroll position
 				// Hero threshold is 150px, only on homepage
-				const isHomepage = typeof window !== "undefined" && window.location.pathname === "/";
-				const isAboveThreshold = typeof window !== "undefined" && window.scrollY < 150;
+				const isHomepage =
+					typeof window !== "undefined" && window.location.pathname === "/";
+				const isAboveThreshold =
+					typeof window !== "undefined" && window.scrollY < 150;
 				const shouldBeHero = isHomepage && isAboveThreshold;
 				set({
 					position: shouldBeHero ? "hero" : "corner",
@@ -414,6 +416,6 @@ How would you like to modify this theme?`;
 				// Called when hydration is complete
 				state?.setHasHydrated(true);
 			},
-		}
-	)
+		},
+	),
 );

@@ -1,7 +1,11 @@
 "use client";
 
-import { HexColorPicker, HexColorInput } from "react-colorful";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HexColorInput, HexColorPicker } from "react-colorful";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 interface ColorPickerProps {
@@ -18,9 +22,10 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
 		<Popover>
 			<PopoverTrigger asChild>
 				<button
+					type="button"
 					className={cn(
 						"h-6 w-6 shrink-0 cursor-pointer rounded border border-border",
-						className
+						className,
 					)}
 					style={{ backgroundColor: value }}
 				/>

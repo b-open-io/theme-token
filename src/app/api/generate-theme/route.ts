@@ -39,9 +39,7 @@ const styleModeSchema = z.object({
 		"Less prominent actions - derived from primary with reduced chroma",
 	),
 	"secondary-foreground": oklchColorSchema.describe("Text on secondary"),
-	muted: oklchColorSchema.describe(
-		"Subtle/disabled backgrounds - low chroma",
-	),
+	muted: oklchColorSchema.describe("Subtle/disabled backgrounds - low chroma"),
 	"muted-foreground": oklchColorSchema.describe(
 		"Subtle text - reduced contrast from foreground",
 	),
@@ -108,7 +106,6 @@ const themeSchema = z.object({
 	light: styleModeSchema.describe("Light mode colors"),
 	dark: styleModeSchema.describe("Dark mode colors"),
 });
-
 
 export async function POST(request: NextRequest) {
 	try {
