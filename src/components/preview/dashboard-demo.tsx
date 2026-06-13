@@ -173,23 +173,49 @@ export function DashboardDemo() {
 										</CardHeader>
 										<CardContent className="p-3 pt-0">
 											<div className="space-y-3">
-												{[1, 2, 3].map((i) => (
-													<div key={i} className="flex items-center gap-2">
+												{[
+													{
+														name: "Olivia Martin",
+														email: "olivia@email.com",
+														amount: "+$1,999",
+														initials: "OM",
+														tone: "bg-primary text-primary-foreground",
+													},
+													{
+														name: "Jackson Lee",
+														email: "jackson@email.com",
+														amount: "+$39",
+														initials: "JL",
+														tone: "bg-secondary text-secondary-foreground",
+													},
+													{
+														name: "Isabella Nguyen",
+														email: "isabella@email.com",
+														amount: "+$299",
+														initials: "IN",
+														tone: "bg-accent text-accent-foreground",
+													},
+												].map((sale) => (
+													<div
+														key={sale.email}
+														className="flex items-center gap-2"
+													>
 														<Avatar className="h-7 w-7">
-															<AvatarImage
-																src={`https://avatar.vercel.sh/${i}.png`}
-															/>
-															<AvatarFallback>OM</AvatarFallback>
+															<AvatarFallback
+																className={`text-[10px] font-semibold ${sale.tone}`}
+															>
+																{sale.initials}
+															</AvatarFallback>
 														</Avatar>
 														<div className="flex-1 min-w-0">
 															<p className="text-xs font-medium truncate">
-																Olivia Martin
+																{sale.name}
 															</p>
 															<p className="text-[10px] text-muted-foreground truncate">
-																olivia@email.com
+																{sale.email}
 															</p>
 														</div>
-														<div className="text-xs font-bold">+$1,999</div>
+														<div className="text-xs font-bold">{sale.amount}</div>
 													</div>
 												))}
 											</div>
