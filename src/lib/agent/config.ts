@@ -8,10 +8,10 @@ import { getNavigationHints, getToolsForPage } from "./tool-routing";
 
 // Model IDs for AI Gateway (Vercel AI SDK v6 gateway format)
 // Free model for conversation - fast and cost-effective
-export const conversationModel = "google/gemini-2.0-flash" as const;
+export const conversationModel = "google/gemini-3.5-flash" as const;
 
 // Paid model for expensive generation operations
-export const generationModel = "google/gemini-3-pro-preview" as const;
+export const generationModel = "google/gemini-3.1-pro-preview" as const;
 
 // Re-export from centralized pricing for backward compatibility
 export const TOOL_COSTS = BASE_PRICES;

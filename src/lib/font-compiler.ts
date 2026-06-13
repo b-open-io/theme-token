@@ -1,4 +1,4 @@
-import opentype from "opentype.js";
+import * as opentype from "opentype.js";
 import { compress } from "wawoff2";
 import { svgPathToOpentypePath, getPathBounds } from "./svg-to-path";
 

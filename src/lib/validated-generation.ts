@@ -25,7 +25,7 @@ export interface ValidatedGenerationConfig<T> {
 	codeExtractor: (result: T) => string | Array<{ content: string; filename?: string }>;
 	/** Maximum retry attempts (default: 3) */
 	maxRetries?: number;
-	/** Model ID to use (default: google/gemini-3-pro-preview) */
+	/** Model ID to use (default: google/gemini-3.1-pro-preview) */
 	model?: string;
 }
 
@@ -60,7 +60,7 @@ export async function generateWithValidation<T>(
 		userPrompt,
 		codeExtractor,
 		maxRetries = 3,
-		model = "google/gemini-3-pro-preview",
+		model = "google/gemini-3.1-pro-preview",
 	} = config;
 
 	let attempts = 0;

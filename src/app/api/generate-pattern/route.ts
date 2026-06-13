@@ -254,7 +254,7 @@ Apply the requested changes and return the modified SVG.`;
 		// Streaming mode
 		if (stream) {
 			const result = await streamText({
-				model: "google/gemini-2.0-flash" as Parameters<typeof streamText>[0]["model"],
+				model: "google/gemini-3.5-flash" as Parameters<typeof streamText>[0]["model"],
 				system: activeSystemPrompt,
 				prompt: userPrompt,
 				tools: patternTools,
@@ -272,7 +272,7 @@ Apply the requested changes and return the modified SVG.`;
 
 		// Non-streaming mode
 		const { text: svgResult, toolCalls: resultToolCalls } = await generateText({
-			model: "google/gemini-2.0-flash" as Parameters<typeof generateText>[0]["model"],
+			model: "google/gemini-3.5-flash" as Parameters<typeof generateText>[0]["model"],
 			system: activeSystemPrompt,
 			prompt: userPrompt,
 			tools: patternTools,
@@ -320,7 +320,7 @@ Apply the requested changes and return the modified SVG.`;
 			svg,
 			seed: seed || Math.random().toString(36).substring(2, 10),
 			provider: "google",
-			model: "gemini-2.0-flash",
+			model: "gemini-3.5-flash",
 			mode: isAugment ? "augment" : "generate",
 			meta,
 			toolCalls,

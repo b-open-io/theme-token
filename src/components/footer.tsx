@@ -1,10 +1,10 @@
 "use client";
 
+import { IconBrandGithub } from "@tabler/icons-react";
 import {
 	Box,
 	Cpu,
 	ExternalLink,
-	Github,
 	Layers,
 	Package,
 	Palette,
@@ -141,7 +141,7 @@ export function Footer() {
 									rel="noreferrer"
 									className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
 								>
-									<Github className="w-3.5 h-3.5" /> GitHub
+									<IconBrandGithub className="w-3.5 h-3.5" /> GitHub
 								</a>
 							</li>
 							<li>
@@ -235,7 +235,7 @@ export function Footer() {
 							className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
 							aria-label="GitHub"
 						>
-							<Github className="w-4 h-4" />
+							<IconBrandGithub className="w-4 h-4" />
 						</a>
 
 						{/* Status Indicator */}

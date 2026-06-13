@@ -1,14 +1,15 @@
 "use client";
 
-import { Github, Menu, Moon, Sun, X } from "lucide-react";
+import { IconBrandGithub } from "@tabler/icons-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Menu, Moon, Sun, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { WalletConnect } from "@/components/wallet-connect";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
+import { WalletConnect } from "@/components/wallet-connect";
 import { getWidthVariant, WIDTH_CONFIG } from "@/lib/layout-config";
 
 function useGitHubStars() {
@@ -66,7 +67,9 @@ export function Header() {
 	return (
 		<>
 			<header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-				<div className={`mx-auto flex h-14 items-center justify-between px-4 transition-[max-width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${widthClass}`}>
+				<div
+					className={`mx-auto flex h-14 items-center justify-between px-4 transition-[max-width] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${widthClass}`}
+				>
 					{/* Logo - Text on mobile, icon+text on desktop */}
 					<Link href="/" className="flex items-center gap-2">
 						<Image
@@ -88,7 +91,8 @@ export function Header() {
 								key={link.href}
 								href={link.href}
 								className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-									pathname === link.href || pathname?.startsWith(link.href + "/")
+									pathname === link.href ||
+									pathname?.startsWith(link.href + "/")
 										? "text-foreground"
 										: "text-muted-foreground"
 								}`}
@@ -107,14 +111,14 @@ export function Header() {
 							rel="noopener noreferrer"
 							className="hidden sm:inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 						>
-							<Github className="h-4 w-4" />
+							<IconBrandGithub className="h-4 w-4" />
 							{stars !== null && (
 								<span className="text-xs tabular-nums">{stars}</span>
 							)}
 						</a>
-						
+
 						<WalletConnect />
-						
+
 						{/* Mobile Menu Button */}
 						<Button
 							variant="ghost"
@@ -167,13 +171,18 @@ export function Header() {
 											href={link.href}
 											onClick={() => setMenuOpen(false)}
 											className={`group flex flex-col rounded-xl px-4 py-4 transition-colors ${
-												pathname === link.href || pathname?.startsWith(link.href + "/")
+												pathname === link.href ||
+												pathname?.startsWith(link.href + "/")
 													? "bg-primary/10 text-primary"
 													: "hover:bg-muted"
 											}`}
 										>
-											<span className="text-2xl font-semibold">{link.label}</span>
-											<span className="text-sm text-muted-foreground">{link.description}</span>
+											<span className="text-2xl font-semibold">
+												{link.label}
+											</span>
+											<span className="text-sm text-muted-foreground">
+												{link.description}
+											</span>
 										</Link>
 									</motion.div>
 								))}
@@ -217,7 +226,7 @@ export function Header() {
 									rel="noopener noreferrer"
 									className="flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 								>
-									<Github className="h-5 w-5" />
+									<IconBrandGithub className="h-5 w-5" />
 									<span className="flex-1 text-sm font-medium">GitHub</span>
 									{stars !== null && (
 										<span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">

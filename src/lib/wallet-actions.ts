@@ -1,18 +1,18 @@
-import { PublicKey, Utils } from "@bsv/sdk";
+import { createContext, type OneSatContext, sendBsv } from "@1sat/actions";
 import type { WalletInterface } from "@bsv/sdk";
-import {
-	createContext,
-	sendBsv,
-	type OneSatContext,
-} from "@1sat/actions";
+import { PublicKey, Utils } from "@bsv/sdk";
 import {
 	buildThemeMetadata,
 	buildTileMetadata,
 	type PackageMapMetadata,
 } from "@/lib/asset-metadata";
-import { publishPackage, type PublishPackageResult, type PackageFile } from "@/lib/package-builder";
-import { fetchOrdinalsByAddress } from "@/lib/yours-wallet";
+import {
+	type PackageFile,
+	type PublishPackageResult,
+	publishPackage,
+} from "@/lib/package-builder";
 import type { Ordinal } from "@/lib/yours-wallet";
+import { fetchOrdinalsByAddress } from "@/lib/yours-wallet";
 
 /**
  * Create an action context for @1sat/actions from a CWI wallet.
@@ -52,9 +52,7 @@ export async function getPaymentAddress(
 /**
  * Get the identity public key from the wallet.
  */
-export async function getIdentityKey(
-	wallet: WalletInterface,
-): Promise<string> {
+export async function getIdentityKey(wallet: WalletInterface): Promise<string> {
 	const { publicKey } = await wallet.getPublicKey({ identityKey: true });
 	return publicKey;
 }
@@ -193,7 +191,9 @@ export async function inscribeImage(
 		...(imageMetadata?.prompt && { prompt: imageMetadata.prompt }),
 		...(imageMetadata?.provider && { provider: imageMetadata.provider }),
 		...(imageMetadata?.model && { model: imageMetadata.model }),
-		...(imageMetadata?.aspectRatio && { aspectRatio: imageMetadata.aspectRatio }),
+		...(imageMetadata?.aspectRatio && {
+			aspectRatio: imageMetadata.aspectRatio,
+		}),
 		...(imageMetadata?.style && { style: imageMetadata.style }),
 		...(imageMetadata?.width && { width: imageMetadata.width.toString() }),
 		...(imageMetadata?.height && { height: imageMetadata.height.toString() }),
@@ -224,5 +224,9 @@ export async function sendPayment(
 		throw new Error("Payment succeeded but no txid was returned");
 	}
 
-	return { txid: result.txid, rawtx: result.rawtx };
+	// @1sat/actions now returns the raw tx as a byte array (`tx`); expose hex.
+	return {
+		txid: result.txid,
+		rawtx: result.tx ? Utils.toHex(result.tx) : undefined,
+	};
 }

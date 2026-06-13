@@ -3,11 +3,8 @@
  * Replaces manual OrdLock transaction building with the action system.
  */
 
-import type { WalletInterface } from "@bsv/sdk";
-import {
-	listOrdinal as listOrdinalAction,
-	getOrdinals,
-} from "@1sat/actions";
+import { getOrdinals, listOrdinal as listOrdinalAction } from "@1sat/actions";
+import { Utils, type WalletInterface } from "@bsv/sdk";
 import { createWalletContext, getPaymentAddress } from "@/lib/wallet-actions";
 
 export interface ListOrdinalParams {
@@ -42,9 +39,7 @@ export async function listOrdinal(
 	const ordinal = outputs.find((o) => o.outpoint === outpoint);
 
 	if (!ordinal) {
-		throw new Error(
-			`Ordinal not found in wallet for outpoint: ${outpoint}`,
-		);
+		throw new Error(`Ordinal not found in wallet for outpoint: ${outpoint}`);
 	}
 
 	// Derive the seller's payment address
@@ -67,6 +62,7 @@ export async function listOrdinal(
 
 	return {
 		txid: result.txid,
-		rawtx: result.rawtx,
+		// @1sat/actions now returns the raw tx as a byte array (`tx`); expose hex.
+		rawtx: result.tx ? Utils.toHex(result.tx) : undefined,
 	};
 }

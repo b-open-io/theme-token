@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 		const modelId =
 			model === "claude-opus-4.5"
 				? "anthropic/claude-opus-4.5"
-				: "google/gemini-3-pro-preview";
+				: "google/gemini-3.1-pro-preview";
 
 		// If primaryColor provided, generate palette locally using tints.dev library
 		let paletteContext = "";

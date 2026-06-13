@@ -1,8 +1,13 @@
-import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
+import {
+	convertToModelMessages,
+	stepCountIs,
+	streamText,
+	type UIMessage,
+} from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-	conversationModel,
 	buildSwatchySystemPrompt,
+	conversationModel,
 	type SwatchyContext,
 } from "@/lib/agent/config";
 import { getPageAwareTools } from "@/lib/agent/tools";
@@ -12,7 +17,10 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { messages, context }: { messages: UIMessage[]; context?: SwatchyContext } = body;
+		const {
+			messages,
+			context,
+		}: { messages: UIMessage[]; context?: SwatchyContext } = body;
 
 		if (!messages || !Array.isArray(messages)) {
 			return NextResponse.json(
@@ -34,7 +42,7 @@ export async function POST(request: NextRequest) {
 		const result = streamText({
 			model: conversationModel as Parameters<typeof streamText>[0]["model"],
 			system: systemPrompt,
-			messages: convertToModelMessages(messages),
+			messages: await convertToModelMessages(messages),
 			tools: availableTools,
 			toolChoice: "auto",
 			// Allow multi-step tool calling - Swatchy can chain actions (navigate then generate, etc)

@@ -76,7 +76,7 @@ const JSON_DATA: Record<AssetType, string> = {
   "license": "CC0",
   "prompt": "evenly spaced dots",
   "provider": "google",
-  "model": "gemini-2.5-flash"
+  "model": "gemini-3.5-flash"
 }`,
 	wallpaper: `{
   "app": "theme-token",
@@ -86,7 +86,7 @@ const JSON_DATA: Record<AssetType, string> = {
   "license": "CC0",
   "prompt": "abstract gradient",
   "provider": "google",
-  "model": "imagen-3"
+  "model": "gemini-3-pro-image"
 }`,
 	icon: `{
   "app": "theme-token",
@@ -96,7 +96,7 @@ const JSON_DATA: Record<AssetType, string> = {
   "license": "CC0",
   "prompt": "minimal gear icon",
   "provider": "google",
-  "model": "gemini-2.5-flash"
+  "model": "gemini-3-pro-image"
 }`,
 	project: `{
   "app": "theme-token",
