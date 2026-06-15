@@ -763,11 +763,20 @@ export function useSwatchyChat() {
 							return `Theme "${data.theme.name}" generated and saved to drafts!`;
 						}
 
-						// Otherwise navigate to studio (it will pick up aiGeneratedTheme from store)
+						// Otherwise hard-navigate to the studio with the FULL theme in the
+						// URL. This is a single SSR load (like pasting the link), so the
+						// generated theme is rendered from the URL on arrival. The old
+						// approach — soft-push to a clean /studio/theme then rewrite the
+						// URL client-side — loaded the session theme first and never
+						// re-read the rewritten styles, so you saw the previous theme; it
+						// also turned the long URL into a failing RSC fetch.
 						setNavigating(true);
-						router.push("/studio/theme");
-
 						setGenerationSuccess(data.theme);
+						const params = new URLSearchParams({
+							styles: btoa(JSON.stringify(data.theme.styles)),
+							name: data.theme.name,
+						});
+						window.location.href = `/studio/theme?${params.toString()}`;
 						return `Theme "${data.theme.name}" generated! Opening studio...`;
 					} catch (err) {
 						const errorMsg =

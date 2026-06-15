@@ -79,7 +79,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 					</Button>
 				)}
 			</DialogTrigger>
-			<DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden">
+			<DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden">
 				<DialogHeader>
 					<DialogTitle>Export Theme: {theme.name}</DialogTitle>
 					<DialogDescription>
@@ -90,6 +90,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 				<Tabs
 					value={activeTab}
 					onValueChange={(v) => setActiveTab(v as ExportFormat)}
+					className="flex min-h-0 min-w-0 flex-1 flex-col"
 				>
 					<TabsList className="w-full">
 						<TabsTrigger value="css" className="flex-1">
@@ -109,8 +110,12 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 
 					{(["css", "tailwind", "cli", "json"] as ExportFormat[]).map(
 						(format) => (
-							<TabsContent key={format} value={format} className="mt-4">
-								<div className="space-y-2">
+							<TabsContent
+								key={format}
+								value={format}
+								className="mt-4 min-h-0 min-w-0 flex-1"
+							>
+								<div className="min-w-0 space-y-2">
 									{/* Toolbar: description + always-visible copy button */}
 									<div className="flex items-center justify-between gap-3">
 										<p className="min-w-0 truncate text-sm text-muted-foreground">
@@ -135,7 +140,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 											)}
 										</Button>
 									</div>
-									<pre className="max-h-[50vh] overflow-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs whitespace-pre">
+									<pre className="max-h-[50vh] w-full overflow-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs whitespace-pre">
 										{getContent(format)}
 									</pre>
 								</div>
