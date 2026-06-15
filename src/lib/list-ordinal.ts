@@ -5,7 +5,7 @@
 
 import { getOrdinals, listOrdinal as listOrdinalAction } from "@1sat/actions";
 import { Utils, type WalletInterface } from "@bsv/sdk";
-import { createWalletContext, getPaymentAddress } from "@/lib/wallet-actions";
+import { createWalletContext, getDepositAddress } from "@/lib/wallet-actions";
 
 export interface ListOrdinalParams {
 	/** Outpoint of the ordinal to list (txid_vout format) */
@@ -42,8 +42,8 @@ export async function listOrdinal(
 		throw new Error(`Ordinal not found in wallet for outpoint: ${outpoint}`);
 	}
 
-	// Derive the seller's payment address
-	const payAddress = await getPaymentAddress(wallet);
+	// Sale proceeds go to the wallet's canonical deposit address
+	const payAddress = await getDepositAddress(wallet);
 
 	// Execute the listing via @1sat/actions
 	const result = await listOrdinalAction.execute(ctx, {

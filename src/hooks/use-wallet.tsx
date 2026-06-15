@@ -26,10 +26,9 @@ import { bundleItemsToPackage, publishPackage } from "@/lib/package-builder";
 // Import and re-export pricing constants
 import { PRISM_PASS_COLLECTION_ID, PRISM_PASS_DISCOUNT } from "@/lib/pricing";
 import {
+	getDepositAddress,
 	getIdentityKey,
-	getOrdinalAddress,
 	getOwnedOrdinals,
-	getPaymentAddress,
 	getSocialProfile,
 	inscribeImage as walletInscribeImage,
 	inscribePattern as walletInscribePattern,
@@ -408,16 +407,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			// main funds basket ("default") is admin-only, so apps cannot read the
 			// user's BSV balance. Payment affordability is determined by attempting
 			// the payment and surfacing any wallet error (e.g. insufficient funds).
-			const [ordAddr, bsvAddr, idKey, social] = await Promise.all([
-				getOrdinalAddress(w),
-				getPaymentAddress(w),
+			const [depositAddr, idKey, social] = await Promise.all([
+				getDepositAddress(w),
 				getIdentityKey(w),
 				getSocialProfile(w),
 			]);
 
+			// One canonical deposit address serves both ordinals and payments in
+			// the 1Sat paradigm — they are the same address, matching the wallet.
 			const addrs: Addresses = {
-				ordAddress: ordAddr,
-				bsvAddress: bsvAddr,
+				ordAddress: depositAddr,
+				bsvAddress: depositAddr,
 				identityKey: idKey,
 			};
 			console.log("[Wallet] Addresses:", addrs);

@@ -1,12 +1,13 @@
 import {
 	createContext,
+	deriveDepositAddresses,
 	getOrdinals,
 	getProfile,
 	type OneSatContext,
 	sendBsv,
 } from "@1sat/actions";
 import type { WalletInterface, WalletOutput } from "@bsv/sdk";
-import { PublicKey, Utils } from "@bsv/sdk";
+import { Utils } from "@bsv/sdk";
 import {
 	buildThemeMetadata,
 	buildTileMetadata,
@@ -26,31 +27,25 @@ export function createWalletContext(wallet: WalletInterface): OneSatContext {
 }
 
 /**
- * Derive the ordinal (ord) address from the wallet.
+ * Derive the wallet's canonical default deposit address under P1SAT.
+ *
+ * In the 1Sat paradigm there is a single deposit address (keyID "1sat 0",
+ * derived from the identity key under P1SAT_PROTOCOL) used for both ordinals
+ * and payments — not separate ord/bsv addresses. Any conforming wallet
+ * (yours-wallet, wallet-desktop, CLI, MCP) derives the SAME address from the
+ * same identity, so this matches what the user sees in their wallet. We use
+ * the package's own action rather than re-deriving with a custom protocol.
  */
-export async function getOrdinalAddress(
+export async function getDepositAddress(
 	wallet: WalletInterface,
 ): Promise<string> {
-	const { publicKey } = await wallet.getPublicKey({
-		protocolID: [2, "wallet"],
-		keyID: "ord",
-		counterparty: "self",
-	});
-	return PublicKey.fromString(publicKey).toAddress();
-}
-
-/**
- * Derive the payment (bsv) address from the wallet.
- */
-export async function getPaymentAddress(
-	wallet: WalletInterface,
-): Promise<string> {
-	const { publicKey } = await wallet.getPublicKey({
-		protocolID: [2, "wallet"],
-		keyID: "bsv",
-		counterparty: "self",
-	});
-	return PublicKey.fromString(publicKey).toAddress();
+	const ctx = createWalletContext(wallet);
+	const { derivations } = await deriveDepositAddresses.execute(ctx, {});
+	const address = derivations[0]?.address;
+	if (!address) {
+		throw new Error("Wallet returned no deposit address derivation");
+	}
+	return address;
 }
 
 /**
