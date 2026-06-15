@@ -5,6 +5,11 @@ import { FONT_NAMES, SYSTEM_FONTS } from "@/lib/fonts";
 import { createDraft } from "@/lib/storage";
 import { generateTintsPalette } from "@/lib/tints";
 
+// gemini-3.1-pro-preview theme generation runs ~60s; the server-side draft save
+// adds a KV round-trip on top. Without an explicit limit the route hits Vercel's
+// default timeout and returns a non-JSON 500 ("An error occurred"). Give it room.
+export const maxDuration = 120;
+
 // Theme color schema for OKLCH colors
 const oklchColorSchema = z
 	.string()
