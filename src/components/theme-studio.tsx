@@ -25,6 +25,7 @@ import {
 	ShoppingCart,
 	Sparkles,
 	Sun,
+	Trash2,
 	Type,
 	Upload,
 } from "lucide-react";
@@ -481,6 +482,38 @@ export function ThemeStudio() {
 		setTimeout(() => setSavedNotice(false), 2000);
 	};
 
+	const handleDeleteDraft = useCallback(
+		(draftId: string) => {
+			const current = loadDrafts();
+			const idx = current.findIndex((d) => d.id === draftId);
+			if (idx === -1) return;
+			const deleted = current[idx];
+			const remaining = current.filter((d) => d.id !== draftId);
+			saveDrafts(remaining);
+			setDrafts(remaining);
+
+			// If the deleted draft is the one currently open, move selection to the
+			// nearest remaining theme so we don't stay parked on a deleted theme.
+			if (selectedTheme?.name === deleted.theme.name) {
+				const fallback =
+					remaining[idx]?.theme ?? // draft that shifted into this slot
+					remaining[idx - 1]?.theme ?? // previous draft
+					availableThemes[0] ?? // then wallet themes
+					onChainThemes[0]?.theme ?? // then on-chain themes
+					null;
+				if (fallback) {
+					loadThemeFonts(fallback);
+					setSelectedTheme(fallback);
+					setOriginalTheme(fallback);
+					setSelectedThemeOrigin(null);
+					setCustomName("");
+					void applyThemeAnimated(fallback);
+				}
+			}
+		},
+		[selectedTheme, availableThemes, onChainThemes, applyThemeAnimated],
+	);
+
 	const isConnected = status === "connected";
 	const canMint = isConnected && !isInscribing;
 
@@ -855,8 +888,12 @@ export function ThemeStudio() {
 													Drafts
 												</SelectLabel>
 												{drafts.map((draft) => (
-													<SelectItem key={draft.id} value={draft.theme.name}>
-														<div className="flex items-center gap-2">
+													<SelectItem
+														key={draft.id}
+														value={draft.theme.name}
+														className="pr-8"
+													>
+														<div className="flex w-full items-center gap-2">
 															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
 																{[
 																	draft.theme.styles[mode].primary,
@@ -870,7 +907,22 @@ export function ThemeStudio() {
 																	/>
 																))}
 															</div>
-															<span>{draft.theme.name}</span>
+															<span className="truncate">
+																{draft.theme.name}
+															</span>
+															<button
+																type="button"
+																aria-label={`Delete ${draft.theme.name}`}
+																title="Delete draft"
+																className="ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+																onPointerDown={(e) => e.stopPropagation()}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	handleDeleteDraft(draft.id);
+																}}
+															>
+																<Trash2 className="h-3 w-3" />
+															</button>
 														</div>
 													</SelectItem>
 												))}
