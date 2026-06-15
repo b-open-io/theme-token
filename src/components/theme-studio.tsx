@@ -358,21 +358,27 @@ export function ThemeStudio() {
 			const encoded = encodeStyles(selectedTheme.styles);
 			if (encoded) params.set("styles", encoded);
 
-			// Add name if custom
-			if (customName.trim()) params.set("name", customName.trim());
+			// Always carry the theme's name so a shared/navigated URL shows the
+			// real name instead of falling back to "Shared Theme".
+			const name = customName.trim() || selectedTheme.name?.trim();
+			if (name) params.set("name", name);
 
 			// Add tab if not default
 			if (editorSubTab !== "colors") params.set("tab", editorSubTab);
 
 			const queryString = params.toString();
 			const url = queryString ? `${pathname}?${queryString}` : pathname;
-			// Skip redundant replaces: writing the same URL can re-render and feed
-			// a render/update loop. Only navigate when the URL actually changed.
 			if (url === lastSyncedUrl.current) return;
 			lastSyncedUrl.current = url;
-			router.replace(url, { scroll: false });
+			// Use the History API directly, NOT router.replace. The encoded theme
+			// makes this a ~2.6KB query string; router.replace turns that into a
+			// client-side RSC fetch (`?_rsc=`) which fails on the long URL and
+			// renders Next's "This page couldn't load" navigation error. A bare
+			// history.replaceState updates the address bar (so the URL stays
+			// shareable) without any server round-trip or re-render.
+			window.history.replaceState(null, "", url);
 		}, 500); // 500ms debounce
-	}, [selectedTheme, customName, editorSubTab, pathname, router]);
+	}, [selectedTheme, customName, editorSubTab, pathname]);
 
 	// Trigger URL sync when relevant state changes
 	useEffect(() => {
