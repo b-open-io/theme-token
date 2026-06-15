@@ -252,6 +252,20 @@ export function ThemeStudio() {
 		staleTime: 5 * 60 * 1000,
 	});
 
+	// Unique key for the active theme's dropdown row, matched by object reference
+	// so duplicate theme names don't both get marked selected. Empty when the
+	// active theme isn't one of the listed items (e.g. a freshly loaded or edited
+	// theme), which correctly shows no checkmark.
+	const selectedValue = (() => {
+		const oc = onChainThemes.find((t) => t.theme === selectedTheme);
+		if (oc) return `oc:${oc.origin}`;
+		const wIdx = selectedTheme ? availableThemes.indexOf(selectedTheme) : -1;
+		if (wIdx >= 0) return `w:${wIdx}`;
+		const draft = drafts.find((d) => d.theme === selectedTheme);
+		if (draft) return `d:${draft.id}`;
+		return "";
+	})();
+
 	// Initialize from cached themes if no active theme from SSR
 	useEffect(() => {
 		if (!selectedTheme && onChainThemes.length > 0) {
@@ -766,23 +780,34 @@ export function ThemeStudio() {
 							<div className="space-y-4">
 								{/* Theme selector */}
 								<Select
-									value={selectedTheme.name}
+									// Item values must be UNIQUE — theme names are not (a user can
+									// have two drafts named "Chaparrals"). Keying selection by name
+									// made Radix check both same-named items. Use a typed unique key
+									// (origin / wallet index / draft id) and match the active theme
+									// by object reference so duplicate names never collide.
+									value={selectedValue}
 									onValueChange={async (value) => {
-										// Find theme from all sources (including drafts)
-										const onChain = onChainThemes.find(
-											(t) => t.theme.name === value,
-										);
-										const wallet = availableThemes.find(
-											(t) => t.name === value,
-										);
-										const draft = drafts.find((d) => d.theme.name === value);
-										const theme = onChain?.theme || wallet || draft?.theme;
+										let theme: ThemeToken | undefined;
+										let origin: string | null = null;
+										if (value.startsWith("oc:")) {
+											const found = onChainThemes.find(
+												(t) => t.origin === value.slice(3),
+											);
+											theme = found?.theme;
+											origin = found?.origin ?? null;
+										} else if (value.startsWith("w:")) {
+											theme = availableThemes[Number(value.slice(2))];
+										} else if (value.startsWith("d:")) {
+											theme = drafts.find(
+												(d) => d.id === value.slice(2),
+											)?.theme;
+										}
 										if (theme) {
 											loadThemeFonts(theme);
 											isAnimatingRef.current = true;
 											setSelectedTheme(theme);
 											setOriginalTheme(theme); // Reset original when selecting a new theme
-											setSelectedThemeOrigin(onChain?.origin || null); // Track origin for on-chain themes
+											setSelectedThemeOrigin(origin); // Track origin for on-chain themes
 											setCustomName("");
 											await applyThemeAnimated(theme);
 											isAnimatingRef.current = false;
@@ -823,7 +848,7 @@ export function ThemeStudio() {
 													return (
 														<SelectItem
 															key={published.origin}
-															value={published.theme.name}
+															value={`oc:${published.origin}`}
 														>
 															<div className="flex items-center gap-2">
 																<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
@@ -864,8 +889,8 @@ export function ThemeStudio() {
 												<SelectLabel className="text-xs text-muted-foreground">
 													My Themes
 												</SelectLabel>
-												{availableThemes.map((theme) => (
-													<SelectItem key={theme.name} value={theme.name}>
+												{availableThemes.map((theme, index) => (
+													<SelectItem key={theme.name} value={`w:${index}`}>
 														<div className="flex items-center gap-2">
 															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
 																{[
@@ -893,10 +918,9 @@ export function ThemeStudio() {
 													Drafts
 												</SelectLabel>
 												{drafts.map((draft) => {
-													const isSelected =
-														draft.theme.name === selectedTheme.name;
+													const isSelected = selectedValue === `d:${draft.id}`;
 													return (
-														<SelectItem key={draft.id} value={draft.theme.name}>
+														<SelectItem key={draft.id} value={`d:${draft.id}`}>
 															<div className="flex items-center gap-2">
 																<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
 																	{[
@@ -917,7 +941,10 @@ export function ThemeStudio() {
 															</div>
 															{/* Delete control sits where the selected-item checkmark
 															    sits (absolute right-2). Shown only on non-selected
-															    drafts so it never collides with the checkmark. */}
+															    drafts so it never collides with the checkmark.
+															    Stop pointer down/up AND click: Radix Select commits
+															    selection on pointerup, so stopping click alone let
+															    the item get selected instead of deleted. */}
 															{!isSelected && (
 																<button
 																	type="button"
@@ -925,8 +952,10 @@ export function ThemeStudio() {
 																	title="Delete draft"
 																	className="absolute right-2 flex size-3.5 items-center justify-center rounded text-muted-foreground hover:text-destructive"
 																	onPointerDown={(e) => e.stopPropagation()}
+																	onPointerUp={(e) => e.stopPropagation()}
 																	onClick={(e) => {
 																		e.stopPropagation();
+																		e.preventDefault();
 																		handleDeleteDraft(draft.id);
 																	}}
 																>
