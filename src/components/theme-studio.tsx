@@ -67,7 +67,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
-import { loadThemeFonts } from "@/lib/fonts";
+import { loadThemeFonts, sanitizeStyleModeFonts } from "@/lib/fonts";
 import {
 	selectPendingColorChange,
 	selectPendingRadiusChange,
@@ -115,7 +115,13 @@ function encodeStyles(styles: ThemeToken["styles"]): string {
 
 function decodeStyles(encoded: string): ThemeToken["styles"] | null {
 	try {
-		return JSON.parse(atob(encoded));
+		const styles = JSON.parse(atob(encoded)) as ThemeToken["styles"];
+		// Defend against share URLs carrying corrupted font fields (e.g. a model
+		// that leaked its schema/reasoning into font-serif). Left unsanitized,
+		// these multi-KB strings crash the studio when fonts load/apply.
+		if (styles?.light) sanitizeStyleModeFonts(styles.light);
+		if (styles?.dark) sanitizeStyleModeFonts(styles.dark);
+		return styles;
 	} catch {
 		return null;
 	}

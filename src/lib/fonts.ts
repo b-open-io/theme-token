@@ -127,6 +127,51 @@ export const SYSTEM_FONTS = {
 	mono: "ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace",
 };
 
+/**
+ * A valid CSS font stack is short and contains no braces, newlines, or JSON.
+ * Models occasionally leak their own schema/reasoning into the optional font
+ * fields (multi-KB blobs), which bloats share URLs and crashes the studio on
+ * load. Returns the value when it looks like a real stack, otherwise the safe
+ * system stack for that role.
+ */
+export function sanitizeFontValue(
+	value: unknown,
+	role: keyof typeof SYSTEM_FONTS,
+): string | undefined {
+	// Absent is legitimate — the theme simply didn't specify this font role.
+	if (value === undefined || value === null) return undefined;
+	const isValid =
+		typeof value === "string" &&
+		value.length > 0 &&
+		value.length <= 200 &&
+		!/[{}\n\r]/.test(value) &&
+		!value.includes('"type"');
+	// Present-but-garbage: fall back to the safe system stack for this role.
+	return isValid ? (value as string) : SYSTEM_FONTS[role];
+}
+
+/**
+ * Sanitize the three font fields on a style-mode record in place, replacing
+ * any present-but-malformed value with the system stack while leaving absent
+ * fields absent. Mutates and returns the record.
+ */
+export function sanitizeStyleModeFonts<T extends object>(mode: T): T {
+	const record = mode as Record<string, string | undefined>;
+	for (const [key, role] of [
+		["font-sans", "sans"],
+		["font-serif", "serif"],
+		["font-mono", "mono"],
+	] as const) {
+		const sanitized = sanitizeFontValue(record[key], role);
+		if (sanitized === undefined) {
+			delete record[key];
+		} else {
+			record[key] = sanitized;
+		}
+	}
+	return mode;
+}
+
 // All fonts flattened for lookup
 export const ALL_FONTS = [
 	...FONT_CATALOG.sans.map((f) => ({ ...f, category: "sans" as const })),

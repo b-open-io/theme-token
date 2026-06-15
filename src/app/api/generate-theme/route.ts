@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { FONT_NAMES, SYSTEM_FONTS } from "@/lib/fonts";
+import { FONT_NAMES, SYSTEM_FONTS, sanitizeStyleModeFonts } from "@/lib/fonts";
 import { createDraft } from "@/lib/storage";
 import { generateTintsPalette } from "@/lib/tints";
 
@@ -275,6 +275,13 @@ Maintain the core identity and color harmony but apply the user's modifications.
 			maxRetries: 1,
 			abortSignal: AbortSignal.timeout(60_000),
 		});
+
+		// Models occasionally leak their own schema/reasoning into the optional
+		// font string fields (multi-KB blobs with braces, newlines, JSON). That
+		// corruption bloats the share URL and crashes the studio on load. Replace
+		// any present-but-malformed value with the safe system stack for its role.
+		sanitizeStyleModeFonts(theme.light);
+		sanitizeStyleModeFonts(theme.dark);
 
 		// Extract provider from modelId (e.g., "anthropic/claude-opus-4.5" → "anthropic")
 		const provider = modelId.split("/")[0];
