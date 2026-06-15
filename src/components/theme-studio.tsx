@@ -887,45 +887,50 @@ export function ThemeStudio() {
 												<SelectLabel className="text-xs text-muted-foreground">
 													Drafts
 												</SelectLabel>
-												{drafts.map((draft) => (
-													<SelectItem
-														key={draft.id}
-														value={draft.theme.name}
-														className="pr-8"
-													>
-														<div className="flex w-full items-center gap-2">
-															<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
-																{[
-																	draft.theme.styles[mode].primary,
-																	draft.theme.styles[mode].secondary,
-																	draft.theme.styles[mode].accent,
-																].map((color) => (
-																	<div
-																		key={color}
-																		className="flex-1"
-																		style={{ backgroundColor: color }}
-																	/>
-																))}
+												{drafts.map((draft) => {
+													const isSelected =
+														draft.theme.name === selectedTheme.name;
+													return (
+														<SelectItem key={draft.id} value={draft.theme.name}>
+															<div className="flex items-center gap-2">
+																<div className="flex h-3 w-9 overflow-hidden rounded-sm border border-border">
+																	{[
+																		draft.theme.styles[mode].primary,
+																		draft.theme.styles[mode].secondary,
+																		draft.theme.styles[mode].accent,
+																	].map((color) => (
+																		<div
+																			key={color}
+																			className="flex-1"
+																			style={{ backgroundColor: color }}
+																		/>
+																	))}
+																</div>
+																<span className="truncate">
+																	{draft.theme.name}
+																</span>
 															</div>
-															<span className="truncate">
-																{draft.theme.name}
-															</span>
-															<button
-																type="button"
-																aria-label={`Delete ${draft.theme.name}`}
-																title="Delete draft"
-																className="ml-auto shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-																onPointerDown={(e) => e.stopPropagation()}
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleDeleteDraft(draft.id);
-																}}
-															>
-																<Trash2 className="h-3 w-3" />
-															</button>
-														</div>
-													</SelectItem>
-												))}
+															{/* Delete control sits where the selected-item checkmark
+															    sits (absolute right-2). Shown only on non-selected
+															    drafts so it never collides with the checkmark. */}
+															{!isSelected && (
+																<button
+																	type="button"
+																	aria-label={`Delete ${draft.theme.name}`}
+																	title="Delete draft"
+																	className="absolute right-2 flex size-3.5 items-center justify-center rounded text-muted-foreground hover:text-destructive"
+																	onPointerDown={(e) => e.stopPropagation()}
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleDeleteDraft(draft.id);
+																	}}
+																>
+																	<Trash2 className="size-3.5" />
+																</button>
+															)}
+														</SelectItem>
+													);
+												})}
 											</SelectGroup>
 										)}
 									</SelectContent>
