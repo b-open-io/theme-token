@@ -104,6 +104,7 @@ export function SwatchyAssistant() {
 							key="talk-bubble"
 							type={activeScriptEvent.type}
 							text={activeScriptEvent.text}
+							side={side}
 						/>
 					)}
 			</AnimatePresence>

@@ -2,19 +2,29 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import type { SwatchySide } from "./swatchy-store";
 
 interface SwatchyTalkBubbleProps {
 	type: "say" | "think";
 	text: string;
+	/** Which screen edge Swatchy is docked on, so the bubble grows inward. */
+	side: SwatchySide;
 }
 
-export function SwatchyTalkBubble({ type, text }: SwatchyTalkBubbleProps) {
+export function SwatchyTalkBubble({
+	type,
+	text,
+	side,
+}: SwatchyTalkBubbleProps) {
+	const isLeft = side === "left";
 	return (
 		<motion.div
 			className={cn(
-				"absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 z-50 pointer-events-none",
-				// Shift slightly for visual balance relative to avatar center
-				"ml-4",
+				// Anchor to whichever edge Swatchy is docked on so the bubble grows
+				// inward and never spills off-screen. (Centering on the avatar made
+				// it overflow when he wandered to either edge.)
+				"absolute bottom-full mb-4 z-50 w-48 max-w-[80vw] pointer-events-none",
+				isLeft ? "left-0" : "right-0",
 			)}
 			initial={{ opacity: 0, scale: 0.5, y: 10 }}
 			animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -23,36 +33,42 @@ export function SwatchyTalkBubble({ type, text }: SwatchyTalkBubbleProps) {
 		>
 			<div
 				className={cn(
-					"relative p-3 bg-background border-2 border-primary text-primary-foreground text-xs font-medium text-center shadow-lg",
-					type === "say" ? "rounded-xl rounded-bl-none" : "rounded-[20px]",
+					"relative rounded-xl border-2 border-primary bg-background p-3 text-center text-xs font-medium shadow-lg",
 					type === "think" && "border-dashed",
 				)}
 			>
-				{/* Content */}
 				<span className="text-foreground">{text}</span>
 
-				{/* Tails */}
+				{/* Down-pointing tail toward the avatar. Two stacked triangles: an
+				    outer one in the border color and an inner one in the background
+				    colour pulled up by the 2px border width, so the border wraps the
+				    tail cleanly and the join with the bubble has no seam line. */}
 				{type === "say" && (
-					<svg
-						aria-hidden="true"
-						className="absolute -bottom-[14px] left-4 w-4 h-4 text-primary fill-background stroke-primary stroke-2"
-						viewBox="0 0 20 20"
-					>
-						<path d="M0 0 L0 20 L20 0 Z" />
-						{/* Overlay to hide border overlap */}
-						<path
-							d="M2 0 L18 0"
-							stroke="none"
-							fill="currentColor"
-							className="text-background"
+					<>
+						<div
+							className={cn(
+								"absolute top-full h-0 w-0 border-x-[10px] border-t-[10px] border-x-transparent border-t-primary",
+								isLeft ? "left-4" : "right-4",
+							)}
 						/>
-					</svg>
+						<div
+							className={cn(
+								"absolute top-full -mt-[3px] h-0 w-0 border-x-[8px] border-t-[8px] border-x-transparent border-t-background",
+								isLeft ? "left-[18px]" : "right-[18px]",
+							)}
+						/>
+					</>
 				)}
 
 				{type === "think" && (
-					<div className="absolute -bottom-6 left-6 flex flex-col items-center gap-1">
-						<div className="w-2 h-2 rounded-full bg-background border-2 border-primary" />
-						<div className="w-1.5 h-1.5 rounded-full bg-background border-2 border-primary" />
+					<div
+						className={cn(
+							"absolute top-full mt-1 flex flex-col items-center gap-1",
+							isLeft ? "left-6" : "right-6",
+						)}
+					>
+						<div className="h-2 w-2 rounded-full border-2 border-primary bg-background" />
+						<div className="h-1.5 w-1.5 rounded-full border-2 border-primary bg-background" />
 					</div>
 				)}
 			</div>
