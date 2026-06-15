@@ -6,6 +6,7 @@ import {
 	imagesFlag,
 	projectFlag,
 	registryFlag,
+	themeFlag,
 	wallpapersFlag,
 } from "./flags";
 
@@ -20,6 +21,7 @@ import {
  */
 export async function getFeatureFlags(): Promise<FeatureFlags> {
 	const [
+		theme,
 		fonts,
 		images,
 		icons,
@@ -28,6 +30,7 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
 		project,
 		componentPreview,
 	] = await Promise.all([
+		themeFlag(),
 		fontsFlag(),
 		imagesFlag(),
 		iconsFlag(),
@@ -37,6 +40,7 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
 		componentPreviewFlag(),
 	]);
 	return {
+		theme,
 		fonts,
 		images,
 		icons,

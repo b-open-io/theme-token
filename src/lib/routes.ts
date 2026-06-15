@@ -68,6 +68,7 @@ export const routes: RouteInfo[] = [
 		label: "Theme",
 		description: "Create and edit shadcn themes with live preview",
 		category: "studio",
+		feature: "theme",
 		icon: Palette,
 		tools: ["generateTheme", "setThemeColor", "setThemeRadius", "setThemeFont"],
 		cost: 1_000_000,

@@ -15,6 +15,7 @@
 import { createContext, useContext } from "react";
 
 export type FeatureFlagKey =
+	| "theme"
 	| "fonts"
 	| "images"
 	| "icons"
