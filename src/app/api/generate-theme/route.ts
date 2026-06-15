@@ -5,10 +5,10 @@ import { FONT_NAMES, SYSTEM_FONTS } from "@/lib/fonts";
 import { createDraft } from "@/lib/storage";
 import { generateTintsPalette } from "@/lib/tints";
 
-// gemini-3.1-pro-preview theme generation runs ~60s; the server-side draft save
-// adds a KV round-trip on top. Without an explicit limit the route hits Vercel's
-// default timeout and returns a non-JSON 500 ("An error occurred"). Give it room.
-export const maxDuration = 120;
+// Flash generation is seconds, but the generateObject call is also bounded by
+// AbortSignal.timeout(60s) below. Keep a maxDuration backstop above that so the
+// abort fires first and returns a clean error rather than a platform timeout.
+export const maxDuration = 90;
 
 // Theme color schema for OKLCH colors
 const oklchColorSchema = z
@@ -127,11 +127,13 @@ export async function POST(request: NextRequest) {
 			paymentTxid,
 		} = body;
 
-		// Determine which model to use
+		// Determine which model to use. Default to the latest Gemini Flash:
+		// structured theme JSON doesn't need a reasoning-tier model, and flash is
+		// ~50x cheaper and seconds (vs minutes) per request on the gateway.
 		const modelId =
 			model === "claude-opus-4.5"
 				? "anthropic/claude-opus-4.5"
-				: "google/gemini-3.1-pro-preview";
+				: "google/gemini-3.5-flash";
 
 		// If primaryColor provided, generate palette locally using tints.dev library
 		let paletteContext = "";
