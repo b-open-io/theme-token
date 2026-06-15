@@ -64,6 +64,34 @@ function finalizeInterruptedToolCalls(messages: UIMessage[]): UIMessage[] {
 	});
 }
 
+/**
+ * Extract a useful message from a failed API response. The server may return a
+ * non-JSON body (e.g. a platform timeout/runtime 500 that starts with "An error
+ * occurred"), so read text and only parse JSON when it actually is JSON — never
+ * throw a misleading "not valid JSON" on top of the real failure.
+ */
+async function readApiError(
+	response: Response,
+	fallback: string,
+): Promise<string> {
+	const text = await response.text().catch(() => "");
+	if (!text) return fallback;
+	try {
+		const parsed: unknown = JSON.parse(text);
+		if (
+			parsed &&
+			typeof parsed === "object" &&
+			"error" in parsed &&
+			typeof (parsed as { error: unknown }).error === "string"
+		) {
+			return (parsed as { error: string }).error;
+		}
+	} catch {
+		// Non-JSON body — fall through to the raw text.
+	}
+	return text.slice(0, 200);
+}
+
 export function useSwatchyChat() {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -715,8 +743,9 @@ export function useSwatchyChat() {
 						});
 
 						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate theme");
+							throw new Error(
+								await readApiError(response, "Failed to generate theme"),
+							);
 						}
 
 						const data = await response.json();
@@ -762,8 +791,9 @@ export function useSwatchyChat() {
 						});
 
 						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate pattern");
+							throw new Error(
+								await readApiError(response, "Failed to generate pattern"),
+							);
 						}
 
 						const data = await response.json();
@@ -811,8 +841,9 @@ export function useSwatchyChat() {
 						});
 
 						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate icon set");
+							throw new Error(
+								await readApiError(response, "Failed to generate icon set"),
+							);
 						}
 
 						const data = await response.json();
@@ -855,8 +886,9 @@ export function useSwatchyChat() {
 						});
 
 						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate favicon");
+							throw new Error(
+								await readApiError(response, "Failed to generate favicon"),
+							);
 						}
 
 						const data = await response.json();
@@ -893,8 +925,9 @@ export function useSwatchyChat() {
 						});
 
 						if (!response.ok) {
-							const error = await response.json();
-							throw new Error(error.error || "Failed to generate font");
+							throw new Error(
+								await readApiError(response, "Failed to generate font"),
+							);
 						}
 
 						const data = await response.json();
