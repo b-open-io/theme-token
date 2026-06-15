@@ -260,11 +260,18 @@ You are REMIXING an existing theme. Here is the previous design:
 Maintain the core identity and color harmony but apply the user's modifications.`;
 		}
 
+		// Bound the model call: abort if it runs too long and don't retry a slow
+		// call. Without this, a slow/stalled model (some preview models stream at
+		// ~50 tok/s and take minutes) keeps the gateway request — and its billing —
+		// running long after the function itself times out. Aborting cancels the
+		// upstream request and surfaces a clean error instead of a runaway cost.
 		const { object: theme } = await generateObject({
 			model: modelId as Parameters<typeof generateObject>[0]["model"],
 			schema: themeSchema,
 			system: systemPrompt,
 			prompt: userPrompt,
+			maxRetries: 1,
+			abortSignal: AbortSignal.timeout(60_000),
 		});
 
 		// Extract provider from modelId (e.g., "anthropic/claude-opus-4.5" → "anthropic")
@@ -307,12 +314,19 @@ Maintain the core identity and color harmony but apply the user's modifications.
 		return NextResponse.json({ theme: themeToken, draftId });
 	} catch (error) {
 		console.error("Theme generation error:", error);
+		// AbortSignal.timeout throws a TimeoutError — surface a clear message.
+		const isTimeout =
+			error instanceof Error &&
+			(error.name === "TimeoutError" || error.name === "AbortError");
 		return NextResponse.json(
 			{
-				error:
-					error instanceof Error ? error.message : "Failed to generate theme",
+				error: isTimeout
+					? "Theme generation timed out — the model took too long to respond. Please try again."
+					: error instanceof Error
+						? error.message
+						: "Failed to generate theme",
 			},
-			{ status: 500 },
+			{ status: isTimeout ? 504 : 500 },
 		);
 	}
 }
