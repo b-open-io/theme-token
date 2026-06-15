@@ -600,30 +600,6 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 	}
 }
 
-/**
- * Fetch ordinals owned by an address from GorillaPool API.
- * Returns enriched data with origin, MAP metadata, inscription content.
- * Used because BRC-100 listOutputs() returns sparse data without MAP/inscription content.
- */
-export async function fetchOrdinalsByAddress(
-	address: string,
-	limit = 100,
-): Promise<Ordinal[]> {
-	try {
-		const response = await fetch(
-			`${ORDINALS_API}/txos/address/${address}/unspent?limit=${limit}&offset=0`,
-		);
-		if (!response.ok) {
-			console.error("[fetchOrdinalsByAddress] API error:", response.status);
-			return [];
-		}
-		return await response.json();
-	} catch (err) {
-		console.error("[fetchOrdinalsByAddress] Failed:", err);
-		return [];
-	}
-}
-
 export type AssetType = "tile" | "wallpaper" | "icon";
 
 export interface ImageMetadata {
