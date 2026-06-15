@@ -25,7 +25,7 @@ import {
 	buildRegistryBundle,
 	type RegistryManifest,
 } from "@/lib/bundle-builder";
-import { featureFlags } from "@/lib/feature-flags";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import { type GeneratedRegistryItem, useSwatchyStore } from "./swatchy-store";
 
@@ -52,11 +52,12 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 		isInscribing,
 		status: walletStatus,
 	} = useYoursWallet();
+	const { componentPreview } = useFeatureFlags();
 
 	const isBlock = manifest.type === "registry:block";
 	const Icon = isBlock ? Blocks : FileCode;
 	const isWalletConnected = walletStatus === "connected";
-	const canPreview = featureFlags.componentPreview;
+	const canPreview = componentPreview;
 
 	// Validation info
 	const validationAttempts = validation?.attempts || 1;

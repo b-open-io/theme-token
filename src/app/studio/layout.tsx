@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { getStudioTabs } from "@/lib/routes";
 
 export default function StudioLayout({
@@ -13,9 +14,10 @@ export default function StudioLayout({
 }) {
 	const pathname = usePathname();
 	const barRef = useRef<HTMLDivElement>(null);
+	const flags = useFeatureFlags();
 
-	// Get studio tabs from route registry (already filtered by feature flags)
-	const tabs = useMemo(() => getStudioTabs(), []);
+	// Get studio tabs from route registry (filtered by Vercel feature flags)
+	const tabs = useMemo(() => getStudioTabs(flags), [flags]);
 
 	// Only show header on subroutes, not on /studio landing
 	const isSubroute = pathname !== "/studio";

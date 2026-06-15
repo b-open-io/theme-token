@@ -1,4 +1,4 @@
-import { featureFlags } from "@/lib/feature-flags";
+import type { FeatureFlags } from "@/lib/feature-flags";
 import { BASE_PRICES, PAID_TOOLS as PAID_TOOLS_SET } from "@/lib/pricing";
 import { generateRouteDocumentation } from "@/lib/routes";
 import { getNavigationHints, getToolsForPage } from "./tool-routing";
@@ -95,7 +95,10 @@ export interface SwatchyContext {
 /**
  * Build the system prompt for Swatchy based on enabled feature flags and current context
  */
-export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
+export function buildSwatchySystemPrompt(
+	flags: FeatureFlags,
+	context?: SwatchyContext,
+): string {
 	// Build capabilities list based on enabled features
 	const capabilities: string[] = [
 		"1. **Navigation** - Take users anywhere: themes gallery, studios, marketplace, docs",
@@ -104,35 +107,35 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 
 	let capabilityNumber = 3;
 
-	if (featureFlags.fonts) {
+	if (flags.fonts) {
 		capabilities.push(
 			`${capabilityNumber}. **Font Generation** - Generate custom fonts (costs 10M sats)`,
 		);
 		capabilityNumber++;
 	}
 
-	if (featureFlags.images) {
+	if (flags.images) {
 		capabilities.push(
 			`${capabilityNumber}. **Pattern Generation** - Create SVG patterns (costs 1M sats)`,
 		);
 		capabilityNumber++;
 	}
 
-	if (featureFlags.icons) {
+	if (flags.icons) {
 		capabilities.push(
 			`${capabilityNumber}. **Icon Studio** - Generate icon sets and favicons`,
 		);
 		capabilityNumber++;
 	}
 
-	if (featureFlags.wallpapers) {
+	if (flags.wallpapers) {
 		capabilities.push(
 			`${capabilityNumber}. **Wallpaper Generation** - Create AI wallpapers for desktop/mobile (costs 1M sats)`,
 		);
 		capabilityNumber++;
 	}
 
-	if (featureFlags.registry) {
+	if (flags.registry) {
 		capabilities.push(
 			`${capabilityNumber}. **Block Generation** - Create complex shadcn UI blocks (costs 1M sats)`,
 		);
@@ -150,7 +153,7 @@ export function buildSwatchySystemPrompt(context?: SwatchyContext): string {
 	);
 
 	// Generate dynamic route documentation
-	const routeDocs = generateRouteDocumentation();
+	const routeDocs = generateRouteDocumentation(flags);
 
 	// Build current state section
 	let currentStateSection = "";

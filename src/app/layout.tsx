@@ -7,6 +7,8 @@ import { JsonLd } from "@/components/json-ld";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
+import { FeatureFlagsProvider } from "@/lib/feature-flags";
+import { getFeatureFlags } from "@/lib/flags";
 import { generateInlineThemeCss } from "@/lib/server/generate-theme-css";
 import {
 	getRandomCachedTheme,
@@ -145,6 +147,10 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	// Resolve feature flags once per request (Vercel flag platform) and hand
+	// them to the client via FeatureFlagsProvider for synchronous gating.
+	const featureFlags = await getFeatureFlags();
+
 	// Read theme session from cookies
 	const cookieStore = await cookies();
 	const sessionCookie = cookieStore.get(THEME_SESSION_COOKIE);
@@ -183,18 +189,20 @@ export default async function RootLayout({
 				)}
 			</head>
 			<body className="font-sans antialiased">
-				<Providers
-					initialThemeOrigin={sessionThemeOrigin}
-					hasExistingSession={!!session}
-				>
-					<div className="flex min-h-full flex-col">
-						<Header />
-						<main className="flex min-h-0 flex-1 flex-col">{children}</main>
-						<ConditionalFooter />
-					</div>
-					<Toaster position="bottom-right" richColors closeButton />
-					<SwatchyAssistant />
-				</Providers>
+				<FeatureFlagsProvider value={featureFlags}>
+					<Providers
+						initialThemeOrigin={sessionThemeOrigin}
+						hasExistingSession={!!session}
+					>
+						<div className="flex min-h-full flex-col">
+							<Header />
+							<main className="flex min-h-0 flex-1 flex-col">{children}</main>
+							<ConditionalFooter />
+						</div>
+						<Toaster position="bottom-right" richColors closeButton />
+						<SwatchyAssistant />
+					</Providers>
+				</FeatureFlagsProvider>
 			</body>
 		</html>
 	);

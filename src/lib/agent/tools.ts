@@ -620,13 +620,13 @@ export const getExchangeRate = tool({
 // Tool Registry
 // ============================================================================
 
-import { featureFlags } from "@/lib/feature-flags";
+import type { FeatureFlags } from "@/lib/feature-flags";
 import { getToolsForPage, type ToolName } from "./tool-routing";
 
 /**
  * Get all available tools based on feature flags
  */
-export function getAvailableTools() {
+export function getAvailableTools(flags: FeatureFlags) {
 	// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
 	const tools: Record<string, any> = {
 		navigate,
@@ -640,18 +640,18 @@ export function getAvailableTools() {
 	};
 
 	// Add font-related tools if fonts feature is enabled
-	if (featureFlags.fonts) {
+	if (flags.fonts) {
 		tools.generateFont = generateFont;
 	}
 
 	// Add pattern-related tools if images feature is enabled
-	if (featureFlags.images) {
+	if (flags.images) {
 		tools.generatePattern = generatePattern;
 		tools.setPatternParams = setPatternParams;
 	}
 
 	// Add icon-related tools if icons feature is enabled
-	if (featureFlags.icons) {
+	if (flags.icons) {
 		tools.generateIconSet = generateIconSet;
 		tools.generateFavicon = generateFavicon;
 		tools.setIconStudioTab = setIconStudioTab;
@@ -675,14 +675,18 @@ export function getAvailableTools() {
 	}
 
 	// Add wallpaper-related tools if wallpapers feature is enabled
-	if (featureFlags.wallpapers) {
+	if (flags.wallpapers) {
 		tools.generateWallpaper = generateWallpaper;
 	}
 
 	// Add registry-related tools if registry feature is enabled
-	if (featureFlags.registry) {
+	if (flags.registry) {
 		tools.generateBlock = generateBlock;
 		tools.generateComponent = generateComponent;
+	}
+
+	// Add project composition tool if project studio is enabled
+	if (flags.project) {
 		tools.createProject = createProject;
 	}
 
@@ -695,8 +699,8 @@ export function getAvailableTools() {
  * This ensures only relevant tools are exposed to the model.
  * Studio-specific tools only appear when on that studio page.
  */
-export function getPageAwareTools(pathname: string) {
-	const allAvailableTools = getAvailableTools();
+export function getPageAwareTools(pathname: string, flags: FeatureFlags) {
+	const allAvailableTools = getAvailableTools(flags);
 	const allowedTools = getToolsForPage(pathname);
 
 	// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape

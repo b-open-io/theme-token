@@ -9,7 +9,7 @@ import {
 	BsvRateProvider,
 	useBsvRateContext,
 } from "@/hooks/use-bsv-rate-context";
-import { featureFlags } from "@/lib/feature-flags";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import {
 	type FontMarketListing,
 	fetchFontMarketListings,
@@ -65,14 +65,12 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 	const [themeListings, setThemeListings] = useState<ThemeMarketListing[]>([]);
 	const [fontListings, setFontListings] = useState<FontMarketListing[]>([]);
 	const { formatUsd } = useBsvRateContext();
+	const flags = useFeatureFlags();
 
 	// Filter tabs based on feature flags
 	const tabs = useMemo(
-		() =>
-			allTabs.filter(
-				(tab) => tab.feature === null || featureFlags[tab.feature],
-			),
-		[],
+		() => allTabs.filter((tab) => tab.feature === null || flags[tab.feature]),
+		[flags],
 	);
 
 	// Mouse tracking for spotlight effect

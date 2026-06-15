@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Palette, Shapes, Terminal, Type } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { getStudioTabs } from "@/lib/routes";
 
 // Visual Preview Components
@@ -134,8 +135,9 @@ const itemVariants = {
 };
 
 export function StudioPageClient() {
-	// Get studio tools from route registry (already filtered by feature flags)
-	const studioTools = useMemo(() => getStudioTabs(), []);
+	const flags = useFeatureFlags();
+	// Get studio tools from route registry (filtered by Vercel feature flags)
+	const studioTools = useMemo(() => getStudioTabs(flags), [flags]);
 
 	return (
 		<div className="min-h-[80vh] w-full bg-background py-12">

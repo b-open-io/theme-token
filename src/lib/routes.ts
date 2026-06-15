@@ -15,11 +15,11 @@ import {
 	Shapes,
 	Type,
 } from "lucide-react";
-import { featureFlags } from "./feature-flags";
+import type { FeatureFlagKey, FeatureFlags } from "./feature-flags";
 
 export type RouteCategory = "main" | "studio" | "market" | "user";
 
-export type FeatureFlagKey = keyof typeof featureFlags;
+export type { FeatureFlagKey };
 
 export interface RouteInfo {
 	path: string;
@@ -134,6 +134,7 @@ export const routes: RouteInfo[] = [
 		description:
 			"Compose themes, fonts, icons into complete shadcn/create presets",
 		category: "studio",
+		feature: "project",
 		icon: FolderKanban,
 		tools: ["createProject"],
 	},
@@ -205,22 +206,25 @@ export const routes: RouteInfo[] = [
 /**
  * Get all enabled routes based on feature flags
  */
-export function getEnabledRoutes(): RouteInfo[] {
-	return routes.filter((r) => !r.feature || featureFlags[r.feature]);
+export function getEnabledRoutes(flags: FeatureFlags): RouteInfo[] {
+	return routes.filter((r) => !r.feature || flags[r.feature]);
 }
 
 /**
  * Get enabled routes by category
  */
-export function getRoutesByCategory(category: RouteCategory): RouteInfo[] {
-	return getEnabledRoutes().filter((r) => r.category === category);
+export function getRoutesByCategory(
+	category: RouteCategory,
+	flags: FeatureFlags,
+): RouteInfo[] {
+	return getEnabledRoutes(flags).filter((r) => r.category === category);
 }
 
 /**
  * Get studio routes for navigation tabs
  */
-export function getStudioTabs(): RouteInfo[] {
-	return getRoutesByCategory("studio");
+export function getStudioTabs(flags: FeatureFlags): RouteInfo[] {
+	return getRoutesByCategory("studio", flags);
 }
 
 /**
@@ -239,8 +243,8 @@ function formatCost(sats: number): string {
 /**
  * Generate route documentation for Swatchy AI agent
  */
-export function generateRouteDocumentation(): string {
-	const enabledRoutes = getEnabledRoutes();
+export function generateRouteDocumentation(flags: FeatureFlags): string {
+	const enabledRoutes = getEnabledRoutes(flags);
 
 	const sections: string[] = [];
 

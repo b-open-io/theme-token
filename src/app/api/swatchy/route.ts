@@ -11,6 +11,7 @@ import {
 	type SwatchyContext,
 } from "@/lib/agent/config";
 import { getPageAwareTools } from "@/lib/agent/tools";
+import { getFeatureFlags } from "@/lib/flags";
 
 export const maxDuration = 60;
 
@@ -29,13 +30,16 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		// Resolve feature flags (Vercel platform) for this request
+		const flags = await getFeatureFlags();
+
 		// Build dynamic system prompt with context
-		const systemPrompt = buildSwatchySystemPrompt(context);
+		const systemPrompt = buildSwatchySystemPrompt(flags, context);
 
 		// Get tools filtered by current page context
 		// This ensures studio-specific tools only appear when on that studio page
 		const currentPage = context?.currentPage || "/";
-		const availableTools = getPageAwareTools(currentPage);
+		const availableTools = getPageAwareTools(currentPage, flags);
 
 		// Use streaming text generation with tools
 		// The model string format "provider/model" is used by Vercel AI Gateway

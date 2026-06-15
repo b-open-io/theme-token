@@ -30,7 +30,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
-import { featureFlags } from "@/lib/feature-flags";
+import { type FeatureFlags, useFeatureFlags } from "@/lib/feature-flags";
 import { BlockPreview } from "./block-preview";
 import { PaymentRequestCard } from "./payment-request";
 import { useSwatchyStore } from "./swatchy-store";
@@ -204,7 +204,7 @@ const PAGE_SUGGESTIONS: Record<string, string[]> = {
 	],
 };
 
-function getSuggestions(pathname: string): string[] {
+function getSuggestions(pathname: string, flags: FeatureFlags): string[] {
 	// First suggestion is a random pop culture theme
 	const firstSuggestion = `Create a ${getRandomPopCultureTheme()} theme`;
 
@@ -224,15 +224,15 @@ function getSuggestions(pathname: string): string[] {
 	// Feature-gated suggestions (exclude if already on that studio)
 	const featureSuggestions: string[] = [];
 
-	if (featureFlags.fonts && !pathname.includes("/studio/font")) {
+	if (flags.fonts && !pathname.includes("/studio/font")) {
 		featureSuggestions.push("Create a custom font");
 	}
 
-	if (featureFlags.images && !pathname.includes("/studio/pattern")) {
+	if (flags.images && !pathname.includes("/studio/pattern")) {
 		featureSuggestions.push("Generate a pattern");
 	}
 
-	if (featureFlags.registry && !pathname.includes("/studio/registry")) {
+	if (flags.registry && !pathname.includes("/studio/registry")) {
 		featureSuggestions.push("Generate a UI block");
 	}
 
@@ -290,7 +290,11 @@ export function SwatchyChatBubble() {
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 
 	// Generate context-aware suggestions based on current page
-	const suggestions = useMemo(() => getSuggestions(pathname), [pathname]);
+	const flags = useFeatureFlags();
+	const suggestions = useMemo(
+		() => getSuggestions(pathname, flags),
+		[pathname, flags],
+	);
 
 	// Close on Escape (only when textarea not focused)
 	useEffect(() => {
