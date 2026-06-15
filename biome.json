@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -20,7 +20,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"suspicious": {
 				"noArrayIndexKey": "warn",
 				"noCommentText": "off"
@@ -48,5 +48,21 @@
 				"organizeImports": "on"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["src/components/ai-elements/**"],
+			"linter": {
+				"rules": {
+					"performance": { "noImgElement": "off" },
+					"suspicious": {
+						"noExplicitAny": "off",
+						"noArrayIndexKey": "off"
+					},
+					"complexity": { "useOptionalChain": "off" },
+					"correctness": { "noUnusedImports": "off" }
+				}
+			}
+		}
+	]
 }

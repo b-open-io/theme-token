@@ -649,7 +649,6 @@ export const PromptInput = ({
 		};
 	}, [add, globalDrop]);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: cleanup only on unmount; filesRef always current
 	useEffect(
 		() => () => {
 			if (!usingProvider) {

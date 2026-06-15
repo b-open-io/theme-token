@@ -8,7 +8,7 @@ import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
 import { Toaster } from "@/components/ui/sonner";
 import { FeatureFlagsProvider } from "@/lib/feature-flags";
-import { getFeatureFlags } from "@/lib/flags";
+import { getFeatureFlags } from "@/lib/get-feature-flags";
 import { generateInlineThemeCss } from "@/lib/server/generate-theme-css";
 import {
 	getRandomCachedTheme,

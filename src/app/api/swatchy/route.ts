@@ -11,7 +11,7 @@ import {
 	type SwatchyContext,
 } from "@/lib/agent/config";
 import { getPageAwareTools } from "@/lib/agent/tools";
-import { getFeatureFlags } from "@/lib/flags";
+import { getFeatureFlags } from "@/lib/get-feature-flags";
 
 export const maxDuration = 60;
 

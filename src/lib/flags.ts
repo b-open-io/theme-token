@@ -1,6 +1,5 @@
 import { vercelAdapter } from "@flags-sdk/vercel";
 import { flag } from "flags/next";
-import type { FeatureFlags } from "./feature-flags";
 
 /**
  * Feature flags backed by Vercel's first-party flag platform.
@@ -80,36 +79,6 @@ export const componentPreviewFlag = flag<boolean>({
 		"Live sandbox preview of AI-generated components (Preview button in block-preview). Independent of the registry studio gate.",
 });
 
-/**
- * Resolve every feature flag into a single plain object for the request.
- * Called server-side (root layout, API routes) and handed to the client
- * via FeatureFlagsProvider so synchronous client gating keeps working.
- */
-export async function getFeatureFlags(): Promise<FeatureFlags> {
-	const [
-		fonts,
-		images,
-		icons,
-		wallpapers,
-		registry,
-		project,
-		componentPreview,
-	] = await Promise.all([
-		fontsFlag(),
-		imagesFlag(),
-		iconsFlag(),
-		wallpapersFlag(),
-		registryFlag(),
-		projectFlag(),
-		componentPreviewFlag(),
-	]);
-	return {
-		fonts,
-		images,
-		icons,
-		wallpapers,
-		registry,
-		project,
-		componentPreview,
-	};
-}
+// The per-request resolver lives in ./get-feature-flags so this module only
+// exports flag definitions — the /.well-known/vercel/flags discovery endpoint
+// star-imports this file and getProviderData() rejects non-flag exports.
