@@ -418,7 +418,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			const addrs: Addresses = {
 				ordAddress: ordAddr,
 				bsvAddress: bsvAddr,
-				identityAddress: idKey,
+				identityKey: idKey,
 			};
 			console.log("[Wallet] Addresses:", addrs);
 

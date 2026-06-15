@@ -51,7 +51,8 @@ export interface GetOrdinalsOptions {
 export interface Addresses {
 	bsvAddress: string;
 	ordAddress: string;
-	identityAddress: string;
+	/** Identity public key (hex) from wallet.getPublicKey({ identityKey: true }) — not an address. */
+	identityKey: string;
 }
 
 export interface Balance {
