@@ -582,15 +582,20 @@ export function ThemeStudio() {
 		}
 	}, [pendingRadiusChange, selectedTheme, consumePendingRadiusChange]);
 
-	// Update theme name when customName changes
+	// Update theme name when customName changes. Critical: bail out with the
+	// SAME reference when the name is already current, and don't depend on
+	// selectedTheme — otherwise every run produces a new selectedTheme object,
+	// which re-triggers this effect, causing an infinite update loop ("Maximum
+	// update depth exceeded"). The loop only fired when customName was non-empty,
+	// i.e. for named/generated themes and ?styles=...&name=... URLs.
 	useEffect(() => {
-		if (customName.trim() && selectedTheme) {
-			setSelectedTheme((prev: ThemeToken | null) => {
-				if (!prev) return prev;
-				return { ...prev, name: customName.trim() };
-			});
-		}
-	}, [customName, selectedTheme]);
+		const name = customName.trim();
+		if (!name) return;
+		setSelectedTheme((prev: ThemeToken | null) => {
+			if (!prev || prev.name === name) return prev;
+			return { ...prev, name };
+		});
+	}, [customName]);
 
 	const handleConfirmInscribe = async (data: {
 		name: string;
