@@ -27,14 +27,20 @@ All three are fixed by the same primitive: **prove the caller controls the walle
 
 ## Decisions required (resolve before executing)
 
-1. **Is server-side payment enforcement actually wanted now?** Today payment is client-trust and an admin allowlist (`src/lib/admins.ts`) bypasses it client-side. Confirm the business intent: should the server reject unpaid generation? (If "not yet," this plan narrows to IDOR + sandbox auth only.)
-2. **Payment verification mechanism.** Proposed: given `paymentTxid`, fetch the tx from GorillaPool (`ordinals.gorillapool.io/api` is already used in this repo), assert an output pays `FEE_ADDRESS` (`src/lib/agent/config.ts`) ≥ the tool's price (`src/lib/pricing.ts`), accept 0-conf (mempool) within a tolerance, and **record the txid in KV as consumed** (one txid = one generation) to prevent replay. Confirm: 0-conf acceptable? price source authoritative?
-3. **Identity-proof mechanism for drafts/storage.** Use the Yours Wallet / `@1sat/actions` primitives (see "Identity primitives" below). Two viable approaches — confirm which:
-   - **(a) `getAuthToken`** — purpose-built: client calls `getAuthToken({ requestPath, body })` and sends the returned `authToken` in a header; the token binds path+body+timestamp (anti-replay). **Caveat:** there is **no packaged server-side verifier** in `@1sat/actions` (it ships only the client action), and the token's wire format is undocumented — so this needs a short spike (read `node_modules/@1sat/actions/dist/signing/authToken.js` to learn the exact token encoding) before we can verify it server-side.
-   - **(b) `signBsm` + `@bsv/sdk` BSM verify** — most transparent: server issues a nonce, client `signBsm({ message: nonce+path+ts })` returns `{ address, pubKey, sig }`, server verifies with `@bsv/sdk`'s BSM verifier against the identity-derived address. Well-defined verification, no reverse-engineering. Recommended unless the `getAuthToken` spike shows a clean verify path.
-   - Confirm UX: one signature per session (cache a short-lived server session) vs per mutating request.
-4. **Admin free-gen + identity key, server-side.** Today `src/lib/admins.ts` allowlists by identity **pubkey** and is checked **client-only**. Decide the canonical identity to key on once identity is proven server-side: the identity pubkey (current) or the **`bapId`** from `getProfile()` (more stable/semantic — see primitives). Move the allowlist check server-side. Confirm allowlist location (code constant vs env).
-5. **Sandbox routes.** Gate `preview-*-sandbox` behind the same identity proof + per-identity rate limit + concurrent-sandbox cap. Confirm rate limits.
+Recommended split: **004a = identity auth + N-free-per-identity + IDOR** (Phase 1, high value / low risk), **004b = payment verification** (Phase 2, optional), **004c = sandbox gating** (reuses 004a auth).
+
+1. **Identity auth — DECIDED: `bitcoin-auth`** (see "Identity auth" below). `verifyAuthToken` server-side; no roll-your-own. No open question except UX: one token per mutating request (simplest, the wallet issues it) vs a short-lived server session — recommend per-request first.
+
+2. **Free generations per identity — the maintainer's directive ("each account only gets N free generations").** Today free-gen is bypassable: the client reads `/api/user/storage?userId=<ordAddress>` and treats `totalDrafts === 0` as eligible (`use-swatchy-chat.ts:160-173`), keyed on a client-supplied address with no proof, and the server never enforces it. Replace with a **server-enforced counter keyed by the verified identity** (from `bitcoin-auth`): KV `freegen:<identityKey>` incremented atomically; allow up to **N** (decision: **what is N? default 1, matching today's "first generation free"**), then require payment. Admins (decision 4) get unlimited. This is the core of Phase 1.
+
+3. **Is server-side payment enforcement wanted now?** (Phase 2, your call — you flagged two concerns; here's the read on each.)
+   - *Concern 1 — "trust the wallet, it can't be spoofed."* The wallet's response is trustworthy **on the client**, but the generate endpoints are reachable by plain `curl` with no wallet at all — so "trust the wallet said it paid" only holds once the request is provably from an authenticated identity. With Phase 1 (identity auth + per-identity free cap) in place, anonymous unlimited abuse is already gone; the residual risk is an *authenticated* user claiming paid generations they didn't pay for. That's lower-stakes, so trusting the wallet's payment claim for authenticated users is a defensible MVP — payment verification can be Phase 2.
+   - *Concern 2 — GorillaPool timing race / false failure on 0-conf.* This is real **if** we verify by polling GP for the txid. Avoid it: **verify the transaction the wallet returns locally** (the `sendBsv`/inscribe response carries the raw tx / BEEF). Parse it with `@bsv/sdk`, assert an output pays `FEE_ADDRESS` (`src/lib/agent/config.ts`) ≥ the tool's price (`src/lib/pricing.ts`); the txid is the hash of the tx (cannot be spoofed); record it consumed in KV (replay guard). No GP round-trip, no propagation race. (BEEF even carries SPV input proofs if we want full validity, still no GP dependency.) → **Concern 2 is a non-issue with local tx verification.**
+   - Decision: ship Phase 2 now, or accept "authenticated wallet claim" for paid gens until later?
+
+4. **Admin key, server-side.** Today `src/lib/admins.ts` allowlists by identity **pubkey**, checked **client-only**. Once identity is proven server-side (decision 1), move the check server-side and pick the canonical key: the verified `pubkey` (current) or the **`bapId`** from `getProfile()` (more stable/semantic). Confirm allowlist location (code constant vs env).
+
+5. **Sandbox routes.** Gate `preview-*-sandbox` behind the same `bitcoin-auth` proof + per-identity rate limit + concurrent-sandbox cap. Confirm rate limits.
 
 ## Current state (entry points to read)
 
@@ -44,7 +50,23 @@ All three are fixed by the same primitive: **prove the caller controls the walle
 - Sandbox: `src/app/api/preview-registry-item-sandbox/route.ts`, `preview-component-sandbox/route.ts`, `src/lib/sandbox-preview.ts`.
 - Existing primitives to reuse: `@bsv/sdk` (signatures), `@vercel/kv` (consumed-txid + nonce store), `FEE_ADDRESS` in `src/lib/agent/config.ts`, prices in `src/lib/pricing.ts`, GorillaPool base in the codebase.
 
-## Identity primitives (Yours Wallet provider API + `@1sat/actions`)
+## Identity auth — use `bitcoin-auth` (decided)
+
+**`bitcoin-auth` v0.0.8 is already installed** (transitive dep via `@sigma-auth/better-auth-plugin`, and a direct dep) and ships a **server-side verifier** — so we do NOT roll our own or reverse-engineer any token format. Yours Wallet's `getAuthToken` is compatible with it (maintainer-confirmed).
+
+`bitcoin-auth` exports:
+- `getAuthToken(config: { privateKeyWif, requestPath, body?, scheme?, bodyEncoding?, timestamp? }) => string` — client side (the wallet produces this; we do not handle the WIF ourselves — the wallet's `getAuthToken` provider method returns the token).
+- `parseAuthToken(token) => AuthToken | null` where `AuthToken = { requestPath, timestamp, body?, pubkey, signature, scheme: "bsm"|"brc77" }`.
+- **`verifyAuthToken(token, target: { requestPath, timestamp, body? }, timePad?, bodyEncoding?) => boolean`** — server side. `timePad` is the allowed clock-skew / replay window (seconds).
+
+**Server flow (the IDOR + free-gen foundation):**
+1. Client gets a token from the wallet (`getAuthToken({ requestPath, body })`) and sends it in a header (e.g. `X-Auth-Token`).
+2. Route handler reconstructs the `target` (`requestPath` = the route path, `body` = the raw request body, `timestamp` from the token) and calls `verifyAuthToken(token, target, timePad)`. Reject on `false`.
+3. `parseAuthToken(token).pubkey` is the **verified identity**. Derive the user's address from it (`@bsv/sdk` `PublicKey.fromString(pubkey).toAddress()`) and/or map to `bapId` via `getProfile`. That identity — not a client-supplied `userId` — is the owner key for drafts/storage (fixes IDOR) and the key for the free-generation counter.
+
+This replaces the earlier "spike the token format / verify manually" caveat — a packaged verifier exists.
+
+## Other primitives (Yours Wallet provider API + `@1sat/actions`)
 
 Confirmed available in the installed `@1sat/actions` (exported from package root via `./signing`) and the Yours Wallet provider API. The app already uses `createWalletContext`/`getProfile` in `src/lib/wallet-actions.ts`.
 
