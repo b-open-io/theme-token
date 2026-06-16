@@ -22,6 +22,9 @@ and is **design-gated — do not auto-execute**.
 | 006 | Themes cache: parallelize the N+1 ORDFS fetch | P2 | S | LOW-MED | — | DONE (executed + reviewed 2026-06-16) |
 | 007 | DX baseline: `typecheck` script + `.env.example` + CI | P2 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
 | 008 | README: fix broken CLI install instructions | P3 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
+| 009 | Test baseline: `bun test` over pure lib logic (22 tests) | P2 | M | LOW | — | DONE (executed + reviewed 2026-06-16) |
+| 010 | Remove 7 unused dependencies | P2 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
+| 011 | Code-split three.js out of `/preview` first-load bundle | P2 | M | LOW | — | DONE (executed + reviewed 2026-06-16) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (rationale)
 
@@ -32,11 +35,12 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (rational
 
 ## Recommended but not yet written as plans (from the audit)
 
-Remaining after batch 2 (005–008 above covered the original #6/#10/#11/#12):
+Batches 1–3 covered the original #2/#3/#4/#6/#7/#8(partial)/#9/#10/#11/#12. Remaining:
 
-- **#7 Verification baseline** (tests, M) — no test runner exists. Add `bun test` over pure `src/lib` logic (registry-gateway, `resolveVoutRefs`, tints, `sanitizeStyleModeFonts`). Unblocks 004 and any refactor.
-- **#8 Dead/duplicate deps** (deps, S — needs a full `bun run build` to verify) — remove `@react-three/fiber`, `@react-three/drei`, `@rive-app/react-webgl2`, `satori`, `jotai`, `lodash`, `change-case` (0 imports each); dedup `motion`→`framer-motion` and `swr`→`react-query`; investigate bogus `lodash@^4.18.1` pin.
-- **#9 Code-split heavy deps** (perf, M) — `import * as THREE` is statically bundled into the shared `/preview/[origin]` route; no `next/dynamic` anywhere.
+- **004a / 004b / 004c** — the auth foundation (identity via `bitcoin-auth` + N-free-per-identity + IDOR / payment verify / sandbox gating). Parked on the maintainer's go; 004a is fully specified and unblocked (N is the configurable `FREE_GENERATIONS_PER_IDENTITY`, default 1). Recommend executing 009-on (done) → 004a.
+- **Dep dedups (deferred from #8)** — `motion`→`framer-motion` (1 vendored import in `ai-elements/shimmer.tsx`) and `swr`→`@tanstack/react-query` (1 import in `font-mint/ai-generate-tab.tsx`, behavioral — has polling). Small but touch source/vendored/behavioral code, so kept out of the mechanical dep-removal.
+- **Wire `bun test` into CI** — the CI workflow from 007 runs lint + typecheck; add a `bun run test` step now that 009 exists. One-line follow-up.
+- **`@types/bun`** — 009 excluded `**/*.test.ts` from `tsconfig` (so `tsc` doesn't choke on `bun:test`). Adding `@types/bun` (dev) would let `tsc`/CI typecheck the tests too.
 - Direction: finish/ship the CLI (`cli/index.ts` `list` is a stub, themes-only); external-contract smoke test for `/r/`.
 
 ## Known papercuts (noted during execution, not yet planned)
