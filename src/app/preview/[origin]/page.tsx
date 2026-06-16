@@ -45,7 +45,7 @@ async function getTheme(origin: string): Promise<GetThemeResult | null> {
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ map: { type: "theme" } }),
+				body: JSON.stringify({ map: { type: "registry:style" } }),
 				next: { revalidate: 300 }, // Check every 5 minutes
 			},
 		);
@@ -71,9 +71,10 @@ async function getTheme(origin: string): Promise<GetThemeResult | null> {
 		};
 	}
 
-	// Fall back to ORDFS (direct inscription fetch)
+	// Fall back to ORDFS: themes are ord-fs/json directory packages, so resolve
+	// theme.json via the directory path (ORDFS resolves the `_N` pointer).
 	try {
-		const response = await fetch(getOrdfsUrl(origin), {
+		const response = await fetch(getOrdfsUrl(`${origin}/theme.json`), {
 			next: { revalidate: 3600 }, // Cache for 1 hour
 		});
 

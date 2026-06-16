@@ -52,9 +52,10 @@ export async function GET(request: Request) {
 	}
 
 	try {
-		// Fetch current listings from GorillaPool
+		// Fetch current listings from GorillaPool. Theme tokens are ord-fs/json
+		// directory packages; the tradeable token is the directory ordinal.
 		const response = await fetch(
-			`${ORDINALS_API}/market?limit=100&dir=DESC&type=application/json`,
+			`${ORDINALS_API}/market?limit=100&dir=DESC&type=ord-fs/json`,
 		);
 
 		if (!response.ok) {
@@ -66,11 +67,11 @@ export async function GET(request: Request) {
 
 		const results: MarketListingResponse[] = await response.json();
 
-		// Filter for ThemeToken listings
+		// Filter for theme listings by the on-chain MAP type `registry:style`.
 		const themeListings = results
 			.filter((item) => {
 				const mapData = item.origin?.data?.map || item.data?.map;
-				return mapData?.type === "theme";
+				return mapData?.type === "registry:style";
 			})
 			.map((item) => ({
 				origin: item.origin?.outpoint || item.outpoint,

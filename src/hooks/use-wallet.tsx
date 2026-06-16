@@ -35,11 +35,12 @@ import {
 	inscribeTheme as walletInscribeTheme,
 	sendPayment as walletSendPayment,
 } from "@/lib/wallet-actions";
-import type {
-	Addresses,
-	InscribeResponse,
-	SendBsvResult,
-	SocialProfile,
+import {
+	type Addresses,
+	fetchOrdinalsMetadata,
+	type InscribeResponse,
+	type SendBsvResult,
+	type SocialProfile,
 } from "@/lib/yours-wallet";
 
 export { PRISM_PASS_COLLECTION_ID, PRISM_PASS_DISCOUNT };
@@ -223,11 +224,11 @@ function mapWalletStatus(oneSatStatus: OneSatWalletStatus): WalletStatus {
 /**
  * Categorize the wallet's basket outputs into themes, fonts, and patterns.
  *
- * Outputs come from the provider's ordinals basket (getOrdinals). They are
- * sparse — each carries the MAP tags we set at inscription time, e.g.
- * `registry:style:Name@1.0.0` — so we categorize by tag and hydrate theme
- * content from ORDFS by outpoint. For freshly inscribed (wallet-owned) items
- * the outpoint is the origin, which is exactly what ORDFS needs.
+ * Categorization keys off the on-chain MAP `type` (the shadcn `registry:*`
+ * value), read from the GorillaPool index — NOT the wallet-local basket tags,
+ * which are private metadata that don't survive transfer/purchase. Content is
+ * resolved by ORIGIN (stable across transfers) so a purchased package's files
+ * still resolve. ORDFS resolves the package's `_N` directory pointers.
  */
 async function categorizeOrdinals(outputs: WalletOutput[]): Promise<{
 	tokens: ThemeToken[];
@@ -240,76 +241,42 @@ async function categorizeOrdinals(outputs: WalletOutput[]): Promise<{
 	const owned: OwnedTheme[] = [];
 	const fonts: OwnedFont[] = [];
 	const patterns: OwnedPattern[] = [];
-	let hasPrismPass = false;
 
-	// Theme package outpoints to hydrate from ORDFS (content isn't in the
-	// sparse basket output).
-	const styleCandidates: string[] = [];
+	// Prism Pass membership is a collection NFT, detected from the basket tags.
+	const hasPrismPass = outputs.some((output) =>
+		(output.tags ?? []).some((t) => t.includes(PRISM_PASS_COLLECTION_ID)),
+	);
 
-	for (const output of outputs) {
-		const tags = output.tags ?? [];
-		const { outpoint } = output;
+	// Read on-chain metadata (origin + MAP type) for every basket ordinal.
+	const metas = await fetchOrdinalsMetadata(outputs.map((o) => o.outpoint));
 
-		// Pull the name from a `prefix:Name@version` tag.
-		const nameFromTag = (prefix: string): string | null => {
-			const tag = tags.find((t) => t.startsWith(prefix));
-			return tag ? tag.slice(prefix.length).split("@")[0] : null;
-		};
+	await Promise.allSettled(
+		metas.map(async (meta) => {
+			const type = meta.map?.type;
+			const { origin, outpoint } = meta;
+			const name =
+				typeof meta.map?.name === "string" ? meta.map.name : undefined;
 
-		if (tags.some((t) => t.startsWith("registry:style:"))) {
-			styleCandidates.push(outpoint);
-			continue;
-		}
-
-		const fontName = nameFromTag("registry:font:");
-		if (fontName) {
-			fonts.push({
-				outpoint,
-				origin: outpoint,
-				metadata: { name: fontName, weight: "400", style: "normal" },
-			});
-			continue;
-		}
-
-		const fileName = nameFromTag("registry:file:");
-		if (fileName) {
-			patterns.push({
-				outpoint,
-				origin: outpoint,
-				metadata: { name: fileName },
-			});
-			continue;
-		}
-
-		// Prism Pass membership NFT (collection item).
-		if (tags.some((t) => t.includes(PRISM_PASS_COLLECTION_ID))) {
-			hasPrismPass = true;
-		}
-	}
-
-	// Hydrate theme packages: fetch theme.json from ORDFS by outpoint.
-	if (styleCandidates.length > 0) {
-		const results = await Promise.allSettled(
-			styleCandidates.map(async (outpoint) => {
-				const res = await fetch(getOrdfsUrl(`${outpoint}/theme.json`));
-				if (!res.ok) return null;
-				const themeJson = await res.json();
-				const validation = validateThemeToken(themeJson);
-				if (!validation.valid) return null;
-				return { outpoint, theme: validation.theme };
-			}),
-		);
-		for (const result of results) {
-			if (result.status === "fulfilled" && result.value) {
-				tokens.push(result.value.theme);
-				owned.push({
-					theme: result.value.theme,
-					outpoint: result.value.outpoint,
-					origin: result.value.outpoint,
+			if (type === "registry:style") {
+				// Hydrate the theme: ORDFS resolves the `_N` directory ref to the
+				// theme.json file. Resolve by origin so transferred packages work.
+				const res = await fetch(getOrdfsUrl(`${origin}/theme.json`));
+				if (!res.ok) return;
+				const validation = validateThemeToken(await res.json());
+				if (!validation.valid) return;
+				tokens.push(validation.theme);
+				owned.push({ theme: validation.theme, outpoint, origin });
+			} else if (type === "registry:font") {
+				fonts.push({
+					outpoint,
+					origin,
+					metadata: { name: name ?? "Font", weight: "400", style: "normal" },
 				});
+			} else if (type === "registry:file") {
+				patterns.push({ outpoint, origin, metadata: { name } });
 			}
-		}
-	}
+		}),
+	);
 
 	return { tokens, owned, fonts, patterns, hasPrismPass };
 }

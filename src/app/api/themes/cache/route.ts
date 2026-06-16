@@ -184,14 +184,15 @@ export async function POST(request: Request) {
 	}
 }
 
-// Fetch themes from GorillaPool API - search by type: "theme"
+// Fetch themes from GorillaPool API — search by the on-chain MAP type
+// `registry:style` (the shadcn registry type our theme directories declare).
 async function fetchFromChain(): Promise<CachedTheme[]> {
 	const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 
 	const response = await fetch(`${ORDINALS_API}/inscriptions/search`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ map: { type: "theme" } }),
+		body: JSON.stringify({ map: { type: "registry:style" } }),
 		next: { revalidate: 60 },
 	});
 
@@ -218,9 +219,12 @@ async function fetchFromChain(): Promise<CachedTheme[]> {
 		try {
 			const originOutpoint = item.origin?.outpoint;
 			if (!originOutpoint) return null;
-			const contentResponse = await fetch(getOrdfsUrl(originOutpoint), {
-				next: { revalidate: 3600 },
-			});
+			// Themes are ord-fs/json directory packages: resolve theme.json via the
+			// directory path (ORDFS resolves the `_N` pointer to the file).
+			const contentResponse = await fetch(
+				getOrdfsUrl(`${originOutpoint}/theme.json`),
+				{ next: { revalidate: 3600 } },
+			);
 			if (!contentResponse.ok) return null;
 			const content = await contentResponse.json();
 			// Skip inscriptions without $schema (test/invalid inscriptions)

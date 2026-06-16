@@ -24,8 +24,10 @@ interface FieldDef {
 
 const FIELDS: FieldDef[] = [
 	{ key: "app", type: "string", description: 'Always "theme-token"' },
-	{ key: "type", type: "string", description: "Asset type identifier" },
+	{ key: "type", type: "string", description: "shadcn registry type" },
 	{ key: "name", type: "string", description: "Display name" },
+	{ key: "version", type: "string", description: "Semver, e.g. 1.0.0" },
+	{ key: "description", type: "string", description: "Short summary" },
 	{ key: "author", type: "string", description: "Creator name" },
 	{ key: "license", type: "string", description: "OFL, MIT, CC0, etc." },
 	{ key: "prompt", type: "string", description: "AI generation prompt" },
@@ -33,71 +35,80 @@ const FIELDS: FieldDef[] = [
 	{ key: "model", type: "string", description: "AI model ID" },
 ];
 
+const BASE_REQUIRED = ["app", "type", "name", "version", "description"];
+
 const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 	theme: {
-		active: ["app", "type", "prompt", "provider", "model"],
-		required: ["app", "type"],
+		active: [...BASE_REQUIRED, "prompt", "provider", "model"],
+		required: BASE_REQUIRED,
 	},
 	font: {
-		active: ["app", "type", "author", "license", "prompt", "provider", "model"],
-		required: ["app", "type"],
+		active: [
+			...BASE_REQUIRED,
+			"author",
+			"license",
+			"prompt",
+			"provider",
+			"model",
+		],
+		required: BASE_REQUIRED,
 	},
 	tile: {
 		active: [
-			"app",
-			"type",
-			"name",
+			...BASE_REQUIRED,
 			"author",
 			"license",
 			"prompt",
 			"provider",
 			"model",
 		],
-		required: ["app", "type"],
+		required: BASE_REQUIRED,
 	},
 	wallpaper: {
 		active: [
-			"app",
-			"type",
-			"name",
+			...BASE_REQUIRED,
 			"author",
 			"license",
 			"prompt",
 			"provider",
 			"model",
 		],
-		required: ["app", "type"],
+		required: BASE_REQUIRED,
 	},
 	icon: {
 		active: [
-			"app",
-			"type",
-			"name",
+			...BASE_REQUIRED,
 			"author",
 			"license",
 			"prompt",
 			"provider",
 			"model",
 		],
-		required: ["app", "type"],
+		required: BASE_REQUIRED,
 	},
 	project: {
-		active: ["app", "type", "name", "author"],
-		required: ["app", "type"],
+		active: [...BASE_REQUIRED, "author"],
+		required: BASE_REQUIRED,
 	},
 };
 
 const JSON_DATA: Record<AssetType, string> = {
 	theme: `{
   "app": "theme-token",
-  "type": "theme",
+  "type": "registry:style",
+  "name": "Cyberpunk Neon",
+  "version": "1.0.0",
+  "description": "Cyberpunk neon theme",
   "prompt": "cyberpunk neon",
   "provider": "anthropic",
   "model": "claude-opus-4-5"
 }`,
 	font: `{
   "app": "theme-token",
-  "type": "font",
+  "type": "registry:font",
+  "name": "Elegant Serif",
+  "version": "1.0.0",
+  "description": "Elegant serif typeface",
   "author": "John Doe",
   "license": "OFL",
   "prompt": "elegant serif",
@@ -106,8 +117,10 @@ const JSON_DATA: Record<AssetType, string> = {
 }`,
 	tile: `{
   "app": "theme-token",
-  "type": "tile",
+  "type": "registry:file",
   "name": "Dot Grid",
+  "version": "1.0.0",
+  "description": "Evenly spaced dot grid",
   "author": "Jane Smith",
   "license": "CC0",
   "prompt": "evenly spaced dots",
@@ -116,8 +129,10 @@ const JSON_DATA: Record<AssetType, string> = {
 }`,
 	wallpaper: `{
   "app": "theme-token",
-  "type": "wallpaper",
+  "type": "registry:file",
   "name": "Gradient Mesh",
+  "version": "1.0.0",
+  "description": "Abstract gradient mesh wallpaper",
   "author": "Alex Chen",
   "license": "CC0",
   "prompt": "abstract gradient",
@@ -126,8 +141,10 @@ const JSON_DATA: Record<AssetType, string> = {
 }`,
 	icon: `{
   "app": "theme-token",
-  "type": "icon",
+  "type": "registry:file",
   "name": "Settings",
+  "version": "1.0.0",
+  "description": "Minimal gear icon",
   "author": "Icon Studio",
   "license": "CC0",
   "prompt": "minimal gear icon",
@@ -136,8 +153,10 @@ const JSON_DATA: Record<AssetType, string> = {
 }`,
 	project: `{
   "app": "theme-token",
-  "type": "project",
+  "type": "registry:file",
   "name": "My Project",
+  "version": "1.0.0",
+  "description": "Theme project bundle",
   "author": "John Doe"
 }`,
 };
@@ -317,9 +336,11 @@ export function OnChainProtocol() {
 
 			{/* Compact Footer Note */}
 			<p className="mx-auto max-w-2xl text-center text-[10px] text-muted-foreground">
-				MAP (Magic Attribute Protocol) metadata is inscribed alongside the asset
-				content. Theme JSON includes name, author, cssVars. Font metadata is
-				embedded in the binary.
+				MAP (Magic Attribute Protocol) metadata tags the package's{" "}
+				<code className="text-primary">ord-fs/json</code> directory manifest —
+				the tradeable ordinal — declaring its shadcn registry type. The asset
+				files (theme JSON, font binary, SVG) are separate inscriptions the
+				directory references.
 			</p>
 		</div>
 	);

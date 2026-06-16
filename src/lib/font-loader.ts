@@ -9,7 +9,6 @@ import {
 	clearFontCache,
 	extractOrigin,
 	getCachedFont,
-	getOrdfsUrl,
 	isFontLoaded,
 	isOnChainPath,
 	type LoadedFont,
@@ -21,6 +20,7 @@ import {
 	isUploadedFontPath,
 	useFontUploadStore,
 } from "@/lib/stores/font-upload-store";
+import { fetchOrdinalsMetadata } from "@/lib/yours-wallet";
 
 // Re-export SDK functions with legacy names for backward compatibility
 export {
@@ -34,7 +34,6 @@ export {
 // Alias exports to match previous API names
 export const isOnChainFont = isOnChainPath;
 export const extractOriginFromPath = extractOrigin;
-export const getFontContentUrl = getOrdfsUrl;
 
 // Website-specific: Font metadata from MAP protocol
 export interface FontMetadata {
@@ -48,53 +47,39 @@ export interface FontMetadata {
 }
 
 /**
- * Fetch font metadata from ORDFS (MAP data)
- * This is website-specific and not in the SDK
+ * Fetch font metadata (the on-chain MAP record) for a font package.
+ *
+ * Read from the GorillaPool index rather than the bare ORDFS origin: font
+ * packages are `ord-fs/json` directories, so a bare-origin fetch resolves the
+ * directory (not the MAP) — the MAP lives on the directory inscription, which
+ * the index returns directly. Website-specific, not in the SDK.
  */
 export async function fetchFontMetadata(
 	origin: string,
 ): Promise<FontMetadata | null> {
 	try {
-		// Fetch the ordinal data which includes MAP metadata
-		const response = await fetch(getOrdfsUrl(origin));
-		if (!response.ok) return null;
+		const [meta] = await fetchOrdinalsMetadata([origin]);
+		const map = meta?.map;
+		if (!map) return null;
 
-		// For fonts, the response might be binary, so we need to check content-type
-		const contentType = response.headers.get("content-type");
+		const str = (v: unknown): string | undefined =>
+			typeof v === "string" ? v : undefined;
 
-		// If it's a font file, we need to fetch metadata from the API
-		if (contentType?.includes("font")) {
-			// Font binary - no metadata in this response
-			return null;
-		}
-
-		// Try to parse as JSON (might be ordinal data with map)
-		const data = await response.json();
-		if (data?.map) {
-			return {
-				name: data.map.name || "Unknown Font",
-				author: data.map.author,
-				license: data.map.license,
-				weight: data.map.weight || "400",
-				style: data.map.style || "normal",
-				prompt: data.map.prompt,
-				glyphCount: data.map.glyphCount
-					? parseInt(data.map.glyphCount, 10)
-					: undefined,
-			};
-		}
-
-		return null;
+		return {
+			name: str(map.name) ?? "Unknown Font",
+			author: str(map.author),
+			license: str(map.license),
+			weight: str(map["font.weight"]) ?? str(map.weight) ?? "400",
+			style: str(map.style) ?? "normal",
+			prompt: str(map.prompt),
+			glyphCount: str(map.glyphCount)
+				? Number.parseInt(str(map.glyphCount) as string, 10)
+				: undefined,
+		};
 	} catch {
 		return null;
 	}
 }
-
-/**
- * Get ORDFS metadata URL for a font origin
- * Re-exports SDK function for backwards compatibility
- */
-export const getFontMetadataUrl = getOrdfsUrl;
 
 /**
  * Load fonts for a theme's style mode

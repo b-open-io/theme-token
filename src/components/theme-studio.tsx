@@ -417,9 +417,11 @@ export function ThemeStudio() {
 		const remixParam = searchParams.get("remix");
 		const nameParam = searchParams.get("name");
 
-		// Handle remix by origin - fetch theme from blockchain
+		// Handle remix by origin - fetch theme from blockchain. Themes are
+		// ord-fs/json directory packages, so resolve theme.json via the directory
+		// path (ORDFS resolves the `_N` pointer to the file).
 		if (remixParam) {
-			fetch(getOrdfsUrl(remixParam))
+			fetch(getOrdfsUrl(`${remixParam}/theme.json`))
 				.then((res) => res.json())
 				.then((data) => {
 					if (data.styles && (data.styles.light || data.styles.dark)) {

@@ -88,10 +88,11 @@ export async function getSocialProfile(
  * Get the ordinals the wallet actually holds, read from the provider's
  * ordinals basket via @1sat/actions getOrdinals (BRC-100 listOutputs).
  *
- * This is the canonical source: it returns everything the wallet tracks —
- * including self-inscribed packages locked to per-mint derived addresses,
- * which a GorillaPool-by-address lookup would miss. Outputs carry our MAP
- * tags (e.g. `registry:style:Name@1.0.0`); content is hydrated by outpoint.
+ * This is the canonical ownership source: it returns everything the wallet
+ * tracks — including self-inscribed packages locked to per-mint derived
+ * addresses, which a GorillaPool-by-address lookup would miss. The returned
+ * outpoints are then categorized by their on-chain MAP `type` (read from the
+ * index), not the wallet-local basket tags — see `categorizeOrdinals`.
  */
 export async function getOwnedOrdinals(
 	wallet: WalletInterface,

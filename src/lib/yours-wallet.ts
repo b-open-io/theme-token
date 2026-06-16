@@ -210,6 +210,65 @@ export const YOURS_WALLET_URL = "https://yours.org";
 const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 
 /**
+ * On-chain metadata for a wallet ordinal, read from the GorillaPool index.
+ *
+ * `map` is the inscription's MAP record (e.g. `{app, type, name, version}`)
+ * and `origin` is the immutable first-inscription outpoint. We categorize
+ * registry packages by `map.type` (the shadcn `registry:*` value) rather than
+ * the wallet-local basket tags, which don't survive transfer/purchase.
+ */
+export interface OrdinalMetadata {
+	/** Current outpoint (as queried). */
+	outpoint: string;
+	/** Origin outpoint — stable across transfers; use it to resolve content. */
+	origin: string;
+	/** Inscription MAP record, if present. */
+	map?: Record<string, unknown>;
+}
+
+interface GorillaPoolTxo {
+	outpoint: string;
+	origin?: {
+		outpoint?: string;
+		data?: {
+			map?: Record<string, unknown>;
+		};
+	};
+}
+
+/**
+ * Fetch on-chain metadata (origin + MAP) for a set of ordinal outpoints in a
+ * single bulk request to the GorillaPool index. Per-outpoint lookup works for
+ * self-inscribed ordinals at derived addresses (which a by-address query
+ * misses). Outpoints with no index entry are omitted from the result.
+ */
+export async function fetchOrdinalsMetadata(
+	outpoints: string[],
+): Promise<OrdinalMetadata[]> {
+	if (outpoints.length === 0) return [];
+	const response = await fetch(`${ORDINALS_API}/txos/outpoints?script=false`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(outpoints),
+	});
+	if (!response.ok) {
+		throw new Error(
+			`GorillaPool metadata lookup failed: ${response.status} ${response.statusText}`,
+		);
+	}
+	const txos: GorillaPoolTxo[] = await response.json();
+	return txos
+		.filter((txo): txo is GorillaPoolTxo & { outpoint: string } =>
+			Boolean(txo?.outpoint),
+		)
+		.map((txo) => ({
+			outpoint: txo.outpoint,
+			origin: txo.origin?.outpoint ?? txo.outpoint,
+			map: txo.origin?.data?.map,
+		}));
+}
+
+/**
  * Submit a txid to GorillaPool indexer so it gets indexed immediately
  */
 export async function submitToIndexer(txid: string): Promise<boolean> {
@@ -263,9 +322,10 @@ export interface FontMarketListing extends MarketListing {
  */
 export async function fetchMarketListings(): Promise<MarketListing[]> {
 	try {
-		// Query the market API - limit to JSON types which theme tokens are
+		// Theme tokens are ord-fs/json directory packages; the listed token is
+		// the directory ordinal.
 		const response = await fetch(
-			`${ORDINALS_API}/market?limit=100&dir=DESC&type=application/json`,
+			`${ORDINALS_API}/market?limit=100&dir=DESC&type=ord-fs/json`,
 		);
 
 		if (!response.ok) {
@@ -321,15 +381,18 @@ export async function fetchThemeMarketListings(): Promise<
 	const listings = await fetchMarketListings();
 	const themeListings: ThemeMarketListing[] = [];
 
-	// Filter for potential theme tokens first (by map metadata)
-	const potentialThemes = listings.filter((l) => l.data?.map?.type === "theme");
+	// Filter for theme tokens by the on-chain MAP type `registry:style`.
+	const potentialThemes = listings.filter(
+		(l) => l.data?.map?.type === "registry:style",
+	);
 
 	const { validateThemeToken } = await import("@theme-token/sdk");
 
 	for (const listing of potentialThemes) {
 		try {
-			// Try to fetch the content from ordfs
-			const content = await fetchOrdinalContent(listing.origin);
+			// Resolve theme.json via the ord-fs directory path (ORDFS resolves the
+			// `_N` pointer to the file). Use the origin so transfers still resolve.
+			const content = await fetchOrdinalContent(`${listing.origin}/theme.json`);
 			if (content) {
 				const result = validateThemeToken(content);
 				if (result.valid) {
