@@ -21,13 +21,14 @@ function toHex(color: string | undefined, fallback: string): string {
 	}
 }
 
-// Extract colors from dark mode for stripes
+// Extract stripe colors from dark mode. Only vibrant/brand colors — "muted"
+// is intentionally a dark, low-chroma UI color (e.g. oklch(0.32 0.06 280) →
+// #2d2f51) and reads as an ugly gray stripe against a vivid palette.
 function extractColors(theme: ThemeToken): string[] {
 	const colorKeys = [
 		"primary",
 		"secondary",
 		"accent",
-		"muted",
 		"chart-1",
 		"chart-2",
 		"chart-3",
@@ -39,8 +40,13 @@ function extractColors(theme: ThemeToken): string[] {
 	const styles = theme.styles.dark;
 	for (const key of colorKeys) {
 		const color = styles[key as keyof typeof styles];
-		if (color && typeof color === "string") {
-			colors.push(toHex(color, "#666666"));
+		if (!color || typeof color !== "string") continue;
+		// Skip anything that can't be parsed rather than injecting a static gray
+		// fallback — only real, valid theme colors become stripes.
+		try {
+			colors.push(from(color).hex);
+		} catch {
+			// invalid color value — leave it out entirely
 		}
 	}
 	return [...new Set(colors)];
@@ -91,8 +97,9 @@ export async function GET(
 		params,
 	]);
 
-	// Default colors
-	const defaultColors = ["#6366f1", "#a855f7", "#ec4899", "#52525b", "#3b82f6"];
+	// Default colors (only used when a theme has no extractable colors) — all
+	// vibrant, no gray, to match the brand-color-only stripe treatment.
+	const defaultColors = ["#6366f1", "#a855f7", "#ec4899", "#06b6d4", "#3b82f6"];
 	let stripeColors = defaultColors;
 	let foregroundColor = "#fafafa";
 	let themeName = "Theme Token";
