@@ -16,7 +16,8 @@
 		"lint": "biome check",
 		"lint:fix": "biome check --write",
 		"cli": "bun run cli/index.ts",
-		"generate-og": "bun run scripts/generate-og-images.ts"
+		"generate-og": "bun run scripts/generate-og-images.ts",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@1sat/actions": "^0.0.166",
