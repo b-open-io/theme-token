@@ -65,7 +65,7 @@ export async function GET(
 		return NextResponse.json(registryItem, {
 			headers: {
 				"Content-Type": "application/json",
-				"Cache-Control": "public, max-age=3600",
+				"Cache-Control": "public, max-age=3600, s-maxage=31536000, immutable",
 			},
 		});
 	} catch (error) {
