@@ -56,9 +56,27 @@ https://themetoken.dev/studio?import=<base64-css>&name=<name>&source=<source>
 
 ## CLI
 
+Install any published theme into your shadcn project with the standard CLI —
+no extra tooling:
+
 ```bash
-bunx themetoken add 85702d92...cf_0    # Install by origin
-bunx themetoken url <origin>            # Get registry URL
+bunx shadcn@latest add https://themetoken.dev/r/themes/<origin>
+```
+
+Blocks and components publish the same way:
+
+```bash
+bunx shadcn@latest add https://themetoken.dev/r/blocks/<origin>
+bunx shadcn@latest add https://themetoken.dev/r/components/<origin>
+```
+
+### Local CLI (this repo)
+
+A helper CLI lives in `cli/index.ts` (run via Bun — it is not published to npm):
+
+```bash
+bun run cli add <origin>    # resolve + verify a theme by origin
+bun run cli url <origin>    # print the registry URL for an origin
 ```
 
 ---
