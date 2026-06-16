@@ -156,8 +156,9 @@ export function BuyThemeModal({
 				marketplaceAddress: "15q8YQSqUa9uTh6gh4AVixxq29xkpBBP9z",
 			});
 
-			// Add to pending themes for immediate ownership
-			addPendingTheme(theme, txid);
+			// Add to pending themes for immediate ownership (before the indexer
+			// confirms). Key by the theme's stable origin so it dedupes later.
+			addPendingTheme(theme, listing.origin);
 
 			onPurchaseComplete?.(txid);
 			onClose();

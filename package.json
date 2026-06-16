@@ -91,6 +91,7 @@
 		"ai": "^6.0.206",
 		"ansi-to-react": "^6.2.6",
 		"better-color-tools": "^0.12.3",
+		"bitcoin-image": "^0.0.3",
 		"chrono-node": "^2.9.1",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",

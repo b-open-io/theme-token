@@ -189,7 +189,7 @@ interface WalletContextValue {
 		amountSatoshis: number,
 	) => Promise<SendBsvResult | null>;
 	isSending: boolean;
-	addPendingTheme: (theme: ThemeToken, txid: string) => void;
+	addPendingTheme: (theme: ThemeToken, origin: string) => void;
 	/** Inscribe multiple items in a single transaction (multi-output bundle) */
 	inscribeBundle: (items: BundleItem[]) => Promise<BundleInscribeResult | null>;
 	/** Mint a collection item (e.g., Prism Pass) */
@@ -311,7 +311,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	const [isListing, setIsListing] = useState(false);
 	const [isSending, setIsSending] = useState(false);
 	const [pendingThemes, setPendingThemes] = useState<OwnedTheme[]>([]);
-	const { availableThemes, setAvailableThemes, resetTheme } = useTheme();
+	const { setAvailableThemes, resetTheme } = useTheme();
 
 	// Track whether we've fetched data for the current wallet connection
 	const hasFetchedRef = useRef(false);
@@ -330,38 +330,34 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	}, [error, oneSatError]);
 
 	// Fetch theme tokens, fonts, and patterns from wallet
-	const fetchThemeTokens = useCallback(
-		async (w: WalletInterface) => {
-			setIsLoading(true);
-			setError(null);
+	const fetchThemeTokens = useCallback(async (w: WalletInterface) => {
+		setIsLoading(true);
+		setError(null);
 
-			try {
-				const ordinals = await getOwnedOrdinals(w);
-				const {
-					tokens,
-					owned,
-					fonts,
-					patterns,
-					hasPrismPass: prismPass,
-				} = await categorizeOrdinals(ordinals);
+		try {
+			const ordinals = await getOwnedOrdinals(w);
+			const {
+				tokens,
+				owned,
+				fonts,
+				patterns,
+				hasPrismPass: prismPass,
+			} = await categorizeOrdinals(ordinals);
 
-				setHasPrismPass(prismPass);
-				setThemeTokens(tokens);
-				setOwnedThemes(owned);
-				setOwnedFonts(fonts);
-				setOwnedPatterns(patterns);
-				setAvailableThemes(tokens);
-			} catch (err) {
-				console.error("[Wallet] Error fetching ordinals:", err);
-				setError(
-					err instanceof Error ? err.message : "Failed to fetch ordinals",
-				);
-			} finally {
-				setIsLoading(false);
-			}
-		},
-		[setAvailableThemes],
-	);
+			setHasPrismPass(prismPass);
+			setThemeTokens(tokens);
+			setOwnedThemes(owned);
+			setOwnedFonts(fonts);
+			setOwnedPatterns(patterns);
+			// availableThemes (the dropdown) is derived from ownedThemes +
+			// pendingThemes by the merge effect below — don't set it here.
+		} catch (err) {
+			console.error("[Wallet] Error fetching ordinals:", err);
+			setError(err instanceof Error ? err.message : "Failed to fetch ordinals");
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
 
 	// Fetch wallet info (addresses, balance)
 	const fetchWalletInfo = useCallback(async (w: WalletInterface) => {
@@ -420,6 +416,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				setHasPrismPass(false);
 				setAddresses(null);
 				setProfile(null);
+				setPendingThemes([]);
 				setAvailableThemes([]);
 				resetTheme();
 			}
@@ -432,6 +429,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		setAvailableThemes,
 		resetTheme,
 	]);
+
+	// Merge indexer-confirmed (ownedThemes) and optimistic (pendingThemes) themes
+	// into the dropdown, deduped by origin. A freshly minted/purchased theme is
+	// pending until GorillaPool indexes it; once confirmed it drops from pending
+	// so it never appears twice.
+	useEffect(() => {
+		const confirmed = new Set(ownedThemes.map((t) => t.origin));
+		const stillPending = pendingThemes.filter((p) => !confirmed.has(p.origin));
+		if (stillPending.length !== pendingThemes.length) {
+			setPendingThemes(stillPending);
+			return;
+		}
+		setAvailableThemes([
+			...ownedThemes.map((t) => t.theme),
+			...stillPending.map((p) => p.theme),
+		]);
+	}, [ownedThemes, pendingThemes, setAvailableThemes]);
 
 	const connect = useCallback(async () => {
 		setError(null);
@@ -484,6 +498,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 					wallet,
 					jsonString,
 					theme.name,
+				);
+
+				// Optimistic ownership: we just minted it, so surface it instantly
+				// without waiting on the indexer. The merge effect dedupes it once
+				// GorillaPool confirms the same origin (the manifest directory).
+				const mintedOrigin = `${result.txid}_${result.manifestVout}`;
+				setPendingThemes((prev) =>
+					prev.some((p) => p.origin === mintedOrigin)
+						? prev
+						: [
+								...prev,
+								{ theme, outpoint: mintedOrigin, origin: mintedOrigin },
+							],
 				);
 
 				// Add to themes cache immediately so it shows up on homepage
@@ -667,21 +694,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		[wallet, fetchWalletInfo],
 	);
 
-	// Add a theme to pending state (optimistic ownership before wallet confirms)
-	const addPendingTheme = useCallback(
-		(theme: ThemeToken, txid: string) => {
-			const origin = `${txid}_0`;
-			const pendingTheme: OwnedTheme = {
-				theme,
-				outpoint: origin,
-				origin,
-			};
-			setPendingThemes((prev) => [...prev, pendingTheme]);
-			// Also add to available themes for immediate dropdown selection
-			setAvailableThemes([...availableThemes, theme]);
-		},
-		[availableThemes, setAvailableThemes],
-	);
+	// Add a theme to pending state (optimistic ownership before the indexer
+	// confirms). `origin` is the theme's stable origin outpoint — the same key
+	// GorillaPool reports — so the merge effect dedupes once it's indexed. The
+	// dropdown updates via that effect, not here.
+	const addPendingTheme = useCallback((theme: ThemeToken, origin: string) => {
+		setPendingThemes((prev) =>
+			prev.some((p) => p.origin === origin)
+				? prev
+				: [...prev, { theme, outpoint: origin, origin }],
+		);
+	}, []);
 
 	/**
 	 * Inscribe multiple items in a single transaction (multi-output bundle).

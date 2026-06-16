@@ -5,10 +5,11 @@
 
 import { getOrdinals, listOrdinal as listOrdinalAction } from "@1sat/actions";
 import { Utils, type WalletInterface } from "@bsv/sdk";
+import { sameOutpoint } from "@/lib/outpoint";
 import { createWalletContext, getDepositAddress } from "@/lib/wallet-actions";
 
 export interface ListOrdinalParams {
-	/** Outpoint of the ordinal to list (txid_vout format) */
+	/** Outpoint of the ordinal to list (any format; matched canonically) */
 	outpoint: string;
 	/** Price in satoshis */
 	priceSatoshis: number;
@@ -34,9 +35,11 @@ export async function listOrdinal(
 
 	const ctx = createWalletContext(wallet);
 
-	// Look up the ordinal output from the wallet
+	// Look up the ordinal output from the wallet. The wallet serializes
+	// outpoints as `txid.vout` while ours are canonical `txid_vout`, so compare
+	// by canonical form rather than raw string.
 	const { outputs } = await getOrdinals.execute(ctx, { limit: 100 });
-	const ordinal = outputs.find((o) => o.outpoint === outpoint);
+	const ordinal = outputs.find((o) => sameOutpoint(o.outpoint, outpoint));
 
 	if (!ordinal) {
 		throw new Error(`Ordinal not found in wallet for outpoint: ${outpoint}`);

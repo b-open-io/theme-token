@@ -3,6 +3,8 @@
  * https://yours-wallet.gitbook.io/provider-api
  */
 
+import { normalizeOutpoint } from "@/lib/outpoint";
+
 export interface OrdinalData {
 	types?: string[];
 	insc?: {
@@ -219,11 +221,7 @@ const ORDINALS_API = "https://ordinals.gorillapool.io/api";
  * the wallet-local basket tags, which don't survive transfer/purchase.
  */
 export interface OrdinalMetadata {
-	/**
-	 * The outpoint as supplied by the caller (BRC-100 wallet format, `txid.vout`).
-	 * Preserved so it round-trips for listing/transfer, which match the wallet's
-	 * own outputs.
-	 */
+	/** Canonical outpoint (`txid_vout`). */
 	outpoint: string;
 	/** Origin outpoint (`txid_vout`) — stable across transfers; resolves content. */
 	origin: string;
@@ -242,39 +240,22 @@ interface GorillaPoolTxo {
 }
 
 /**
- * Normalize an outpoint to GorillaPool/ORDFS form (`txid_vout`). BRC-100 wallets
- * serialize outpoints as `txid.vout` (period); GorillaPool and ORDFS require an
- * underscore. The txid is hex (no `.`), so the delimiter is the only period.
- */
-function toUnderscoreOutpoint(outpoint: string): string {
-	return outpoint.replace(".", "_");
-}
-
-/**
  * Fetch on-chain metadata (origin + MAP) for a set of ordinal outpoints in a
  * single bulk request to the GorillaPool index. Per-outpoint lookup works for
  * self-inscribed ordinals at derived addresses (which a by-address query
  * misses). Outpoints with no index entry are omitted from the result.
  *
- * Accepts BRC-100 (`txid.vout`) outpoints and normalizes them for the query;
- * each result's `outpoint` is mapped back to the exact value the caller passed.
+ * Accepts any outpoint format; outpoints are normalized to the canonical
+ * `txid_vout` the index expects (BRC-100 wallets use `txid.vout`).
  */
 export async function fetchOrdinalsMetadata(
 	outpoints: string[],
 ): Promise<OrdinalMetadata[]> {
 	if (outpoints.length === 0) return [];
-	// GorillaPool wants `txid_vout`; map normalized -> original so we can return
-	// the caller's outpoint (which listing/transfer match against the wallet).
-	const originalByNormalized = new Map<string, string>();
-	const normalized = outpoints.map((op) => {
-		const n = toUnderscoreOutpoint(op);
-		originalByNormalized.set(n, op);
-		return n;
-	});
 	const response = await fetch(`${ORDINALS_API}/txos/outpoints?script=false`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(normalized),
+		body: JSON.stringify(outpoints.map(normalizeOutpoint)),
 	});
 	if (!response.ok) {
 		throw new Error(
@@ -287,7 +268,7 @@ export async function fetchOrdinalsMetadata(
 			Boolean(txo?.outpoint),
 		)
 		.map((txo) => ({
-			outpoint: originalByNormalized.get(txo.outpoint) ?? txo.outpoint,
+			outpoint: txo.outpoint,
 			origin: txo.origin?.outpoint ?? txo.outpoint,
 			map: txo.origin?.data?.map,
 		}));
