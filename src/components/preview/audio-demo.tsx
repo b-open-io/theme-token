@@ -1,9 +1,15 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
+import dynamic from "next/dynamic";
 import ParticlePlayerWidget from "@/components/audio/particles/particle-player-widget";
 import { AudioDemoProvider } from "./audio-demo-provider";
-import { AudioVisualizerFractal } from "./audio-visualizer-fractal";
+
+const AudioVisualizerFractal = dynamic(
+	() =>
+		import("./audio-visualizer-fractal").then((m) => m.AudioVisualizerFractal),
+	{ ssr: false },
+);
 
 const demoTracks = [
 	{
