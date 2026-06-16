@@ -10,6 +10,7 @@ import {
 } from "@/components/theme-gallery";
 import { useTheme } from "@/components/theme-provider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { isAdminIdentity } from "@/lib/admins";
 import { FEE_ADDRESS, type SwatchyContext } from "@/lib/agent/config";
 import {
 	getToolValidationError,
@@ -103,6 +104,8 @@ export function useSwatchyChat() {
 		hasPrismPass,
 	} = useYoursWallet();
 	const ordAddress = addresses?.ordAddress;
+	// Admins get every paid generation for free (payment skipped client-side).
+	const isAdmin = isAdminIdentity(addresses?.identityKey);
 	const {
 		paymentPending,
 		setPaymentPending,
@@ -175,14 +178,18 @@ export function useSwatchyChat() {
 	// Update pending payment if user becomes eligible for free generation while it's open
 	// This handles the flow: Generate -> Connect Wallet -> Become Eligible -> Update UI
 	useEffect(() => {
-		if (paymentPending && !paymentPending.isFree && hasFreeGeneration) {
+		if (
+			paymentPending &&
+			!paymentPending.isFree &&
+			(isAdmin || hasFreeGeneration)
+		) {
 			console.log("[Swatchy] Updating pending payment to be free");
 			setPaymentPending({
 				...paymentPending,
 				isFree: true,
 			});
 		}
-	}, [paymentPending, hasFreeGeneration, setPaymentPending]);
+	}, [paymentPending, isAdmin, hasFreeGeneration, setPaymentPending]);
 
 	// Build context to pass to API - includes current state for Swatchy's awareness
 	const context = useMemo((): SwatchyContext => {
@@ -288,10 +295,12 @@ export function useSwatchyChat() {
 					// Get price with Prism Pass discount if applicable
 					const cost = getPrice(toolName as PricingTool, hasPrismPass);
 
-					// Check if eligible for free generation
-					if (hasFreeGeneration) {
+					// Free when admin (unlimited) or eligible for the one-time free gen
+					if (isAdmin || hasFreeGeneration) {
 						console.log(
-							"[Swatchy] User eligible for free generation, showing claim UI",
+							isAdmin
+								? "[Swatchy] Admin — generation is free"
+								: "[Swatchy] User eligible for free generation, showing claim UI",
 						);
 						setPaymentPending({
 							toolName,
