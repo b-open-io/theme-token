@@ -15,22 +15,22 @@ async function getGoogleFonts(): Promise<Set<string>> {
 	}
 
 	try {
-		// Google Fonts API - free, no key required for this endpoint
-		const response = await fetch(
-			"https://www.googleapis.com/webfonts/v1/webfonts?key=AIzaSyBwIX97bVWr3-6AIUvGkcNnmFgirefZ6Sw&sort=alpha",
-			{ next: { revalidate: 3600 } },
-		);
+		// Google Fonts catalog via the public, key-less metadata endpoint.
+		const response = await fetch("https://fonts.google.com/metadata/fonts", {
+			next: { revalidate: 3600 },
+		});
 
 		if (!response.ok) {
 			console.warn("[validate-font] Failed to fetch Google Fonts list");
 			return googleFontsCache || new Set();
 		}
 
-		const data = await response.json();
+		const text = await response.text();
+		const data = JSON.parse(text.replace(/^\)\]\}'?\n?/, "")) as {
+			familyMetadataList?: { family: string }[];
+		};
 		const fonts = new Set<string>(
-			data.items?.map((item: { family: string }) =>
-				item.family.toLowerCase(),
-			) || [],
+			data.familyMetadataList?.map((item) => item.family.toLowerCase()) || [],
 		);
 
 		googleFontsCache = fonts;
