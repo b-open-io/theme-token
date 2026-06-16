@@ -23,9 +23,15 @@ const CRON_SECRET = process.env.CRON_SECRET;
  * Delete all expired drafts across all users
  */
 export async function POST(request: NextRequest) {
+	if (!CRON_SECRET) {
+		return NextResponse.json(
+			{ error: "CRON_SECRET is not configured" },
+			{ status: 500 },
+		);
+	}
 	// Verify cron secret (Vercel adds this header)
 	const authHeader = request.headers.get("authorization");
-	if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+	if (authHeader !== `Bearer ${CRON_SECRET}`) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
@@ -78,8 +84,14 @@ export async function POST(request: NextRequest) {
  * Health check / manual trigger (requires auth)
  */
 export async function GET(request: NextRequest) {
+	if (!CRON_SECRET) {
+		return NextResponse.json(
+			{ error: "CRON_SECRET is not configured" },
+			{ status: 500 },
+		);
+	}
 	const authHeader = request.headers.get("authorization");
-	if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+	if (authHeader !== `Bearer ${CRON_SECRET}`) {
 		return NextResponse.json({
 			status: "ok",
 			message: "Cleanup endpoint ready. Use POST to trigger cleanup.",
