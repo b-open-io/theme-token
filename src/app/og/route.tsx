@@ -129,6 +129,12 @@ export async function GET(request: Request) {
 					style: "normal",
 				},
 			],
+			headers: {
+				// Static brand OG image — cache at the edge rather than re-rendering
+				// per request; stale-while-revalidate lets a redesign propagate.
+				"Cache-Control":
+					"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+			},
 		},
 	);
 }

@@ -234,6 +234,17 @@ export async function GET(
 					style: "normal",
 				},
 			],
+			headers: {
+				// The image for a given origin is deterministic and immutable (the
+				// theme is an on-chain inscription; the stripe layout is seeded by
+				// the origin), so cache it hard at the edge instead of re-rendering
+				// satori + refetching the theme/font on every request. s-maxage caps
+				// fresh CDN serving at a day; stale-while-revalidate keeps serving the
+				// cached image for a week while a rendering-logic change (post-deploy)
+				// gets picked up in the background — so it's efficient but not frozen.
+				"Cache-Control":
+					"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+			},
 		},
 	);
 }
