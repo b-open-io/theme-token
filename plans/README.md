@@ -18,6 +18,10 @@ and is **design-gated — do not auto-execute**.
 | 002 | Delete unauthenticated `/api/test-gateway` debug route | P1 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
 | 003 | Cron cleanup: fail closed when `CRON_SECRET` unset | P1 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
 | 004 | Server-side identity proof + payment verification | P1 | L | MED | test baseline | TODO (design-gated — see plan) |
+| 005 | `/r/` registry routes: CDN caching (s-maxage + immutable) | P2 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
+| 006 | Themes cache: parallelize the N+1 ORDFS fetch | P2 | S | LOW-MED | — | DONE (executed + reviewed 2026-06-16) |
+| 007 | DX baseline: `typecheck` script + `.env.example` + CI | P2 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
+| 008 | README: fix broken CLI install instructions | P3 | S | LOW | — | DONE (executed + reviewed 2026-06-16) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (rationale)
 
@@ -28,16 +32,17 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (reason) | REJECTED (rational
 
 ## Recommended but not yet written as plans (from the audit)
 
-Surfaced and vetted in the audit; ask the advisor to write plans for any of these:
+Remaining after batch 2 (005–008 above covered the original #6/#10/#11/#12):
 
-- **#6 `/r/` registry CDN caching** (perf, S) — the three `r/{themes,blocks,components}/[origin]/route.ts` set only `max-age=3600`, no `s-maxage`; on-chain content is immutable. The `/og` routes already do this right — copy that header.
 - **#7 Verification baseline** (tests, M) — no test runner exists. Add `bun test` over pure `src/lib` logic (registry-gateway, `resolveVoutRefs`, tints, `sanitizeStyleModeFonts`). Unblocks 004 and any refactor.
-- **#8 Dead/duplicate deps** (deps, S) — remove `@react-three/fiber`, `@react-three/drei`, `@rive-app/react-webgl2`, `satori`, `jotai`, `lodash`, `change-case` (0 imports each); dedup `motion`→`framer-motion` and `swr`→`react-query`; investigate bogus `lodash@^4.18.1` pin.
+- **#8 Dead/duplicate deps** (deps, S — needs a full `bun run build` to verify) — remove `@react-three/fiber`, `@react-three/drei`, `@rive-app/react-webgl2`, `satori`, `jotai`, `lodash`, `change-case` (0 imports each); dedup `motion`→`framer-motion` and `swr`→`react-query`; investigate bogus `lodash@^4.18.1` pin.
 - **#9 Code-split heavy deps** (perf, M) — `import * as THREE` is statically bundled into the shared `/preview/[origin]` route; no `next/dynamic` anywhere.
-- **#10 DX** (S) — add `"typecheck": "tsc --noEmit"` script, a `.env.example` (14+ undocumented vars), and a CI workflow.
-- **#11 N+1 ORDFS** in `themes/cache/route.ts:210-238` (perf, S) — serial fetch-per-theme; batch with bounded concurrency.
-- **#12 README CLI install broken** (docs, S) — `bunx themetoken add` but no `bin`, `private: true`.
 - Direction: finish/ship the CLI (`cli/index.ts` `list` is a stub, themes-only); external-contract smoke test for `/r/`.
+
+## Known papercuts (noted during execution, not yet planned)
+
+- **`.claude/worktrees/` is not gitignored**, so `bun run lint` (Biome, default scope) walks into executor worktree copies and can fail spuriously while a worktree exists. Add `.claude/` to `.gitignore` (or a Biome ignore) to stop this. Harmless once worktrees are removed.
+- **`.gitignore` `.env*` glob** also matches `.env.example` (007 force-added it). Consider narrowing to `.env` + `.env.local` (or add `!.env.example`) so the example tracks cleanly without `-f`.
 
 ## Findings considered and rejected
 
