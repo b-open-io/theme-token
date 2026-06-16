@@ -204,36 +204,48 @@ async function fetchFromChain(): Promise<CachedTheme[]> {
 		throw new Error("Invalid API response");
 	}
 
-	const themes: CachedTheme[] = [];
 	const seenOrigins = new Set<string>();
+	const uniqueItems = results.filter((item: (typeof results)[number]) => {
+		const o = item.origin?.outpoint;
+		if (!o || seenOrigins.has(o)) return false;
+		seenOrigins.add(o);
+		return true;
+	});
 
-	for (const item of results) {
+	async function loadTheme(
+		item: (typeof results)[number],
+	): Promise<CachedTheme | null> {
 		try {
 			const originOutpoint = item.origin?.outpoint;
-			if (!originOutpoint || seenOrigins.has(originOutpoint)) continue;
-			seenOrigins.add(originOutpoint);
-
+			if (!originOutpoint) return null;
 			const contentResponse = await fetch(getOrdfsUrl(originOutpoint), {
 				next: { revalidate: 3600 },
 			});
-
-			if (!contentResponse.ok) continue;
-
+			if (!contentResponse.ok) return null;
 			const content = await contentResponse.json();
 			// Skip inscriptions without $schema (test/invalid inscriptions)
-			if (!content.$schema) continue;
-
+			if (!content.$schema) return null;
 			const result = validateThemeToken(content);
-			if (!result.valid) continue;
-
-			themes.push({
+			if (!result.valid) return null;
+			return {
 				origin: originOutpoint,
 				theme: result.theme,
 				inscribedAt: item.height ? item.height * 1000 : Date.now(),
 				owner: item.owner,
-			});
+			};
 		} catch {
-			// Skip invalid
+			return null;
+		}
+	}
+
+	const themes: CachedTheme[] = [];
+	const CONCURRENCY = 10;
+	for (let i = 0; i < uniqueItems.length; i += CONCURRENCY) {
+		const loaded = await Promise.all(
+			uniqueItems.slice(i, i + CONCURRENCY).map(loadTheme),
+		);
+		for (const t of loaded) {
+			if (t) themes.push(t);
 		}
 	}
 
