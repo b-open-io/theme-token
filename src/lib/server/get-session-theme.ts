@@ -13,6 +13,15 @@ import type { CachedTheme } from "@/lib/themes-cache";
 /** Cookie name for theme session */
 export const THEME_SESSION_COOKIE = "theme-session";
 
+/**
+ * How long a randomly-assigned theme sticks for a visitor. The site is meant to
+ * feel freshly (randomly) themed; we cache the pick briefly so it stays stable
+ * within a visit and across quick reloads, then re-randomizes. Enforced both on
+ * the cookie (`maxAge`) and server-side (`assignedAt` age check) so a stale or
+ * long-lived cookie still expires on schedule.
+ */
+export const THEME_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 1 day
+
 /** KV cache key for published themes */
 const THEMES_CACHE_KEY = "themes:published";
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
@@ -157,6 +166,13 @@ export function parseThemeSession(
 			typeof parsed.origin === "string" &&
 			typeof parsed.assignedAt === "number"
 		) {
+			// Treat sessions older than the TTL as expired so the visitor gets a
+			// fresh random theme — independent of the browser cookie's own maxAge
+			// (this also retires the previously year-long cookies immediately).
+			const ageSeconds = (Date.now() - parsed.assignedAt) / 1000;
+			if (ageSeconds > THEME_SESSION_MAX_AGE_SECONDS) {
+				return null;
+			}
 			return parsed as ThemeSession;
 		}
 		return null;

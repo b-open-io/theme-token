@@ -4,13 +4,16 @@ import { cookies } from "next/headers";
 import {
 	createThemeSession,
 	THEME_SESSION_COOKIE,
+	THEME_SESSION_MAX_AGE_SECONDS,
 } from "@/lib/server/get-session-theme";
 
 const COOKIE_OPTIONS = {
 	httpOnly: false, // Allow client read for debugging
 	secure: process.env.NODE_ENV === "production",
 	sameSite: "lax" as const,
-	maxAge: 60 * 60 * 24 * 365, // 1 year
+	// Set only on first visit (not refreshed each load), so this is a hard
+	// window, not a sliding one.
+	maxAge: THEME_SESSION_MAX_AGE_SECONDS,
 	path: "/",
 };
 
