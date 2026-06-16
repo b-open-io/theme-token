@@ -177,7 +177,7 @@ const PAGE_SUGGESTIONS: Record<string, string[]> = {
 		"Design a geometric hexagon pattern",
 		"Generate a minimalist line pattern",
 	],
-	"/studio/registry": [
+	"/studio/components": [
 		"Generate a pricing table block",
 		"Create a hero section",
 		"Design a login form component",
@@ -232,7 +232,7 @@ function getSuggestions(pathname: string, flags: FeatureFlags): string[] {
 		featureSuggestions.push("Generate a pattern");
 	}
 
-	if (flags.registry && !pathname.includes("/studio/registry")) {
+	if (flags.components && !pathname.includes("/studio/components")) {
 		featureSuggestions.push("Generate a UI block");
 	}
 
@@ -617,13 +617,13 @@ export function SwatchyChatBubble() {
 										<p className="text-xs text-green-600/70 dark:text-green-400/70">
 											Saved to drafts
 										</p>
-										{pathname !== "/studio/registry" && (
+										{pathname !== "/studio/components" && (
 											<button
 												type="button"
 												onClick={() => {
 													setNavigating(true);
 													clearGeneration();
-													router.push("/studio/registry");
+													router.push("/studio/components");
 												}}
 												className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
 											>

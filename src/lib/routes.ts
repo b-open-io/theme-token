@@ -120,12 +120,12 @@ export const routes: RouteInfo[] = [
 		cost: 1_000_000,
 	},
 	{
-		path: "/studio/registry",
-		label: "Component",
+		path: "/studio/components",
+		label: "Components",
 		description:
 			"Create shadcn blocks, components, and hooks for on-chain publishing",
 		category: "studio",
-		feature: "registry",
+		feature: "components",
 		icon: Blocks,
 		tools: ["generateBlock", "generateComponent"],
 	},

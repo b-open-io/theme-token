@@ -1,11 +1,11 @@
 import type { FeatureFlags } from "./feature-flags";
 import {
 	componentPreviewFlag,
+	componentsFlag,
 	fontsFlag,
 	iconsFlag,
 	imagesFlag,
 	projectFlag,
-	registryFlag,
 	themeFlag,
 	wallpapersFlag,
 } from "./flags";
@@ -26,7 +26,7 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
 		images,
 		icons,
 		wallpapers,
-		registry,
+		components,
 		project,
 		componentPreview,
 	] = await Promise.all([
@@ -35,7 +35,7 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
 		imagesFlag(),
 		iconsFlag(),
 		wallpapersFlag(),
-		registryFlag(),
+		componentsFlag(),
 		projectFlag(),
 		componentPreviewFlag(),
 	]);
@@ -45,7 +45,7 @@ export async function getFeatureFlags(): Promise<FeatureFlags> {
 		images,
 		icons,
 		wallpapers,
-		registry,
+		components,
 		project,
 		componentPreview,
 	};

@@ -96,7 +96,7 @@ export const STUDIO_TOOLS: Record<string, ToolName[]> = {
 		"generateIconSet",
 		"generateFavicon",
 	],
-	"/studio/registry": ["generateBlock", "generateComponent"],
+	"/studio/components": ["generateBlock", "generateComponent"],
 	"/studio/wallpaper": ["generateWallpaper"],
 };
 
@@ -109,7 +109,7 @@ const PAGE_NAMES: Record<string, string> = {
 	"/studio/patterns": "Pattern Studio",
 	"/studio/icon": "Icon Studio",
 	"/studio/wallpaper": "Wallpaper Studio",
-	"/studio/registry": "Component Studio",
+	"/studio/components": "Components Studio",
 	"/studio/project": "Project Studio",
 };
 

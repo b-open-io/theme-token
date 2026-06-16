@@ -77,7 +77,7 @@ const THEME_STUDIO_SCRIPTS: SwatchyScript[] = [
 	[say("Once you mint it, it's yours forever.", 3000)],
 ];
 
-const REGISTRY_STUDIO_SCRIPTS: SwatchyScript[] = [
+const COMPONENTS_STUDIO_SCRIPTS: SwatchyScript[] = [
 	[
 		think("Building blocks...", 2000),
 		say("React components are like legos.", 3000),
@@ -137,7 +137,8 @@ const GENERIC_SCRIPTS: SwatchyScript[] = [
 export function getScriptsForPath(pathname: string): SwatchyScript[] {
 	if (pathname === "/") return HOME_SCRIPTS;
 	if (pathname.startsWith("/studio/theme")) return THEME_STUDIO_SCRIPTS;
-	if (pathname.startsWith("/studio/registry")) return REGISTRY_STUDIO_SCRIPTS;
+	if (pathname.startsWith("/studio/components"))
+		return COMPONENTS_STUDIO_SCRIPTS;
 	if (pathname.startsWith("/market")) return MARKET_SCRIPTS;
 	return GENERIC_SCRIPTS;
 }

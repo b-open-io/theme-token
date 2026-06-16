@@ -348,7 +348,7 @@ export function useSwatchyChat() {
 	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
 	addToolOutputRef.current = addToolOutput;
 
-	// For "navigate then generate" flows (e.g. blocks/components must be created in /studio/registry),
+	// For "navigate then generate" flows (e.g. blocks/components must be created in /studio/components),
 	// store the last user request and re-send it after navigation so Swatchy can continue seamlessly.
 	const lastUserMessageRef = useRef<string | null>(null);
 	const queuedFollowupRef = useRef<{
@@ -516,7 +516,7 @@ export function useSwatchyChat() {
 					// If we're navigating to a studio that gates certain generation tools,
 					// re-send the last user request once we arrive so the model can call the now-available tools.
 					if (
-						(path === "/studio/registry" ||
+						(path === "/studio/components" ||
 							path === "/studio/wallpaper" ||
 							path === "/studio/icon") &&
 						lastUserMessageRef.current

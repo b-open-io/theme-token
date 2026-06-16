@@ -14,7 +14,7 @@ import { flag } from "flags/next";
  * falling back to a baked-in default (a stale default would hide the
  * misconfiguration). Flip values per environment in the dashboard or via:
  *
- *   vercel flags enable studio-registry -e production
+ *   vercel flags enable studio-components -e production
  *   vercel flags disable studio-fonts   -e production
  *
  * NOTE: server-only (flags/next uses node:async_hooks). Client components read
@@ -57,11 +57,11 @@ export const wallpapersFlag = flag<boolean>({
 		"Wallpaper studio: AI wallpaper generation. Gates /studio/wallpaper, /market/my-wallpapers, and the generateWallpaper tool.",
 });
 
-export const registryFlag = flag<boolean>({
-	key: "studio-registry",
+export const componentsFlag = flag<boolean>({
+	key: "studio-components",
 	adapter: vercelAdapter(),
 	description:
-		"Registry/Component studio: shadcn blocks, components, and hooks. Gates /studio/registry and the generateBlock/generateComponent tools.",
+		"Components studio: AI-generated shadcn blocks, components, and hooks for on-chain publishing. Gates /studio/components and the generateBlock/generateComponent tools. (Distinct from the always-on /r/ shadcn registry gateway.)",
 });
 
 export const projectFlag = flag<boolean>({

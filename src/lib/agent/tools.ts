@@ -680,7 +680,7 @@ export function getAvailableTools(flags: FeatureFlags) {
 	}
 
 	// Add registry-related tools if registry feature is enabled
-	if (flags.registry) {
+	if (flags.components) {
 		tools.generateBlock = generateBlock;
 		tools.generateComponent = generateComponent;
 	}

@@ -20,7 +20,7 @@ export type FeatureFlagKey =
 	| "images"
 	| "icons"
 	| "wallpapers"
-	| "registry"
+	| "components"
 	| "project"
 	| "componentPreview";
 
