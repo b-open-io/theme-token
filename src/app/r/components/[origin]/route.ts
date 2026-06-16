@@ -1,5 +1,5 @@
-import { getOrdfsUrl } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import {
 	hydrateRegistryManifest,
 	toShadcnRegistryItem,

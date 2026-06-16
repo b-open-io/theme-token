@@ -1,9 +1,6 @@
-import {
-	getOrdfsUrl,
-	toShadcnRegistry,
-	validateThemeToken,
-} from "@theme-token/sdk";
+import { toShadcnRegistry, validateThemeToken } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
+import { getOrdfsUrl } from "@/lib/ordfs";
 
 export async function GET(
 	_request: Request,

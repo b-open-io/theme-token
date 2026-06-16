@@ -1,6 +1,5 @@
 "use client";
 
-import { getOrdfsUrl } from "@theme-token/sdk";
 import {
 	Check,
 	Download,
@@ -21,6 +20,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import { downloadWallpaper } from "@/lib/wallpaper-engine";
 import { useWallpaperContext } from "./wallpaper-context";
 import { WallpaperGallery } from "./wallpaper-gallery";

@@ -1,12 +1,9 @@
-import {
-	getOrdfsUrl,
-	type ThemeToken,
-	validateThemeToken,
-} from "@theme-token/sdk";
+import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { CachedTheme } from "@/app/api/themes/cache/route";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import { PreviewClient } from "./preview-client";
 
 interface Props {

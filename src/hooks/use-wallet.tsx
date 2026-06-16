@@ -5,11 +5,7 @@ import {
 	useWallet as useOneSatWallet,
 } from "@1sat/react";
 import type { WalletInterface, WalletOutput } from "@bsv/sdk";
-import {
-	getOrdfsUrl,
-	type ThemeToken,
-	validateThemeToken,
-} from "@theme-token/sdk";
+import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import {
 	createContext,
 	type ReactNode,
@@ -22,6 +18,7 @@ import {
 } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import { bundleItemsToPackage, publishPackage } from "@/lib/package-builder";
 // Import and re-export pricing constants
 import { PRISM_PASS_COLLECTION_ID, PRISM_PASS_DISCOUNT } from "@/lib/pricing";

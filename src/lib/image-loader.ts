@@ -15,7 +15,8 @@
  * - Result: 100% theme-reactive patterns
  */
 
-import { extractOrigin, getOrdfsUrl, isOnChainPath } from "@theme-token/sdk";
+import { extractOrigin, isOnChainPath } from "@theme-token/sdk";
+import { getOrdfsUrl } from "@/lib/ordfs";
 
 // Re-export SDK functions with image-specific names for backwards compatibility
 export const isOnChainImage = isOnChainPath;

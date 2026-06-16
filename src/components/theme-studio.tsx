@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	applyTheme as applyThemeToDOM,
-	getOrdfsUrl,
 	parseCss,
 	type ThemeToken,
 } from "@theme-token/sdk";
@@ -69,6 +68,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { loadThemeFonts, sanitizeStyleModeFonts } from "@/lib/fonts";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import {
 	selectPendingColorChange,
 	selectPendingRadiusChange,

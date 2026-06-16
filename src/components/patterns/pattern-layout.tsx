@@ -1,6 +1,5 @@
 "use client";
 
-import { getOrdfsUrl } from "@theme-token/sdk";
 import { Check, ExternalLink, Loader2, PenLine, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +8,7 @@ import { PatternSidebar } from "@/components/patterns/pattern-sidebar";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
+import { getOrdfsUrl } from "@/lib/ordfs";
 
 export function PatternLayout() {
 	const { result, svgDataUrl, params, randomize } = usePatternContext();

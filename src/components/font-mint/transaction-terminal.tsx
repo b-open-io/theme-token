@@ -2,7 +2,6 @@
 
 import { useWallet as useOneSatWallet } from "@1sat/react";
 import { Utils } from "@bsv/sdk";
-import { getOrdfsUrl } from "@theme-token/sdk";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FontFile } from "@/app/studio/font/font-mint-client";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-wallet";
 import { buildFontMetadata } from "@/lib/asset-metadata";
 import { generateFontPreviewFromData } from "@/lib/font-preview-generator";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import type { PackageFile } from "@/lib/package-builder";
 import { publishPackage } from "@/lib/package-builder";
 import type { CompiledFont } from "./ai-generate-tab";

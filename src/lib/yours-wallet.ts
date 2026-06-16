@@ -189,13 +189,14 @@ export function isYoursWalletInstalled(): boolean {
 }
 
 /**
- * Fetch ordinal content from ordfs.network
+ * Fetch ordinal content from the ORDFS gateway. `outpoint` may be an outpoint,
+ * origin, or directory path (e.g. `${origin}/theme.json`).
  */
 export async function fetchOrdinalContent<T = unknown>(
 	outpoint: string,
 ): Promise<T | null> {
 	try {
-		const { getOrdfsUrl } = await import("@theme-token/sdk");
+		const { getOrdfsUrl } = await import("@/lib/ordfs");
 		const response = await fetch(getOrdfsUrl(outpoint));
 		if (!response.ok) return null;
 		return await response.json();

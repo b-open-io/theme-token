@@ -1,4 +1,4 @@
-import { getOrdfsUrl } from "@theme-token/sdk";
+import { getOrdfsUrl } from "@/lib/ordfs";
 
 /**
  * Registry Gateway - Shared logic for serving shadcn registry items from the blockchain

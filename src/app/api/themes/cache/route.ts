@@ -1,10 +1,7 @@
-import {
-	getOrdfsUrl,
-	type ThemeToken,
-	validateThemeToken,
-} from "@theme-token/sdk";
+import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { getOrdfsUrl } from "@/lib/ordfs";
 
 const THEMES_CACHE_KEY = "themes:published";
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 day TTL - KV persists across deploys

@@ -1,6 +1,5 @@
 "use client";
 
-import { getOrdfsUrl } from "@theme-token/sdk";
 import {
 	ArrowLeft,
 	Copy,
@@ -27,6 +26,7 @@ import {
 	getCachedFont,
 	loadFontByOrigin,
 } from "@/lib/font-loader";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import {
 	type FontMarketListing,
 	fetchFontMarketListings,
