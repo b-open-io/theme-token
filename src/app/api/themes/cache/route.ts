@@ -2,6 +2,7 @@ import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
 import { getOrdfsUrl } from "@/lib/ordfs";
+import { extractTxid } from "@/lib/registry-gateway";
 
 const THEMES_CACHE_KEY = "themes:published";
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 day TTL - KV persists across deploys
@@ -72,8 +73,19 @@ export async function GET(request: Request) {
 		// Merge: Keep ALL cached themes that aren't on-chain yet
 		// (they may just not be indexed by GorillaPool, but are valid inscriptions)
 		const chainOrigins = new Set(freshThemes.map((t) => t.origin));
+		const chainTxids = new Set(
+			freshThemes
+				.map((t) => extractTxid(t.origin))
+				.filter((txid): txid is string => txid !== null),
+		);
 		const notOnChain =
-			existingCache?.themes.filter((t) => !chainOrigins.has(t.origin)) || [];
+			existingCache?.themes.filter((t) => {
+				const txid = extractTxid(t.origin);
+				// Older clients cached the theme file (_0), while chain search returns
+				// the package manifest (_1). Once either output from that transaction
+				// is indexed, prefer the canonical fresh result over the stale alias.
+				return txid ? !chainTxids.has(txid) : !chainOrigins.has(t.origin);
+			}) || [];
 
 		const mergedThemes = [...notOnChain, ...freshThemes];
 
