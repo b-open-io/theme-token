@@ -1,8 +1,8 @@
 import {
 	createContext,
 	deriveDepositAddresses,
-	getOrdinals,
 	getProfile,
+	listOrdinals,
 	type OneSatContext,
 	sendBsv,
 } from "@1sat/actions";
@@ -86,7 +86,7 @@ export async function getSocialProfile(
 
 /**
  * Get the ordinals the wallet actually holds, read from the provider's
- * ordinals basket via @1sat/actions getOrdinals (BRC-100 listOutputs).
+ * ordinals basket via @1sat/actions listOrdinals (BRC-100 listOutputs).
  *
  * This is the canonical ownership source: it returns everything the wallet
  * tracks — including self-inscribed packages locked to per-mint derived
@@ -99,7 +99,7 @@ export async function getOwnedOrdinals(
 	limit = 1000,
 ): Promise<WalletOutput[]> {
 	const ctx = createWalletContext(wallet);
-	const { outputs } = await getOrdinals.execute(ctx, { limit });
+	const { outputs } = await listOrdinals.execute(ctx, { limit });
 	return outputs;
 }
 

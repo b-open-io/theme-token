@@ -39,10 +39,13 @@ interface PatternRequest {
 
 // Build tool descriptions for the system prompt
 const toolDescriptions = Object.entries(patternTools)
-	.map(
-		([name, tool]) =>
-			`- ${name}: ${tool.description?.split("\n")[0] || "No description"}`,
-	)
+	.map(([name, tool]) => {
+		const description =
+			typeof tool.description === "string"
+				? tool.description.split("\n")[0]
+				: "No description";
+		return `- ${name}: ${description}`;
+	})
 	.join("\n");
 
 // Token reference for the prompt

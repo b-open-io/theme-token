@@ -1,7 +1,7 @@
 "use client";
 
 import type { ThemeToken } from "@theme-token/sdk";
-import { isTextUIPart, isToolOrDynamicToolUIPart, type UIMessage } from "ai";
+import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
 import {
 	ArrowRight,
@@ -410,8 +410,7 @@ export function SwatchyChatBubble() {
 							messages.map((msg) => {
 								const uiMessage = msg as UIMessage;
 								const hasContent = uiMessage.parts?.some(
-									(part) =>
-										isTextUIPart(part) || isToolOrDynamicToolUIPart(part),
+									(part) => isTextUIPart(part) || isToolUIPart(part),
 								);
 								if (!hasContent) return null;
 
@@ -431,7 +430,7 @@ export function SwatchyChatBubble() {
 											}
 
 											// Render tool invocation parts
-											if (isToolOrDynamicToolUIPart(part)) {
+											if (isToolUIPart(part)) {
 												const toolName =
 													"toolName" in part
 														? part.toolName

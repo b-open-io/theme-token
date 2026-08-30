@@ -5,7 +5,7 @@
  * Used to catch syntax errors before returning generated code to users.
  */
 
-import ts from "typescript";
+import ts from "typescript-api";
 
 export interface CodeValidationResult {
 	valid: boolean;

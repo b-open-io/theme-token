@@ -1,10 +1,9 @@
-import { ORDINALS_BASKET } from "@1sat/actions";
+import { ONESAT_PROTOCOL, ORDINALS_BASKET } from "@1sat/actions";
 import { Inscription, MAP, MAP_PREFIX } from "@1sat/templates";
 import {
 	P2PKH,
 	PublicKey,
 	Script,
-	type SecurityLevel,
 	Utils,
 	type WalletInterface,
 } from "@bsv/sdk";
@@ -12,8 +11,6 @@ import type { PackageMapMetadata } from "@/lib/asset-metadata";
 import { submitToIndexer } from "@/lib/yours-wallet";
 
 const MANIFEST_CONTENT_TYPE = "ord-fs/json";
-const ONESAT_PROTOCOL: [SecurityLevel, string] = [2, "wallet"];
-
 /**
  * A file to include in a registry package inscription.
  * Mirrors PackageFile from @1sat/actions.

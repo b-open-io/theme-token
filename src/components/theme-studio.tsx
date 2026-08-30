@@ -193,6 +193,7 @@ export function ThemeStudio() {
 		status,
 		connect,
 		profile,
+		addresses,
 		inscribeTheme,
 		isInscribing,
 		error: walletError,
@@ -531,7 +532,7 @@ export function ThemeStudio() {
 	);
 
 	const isConnected = status === "connected";
-	const canMint = isConnected && !isInscribing;
+	const canMint = isConnected && addresses !== null && !isInscribing;
 
 	// Apply theme to DOM directly for preview (skip during animated transitions)
 	useEffect(() => {
@@ -1711,16 +1712,21 @@ export function ThemeStudio() {
 						<Button
 							size="lg"
 							variant={selectedListing ? "outline" : "default"}
-							disabled={!canMint}
+							disabled={status === "connecting" || (isConnected && !canMint)}
 							onClick={
 								isConnected ? () => setShowInscribeDialog(true) : connect
 							}
 							className="gap-2"
 						>
-							{isConnected ? (
+							{isConnected && addresses ? (
 								<>
 									<PenLine className="h-5 w-5" />
 									Inscribe Theme
+								</>
+							) : isConnected ? (
+								<>
+									<Loader2 className="h-5 w-5 animate-spin" />
+									Preparing Wallet...
 								</>
 							) : status === "connecting" ? (
 								<>

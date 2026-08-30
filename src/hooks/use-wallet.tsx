@@ -394,6 +394,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			);
 		} catch (err) {
 			console.error("[Wallet] Failed to fetch wallet info:", err);
+			setError(err instanceof Error ? err.message : "Failed to prepare wallet");
 		}
 	}, []);
 
