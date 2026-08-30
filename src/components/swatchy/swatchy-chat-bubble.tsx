@@ -325,6 +325,20 @@ export function SwatchyChatBubble() {
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [closeChat]);
 
+	// The mobile chat behaves like a viewport sheet. Keep the studio behind it
+	// stationary so browser chrome and on-screen keyboards do not make the
+	// composer jump while the user is chatting.
+	useEffect(() => {
+		const mobileQuery = window.matchMedia("(max-width: 767px)");
+		if (!mobileQuery.matches) return;
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, []);
+
 	const handleSuggestionClick = (suggestion: string) => {
 		setInput(suggestion);
 	};
@@ -359,7 +373,10 @@ export function SwatchyChatBubble() {
 	return (
 		<motion.div
 			ref={chatContainerRef}
-			className="absolute right-[75%] top-0 z-[60] flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl origin-top-right max-sm:fixed max-sm:inset-x-4 max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:top-auto max-sm:h-[70vh] max-sm:w-auto"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Swatchy theme assistant"
+			className="fixed right-[250px] top-20 z-[60] flex h-[500px] w-[380px] origin-top-right flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl max-md:inset-x-2 max-md:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-md:top-[max(0.5rem,env(safe-area-inset-top))] max-md:h-auto max-md:w-auto max-md:rounded-xl"
 			initial={{ opacity: 0, scale: 0.9, x: 20 }}
 			animate={{ opacity: 1, scale: 1, x: 0 }}
 			exit={{ opacity: 0, scale: 0.9, x: 20 }}
@@ -375,12 +392,18 @@ export function SwatchyChatBubble() {
 			<div className="absolute -top-2.5 right-8 hidden h-0 w-0 border-b-[11px] border-l-[11px] border-r-[11px] border-b-background border-l-transparent border-r-transparent sm:block" />
 
 			{/* Header */}
-			<div className="flex items-center justify-between border-b px-4 py-3">
+			<div className="flex min-h-12 items-center justify-between border-b px-4 py-2">
 				<div className="flex items-center gap-2">
 					<span className="text-sm font-medium">Swatchy</span>
 					<span className="text-xs text-muted-foreground">Theme Assistant</span>
 				</div>
-				<Button variant="ghost" size="icon" onClick={closeChat}>
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={closeChat}
+					aria-label="Close Swatchy chat"
+					className="size-11 md:size-9"
+				>
 					<X className="h-4 w-4" />
 				</Button>
 			</div>
@@ -395,13 +418,13 @@ export function SwatchyChatBubble() {
 									Hi! I&apos;m Swatchy, your theme assistant. How can I help you
 									today?
 								</p>
-								<Suggestions className="flex-wrap justify-center gap-2">
+								<Suggestions className="w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
 									{suggestions.map((suggestion) => (
 										<Suggestion
 											key={suggestion}
 											suggestion={suggestion}
 											onClick={handleSuggestionClick}
-											className="text-xs"
+											className="h-auto min-h-10 w-full whitespace-normal px-3 py-2 text-xs sm:w-auto sm:whitespace-nowrap"
 										/>
 									))}
 								</Suggestions>

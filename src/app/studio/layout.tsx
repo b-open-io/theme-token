@@ -22,6 +22,17 @@ export default function StudioLayout({
 	// Only show header on subroutes, not on /studio landing
 	const isSubroute = pathname !== "/studio";
 
+	// Studio subroutes manage scrolling inside their editor and preview panes.
+	// Lock the document so rounding at the viewport boundary cannot add a second,
+	// browser-native scrollbar beside the themed pane scrollbar.
+	useEffect(() => {
+		if (!isSubroute) return;
+		document.documentElement.classList.add("studio-viewport");
+		return () => {
+			document.documentElement.classList.remove("studio-viewport");
+		};
+	}, [isSubroute]);
+
 	// Mouse tracking for spotlight effect
 	const mouseX = useMotionValue(0);
 	const smoothMouseX = useSpring(mouseX, { stiffness: 400, damping: 40 });
@@ -45,7 +56,7 @@ export default function StudioLayout({
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden bg-background">
+		<div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden bg-background">
 			{/* Terminal-style Header */}
 			<header className="shrink-0 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="mx-auto max-w-full px-4">

@@ -14,6 +14,7 @@ import {
 	ChevronUp,
 	Copy,
 	ExternalLink,
+	Eye,
 	Loader2,
 	Moon,
 	PenLine,
@@ -297,6 +298,9 @@ export function ThemeStudio() {
 		themeName: string;
 	} | null>(null);
 	const [showInscribeDialog, setShowInscribeDialog] = useState(false);
+	const [mobileWorkspace, setMobileWorkspace] = useState<"edit" | "preview">(
+		"edit",
+	);
 
 	// Subscribe to Swatchy's AI-generated theme for success modal/confetti
 	const aiGeneratedTheme = useSwatchyStore((s) => s.aiGeneratedTheme);
@@ -651,6 +655,15 @@ export function ThemeStudio() {
 		isAnimatingRef.current = false;
 	};
 
+	const handleImport = async (theme: ThemeToken) => {
+		isAnimatingRef.current = true;
+		setSelectedTheme(theme);
+		setOriginalTheme(theme);
+		setCustomName(theme.name);
+		await applyThemeAnimated(theme);
+		isAnimatingRef.current = false;
+	};
+
 	// Update a single color in the current mode
 	const updateColor = (key: string, value: string) => {
 		// Auto-generate custom name on first modification
@@ -772,11 +785,94 @@ export function ThemeStudio() {
 					</DialogContent>
 				</Dialog>
 
+				{/* Mobile workspace toolbar */}
+				<div className="flex min-w-0 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-2 py-2 backdrop-blur lg:hidden">
+					<div className="flex h-10 shrink-0 rounded-lg bg-muted/60">
+						<button
+							type="button"
+							onClick={() => setMobileWorkspace("edit")}
+							aria-pressed={mobileWorkspace === "edit"}
+							className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors ${
+								mobileWorkspace === "edit"
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground"
+							}`}
+						>
+							<Pipette className="size-3.5" />
+							Edit
+						</button>
+						<button
+							type="button"
+							onClick={() => setMobileWorkspace("preview")}
+							aria-pressed={mobileWorkspace === "preview"}
+							className={`flex h-10 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors ${
+								mobileWorkspace === "preview"
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground"
+							}`}
+						>
+							<Eye className="size-3.5" />
+							Preview
+						</button>
+					</div>
+
+					<div className="ml-auto flex min-w-0 shrink-0 items-center gap-1">
+						<button
+							type="button"
+							onClick={(event) => toggleMode(event)}
+							aria-label={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
+							className="flex size-10 items-center justify-center rounded-md border border-border bg-muted/50"
+						>
+							{mode === "light" ? (
+								<Sun className="size-4" />
+							) : (
+								<Moon className="size-4" />
+							)}
+						</button>
+						<ImportModal
+							onImport={handleImport}
+							trigger={
+								<button
+									type="button"
+									aria-label="Import theme"
+									className="flex size-10 items-center justify-center rounded-md border border-border bg-muted/50"
+								>
+									<Upload className="size-4" />
+								</button>
+							}
+						/>
+						<ExportModal
+							theme={selectedTheme}
+							trigger={
+								<button
+									type="button"
+									aria-label="Export theme"
+									className="flex size-10 items-center justify-center rounded-md border border-border bg-muted/50"
+								>
+									<Copy className="size-4" />
+								</button>
+							}
+						/>
+						{isDirty && originalTheme && (
+							<button
+								type="button"
+								onClick={handleReset}
+								aria-label={`Reset to ${originalTheme.name}`}
+								className="flex size-10 items-center justify-center rounded-md border border-destructive/50 bg-destructive/10 text-destructive"
+							>
+								<RotateCcw className="size-4" />
+							</button>
+						)}
+					</div>
+				</div>
+
 				{/* Main content area */}
 				<div className="flex min-h-0 flex-1 overflow-hidden">
 					{/* Left Panel: Controls (fixed width, scrollable) */}
-					<div className="flex min-h-0 w-full flex-col border-r border-border bg-muted/5 lg:w-[380px] lg:shrink-0">
-						<div className="min-h-0 flex-1 overflow-y-auto p-4">
+					<div
+						className={`${mobileWorkspace === "edit" ? "flex" : "hidden"} min-h-0 w-full flex-col border-r border-border bg-muted/5 lg:flex lg:w-[380px] lg:shrink-0`}
+					>
+						<div className="theme-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
 							{/* Editor Content */}
 							<div className="space-y-4">
 								{/* Theme selector */}
@@ -1555,9 +1651,11 @@ export function ThemeStudio() {
 					{/* Close left panel */}
 
 					{/* Right Panel: Preview (scrollable) */}
-					<div className="hidden flex-1 flex-col overflow-hidden lg:flex">
+					<div
+						className={`${mobileWorkspace === "preview" ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden lg:flex`}
+					>
 						{/* Toolbar */}
-						<div className="flex shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
+						<div className="hidden shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 py-2 backdrop-blur lg:flex">
 							<div className="flex items-center gap-2">
 								<span className="text-sm font-medium">Preview</span>
 								{/* Mode Toggle */}
@@ -1582,14 +1680,7 @@ export function ThemeStudio() {
 							<div className="flex items-center gap-1">
 								{/* Import Button */}
 								<ImportModal
-									onImport={async (theme) => {
-										isAnimatingRef.current = true;
-										setSelectedTheme(theme);
-										setOriginalTheme(theme); // Reset original when importing
-										setCustomName(theme.name);
-										await applyThemeAnimated(theme);
-										isAnimatingRef.current = false;
-									}}
+									onImport={handleImport}
 									trigger={
 										<button
 											type="button"
@@ -1628,7 +1719,7 @@ export function ThemeStudio() {
 							</div>
 						</div>
 						{/* Scrollable Preview Area */}
-						<div className="flex-1 overflow-y-auto bg-background">
+						<div className="theme-scrollbar flex-1 overflow-y-auto bg-background">
 							<ThemePreviewPanel
 								onUpdateColor={updateColor}
 								primaryColor={selectedTheme.styles[mode].primary}
@@ -1640,11 +1731,11 @@ export function ThemeStudio() {
 				{/* Close main content area */}
 
 				{/* Bottom Bar: Mint Action */}
-				<div className="flex shrink-0 items-center justify-between border-t border-border bg-muted/30 px-4 py-2">
-					<div className="flex items-center gap-2">
+				<div className="flex w-full min-w-0 shrink-0 flex-col items-stretch gap-2 overflow-hidden border-t border-border bg-muted/30 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-4">
+					<div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:w-auto">
 						{/* Dirty indicator and base theme name */}
 						{isDirty && originalTheme && (
-							<div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400">
+							<div className="col-span-2 flex min-w-0 items-center gap-1.5 truncate rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400 sm:col-auto">
 								<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
 								Modified from {originalTheme.name}
 							</div>
@@ -1655,14 +1746,14 @@ export function ThemeStudio() {
 							value={customName}
 							onChange={(e) => setCustomName(e.target.value)}
 							placeholder={selectedTheme.name}
-							className={`h-9 w-40 rounded-lg border bg-background px-3 text-sm focus:border-primary focus:outline-none ${isDirty ? "border-amber-500/50" : "border-border"}`}
+							className={`h-10 min-w-0 w-full rounded-lg border bg-background px-3 text-sm focus:border-primary focus:outline-none sm:h-9 sm:w-40 ${isDirty ? "border-amber-500/50" : "border-border"}`}
 						/>
 
 						{/* Save Draft Button */}
 						<button
 							type="button"
 							onClick={handleSaveDraft}
-							className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm transition-colors hover:bg-muted"
+							className="flex h-10 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm transition-colors hover:bg-muted sm:h-9"
 						>
 							{savedNotice ? (
 								<>
@@ -1688,19 +1779,19 @@ export function ThemeStudio() {
 					</div>
 
 					{walletError && (
-						<div className="flex items-center gap-2 text-sm text-destructive">
+						<div className="flex w-full min-w-0 items-center gap-2 break-words text-sm text-destructive sm:w-auto">
 							<AlertCircle className="h-4 w-4" />
 							{walletError}
 						</div>
 					)}
 
-					<div className="flex items-center gap-2">
+					<div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto">
 						{/* Buy Button - only show when selected theme is for sale */}
 						{selectedListing && (
 							<Button
 								size="lg"
 								onClick={() => setShowBuyModal(true)}
-								className="gap-2"
+								className="h-10 min-w-0 w-full gap-2 whitespace-nowrap px-3 sm:w-auto sm:px-4"
 							>
 								<ShoppingCart className="h-5 w-5" />
 								Buy
@@ -1714,7 +1805,7 @@ export function ThemeStudio() {
 							onClick={
 								isConnected ? () => setShowInscribeDialog(true) : connect
 							}
-							className="gap-2"
+							className="h-10 min-w-0 w-full gap-2 whitespace-nowrap px-3 sm:w-auto sm:px-4"
 						>
 							{isConnected && addresses ? (
 								<>

@@ -15,6 +15,7 @@ interface SwatchyAvatarProps {
 	position: SwatchyPosition;
 	side: SwatchySide;
 	onClick: () => void;
+	mobileBottomOffset?: number;
 	children?: React.ReactNode;
 }
 
@@ -54,6 +55,7 @@ export function SwatchyAvatar({
 	position,
 	side,
 	onClick,
+	mobileBottomOffset = 16,
 	children,
 }: SwatchyAvatarProps) {
 	const isCorner = position === "corner";
@@ -145,7 +147,7 @@ export function SwatchyAvatar({
 			}
 
 			// Corner (Default)
-			const size = 80;
+			const size = isMobile && mobileBottomOffset > 16 ? 56 : 80;
 			// bottom: 16, right: 16 (or left: 16)
 			if (isLeft) {
 				return {
@@ -156,11 +158,11 @@ export function SwatchyAvatar({
 			}
 			return {
 				x: winW - 16 - size,
-				y: winH - 16 - size,
+				y: winH - (isMobile ? mobileBottomOffset : 16) - size,
 				size,
 			};
 		},
-		[isLeft],
+		[isLeft, mobileBottomOffset],
 	);
 
 	// Animate to target position whenever state changes
@@ -171,7 +173,11 @@ export function SwatchyAvatar({
 		const base = getBasePosition(position, windowSize.w, windowSize.h);
 		const offset = offsetsRef.current[position] ?? { x: 0, y: 0 };
 		const targetX = base.x + offset.x;
-		const targetY = base.y + offset.y;
+		const desiredY = base.y + offset.y;
+		const targetY =
+			position === "corner" && windowSize.w < 640 && mobileBottomOffset > 16
+				? Math.min(desiredY, windowSize.h - mobileBottomOffset - base.size)
+				: desiredY;
 
 		// Stop any existing animations
 		controlsRef.current.x?.stop();
@@ -192,7 +198,17 @@ export function SwatchyAvatar({
 		controlsRef.current.y = animate(y, targetY, spring);
 		controlsRef.current.w = animate(width, base.size, spring);
 		controlsRef.current.h = animate(height, base.size, spring);
-	}, [position, windowSize, isDragging, getBasePosition, x, y, width, height]);
+	}, [
+		position,
+		windowSize,
+		isDragging,
+		getBasePosition,
+		mobileBottomOffset,
+		x,
+		y,
+		width,
+		height,
+	]);
 
 	const handleDragStart = useCallback(() => {
 		setIsDragging(true);

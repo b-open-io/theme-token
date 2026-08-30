@@ -173,6 +173,11 @@
 		@apply bg-background text-foreground overflow-x-hidden;
 	}
 
+	html.studio-viewport,
+	html.studio-viewport body {
+		overflow-y: hidden;
+	}
+
 	/* Smooth theme transitions when colors change */
 	:root {
 		--theme-transition-duration: 400ms;
@@ -231,6 +236,33 @@
 [data-radix-select-content],
 [data-radix-popover-content] {
 	z-index: 9999;
+}
+
+/* Keep native scrolling usable while matching whichever theme is being edited. */
+.theme-scrollbar {
+	scrollbar-color: color-mix(in oklab, var(--foreground) 24%, transparent)
+		transparent;
+	scrollbar-width: thin;
+}
+
+.theme-scrollbar::-webkit-scrollbar {
+	width: 10px;
+}
+
+.theme-scrollbar::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.theme-scrollbar::-webkit-scrollbar-thumb {
+	background: color-mix(in oklab, var(--foreground) 24%, transparent);
+	background-clip: content-box;
+	border: 3px solid transparent;
+	border-radius: 999px;
+}
+
+.theme-scrollbar::-webkit-scrollbar-thumb:hover {
+	background: color-mix(in oklab, var(--foreground) 40%, transparent);
+	background-clip: content-box;
 }
 
 /* Blueprint grid background */

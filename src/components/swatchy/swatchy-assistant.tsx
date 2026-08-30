@@ -92,22 +92,31 @@ export function SwatchyAssistant() {
 	}, [pathname]);
 
 	return (
-		<SwatchyAvatar position={position} side={side} onClick={toggleChat}>
+		<>
+			<SwatchyAvatar
+				position={position}
+				side={side}
+				onClick={toggleChat}
+				mobileBottomOffset={pathname.startsWith("/studio/") ? 104 : 16}
+			>
+				<AnimatePresence>
+					{activeScriptEvent &&
+						(activeScriptEvent.type === "say" ||
+							activeScriptEvent.type === "think") &&
+						activeScriptEvent.text && (
+							<SwatchyTalkBubble
+								key="talk-bubble"
+								type={activeScriptEvent.type}
+								text={activeScriptEvent.text}
+								side={side}
+							/>
+						)}
+				</AnimatePresence>
+			</SwatchyAvatar>
+
 			<AnimatePresence>
 				{position === "expanded" && <SwatchyChatBubble />}
-
-				{activeScriptEvent &&
-					(activeScriptEvent.type === "say" ||
-						activeScriptEvent.type === "think") &&
-					activeScriptEvent.text && (
-						<SwatchyTalkBubble
-							key="talk-bubble"
-							type={activeScriptEvent.type}
-							text={activeScriptEvent.text}
-							side={side}
-						/>
-					)}
 			</AnimatePresence>
-		</SwatchyAvatar>
+		</>
 	);
 }
