@@ -19,7 +19,7 @@ import {
 interface InscribedSuccessModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	txid: string;
+	origin: string;
 	theme: ThemeToken;
 }
 
@@ -131,7 +131,7 @@ function XIcon({ className }: { className?: string }) {
 export function InscribedSuccessModal({
 	isOpen,
 	onClose,
-	txid,
+	origin,
 	theme,
 }: InscribedSuccessModalProps) {
 	const [copied, setCopied] = useState(false);
@@ -146,7 +146,6 @@ export function InscribedSuccessModal({
 		}
 	}, [isOpen, playSuccess]);
 
-	const origin = `${txid}_0`;
 	const installUrl = `https://themetoken.dev/r/themes/${origin}.json`;
 	const installCommand = `bunx shadcn@latest add ${installUrl}`;
 	const marketUrl = `https://1sat.market/outpoint/${origin}`;

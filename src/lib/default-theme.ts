@@ -5,7 +5,8 @@
  * Theme data is fetched from chain and cached - never hardcoded.
  */
 
-import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
+import type { ThemeToken } from "@theme-token/sdk";
+import { fetchThemeFromOneSat } from "@/lib/ordfs";
 
 /**
  * Canonical default theme origin (on-chain)
@@ -20,8 +21,7 @@ export const DEFAULT_THEME_ORIGIN =
  */
 export async function fetchDefaultTheme(): Promise<ThemeToken | null> {
 	try {
-		const published = await fetchThemeByOrigin(DEFAULT_THEME_ORIGIN);
-		return published?.theme ?? null;
+		return await fetchThemeFromOneSat(DEFAULT_THEME_ORIGIN);
 	} catch (error) {
 		console.error("[default-theme] Failed to fetch from chain:", error);
 		return null;

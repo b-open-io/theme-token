@@ -59,40 +59,36 @@ async function getTheme(origin: string): Promise<GetThemeResult | null> {
 		// Ignore chain check errors
 	}
 
-	// If found in cache, return with appropriate source
+	// Ask current 1sat-stack whether the package is already captured. Do not
+	// cache a miss: a relay that returned 202 may make the directory available
+	// moments later. This also lets cached themes graduate from "Pending
+	// Indexing" to "Inscribed" before GorillaPool search catches up.
+	let ordfsTheme: ThemeToken | null = null;
+	try {
+		const response = await fetch(getOrdfsUrl(`${origin}/theme.json`), {
+			cache: "no-store",
+		});
+		if (response.ok) {
+			const result = validateThemeToken(await response.json());
+			if (result.valid) {
+				ordfsTheme = result.theme;
+			}
+		}
+	} catch {
+		// The optimistic KV copy still makes a freshly inscribed theme usable.
+	}
+
 	if (cachedTheme) {
 		return {
 			theme: cachedTheme.theme,
-			source: isOnChain ? "chain" : "cache",
+			source: isOnChain ? "chain" : ordfsTheme ? "ordfs" : "cache",
 			owner: cachedTheme.owner,
 		};
 	}
 
-	// Fall back to ORDFS: themes are ord-fs/json directory packages, so resolve
-	// theme.json via the directory path (ORDFS resolves the `_N` pointer).
-	try {
-		const response = await fetch(getOrdfsUrl(`${origin}/theme.json`), {
-			next: { revalidate: 3600 }, // Cache for 1 hour
-		});
-
-		if (!response.ok) {
-			return null;
-		}
-
-		const json = await response.json();
-		const result = validateThemeToken(json);
-
-		if (!result.valid) {
-			return null;
-		}
-
-		return {
-			theme: result.theme,
-			source: isOnChain ? "chain" : "ordfs",
-		};
-	} catch {
-		return null;
-	}
+	return ordfsTheme
+		? { theme: ordfsTheme, source: isOnChain ? "chain" : "ordfs" }
+		: null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -107,7 +103,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 	const title = `${result.theme.name} | Theme Token`;
 	const description = `Preview ${result.theme.name} by ${result.theme.author || "Unknown"}. Install this theme directly with the ShadCN CLI.`;
-	const imageUrl = `/og/${origin}.png`;
+	// Versioned to invalidate social crawlers that cached the old route before
+	// `.png` parameters were normalized to their underlying ordinal origin.
+	const imageUrl = `/og/${origin}.png?v=2`;
 
 	return {
 		title,

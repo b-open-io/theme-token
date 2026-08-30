@@ -619,8 +619,8 @@ The `origin` is the ordinal origin ID in `{txid}_{vout}` format.
 ### Content Loading
 
 Assets are fetched from ORDFS (Ordinals File System):
-- Content URL: `https://ordfs.network/content/{origin}`
-- Metadata URL: `https://ordfs.network/{origin}`
+- Content URL: `https://api.1sat.app/content/{origin}`
+- Metadata URL: `https://api.1sat.app/1sat/ordfs/metadata/{origin}`
 
 Fonts are loaded via the FontFace API and registered in `document.fonts`.
 Patterns are loaded and applied as CSS `mask-image` for theme-reactive backgrounds.

@@ -1,5 +1,5 @@
-import { fetchThemeByOrigin } from "@theme-token/sdk";
 import type { Metadata } from "next";
+import { getThemeByOrigin } from "@/lib/server/get-session-theme";
 
 interface Props {
 	params: Promise<{ origin: string }>;
@@ -12,9 +12,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	// Try to fetch theme name for title
 	let themeName = "Theme Preview";
 	try {
-		const published = await fetchThemeByOrigin(origin);
-		if (published) {
-			themeName = published.theme.name;
+		const theme = await getThemeByOrigin(origin);
+		if (theme) {
+			themeName = theme.name;
 		}
 	} catch {
 		// Use default name
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 			description: `Preview and install the ${themeName} theme for ShadCN UI`,
 			images: [
 				{
-					url: `/og/${origin}`,
+					url: `/og/${origin}.png?v=2`,
 					width: 1200,
 					height: 630,
 					alt: `${themeName} - Theme Token`,
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 			card: "summary_large_image",
 			title: `${themeName} | Theme Token`,
 			description: `Preview and install the ${themeName} theme`,
-			images: [`/og/${origin}`],
+			images: [`/og/${origin}.png?v=2`],
 		},
 	};
 }

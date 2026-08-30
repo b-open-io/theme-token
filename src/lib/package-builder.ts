@@ -8,6 +8,7 @@ import {
 	type WalletInterface,
 } from "@bsv/sdk";
 import type { PackageMapMetadata } from "@/lib/asset-metadata";
+import { type OneSatRelayResult, relayAtomicBeef } from "@/lib/onesat-relay";
 import { submitToIndexer } from "@/lib/yours-wallet";
 
 const MANIFEST_CONTENT_TYPE = "ord-fs/json";
@@ -31,6 +32,8 @@ export interface PublishPackageResult {
 	manifestVout: number;
 	/** Origin outpoints for each output: ["{txid}_0", "{txid}_1", ...] */
 	origins: string[];
+	/** 1Sat propagation result when the wallet returned Atomic BEEF. */
+	relay?: OneSatRelayResult;
 }
 
 /**
@@ -217,7 +220,25 @@ export async function publishPackage(
 		throw new Error("Package inscription succeeded but no txid was returned");
 	}
 
-	// Submit to indexer for fast discoverability
+	// Capture the wallet-returned Atomic BEEF in current 1sat-stack before
+	// returning success. This makes the transaction and its package contents
+	// immediately available to ORDFS without waiting for passive ingestion.
+	let relay: OneSatRelayResult | undefined;
+	if (result.tx) {
+		try {
+			relay = await relayAtomicBeef(Uint8Array.from(result.tx), result.txid);
+		} catch (error) {
+			// The wallet already broadcast successfully, so propagation remains
+			// best-effort and must not turn a completed inscription into a failure.
+			console.warn("[1Sat Relay] Failed to relay inscription BEEF:", error);
+		}
+	} else {
+		console.warn(
+			"[1Sat Relay] Wallet returned no Atomic BEEF; falling back to txid indexing",
+		);
+	}
+
+	// Keep the legacy GorillaPool hint for marketplace/search discoverability.
 	submitToIndexer(result.txid).catch(() => {});
 
 	const origins = outputs.map((_, i) => `${result.txid}_${i}`);
@@ -226,6 +247,7 @@ export async function publishPackage(
 		txid: result.txid,
 		manifestVout,
 		origins,
+		relay,
 	};
 }
 

@@ -1,15 +1,8 @@
+import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
+
 /**
- * ORDFS content gateway.
- *
- * ordfs.network currently runs a 1sat-stack deploy that predates the `_N`
- * relative-vout directory convention (1sat-stack commit `fff8850`), so it
- * cannot resolve our `ord-fs/json` package directories — a bare-origin fetch
- * of a directory 404s. `api.1sat.app` runs current 1sat-stack and serves
- * content under `/content/*`.
- *
- * TEMPORARY: we point at api.1sat.app until ordfs.network is redeployed from
- * current 1sat-stack. Once that's done, flip `ORDFS_GATEWAY` back to
- * `https://ordfs.network` (note: root path, no `/content` prefix).
+ * Current 1sat-stack content gateway. It supports `_N` relative-vout package
+ * directories, direct BEEF capture, and the latest ORDFS content behavior.
  */
 const ORDFS_GATEWAY = "https://api.1sat.app/content";
 
@@ -20,4 +13,21 @@ const ORDFS_GATEWAY = "https://api.1sat.app/content";
  */
 export function getOrdfsUrl(pathOrOrigin: string): string {
 	return `${ORDFS_GATEWAY}/${pathOrOrigin}`;
+}
+
+/** Load either a package-directory theme or a legacy direct theme inscription. */
+export async function fetchThemeFromOneSat(
+	origin: string,
+): Promise<ThemeToken | null> {
+	for (const path of [`${origin}/theme.json`, origin]) {
+		try {
+			const response = await fetch(getOrdfsUrl(path), { cache: "no-store" });
+			if (!response.ok) continue;
+			const result = validateThemeToken(await response.json());
+			if (result.valid) return result.theme;
+		} catch {
+			// Try the other representation before reporting a miss.
+		}
+	}
+	return null;
 }

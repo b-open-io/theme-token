@@ -5,9 +5,10 @@
  * Accesses KV cache directly - no HTTP calls.
  */
 
-import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
+import type { ThemeToken } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import { DEFAULT_THEME_ORIGIN, fetchDefaultTheme } from "@/lib/default-theme";
+import { fetchThemeFromOneSat } from "@/lib/ordfs";
 import type { CachedTheme } from "@/lib/themes-cache";
 
 /** Cookie name for theme session */
@@ -132,11 +133,11 @@ export async function getThemeByOrigin(
 	}
 
 	// Fall back to direct fetch from chain
-	const published = await fetchThemeByOrigin(origin);
-	if (published?.theme) {
+	const theme = await fetchThemeFromOneSat(origin);
+	if (theme) {
 		// Cache it for future requests
-		await addThemeToKVCache(origin, published.theme);
-		return published.theme;
+		await addThemeToKVCache(origin, theme);
+		return theme;
 	}
 
 	return null;

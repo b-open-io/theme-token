@@ -46,9 +46,9 @@ const partners = [
 		url: "https://1satordinals.com",
 	},
 	{
-		name: "ORDFS",
+		name: "1Sat App",
 		logo: null, // Text-only for now
-		url: "https://ordfs.network",
+		url: "https://1sat.app",
 	},
 	{
 		name: "Yours Wallet",

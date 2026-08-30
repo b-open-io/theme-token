@@ -1,11 +1,10 @@
-import { fetchThemeByOrigin, type ThemeToken } from "@theme-token/sdk";
+import type { ThemeToken } from "@theme-token/sdk";
 import { from } from "better-color-tools";
 import { ImageResponse } from "next/og";
+import { normalizeOriginRouteParam } from "@/lib/outpoint";
+import { getThemeByOrigin } from "@/lib/server/get-session-theme";
 
 export const runtime = "edge";
-
-// Cache OG images for 1 hour, stale-while-revalidate for 1 day
-export const revalidate = 3600;
 
 // Space Grotesk Bold TTF from Fontsource CDN
 const FONT_URL =
@@ -58,31 +57,11 @@ function seededRandom(seed: number, i: number) {
 	return x - Math.floor(x);
 }
 
-// Fetch theme from cache first, then ORDFS
+// Fetch theme from the same direct KV/1Sat path used by preview pages. Avoid a
+// self-fetch through the paginated cache API, which can race or cache a miss.
 async function getTheme(origin: string): Promise<ThemeToken | null> {
-	// Try our KV cache API first (for recently inscribed themes)
 	try {
-		const cacheUrl = new URL("/api/themes/cache", "https://themetoken.dev");
-		const cacheRes = await fetch(cacheUrl.toString(), {
-			headers: { "Content-Type": "application/json" },
-		});
-		if (cacheRes.ok) {
-			const data = await cacheRes.json();
-			const cached = data.themes?.find(
-				(t: { origin: string }) => t.origin === origin,
-			);
-			if (cached?.theme) {
-				return cached.theme;
-			}
-		}
-	} catch {
-		// Fall through to ORDFS
-	}
-
-	// Fall back to ORDFS via SDK
-	try {
-		const published = await fetchThemeByOrigin(origin);
-		return published?.theme || null;
+		return await getThemeByOrigin(origin);
 	} catch {
 		return null;
 	}
@@ -92,10 +71,11 @@ export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ origin: string }> },
 ) {
-	const [fontData, { origin }] = await Promise.all([
+	const [fontData, { origin: originParam }] = await Promise.all([
 		fetch(FONT_URL).then((res) => res.arrayBuffer()),
 		params,
 	]);
+	const origin = normalizeOriginRouteParam(originParam);
 
 	// Default colors (only used when a theme has no extractable colors) — all
 	// vibrant, no gray, to match the brand-color-only stripe treatment.
@@ -242,8 +222,9 @@ export async function GET(
 				// fresh CDN serving at a day; stale-while-revalidate keeps serving the
 				// cached image for a week while a rendering-logic change (post-deploy)
 				// gets picked up in the background — so it's efficient but not frozen.
-				"Cache-Control":
-					"public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+				"Cache-Control": theme
+					? "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
+					: "no-store",
 			},
 		},
 	);

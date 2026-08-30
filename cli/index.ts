@@ -12,12 +12,15 @@
 import { spawn } from "node:child_process";
 
 const REGISTRY_BASE = "https://themetoken.dev/r/themes";
-const ORDFS_BASE = "https://ordfs.network";
+const ORDFS_BASE = "https://api.1sat.app/content";
 
 // Check if input looks like a valid origin/txid
 function parseInput(input: string): { origin: string } | null {
 	// Remove any URL parts if someone pastes a full URL
 	const cleaned = input
+		.replace("https://api.1sat.app/content/", "")
+		.replace("https://1sat.app/content/", "")
+		// Continue accepting links copied from the legacy gateway.
 		.replace("https://ordfs.network/", "")
 		.replace("https://themetoken.dev/r/themes/", "")
 		.replace(".json", "")
@@ -36,7 +39,7 @@ function parseInput(input: string): { origin: string } | null {
 
 async function verifyThemeExists(origin: string): Promise<boolean> {
 	try {
-		const response = await fetch(`${ORDFS_BASE}/${origin}`);
+		const response = await fetch(`${ORDFS_BASE}/${origin}/theme.json`);
 		if (!response.ok) return false;
 
 		const data = await response.json();

@@ -118,6 +118,11 @@ export interface BundleInscribeResult {
 	manifestOrigin: string;
 }
 
+/** Result of a theme inscription, including its package directory origin. */
+export interface ThemeInscribeResult extends InscribeResponse {
+	manifestOrigin: string;
+}
+
 /** Configuration for minting a collection item */
 export interface MintCollectionItemConfig {
 	/** Collection ID (origin outpoint of the collection inscription) */
@@ -153,7 +158,7 @@ interface WalletContextValue {
 	refresh: () => Promise<void>;
 	addresses: Addresses | null;
 	profile: SocialProfile | null;
-	inscribeTheme: (theme: ThemeToken) => Promise<InscribeResponse | null>;
+	inscribeTheme: (theme: ThemeToken) => Promise<ThemeInscribeResult | null>;
 	inscribePattern: (
 		svg: string,
 		metadata?: {
@@ -484,7 +489,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	}, [status, wallet, fetchThemeTokens, fetchWalletInfo]);
 
 	const inscribeTheme = useCallback(
-		async (theme: ThemeToken): Promise<InscribeResponse | null> => {
+		async (theme: ThemeToken): Promise<ThemeInscribeResult | null> => {
 			if (!wallet || !addresses) {
 				setError("Wallet not connected");
 				return null;
@@ -520,7 +525,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
-							txid: result.txid,
+							origin: mintedOrigin,
 							theme,
 							owner: addresses.ordAddress,
 						}),
@@ -533,7 +538,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 				await fetchThemeTokens(wallet);
 				await fetchWalletInfo(wallet);
 
-				return { txid: result.txid };
+				return { txid: result.txid, manifestOrigin: mintedOrigin };
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Inscription failed");
 				return null;

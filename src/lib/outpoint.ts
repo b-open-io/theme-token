@@ -1,5 +1,7 @@
 import { parse } from "bitcoin-image";
 
+const ROUTE_EXTENSION = /\.(?:json|png)$/i;
+
 /**
  * Canonical internal outpoint format is `txid_vout` (underscore) — what
  * GorillaPool and ORDFS use. BRC-100 wallets serialize outpoints as `txid.vout`
@@ -21,6 +23,15 @@ export function normalizeOutpoint(outpoint: string): string {
 		return `${parsed.txid}_${parsed.vout}`;
 	}
 	return outpoint;
+}
+
+/**
+ * Normalize an origin received through a file-like application route. Shadcn
+ * registry URLs end in `.json` and social-image URLs end in `.png`; neither
+ * suffix is part of the ordinal outpoint itself.
+ */
+export function normalizeOriginRouteParam(origin: string): string {
+	return normalizeOutpoint(origin.replace(ROUTE_EXTENSION, ""));
 }
 
 /** True when two outpoints refer to the same output regardless of delimiter. */

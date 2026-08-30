@@ -77,7 +77,6 @@ import {
 import { fetchCachedThemes } from "@/lib/themes-cache";
 import {
 	fetchThemeMarketListings,
-	submitToIndexer,
 	type ThemeMarketListing,
 } from "@/lib/yours-wallet";
 
@@ -209,7 +208,10 @@ export function ThemeStudio() {
 	const [originalTheme, setOriginalTheme] = useState<ThemeToken | null>(
 		activeTheme,
 	);
-	const [txid, setTxid] = useState<string | null>(null);
+	const [inscriptionResult, setInscriptionResult] = useState<{
+		origin: string;
+		theme: ThemeToken;
+	} | null>(null);
 	const [customName, setCustomName] = useState("");
 
 	// URL sync refs
@@ -627,18 +629,14 @@ export function ThemeStudio() {
 
 		const result = await inscribeTheme(themeToMint);
 		if (result) {
-			const origin = `${result.txid}_0`;
-			// Cache theme for immediate preview (before ORDFS indexes it)
-			fetch("/api/themes/cache", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ txid: result.txid, theme: themeToMint }),
-			}).catch(() => {});
-			// Submit to GorillaPool indexer so it appears in search
-			submitToIndexer(result.txid).catch(() => {});
-			// Pre-warm OG image so it's ready for sharing
-			fetch(`/og/${origin}`).catch(() => {});
-			setTxid(result.txid);
+			// The wallet hook has already cached the theme under the package's
+			// manifest origin. Pre-warm the exact versioned URL used by social
+			// metadata so X never races a different OG cache key.
+			fetch(`/og/${result.manifestOrigin}.png?v=2`).catch(() => {});
+			setInscriptionResult({
+				origin: result.manifestOrigin,
+				theme: themeToMint,
+			});
 			setShowInscribeDialog(false);
 		}
 	};
@@ -699,10 +697,10 @@ export function ThemeStudio() {
 		<>
 			{/* Inscribed Success Modal */}
 			<InscribedSuccessModal
-				isOpen={txid !== null}
-				onClose={() => setTxid(null)}
-				txid={txid || ""}
-				theme={selectedTheme}
+				isOpen={inscriptionResult !== null}
+				onClose={() => setInscriptionResult(null)}
+				origin={inscriptionResult?.origin ?? ""}
+				theme={inscriptionResult?.theme ?? selectedTheme}
 			/>
 
 			<div className="flex min-h-0 flex-1 flex-col">

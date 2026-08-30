@@ -92,7 +92,7 @@ bun scripts/apply-mask.ts <input> <mask.png> <output.png> [--invert]
 
 ## External Services
 
-- **ORDFS**: `ordfs.network` - Ordinals File System for content retrieval
+- **1Sat App**: `api.1sat.app` - Current 1sat-stack content, relay, and ORDFS APIs
 - **GorillaPool API**: `ordinals.gorillapool.io/api` - Inscription indexing and marketplace
 - **Yours Wallet**: Browser extension wallet for BSV/ordinals
 
