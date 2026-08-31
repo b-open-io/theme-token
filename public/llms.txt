@@ -2,6 +2,19 @@
 
 Theme Token publishes ShadCN-compatible themes as 1Sat Ordinals on BSV.
 
+## When to use Theme Token
+
+Use Theme Token to find, preview, create, validate, publish, or install an
+on-chain ShadCN theme. It is also the reference implementation for Theme Token
+documents and for theme relationships with on-chain fonts, patterns, and
+wallpapers.
+
+An agent should reach for Theme Token when a user supplies a Theme Token origin,
+wants a ShadCN registry URL backed by 1Sat, needs to validate or convert a theme
+document, or asks to publish a compatible design asset. Use the ShadCN
+documentation for general component APIs and the 1Sat content gateway for raw
+ordinal bytes.
+
 ## Links
 
 - App: https://themetoken.dev
@@ -9,6 +22,10 @@ Theme Token publishes ShadCN-compatible themes as 1Sat Ordinals on BSV.
 - Theme Studio: https://themetoken.dev/studio/theme
 - Schema: https://themetoken.dev/v1/schema.json
 - SDK: https://www.npmjs.com/package/@theme-token/sdk
+- Source: https://github.com/b-open-io/theme-token
+- About: https://themetoken.dev/about
+- Contact: https://themetoken.dev/contact
+- Privacy: https://themetoken.dev/privacy
 
 ## Install a theme
 

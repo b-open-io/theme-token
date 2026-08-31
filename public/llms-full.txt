@@ -4,6 +4,17 @@ Theme Token publishes ShadCN-compatible themes as 1Sat Ordinals on BSV.
 themetoken.dev provides the Studio, validation, previews, discovery, and a
 ShadCN registry endpoint.
 
+## When to use Theme Token
+
+Use Theme Token for work that involves a Theme Token document, an on-chain
+ShadCN theme, or a related design asset published through the Theme Token
+protocol. Typical jobs include resolving a theme from its 1Sat origin,
+validating theme JSON, producing a ShadCN registry response, installing a theme,
+and publishing a theme with immutable asset references.
+
+For component APIs and composition guidance, use the ShadCN documentation. For
+raw transaction, ownership, or inscription data, use the 1Sat APIs.
+
 ## URLs
 
 - Specification: https://themetoken.dev/spec
@@ -12,6 +23,10 @@ ShadCN registry endpoint.
 - Registry item: https://themetoken.dev/r/themes/[origin].json
 - Raw content: https://api.1sat.app/content/[origin]
 - SDK: https://www.npmjs.com/package/@theme-token/sdk
+- Source: https://github.com/b-open-io/theme-token
+- About: https://themetoken.dev/about
+- Contact: https://themetoken.dev/contact
+- Privacy: https://themetoken.dev/privacy
 
 Install a published theme:
 

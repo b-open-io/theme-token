@@ -177,12 +177,13 @@ export function ThemeNotFound() {
 							/>
 						</CardHeader>
 						<CardContent className="p-6 text-center">
-							<h2 className="mb-2 font-mono text-lg font-bold uppercase tracking-widest">
+							<h1 className="mb-2 font-mono text-lg font-bold uppercase tracking-widest">
 								Page Not Found
-							</h2>
+							</h1>
 							<p className="mb-6 text-sm text-muted-foreground">
-								Looks like this page got flushed. But don&apos;t worry, there
-								are plenty of beautiful themes to explore!
+								The requested path does not exist. Browse published themes, read
+								the specification, or use the agent reference to find the right
+								resource.
 							</p>
 
 							<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -193,12 +194,18 @@ export function ThemeNotFound() {
 									</Link>
 								</Button>
 								<Button asChild variant="outline" size="lg" className="gap-2">
-									<Link href="/">
+									<Link href="/spec">
 										<ArrowLeft data-icon="inline-start" className="h-4 w-4" />
-										Back Home
+										Read the Spec
 									</Link>
 								</Button>
 							</div>
+							<p className="mt-4 text-xs text-muted-foreground">
+								Agent index:{" "}
+								<Link href="/llms.txt" className="underline underline-offset-4">
+									llms.txt
+								</Link>
+							</p>
 						</CardContent>
 					</Card>
 				</motion.div>

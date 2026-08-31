@@ -126,6 +126,14 @@ export function Footer() {
 									Token Spec
 								</Link>
 							</li>
+							<li>
+								<Link
+									href="/about"
+									className="text-sm text-muted-foreground hover:text-primary transition-colors"
+								>
+									About
+								</Link>
+							</li>
 						</ul>
 					</div>
 
@@ -143,6 +151,22 @@ export function Footer() {
 								>
 									<IconBrandGithub className="w-3.5 h-3.5" /> GitHub
 								</a>
+							</li>
+							<li>
+								<Link
+									href="/contact"
+									className="text-sm text-muted-foreground hover:text-primary transition-colors"
+								>
+									Contact
+								</Link>
+							</li>
+							<li>
+								<Link
+									href="/privacy"
+									className="text-sm text-muted-foreground hover:text-primary transition-colors"
+								>
+									Privacy
+								</Link>
 							</li>
 							<li>
 								<Link
