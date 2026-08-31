@@ -1,8 +1,11 @@
 import {
 	convertToModelMessages,
+	createUIMessageStreamResponse,
 	stepCountIs,
 	streamText,
+	toUIMessageStream,
 	type UIMessage,
+	validateUIMessages,
 } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -17,13 +20,29 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
 	try {
-		const body = await request.json();
-		const {
-			messages,
-			context,
-		}: { messages: UIMessage[]; context?: SwatchyContext } = body;
+		let body: unknown;
+		try {
+			body = await request.json();
+		} catch {
+			return NextResponse.json(
+				{ error: "Request body must be valid JSON" },
+				{ status: 400 },
+			);
+		}
 
-		if (!messages || !Array.isArray(messages)) {
+		if (!body || typeof body !== "object" || Array.isArray(body)) {
+			return NextResponse.json(
+				{ error: "Request body must be an object" },
+				{ status: 400 },
+			);
+		}
+
+		const { messages, context } = body as {
+			messages?: unknown;
+			context?: SwatchyContext;
+		};
+
+		if (!Array.isArray(messages)) {
 			return NextResponse.json(
 				{ error: "Messages array is required" },
 				{ status: 400 },
@@ -40,20 +59,39 @@ export async function POST(request: NextRequest) {
 		// This ensures studio-specific tools only appear when on that studio page
 		const currentPage = context?.currentPage || "/";
 		const availableTools = getPageAwareTools(currentPage, flags);
+		let validatedMessages: UIMessage[];
+		try {
+			validatedMessages = await validateUIMessages({
+				messages,
+				tools: availableTools,
+			});
+		} catch {
+			return NextResponse.json(
+				{ error: "Messages contain invalid or stale chat history" },
+				{ status: 400 },
+			);
+		}
 
 		// Use streaming text generation with tools
 		// The model string format "provider/model" is used by Vercel AI Gateway
 		const result = streamText({
 			model: conversationModel as Parameters<typeof streamText>[0]["model"],
 			system: systemPrompt,
-			messages: await convertToModelMessages(messages),
+			messages: await convertToModelMessages(validatedMessages),
 			tools: availableTools,
 			toolChoice: "auto",
+			abortSignal: request.signal,
 			// Allow multi-step tool calling - Swatchy can chain actions (navigate then generate, etc)
 			stopWhen: stepCountIs(5),
 		});
 
-		return result.toUIMessageStreamResponse();
+		return createUIMessageStreamResponse({
+			stream: toUIMessageStream({
+				stream: result.stream,
+				tools: availableTools,
+				originalMessages: validatedMessages,
+			}),
+		});
 	} catch (error) {
 		console.error("[Swatchy API Error]", error);
 		return NextResponse.json(

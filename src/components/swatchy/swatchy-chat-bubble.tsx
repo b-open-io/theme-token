@@ -1,38 +1,42 @@
 "use client";
 
-import type { ThemeToken } from "@theme-token/sdk";
 import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
 import { motion } from "framer-motion";
 import {
-	ArrowRight,
 	CheckCircle2,
 	Loader2,
 	RotateCcw,
-	Sparkles,
 	Wrench,
 	X,
 	XCircle,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Conversation,
 	ConversationContent,
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+	Message,
+	MessageContent,
+	MessageResponse,
+} from "@/components/ai-elements/message";
 import {
 	PromptInput,
 	PromptInputFooter,
 	PromptInputSubmit,
 	PromptInputTextarea,
-	PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
 import { type FeatureFlags, useFeatureFlags } from "@/lib/feature-flags";
 import { BlockPreview } from "./block-preview";
 import { PaymentRequestCard } from "./payment-request";
+import {
+	getToolPresentationKind,
+	shouldShowThinking,
+} from "./swatchy-chat-state";
 import { useSwatchyStore } from "./swatchy-store";
 import { useSwatchyChat } from "./use-swatchy-chat";
 
@@ -266,10 +270,8 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 };
 
 export function SwatchyChatBubble() {
-	const router = useRouter();
 	const pathname = usePathname();
-	const { closeChat, setNavigating, clearGeneration, registryItemsCache } =
-		useSwatchyStore();
+	const { closeChat, registryItemsCache } = useSwatchyStore();
 	const {
 		messages,
 		input,
@@ -283,10 +285,15 @@ export function SwatchyChatBubble() {
 		generation,
 		failedRequest,
 		paymentError,
+		error,
+		status,
+		stop,
+		regenerate,
+		clearError,
+		isBusy,
 	} = useSwatchyChat();
 
 	const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
-	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 
 	// Generate context-aware suggestions based on current page
@@ -344,7 +351,7 @@ export function SwatchyChatBubble() {
 	};
 
 	const onPromptSubmit = () => {
-		if (!input.trim() || isLoading) return;
+		if (!input.trim() || isBusy) return;
 		handleSubmit();
 	};
 
@@ -362,13 +369,9 @@ export function SwatchyChatBubble() {
 		handlePaymentCancelled();
 	};
 
-	// Auto-scroll to bottom when messages change
-	useEffect(() => {
-		if (scrollContainerRef.current) {
-			scrollContainerRef.current.scrollTop =
-				scrollContainerRef.current.scrollHeight;
-		}
-	}, []);
+	const latestMessage = messages.at(-1) as UIMessage | undefined;
+	const showThinking =
+		!paymentPending && shouldShowThinking(messages as UIMessage[], status);
 
 	return (
 		<motion.div
@@ -411,281 +414,258 @@ export function SwatchyChatBubble() {
 			{/* Messages */}
 			<Conversation className="flex-1">
 				<ConversationContent className="gap-4 p-3">
-					<div ref={scrollContainerRef} className="flex flex-col gap-4">
-						{messages.length === 0 ? (
-							<div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
-								<p className="text-sm text-muted-foreground">
-									Hi! I&apos;m Swatchy, your theme assistant. How can I help you
-									today?
-								</p>
-								<Suggestions className="w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
-									{suggestions.map((suggestion) => (
-										<Suggestion
-											key={suggestion}
-											suggestion={suggestion}
-											onClick={handleSuggestionClick}
-											className="h-auto min-h-10 w-full whitespace-normal px-3 py-2 text-xs sm:w-auto sm:whitespace-nowrap"
-										/>
-									))}
-								</Suggestions>
-							</div>
-						) : (
-							messages.map((msg) => {
-								const uiMessage = msg as UIMessage;
-								const hasContent = uiMessage.parts?.some(
-									(part) => isTextUIPart(part) || isToolUIPart(part),
-								);
-								if (!hasContent) return null;
+					{messages.length === 0 ? (
+						<div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
+							<p className="text-sm text-muted-foreground">
+								Hi! I&apos;m Swatchy, your theme assistant. How can I help you
+								today?
+							</p>
+							<Suggestions className="w-full flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
+								{suggestions.map((suggestion) => (
+									<Suggestion
+										key={suggestion}
+										suggestion={suggestion}
+										onClick={handleSuggestionClick}
+										className="h-auto min-h-10 w-full whitespace-normal px-3 py-2 text-xs sm:w-auto sm:whitespace-nowrap"
+									/>
+								))}
+							</Suggestions>
+						</div>
+					) : (
+						messages.map((msg) => {
+							const uiMessage = msg as UIMessage;
+							const hasContent = uiMessage.parts?.some(
+								(part) => isTextUIPart(part) || isToolUIPart(part),
+							);
+							if (!hasContent) return null;
 
-								return (
-									<Message
-										key={msg.id}
-										from={msg.role === "user" ? "user" : "assistant"}
-									>
-										{uiMessage.parts?.map((part) => {
-											// Render text parts
-											if (isTextUIPart(part) && part.text) {
+							return (
+								<Message
+									key={msg.id}
+									from={msg.role === "user" ? "user" : "assistant"}
+								>
+									{uiMessage.parts?.map((part, partIndex) => {
+										// Render text parts
+										if (isTextUIPart(part) && part.text) {
+											return (
+												// biome-ignore lint/suspicious/noArrayIndexKey: AI SDK text parts have no stable ID; their append-only order stays stable while text streams.
+												<MessageContent key={`${msg.id}:text:${partIndex}`}>
+													{msg.role === "assistant" ? (
+														<MessageResponse
+															isAnimating={
+																status === "streaming" &&
+																msg.id === latestMessage?.id
+															}
+														>
+															{part.text}
+														</MessageResponse>
+													) : (
+														part.text
+													)}
+												</MessageContent>
+											);
+										}
+
+										// Render tool invocation parts
+										if (isToolUIPart(part)) {
+											const toolName =
+												"toolName" in part
+													? part.toolName
+													: part.type.replace("tool-", "");
+											const displayName =
+												TOOL_DISPLAY_NAMES[toolName] || toolName;
+											const partKey =
+												"toolCallId" in part && part.toolCallId
+													? part.toolCallId
+													: `${msg.id}:${part.type}`;
+											const toolCallId =
+												"toolCallId" in part ? part.toolCallId : null;
+											const presentationKind = getToolPresentationKind(part, {
+												paymentToolCallId: paymentPending?.toolCallId,
+												generationToolCallId: generation.toolCallId,
+												generationStatus: generation.status,
+											});
+
+											if (presentationKind === "payment" && paymentPending) {
 												return (
-													<MessageContent key={`${msg.id}:text:${part.text}`}>
-														{part.text}
-													</MessageContent>
+													<div key={partKey} className="w-full py-1">
+														<PaymentRequestCard
+															payment={paymentPending}
+															onConfirm={onPaymentConfirm}
+															onCancel={onPaymentCancel}
+															isProcessing={isPaymentProcessing}
+															paymentError={paymentError}
+														/>
+													</div>
 												);
 											}
 
-											// Render tool invocation parts
-											if (isToolUIPart(part)) {
-												const toolName =
-													"toolName" in part
-														? part.toolName
-														: part.type.replace("tool-", "");
-												const displayName =
-													TOOL_DISPLAY_NAMES[toolName] || toolName;
-												const partKey =
-													"toolCallId" in part && part.toolCallId
-														? part.toolCallId
-														: `${msg.id}:${part.type}`;
+											if (presentationKind === "generation-running") {
+												return (
+													<div
+														key={partKey}
+														className="flex w-full items-center gap-2 rounded-lg border bg-muted/50 p-3"
+													>
+														<Loader2 className="size-4 shrink-0 animate-spin text-primary" />
+														<span className="min-w-0 text-sm font-medium">
+															{generation.progress || `${displayName}...`}
+														</span>
+													</div>
+												);
+											}
 
-												// Generative UI for Blocks and Components
-												if (
-													(toolName === "generateBlock" ||
-														toolName === "generateComponent") &&
-													part.state === "output-available" &&
-													part.output &&
-													typeof part.output === "object" &&
-													"cacheId" in part.output
-												) {
-													// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
-													const cacheId = (part.output as any).cacheId;
-													const item = registryItemsCache[cacheId];
-
-													if (item) {
-														return (
-															<div key={partKey} className="w-full my-2">
-																<BlockPreview item={item} />
+											if (presentationKind === "generation-error") {
+												return (
+													<div
+														key={partKey}
+														className="w-full rounded-lg border border-destructive/30 bg-destructive/10 p-3"
+														role="alert"
+													>
+														<div className="flex items-start gap-2">
+															<XCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+															<span className="min-w-0 text-sm text-destructive">
+																{generation.error || `${displayName} failed`}
+															</span>
+														</div>
+														{failedRequest?.toolCallId === toolCallId && (
+															<div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+																<p className="text-xs text-destructive/70">
+																	Your payment was processed — retry is free
+																</p>
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="sm"
+																	onClick={() => void handleRetry()}
+																	className="h-8 gap-1 text-primary"
+																>
+																	<RotateCcw className="size-3" />
+																	Free Retry
+																</Button>
 															</div>
-														);
-													}
-												}
+														)}
+													</div>
+												);
+											}
 
-												// Show different UI based on tool state
-												if (
-													part.state === "input-streaming" ||
-													part.state === "input-available"
-												) {
+											// Generative UI for Blocks and Components
+											if (
+												(toolName === "generateBlock" ||
+													toolName === "generateComponent") &&
+												part.state === "output-available" &&
+												part.output &&
+												typeof part.output === "object" &&
+												"cacheId" in part.output
+											) {
+												// biome-ignore lint/suspicious/noExplicitAny: dynamic/third-party shape
+												const cacheId = (part.output as any).cacheId;
+												const item = registryItemsCache[cacheId];
+
+												if (item) {
 													return (
-														<div
-															key={partKey}
-															className="flex items-center gap-2 text-xs text-muted-foreground py-1"
-														>
-															<Loader2 className="h-3 w-3 animate-spin" />
-															<span>{displayName}...</span>
+														<div key={partKey} className="w-full my-2">
+															<BlockPreview item={item} />
 														</div>
 													);
 												}
+											}
 
-												if (part.state === "output-available") {
-													return (
-														<div
-															key={partKey}
-															className="flex items-center gap-2 text-xs text-muted-foreground py-1"
-														>
-															<CheckCircle2 className="h-3 w-3 text-green-500" />
-															<span>{displayName}</span>
-														</div>
-													);
-												}
-
-												if (part.state === "output-error") {
-													return (
-														<div
-															key={partKey}
-															className="flex items-center gap-2 text-xs text-destructive py-1"
-														>
-															<XCircle className="h-3 w-3" />
-															<span>{displayName} failed</span>
-														</div>
-													);
-												}
-
-												// Default: show tool is being called
+											// Show different UI based on tool state
+											if (presentationKind === "tool-running") {
 												return (
 													<div
 														key={partKey}
 														className="flex items-center gap-2 text-xs text-muted-foreground py-1"
 													>
-														<Wrench className="h-3 w-3" />
+														<Loader2 className="h-3 w-3 animate-spin" />
+														<span>{displayName}...</span>
+													</div>
+												);
+											}
+
+											if (
+												presentationKind === "tool-success" ||
+												presentationKind === "generation-success"
+											) {
+												return (
+													<div
+														key={partKey}
+														className="flex items-center gap-2 text-xs text-muted-foreground py-1"
+													>
+														<CheckCircle2 className="h-3 w-3 text-green-500" />
 														<span>{displayName}</span>
 													</div>
 												);
 											}
 
-											return null;
-										})}
-									</Message>
-								);
-							})
-						)}
+											if (presentationKind === "tool-error") {
+												return (
+													<div
+														key={partKey}
+														className="flex items-center gap-2 text-xs text-destructive py-1"
+													>
+														<XCircle className="h-3 w-3" />
+														<span className="min-w-0">
+															{part.errorText || `${displayName} failed`}
+														</span>
+													</div>
+												);
+											}
 
-						{/* Loading indicator */}
-						{isLoading && !paymentPending && (
-							<Message from="assistant">
-								<MessageContent>
-									<span className="animate-pulse">Thinking...</span>
-								</MessageContent>
-							</Message>
-						)}
+											// Default: show tool is being called
+											return (
+												<div
+													key={partKey}
+													className="flex items-center gap-2 text-xs text-muted-foreground py-1"
+												>
+													<Wrench className="h-3 w-3" />
+													<span>{displayName}</span>
+												</div>
+											);
+										}
 
-						{/* Payment request card */}
-						{paymentPending && (
-							<div className="mt-2">
-								<PaymentRequestCard
-									payment={paymentPending}
-									onConfirm={onPaymentConfirm}
-									onCancel={onPaymentCancel}
-									isProcessing={isPaymentProcessing}
-									paymentError={paymentError}
-								/>
+										return null;
+									})}
+								</Message>
+							);
+						})
+					)}
+
+					{/* Loading only when no assistant content has started streaming. */}
+					{showThinking && (
+						<Message from="assistant">
+							<MessageContent>
+								<span className="animate-pulse">Thinking...</span>
+							</MessageContent>
+						</Message>
+					)}
+
+					{error && (
+						<div
+							className="flex items-start justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3"
+							role="alert"
+						>
+							<div className="flex min-w-0 items-start gap-2">
+								<XCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+								<p className="min-w-0 text-sm text-destructive">
+									{error.message || "Swatchy could not complete that response."}
+								</p>
 							</div>
-						)}
-
-						{/* Generation progress indicator */}
-						{generation.status === "generating" && (
-							<div className="mt-2 rounded-lg border bg-muted/50 p-3">
-								<div className="flex items-center gap-2">
-									<Loader2 className="h-4 w-4 animate-spin text-primary" />
-									<span className="text-sm font-medium">
-										{generation.progress || "Processing..."}
-									</span>
-								</div>
-							</div>
-						)}
-
-						{/* Generation success */}
-						{generation.status === "success" && (
-							<motion.div
-								className="mt-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3"
-								initial={{ scale: 0.9, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-								transition={{ type: "spring", stiffness: 300, damping: 20 }}
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="h-8 shrink-0 gap-1"
+								onClick={() => {
+									clearError();
+									void regenerate();
+								}}
 							>
-								<div className="flex items-center gap-2">
-									<motion.div
-										animate={{
-											rotate: [0, 10, -10, 0],
-											scale: [1, 1.2, 1],
-										}}
-										transition={{
-											duration: 0.5,
-											repeat: 2,
-											repeatDelay: 0.5,
-										}}
-									>
-										<Sparkles className="h-4 w-4 text-green-500" />
-									</motion.div>
-									<span className="text-sm font-medium text-green-700 dark:text-green-300">
-										{generation.toolName === "generateTheme" &&
-										generation.result
-											? `"${(generation.result as ThemeToken).name}" created!`
-											: generation.toolName === "generateBlock" ||
-													generation.toolName === "generateComponent"
-												? "Code generated!"
-												: "Generation complete!"}
-									</span>
-								</div>
-								{generation.toolName === "generateTheme" && (
-									<div className="mt-2 flex items-center justify-between">
-										<p className="text-xs text-green-600/70 dark:text-green-400/70">
-											Saved to drafts
-										</p>
-										{pathname !== "/studio/theme" && (
-											<button
-												type="button"
-												onClick={() => {
-													setNavigating(true);
-													clearGeneration();
-													router.push("/studio/theme");
-												}}
-												className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-											>
-												View in Studio
-												<ArrowRight className="h-3 w-3" />
-											</button>
-										)}
-									</div>
-								)}
-								{(generation.toolName === "generateBlock" ||
-									generation.toolName === "generateComponent") && (
-									<div className="mt-2 flex items-center justify-between">
-										<p className="text-xs text-green-600/70 dark:text-green-400/70">
-											Saved to drafts
-										</p>
-										{pathname !== "/studio/components" && (
-											<button
-												type="button"
-												onClick={() => {
-													setNavigating(true);
-													clearGeneration();
-													router.push("/studio/components");
-												}}
-												className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-											>
-												View in Studio
-												<ArrowRight className="h-3 w-3" />
-											</button>
-										)}
-									</div>
-								)}
-							</motion.div>
-						)}
-
-						{/* Generation error */}
-						{generation.status === "error" && (
-							<div className="mt-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-								<div className="flex items-center gap-2">
-									<XCircle className="h-4 w-4 text-destructive" />
-									<span className="text-sm text-destructive">
-										{generation.error || "Generation failed"}
-									</span>
-								</div>
-								{/* Free Retry button - shown when we have a failed paid request */}
-								{failedRequest && (
-									<div className="mt-2 flex items-center justify-between">
-										<p className="text-xs text-destructive/70">
-											Your payment was processed - retry is free
-										</p>
-										<button
-											type="button"
-											onClick={handleRetry}
-											className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80"
-										>
-											<RotateCcw className="h-3 w-3" />
-											Free Retry
-										</button>
-									</div>
-								)}
-							</div>
-						)}
-					</div>
+								<RotateCcw className="size-3" />
+								Retry
+							</Button>
+						</div>
+					)}
 				</ConversationContent>
 				<ConversationScrollButton />
 			</Conversation>
@@ -701,13 +681,21 @@ export function SwatchyChatBubble() {
 						onChange={(e) => setInput(e.target.value)}
 						placeholder="Ask me anything about themes..."
 						className="min-h-10 max-h-24 text-sm"
-						disabled={!!paymentPending}
+						disabled={isBusy}
 					/>
-					<PromptInputFooter>
-						<PromptInputTools />
+					<PromptInputFooter className="justify-end">
 						<PromptInputSubmit
-							disabled={!input.trim() || isLoading || !!paymentPending}
-							status={isLoading ? "submitted" : undefined}
+							type={isLoading ? "button" : "submit"}
+							disabled={!isLoading && (!input.trim() || isBusy)}
+							status={status}
+							onClick={
+								isLoading
+									? (event) => {
+											event.preventDefault();
+											stop();
+										}
+									: undefined
+							}
 						/>
 					</PromptInputFooter>
 				</PromptInput>

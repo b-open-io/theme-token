@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -29,41 +29,12 @@ import {
 	type ThemeMode,
 	useStudioStore,
 } from "@/lib/stores/studio-store";
+import {
+	finalizeInterruptedToolCalls,
+	isSupportedSwatchyPaidTool,
+	shouldAutoContinueAfterTools,
+} from "./swatchy-chat-state";
 import { useSwatchyStore } from "./swatchy-store";
-
-/**
- * Finalize any tool calls left in a non-terminal state in a restored
- * conversation. A page reload/redeploy mid-generation leaves a `tool-*` part
- * stuck in "input-available"/"input-streaming" — which renders as a perpetual
- * "Generating…" spinner and also produces an invalid history (a tool_use with
- * no tool_result) when replayed to the model. Mark these as errored so the UI
- * shows them as interrupted and the conversation stays valid.
- */
-function finalizeInterruptedToolCalls(messages: UIMessage[]): UIMessage[] {
-	return messages.map((message) => {
-		if (!message.parts) return message;
-		let changed = false;
-		const parts = message.parts.map((part) => {
-			const type = (part as { type?: string }).type;
-			const state = (part as { state?: string }).state;
-			if (
-				typeof type === "string" &&
-				(type.startsWith("tool-") || type === "dynamic-tool") &&
-				(state === "input-available" || state === "input-streaming")
-			) {
-				changed = true;
-				return {
-					...part,
-					state: "output-error",
-					errorText:
-						"Interrupted — the page was reloaded before this finished.",
-				} as typeof part;
-			}
-			return part;
-		});
-		return changed ? { ...message, parts } : message;
-	});
-}
 
 /**
  * Extract a useful message from a failed API response. The server may return a
@@ -92,6 +63,20 @@ async function readApiError(
 	}
 	return text.slice(0, 200);
 }
+
+type PaidToolExecutionResult =
+	| { ok: true; output: string | object; redirectTo?: string }
+	| { ok: false; error: string };
+
+const paidToolSuccess = (
+	output: string | object,
+	redirectTo?: string,
+): PaidToolExecutionResult => ({ ok: true, output, redirectTo });
+
+const paidToolFailure = (error: string): PaidToolExecutionResult => ({
+	ok: false,
+	error,
+});
 
 export function useSwatchyChat() {
 	const router = useRouter();
@@ -275,78 +260,118 @@ export function useSwatchyChat() {
 		iconStudioStore,
 	]);
 
-	// Create transport with context in body - recreate when context changes
-	const transport = useMemo(() => {
-		return new DefaultChatTransport({
-			api: "/api/swatchy",
-			body: { context },
-		});
-	}, [context]);
+	// The AI SDK captures transport configuration once. Resolve page/studio
+	// context at request time so automatic tool continuations never send stale
+	// state and context changes do not replace the active transport mid-stream.
+	const contextRef = useRef(context);
+	contextRef.current = context;
+	const transport = useMemo(
+		() =>
+			new DefaultChatTransport({
+				api: "/api/swatchy",
+				body: () => ({ context: contextRef.current }),
+			}),
+		[],
+	);
 
-	const { messages, status, error, sendMessage, setMessages, addToolOutput } =
-		useChat({
-			id: "swatchy-chat",
-			transport,
-			onToolCall: async ({ toolCall }) => {
-				const toolName = toolCall.toolName as ToolName;
+	const {
+		messages,
+		status,
+		error,
+		sendMessage,
+		setMessages,
+		addToolOutput,
+		stop,
+		regenerate,
+		clearError,
+	} = useChat({
+		id: "swatchy-chat",
+		transport,
+		sendAutomaticallyWhen: shouldAutoContinueAfterTools,
+		onToolCall: ({ toolCall }) => {
+			if (toolCall.dynamic) return;
+			const toolName = toolCall.toolName as ToolName;
 
-				// Check if this is a paid tool
-				if (PAID_TOOLS.has(toolName as PricingTool)) {
-					// Get price with Prism Pass discount if applicable
-					const cost = getPrice(toolName as PricingTool, hasPrismPass);
-
-					// Free when admin (unlimited) or eligible for the one-time free gen
-					if (isAdmin || hasFreeGeneration) {
-						console.log(
-							isAdmin
-								? "[Swatchy] Admin — generation is free"
-								: "[Swatchy] User eligible for free generation, showing claim UI",
-						);
-						setPaymentPending({
-							toolName,
-							toolCallId: toolCall.toolCallId,
-							cost: cost, // Keep original cost for display/comparison
-							args: toolCall.input as Record<string, unknown>,
-							isFree: true,
-						});
-						return;
-					}
-
-					// Set payment pending with toolCallId - UI will show payment request
-					setPaymentPending({
-						toolName,
+			// Check if this is a paid tool
+			if (PAID_TOOLS.has(toolName as PricingTool)) {
+				if (!isSupportedSwatchyPaidTool(toolName)) {
+					addToolOutput({
+						tool: toolName,
 						toolCallId: toolCall.toolCallId,
-						cost,
-						args: toolCall.input as Record<string, unknown>,
+						state: "output-error",
+						errorText: `${toolName} is not available in Swatchy yet. No payment was requested.`,
 					});
-
-					// Don't return anything - we'll complete the tool call after payment
-					// The AI will wait for the tool result
 					return;
 				}
 
-				// Handle free tools immediately
-				const result = handleToolExecution(
-					toolName,
-					toolCall.input as Record<string, unknown>,
-				);
+				if (pendingPaidToolCallRef.current) {
+					addToolOutput({
+						tool: toolName,
+						toolCallId: toolCall.toolCallId,
+						state: "output-error",
+						errorText:
+							"Finish or cancel the current paid generation before starting another.",
+					});
+					return;
+				}
 
-				// Provide tool output back to the model
-				addToolOutput({
-					tool: toolName,
+				pendingPaidToolCallRef.current = toolCall.toolCallId;
+				// Get price with Prism Pass discount if applicable
+				const cost = getPrice(toolName as PricingTool, hasPrismPass);
+
+				// Free when admin (unlimited) or eligible for the one-time free gen
+				if (isAdmin || hasFreeGeneration) {
+					console.log(
+						isAdmin
+							? "[Swatchy] Admin — generation is free"
+							: "[Swatchy] User eligible for free generation, showing claim UI",
+					);
+					setPaymentPending({
+						toolName,
+						toolCallId: toolCall.toolCallId,
+						cost: cost, // Keep original cost for display/comparison
+						args: toolCall.input as Record<string, unknown>,
+						isFree: true,
+					});
+					return;
+				}
+
+				// Set payment pending with toolCallId - UI will show payment request
+				setPaymentPending({
+					toolName,
 					toolCallId: toolCall.toolCallId,
-					output: result,
+					cost,
+					args: toolCall.input as Record<string, unknown>,
 				});
-			},
-			onError: (err) => {
-				console.error("[Swatchy Chat Error]", err);
-			},
-		});
+
+				// Don't return anything - we'll complete the tool call after payment
+				// The AI will wait for the tool result
+				return;
+			}
+
+			// Handle free tools immediately
+			const result = handleToolExecution(
+				toolName,
+				toolCall.input as Record<string, unknown>,
+			);
+
+			// Provide tool output back to the model
+			addToolOutput({
+				tool: toolName,
+				toolCallId: toolCall.toolCallId,
+				output: result,
+			});
+		},
+		onError: (err) => {
+			console.error("[Swatchy Chat Error]", err);
+		},
+	});
 
 	// Store addToolOutput in ref so we can call it after payment
 	// Using typeof to get the exact type from useChat return value
 	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
 	addToolOutputRef.current = addToolOutput;
+	const pendingPaidToolCallRef = useRef<string | null>(null);
 
 	// For "navigate then generate" flows (e.g. blocks/components must be created in /studio/components),
 	// store the last user request and re-send it after navigation so Swatchy can continue seamlessly.
@@ -431,6 +456,8 @@ export function useSwatchyChat() {
 
 	// Compute loading state from status
 	const isLoading = status === "submitted" || status === "streaming";
+	const isBusy =
+		isLoading || paymentPending !== null || generation.status === "generating";
 
 	// Resolve natural language destination to actual path
 	const resolveDestination = useCallback(
@@ -733,10 +760,10 @@ export function useSwatchyChat() {
 			toolCallId: string,
 			args: Record<string, unknown>,
 			txid: string,
-		): Promise<string | object> => {
+		): Promise<PaidToolExecutionResult> => {
 			switch (toolName) {
 				case "generateTheme": {
-					setGenerating(toolName, "Generating your theme...");
+					setGenerating(toolName, toolCallId, "Generating your theme...");
 					try {
 						const response = await fetch("/api/generate-theme", {
 							method: "POST",
@@ -769,7 +796,9 @@ export function useSwatchyChat() {
 						if (pathname === "/studio/theme") {
 							dispatchRemixTheme(data.theme);
 							setGenerationSuccess(data.theme);
-							return `Theme "${data.theme.name}" generated and saved to drafts!`;
+							return paidToolSuccess(
+								`Theme "${data.theme.name}" generated and saved to drafts!`,
+							);
 						}
 
 						// Otherwise hard-navigate to the studio with the FULL theme in the
@@ -785,19 +814,21 @@ export function useSwatchyChat() {
 							styles: btoa(JSON.stringify(data.theme.styles)),
 							name: data.theme.name,
 						});
-						window.location.href = `/studio/theme?${params.toString()}`;
-						return `Theme "${data.theme.name}" generated! Opening studio...`;
+						return paidToolSuccess(
+							`Theme "${data.theme.name}" generated! Opening studio...`,
+							`/studio/theme?${params.toString()}`,
+						);
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						// Store failed request context for free retry (already paid)
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating theme: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
 				case "generatePattern": {
-					setGenerating(toolName, "Generating your pattern...");
+					setGenerating(toolName, toolCallId, "Generating your pattern...");
 					try {
 						const response = await fetch("/api/generate-pattern", {
 							method: "POST",
@@ -816,18 +847,20 @@ export function useSwatchyChat() {
 
 						const data = await response.json();
 						setGenerationSuccess(data);
-						return `Pattern generated successfully! Payment txid: ${txid}. Navigate to the Pattern Studio to view it.`;
+						return paidToolSuccess(
+							`Pattern generated successfully! Payment txid: ${txid}. Navigate to the Pattern Studio to view it.`,
+						);
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						// Store failed request context for free retry (already paid)
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating pattern: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
 				case "generateIconSet": {
-					setGenerating(toolName, "Generating your icon set...");
+					setGenerating(toolName, toolCallId, "Generating your icon set...");
 					try {
 						const state = useIconStudioStore.getState();
 						const iconNamesText =
@@ -873,17 +906,19 @@ export function useSwatchyChat() {
 						}
 
 						setGenerationSuccess(data);
-						return `Icon set generated! (${iconNames.length} icons)`;
+						return paidToolSuccess(
+							`Icon set generated! (${iconNames.length} icons)`,
+						);
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating icon set: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
 				case "generateFavicon": {
-					setGenerating(toolName, "Generating your favicon...");
+					setGenerating(toolName, toolCallId, "Generating your favicon...");
 					try {
 						const state = useIconStudioStore.getState();
 						const response = await fetch("/api/generate-favicon", {
@@ -918,18 +953,19 @@ export function useSwatchyChat() {
 						}
 
 						setGenerationSuccess(data);
-						return "Favicon generated!";
+						return paidToolSuccess("Favicon generated!");
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating favicon: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
 				case "generateFont": {
 					setGenerating(
 						toolName,
+						toolCallId,
 						"Starting font generation (this may take 1-3 minutes)...",
 					);
 					try {
@@ -950,13 +986,15 @@ export function useSwatchyChat() {
 
 						const data = await response.json();
 						setGenerationSuccess(data);
-						return `Font generation started! Payment txid: ${txid}. This is an async process - check back in a few minutes.`;
+						return paidToolSuccess(
+							`Font generation started! Payment txid: ${txid}. This is an async process - check back in a few minutes.`,
+						);
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						// Store failed request context for free retry (already paid)
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating font: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
@@ -970,6 +1008,7 @@ export function useSwatchyChat() {
 						for (let attempt = 1; attempt <= 3; attempt++) {
 							setGenerating(
 								toolName,
+								toolCallId,
 								`Attempt ${attempt}/3: Generating your block...`,
 							);
 
@@ -1013,7 +1052,7 @@ export function useSwatchyChat() {
 								args,
 								txid,
 							});
-							return `Error generating block: ${errorMsg}`;
+							return paidToolFailure(errorMsg);
 						}
 
 						console.log(
@@ -1058,17 +1097,17 @@ export function useSwatchyChat() {
 						const summary = `Block "${data.block.name}" generated!${savedMsg} ${fileCount} file(s).${deps}${attemptsMsg} You can preview it in the chat or inscribe it to make it installable via shadcn CLI.`;
 
 						// Return structured output for Generative UI
-						return {
+						return paidToolSuccess({
 							summary,
 							cacheId,
 							type: "registry:block",
 							name: data.block.name,
-						};
+						});
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating block: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
@@ -1082,6 +1121,7 @@ export function useSwatchyChat() {
 						for (let attempt = 1; attempt <= 3; attempt++) {
 							setGenerating(
 								toolName,
+								toolCallId,
 								`Attempt ${attempt}/3: Generating your component...`,
 							);
 
@@ -1124,7 +1164,7 @@ export function useSwatchyChat() {
 								args,
 								txid,
 							});
-							return `Error generating component: ${errorMsg}`;
+							return paidToolFailure(errorMsg);
 						}
 
 						// Cache the generated item for Generative UI
@@ -1161,22 +1201,22 @@ export function useSwatchyChat() {
 						const summary = `Component "${data.component.name}" generated!${savedMsg}${deps}${attemptsMsg} You can preview the code in the chat or inscribe it to make it installable via shadcn CLI.`;
 
 						// Return structured output for Generative UI
-						return {
+						return paidToolSuccess({
 							summary,
 							cacheId,
 							type: "registry:component",
 							name: data.component.name,
-						};
+						});
 					} catch (err) {
 						const errorMsg =
 							err instanceof Error ? err.message : "Generation failed";
 						setGenerationError(errorMsg, { toolName, toolCallId, args, txid });
-						return `Error generating component: ${errorMsg}`;
+						return paidToolFailure(errorMsg);
 					}
 				}
 
 				default:
-					return `Unknown paid tool: ${toolName}`;
+					return paidToolFailure(`Unsupported paid tool: ${toolName}`);
 			}
 		},
 		[
@@ -1227,6 +1267,42 @@ export function useSwatchyChat() {
 		[messages],
 	);
 
+	const applyPaidToolResult = useCallback(
+		async (
+			toolName: ToolName,
+			toolCallId: string,
+			result: PaidToolExecutionResult,
+		) => {
+			const addToolResult = addToolOutputRef.current;
+			if (!addToolResult) return;
+
+			if (result.ok) {
+				await addToolResult({
+					tool: toolName,
+					toolCallId,
+					output: result.output,
+				});
+
+				if (result.redirectTo) {
+					// Give the message/store update one paint to persist before a hard
+					// navigation tears down the chat controller.
+					window.setTimeout(() => {
+						window.location.href = result.redirectTo as string;
+					}, 100);
+				}
+				return;
+			}
+
+			await addToolResult({
+				tool: toolName,
+				toolCallId,
+				state: "output-error",
+				errorText: result.error,
+			});
+		},
+		[],
+	);
+
 	// Handle payment confirmation for paid tools
 	const handlePaymentConfirmed = useCallback(async () => {
 		if (!paymentPending || !addToolOutputRef.current) return;
@@ -1236,9 +1312,8 @@ export function useSwatchyChat() {
 		// Clear any prior error before re-attempting (retry path).
 		setPaymentError(null);
 
+		let txid: string | null = null;
 		try {
-			let txid: string | null = null;
-
 			if (isFree) {
 				console.log("[Payment] Processing free generation claim");
 				txid = "free-first-gen";
@@ -1247,34 +1322,6 @@ export function useSwatchyChat() {
 				// Process payment via Yours Wallet
 				const result = await sendPayment(FEE_ADDRESS, cost);
 				txid = result?.txid || null;
-			}
-
-			if (txid) {
-				// Payment successful (or free claim) - confirm in store
-				confirmPayment(txid);
-
-				// Execute the actual tool and get the result
-				const toolResult = await executePaidTool(
-					toolName,
-					toolCallId,
-					args,
-					txid,
-				);
-
-				// Provide the tool output back to the model to complete the tool call
-				addToolOutputRef.current({
-					tool: toolName,
-					toolCallId,
-					output: toolResult,
-				});
-			} else {
-				// Payment returned null - treat as a wallet-level cancel.
-				console.log("[Payment] User cancelled or wallet returned null");
-				cancelPayment();
-				clearGeneration();
-
-				// Only inform the AI if tool call still exists in messages
-				safeAddToolError(toolName, toolCallId, "Payment was cancelled by user");
 			}
 		} catch (error) {
 			console.error("[Payment Error]", error);
@@ -1285,6 +1332,31 @@ export function useSwatchyChat() {
 			setPaymentError(
 				error instanceof Error ? error.message : "Payment failed",
 			);
+			return;
+		}
+
+		if (!txid) {
+			console.log("[Payment] User cancelled or wallet returned null");
+			cancelPayment();
+			clearGeneration();
+			safeAddToolError(toolName, toolCallId, "Payment was cancelled by user");
+			pendingPaidToolCallRef.current = null;
+			return;
+		}
+
+		// Payment succeeded. Clear the payment UI, execute the generation, then
+		// record a truthful terminal state on the same AI SDK tool part.
+		confirmPayment(txid);
+		try {
+			const toolResult = await executePaidTool(
+				toolName,
+				toolCallId,
+				args,
+				txid,
+			);
+			await applyPaidToolResult(toolName, toolCallId, toolResult);
+		} finally {
+			pendingPaidToolCallRef.current = null;
 		}
 	}, [
 		paymentPending,
@@ -1293,6 +1365,7 @@ export function useSwatchyChat() {
 		cancelPayment,
 		clearGeneration,
 		executePaidTool,
+		applyPaidToolResult,
 		safeAddToolError,
 	]);
 
@@ -1306,6 +1379,7 @@ export function useSwatchyChat() {
 		setPaymentError(null);
 		cancelPayment();
 		clearGeneration();
+		pendingPaidToolCallRef.current = null;
 
 		// Use the safe helper to inform the AI that payment was cancelled
 		safeAddToolError(toolName, toolCallId, "Payment was cancelled by user");
@@ -1315,7 +1389,7 @@ export function useSwatchyChat() {
 	const handleSubmit = useCallback(
 		async (e?: React.FormEvent) => {
 			e?.preventDefault();
-			if (!chatInput.trim() || isLoading) return;
+			if (!chatInput.trim() || isBusy) return;
 
 			// Clear any previous generation state
 			clearGeneration();
@@ -1328,7 +1402,7 @@ export function useSwatchyChat() {
 				text: message,
 			});
 		},
-		[chatInput, isLoading, sendMessage, clearGeneration, setChatInput],
+		[chatInput, isBusy, sendMessage, clearGeneration, setChatInput],
 	);
 
 	// Handle free retry for failed paid tool (user already paid, just retry the generation)
@@ -1339,10 +1413,21 @@ export function useSwatchyChat() {
 
 		// Clear the failed state first
 		clearFailedRequest();
+		pendingPaidToolCallRef.current = toolCallId;
 
 		// Re-execute the paid tool with the original payment txid
-		await executePaidTool(toolName, toolCallId, args, txid);
-	}, [failedRequest, clearFailedRequest, executePaidTool]);
+		try {
+			const toolResult = await executePaidTool(
+				toolName,
+				toolCallId,
+				args,
+				txid,
+			);
+			await applyPaidToolResult(toolName, toolCallId, toolResult);
+		} finally {
+			pendingPaidToolCallRef.current = null;
+		}
+	}, [failedRequest, clearFailedRequest, executePaidTool, applyPaidToolResult]);
 
 	return {
 		messages,
@@ -1350,7 +1435,12 @@ export function useSwatchyChat() {
 		setInput: setChatInput,
 		handleSubmit,
 		isLoading,
+		isBusy,
+		status,
 		error,
+		stop,
+		regenerate,
+		clearError,
 		paymentPending,
 		handlePaymentConfirmed,
 		handlePaymentCancelled,

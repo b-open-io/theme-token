@@ -27,7 +27,7 @@ import {
 } from "@/lib/bundle-builder";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
-import { type GeneratedRegistryItem, useSwatchyStore } from "./swatchy-store";
+import type { GeneratedRegistryItem } from "./swatchy-store";
 
 interface BlockPreviewProps {
 	item: GeneratedRegistryItem;
@@ -46,7 +46,6 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [previewError, setPreviewError] = useState<string | null>(null);
-	const { clearGeneratedRegistryItem } = useSwatchyStore();
 	const {
 		inscribeBundle,
 		isInscribing,
@@ -64,22 +63,14 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const hadRetries = validationAttempts > 1;
 	const hasWarnings = validation?.warnings && validation.warnings.length > 0;
 
-	// Auto-open the preview panel if generation already produced a sandbox preview URL.
-	useEffect(() => {
-		if (item.previewUrl) {
-			setPreviewHtml(null);
-			setPreviewUrl(item.previewUrl);
-			setShowPreview(true);
-		}
-	}, [item.previewUrl]);
-
-	// Reset preview state when a different item is shown (prevents stale srcDoc previews).
+	// Reset preview state when a different item is shown. A generated sandbox
+	// URL is ready to view, so open it instead of immediately hiding it again.
 	useEffect(() => {
 		setPreviewHtml(null);
 		setPreviewUrl(item.previewUrl ?? null);
 		setPreviewError(null);
 		setPreviewLoading(false);
-		setShowPreview(false);
+		setShowPreview(Boolean(item.previewUrl));
 	}, [item.previewUrl]);
 
 	const containsModuleSyntax = useCallback((code: string) => {
@@ -200,10 +191,12 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 			transition={{ duration: 0.2 }}
 		>
 			{/* Header */}
-			<div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
-				<div className="flex items-center gap-2">
-					<Icon className="h-4 w-4 text-primary" />
-					<span className="text-sm font-medium">{manifest.name}</span>
+			<div className="flex flex-col items-stretch gap-2 border-b bg-muted/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex min-w-0 flex-wrap items-center gap-2">
+					<Icon className="size-4 shrink-0 text-primary" />
+					<span className="min-w-0 truncate text-sm font-medium">
+						{manifest.name}
+					</span>
 					<span className="text-xs text-muted-foreground">
 						{isBlock ? "block" : "component"}
 					</span>
@@ -214,7 +207,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto">
 					{canPreview && (
 						<Button
 							variant="ghost"
@@ -231,14 +224,6 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 							Preview
 						</Button>
 					)}
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-6 text-xs"
-						onClick={clearGeneratedRegistryItem}
-					>
-						Dismiss
-					</Button>
 				</div>
 			</div>
 
@@ -281,6 +266,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 								Live Preview
 							</span>
 							<Button
+								aria-label="Close component preview"
 								variant="ghost"
 								size="sm"
 								className="h-5 w-5 p-0"
@@ -341,8 +327,9 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 						{/* File header - separate row button from copy button */}
 						<div className="flex items-center justify-between hover:bg-muted/50 transition-colors">
 							<Button
+								aria-label={`${expandedFile === index ? "Collapse" : "Expand"} ${file.path}`}
 								variant="ghost"
-								className="flex-1 justify-start gap-2 px-3 py-2 h-auto rounded-none"
+								className="min-w-0 flex-1 justify-start gap-2 px-3 py-2 h-auto rounded-none"
 								onClick={() => toggleFile(index)}
 							>
 								{expandedFile === index ? (
@@ -351,13 +338,16 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 									<ChevronRight className="h-3 w-3 text-muted-foreground" />
 								)}
 								<Code2 className="h-3 w-3 text-muted-foreground" />
-								<span className="text-xs font-mono">{file.path}</span>
+								<span className="min-w-0 truncate text-xs font-mono">
+									{file.path}
+								</span>
 							</Button>
 							<Button
+								aria-label={`Copy ${file.path}`}
 								variant="ghost"
 								size="sm"
 								className={cn(
-									"h-8 w-8 p-0 mr-1 opacity-0 group-hover:opacity-100 transition-opacity",
+									"mr-1 size-8 p-0 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100",
 									copiedFile === index && "opacity-100",
 								)}
 								onClick={() => copyToClipboard(file.content, index)}
@@ -388,7 +378,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 			</div>
 
 			{/* Footer with inscribe CTA or success state */}
-			<div className="px-3 py-2 border-t bg-muted/20 flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-3 py-2">
 				{inscribedOrigin ? (
 					<>
 						<div className="flex items-center gap-1.5">

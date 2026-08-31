@@ -23,6 +23,7 @@ export type GenerationStatus = "idle" | "generating" | "success" | "error";
 export interface GenerationState {
 	status: GenerationStatus;
 	toolName: ToolName | null;
+	toolCallId: string | null;
 	progress?: string;
 	result?: unknown;
 	error?: string;
@@ -163,7 +164,11 @@ interface SwatchyStore {
 	clearPayment: () => void;
 
 	// Generation Actions
-	setGenerating: (toolName: ToolName, progress?: string) => void;
+	setGenerating: (
+		toolName: ToolName,
+		toolCallId: string,
+		progress?: string,
+	) => void;
 	setGenerationSuccess: (result: unknown) => void;
 	setGenerationError: (error: string, failedRequest?: FailedRequest) => void;
 	clearGeneration: () => void;
@@ -186,6 +191,7 @@ interface SwatchyStore {
 const initialGenerationState: GenerationState = {
 	status: "idle",
 	toolName: null,
+	toolCallId: null,
 };
 
 export const useSwatchyStore = create<SwatchyStore>()(
@@ -357,11 +363,12 @@ How would you like to modify this theme?`;
 					paymentTxid: null,
 				}),
 
-			setGenerating: (toolName, progress) =>
+			setGenerating: (toolName, toolCallId, progress) =>
 				set({
 					generation: {
 						status: "generating",
 						toolName,
+						toolCallId,
 						progress,
 					},
 				}),
@@ -371,6 +378,7 @@ How would you like to modify this theme?`;
 					generation: {
 						status: "success",
 						toolName: get().generation.toolName,
+						toolCallId: get().generation.toolCallId,
 						result,
 					},
 				}),
@@ -380,6 +388,7 @@ How would you like to modify this theme?`;
 					generation: {
 						status: "error",
 						toolName: get().generation.toolName,
+						toolCallId: get().generation.toolCallId,
 						error,
 					},
 					failedRequest: failedRequest ?? null,
