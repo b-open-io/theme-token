@@ -101,6 +101,50 @@ describe("AI generation routes", () => {
 		});
 	});
 
+	test("passes an inspiration image to the theme model", async () => {
+		const inspirationImage = "data:image/png;base64,aGVsbG8=";
+		const response = await themeRoute.POST(
+			new Request("http://localhost/api/generate-theme", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "Use this neon mood",
+					inspirationImage,
+				}),
+			}) as never,
+		);
+
+		expect(response.status).toBe(200);
+		const options = generateTextMock.mock.calls[0]?.[0] as {
+			messages: Array<{
+				content: Array<{ type: string; text?: string; image?: string }>;
+			}>;
+		};
+		expect(options.messages[0].content).toEqual([
+			expect.objectContaining({
+				type: "text",
+				text: expect.stringContaining("visual inspiration"),
+			}),
+			{ type: "image", image: inspirationImage },
+		]);
+	});
+
+	test("rejects an invalid inspiration image", async () => {
+		const response = await themeRoute.POST(
+			new Request("http://localhost/api/generate-theme", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "Use this",
+					inspirationImage: "https://example.com/image.png",
+				}),
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(generateTextMock).not.toHaveBeenCalled();
+	});
+
 	test("uses the typed image result from GPT-Image-2", async () => {
 		const response = await wallpaperRoute.POST(
 			new Request("http://localhost/api/generate-wallpaper", {

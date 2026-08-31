@@ -1,9 +1,16 @@
 "use client";
 
-import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
+import {
+	type ChatStatus,
+	isFileUIPart,
+	isTextUIPart,
+	isToolUIPart,
+	type UIMessage,
+} from "ai";
 import { motion } from "framer-motion";
 import {
 	CheckCircle2,
+	ImagePlus,
 	Loader2,
 	RotateCcw,
 	Wrench,
@@ -12,6 +19,7 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
 	Conversation,
 	ConversationContent,
@@ -19,14 +27,22 @@ import {
 } from "@/components/ai-elements/conversation";
 import {
 	Message,
+	MessageAttachment,
+	MessageAttachments,
 	MessageContent,
 	MessageResponse,
 } from "@/components/ai-elements/message";
 import {
 	PromptInput,
+	PromptInputAttachment,
+	PromptInputAttachments,
+	PromptInputButton,
 	PromptInputFooter,
+	type PromptInputMessage,
 	PromptInputSubmit,
 	PromptInputTextarea,
+	PromptInputTools,
+	usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
@@ -269,6 +285,49 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	generateComponent: "Generating component",
 };
 
+function ComposerControls({
+	input,
+	isBusy,
+	isLoading,
+	status,
+	onStop,
+}: {
+	input: string;
+	isBusy: boolean;
+	isLoading: boolean;
+	status: ChatStatus;
+	onStop: () => void;
+}) {
+	const { files, openFileDialog } = usePromptInputAttachments();
+	return (
+		<>
+			<PromptInputTools>
+				<PromptInputButton
+					aria-label="Add inspiration image"
+					onClick={openFileDialog}
+				>
+					<ImagePlus className="size-4" />
+				</PromptInputButton>
+			</PromptInputTools>
+			<PromptInputSubmit
+				type={isLoading ? "button" : "submit"}
+				disabled={
+					!isLoading && ((!input.trim() && files.length === 0) || isBusy)
+				}
+				status={status}
+				onClick={
+					isLoading
+						? (event) => {
+								event.preventDefault();
+								onStop();
+							}
+						: undefined
+				}
+			/>
+		</>
+	);
+}
+
 export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 	const pathname = usePathname();
 	const { closeChat, registryItemsCache } = useSwatchyStore();
@@ -349,9 +408,9 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 		setInput(suggestion);
 	};
 
-	const onPromptSubmit = () => {
-		if (!input.trim() || isBusy) return;
-		handleSubmit();
+	const onPromptSubmit = (message: PromptInputMessage) => {
+		if ((!message.text.trim() && message.files.length === 0) || isBusy) return;
+		return handleSubmit(message);
 	};
 
 	const onPaymentConfirm = async () => {
@@ -435,7 +494,10 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 						messages.map((msg) => {
 							const uiMessage = msg as UIMessage;
 							const hasContent = uiMessage.parts?.some(
-								(part) => isTextUIPart(part) || isToolUIPart(part),
+								(part) =>
+									isTextUIPart(part) ||
+									isToolUIPart(part) ||
+									isFileUIPart(part),
 							);
 							if (!hasContent) return null;
 
@@ -445,6 +507,16 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 									from={msg.role === "user" ? "user" : "assistant"}
 								>
 									{uiMessage.parts?.map((part, partIndex) => {
+										if (isFileUIPart(part)) {
+											return (
+												<MessageAttachments
+													key={`${msg.id}:file:${part.filename ?? part.url.slice(-32)}`}
+												>
+													<MessageAttachment data={part} />
+												</MessageAttachments>
+											);
+										}
+
 										// Render text parts
 										if (isTextUIPart(part) && part.text) {
 											return (
@@ -676,29 +748,31 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 			{/* Input */}
 			<div className="border-t p-3">
 				<PromptInput
+					accept="image/*"
+					maxFiles={1}
+					maxFileSize={3 * 1024 * 1024}
+					onError={({ message }) => toast.error(message)}
 					onSubmit={onPromptSubmit}
 					className="rounded-lg border bg-muted/30"
 				>
+					<PromptInputAttachments className="pb-0">
+						{(attachment) => <PromptInputAttachment data={attachment} />}
+					</PromptInputAttachments>
 					<PromptInputTextarea
 						value={input}
 						onChange={(e) => setInput(e.target.value)}
 						placeholder="Ask me anything about themes..."
 						className="min-h-10 max-h-24 text-sm"
 						disabled={isBusy}
+						required={false}
 					/>
-					<PromptInputFooter className="justify-end">
-						<PromptInputSubmit
-							type={isLoading ? "button" : "submit"}
-							disabled={!isLoading && (!input.trim() || isBusy)}
+					<PromptInputFooter>
+						<ComposerControls
+							input={input}
+							isBusy={isBusy}
+							isLoading={isLoading}
 							status={status}
-							onClick={
-								isLoading
-									? (event) => {
-											event.preventDefault();
-											stop();
-										}
-									: undefined
-							}
+							onStop={stop}
 						/>
 					</PromptInputFooter>
 				</PromptInput>

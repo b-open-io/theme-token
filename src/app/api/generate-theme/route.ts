@@ -10,6 +10,24 @@ import { generateTintsPalette } from "@/lib/tints";
 // useful error instead of letting the function itself time out.
 export const maxDuration = 90;
 
+const MAX_INSPIRATION_IMAGE_LENGTH = 4_200_000;
+
+function parseInspirationImage(value: unknown): string | null {
+	if (value == null || value === "") return null;
+	if (typeof value !== "string") {
+		throw new TypeError("Inspiration image must be a data URL");
+	}
+	if (
+		value.length > MAX_INSPIRATION_IMAGE_LENGTH ||
+		!/^data:image\/[a-z0-9.+-]+;base64,/i.test(value)
+	) {
+		throw new TypeError(
+			"Inspiration image must be a supported image under 3 MB",
+		);
+	}
+	return value;
+}
+
 // Theme color schema for OKLCH colors
 const oklchColorSchema = z
 	.string()
@@ -125,7 +143,17 @@ export async function POST(request: NextRequest) {
 			previousTheme,
 			userId,
 			paymentTxid,
+			inspirationImage: rawInspirationImage,
 		} = body;
+		let inspirationImage: string | null;
+		try {
+			inspirationImage = parseInspirationImage(rawInspirationImage);
+		} catch (error) {
+			return NextResponse.json(
+				{ error: error instanceof Error ? error.message : "Invalid image" },
+				{ status: 400 },
+			);
+		}
 
 		const premium = wantsPremiumModel(model);
 		const modelId = premium ? AI_MODELS.premium : AI_MODELS.theme;
@@ -243,6 +271,10 @@ Examples:
 		if (style) {
 			userPrompt += `\n\nStyle preference: ${style}`;
 		}
+		if (inspirationImage) {
+			userPrompt +=
+				"\n\nUse the attached image as visual inspiration. Draw from its palette, mood, contrast, typography character, and visual rhythm. Do not reproduce logos, text, or identifiable artwork.";
+		}
 
 		// Add remix context if previous theme provided
 		if (previousTheme) {
@@ -262,6 +294,20 @@ Maintain the core identity and color harmony but apply the user's modifications.
 		// ~50 tok/s and take minutes) keeps the gateway request — and its billing —
 		// running long after the function itself times out. Aborting cancels the
 		// upstream request and surfaces a clean error instead of a runaway cost.
+		const modelPrompt = inspirationImage
+			? {
+					messages: [
+						{
+							role: "user" as const,
+							content: [
+								{ type: "text" as const, text: userPrompt },
+								{ type: "image" as const, image: inspirationImage },
+							],
+						},
+					],
+				}
+			: { prompt: userPrompt };
+
 		const { output: theme } = await generateText({
 			model: modelId,
 			reasoning: premium ? "low" : "medium",
@@ -271,7 +317,7 @@ Maintain the core identity and color harmony but apply the user's modifications.
 				description: "A complete accessible light and dark UI theme",
 			}),
 			system: systemPrompt,
-			prompt: userPrompt,
+			...modelPrompt,
 			maxRetries: 1,
 			abortSignal: AbortSignal.timeout(60_000),
 		});

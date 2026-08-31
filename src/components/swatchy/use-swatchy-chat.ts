@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, type FileUIPart } from "ai";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -34,6 +34,7 @@ import {
 	getGeneratedThemeHandoff,
 	isSupportedSwatchyPaidTool,
 	shouldAutoContinueAfterTools,
+	withoutTransientFiles,
 } from "./swatchy-chat-state";
 import { useSwatchyStore } from "./swatchy-store";
 
@@ -147,7 +148,10 @@ export function useSwatchyChat() {
 	useEffect(() => {
 		if (walletStatus === "connected" && ordAddress) {
 			fetch(`/api/user/storage?userId=${ordAddress}`)
-				.then((res) => res.json())
+				.then((res) => {
+					if (!res.ok) throw new Error("Failed to check storage usage");
+					return res.json();
+				})
 				.then((data) => {
 					// User gets first generation free if they have 0 total drafts
 					if (data.totalDrafts === 0) {
@@ -377,6 +381,9 @@ export function useSwatchyChat() {
 		addToolOutputRef.current = addToolOutput;
 	}, [addToolOutput]);
 	const pendingPaidToolCallRef = useRef<string | null>(null);
+	// The generation endpoint is a separate paid tool request, so retain the
+	// latest uploaded image long enough to pass it directly to that request.
+	const themeInspirationRef = useRef<string | null>(null);
 
 	// For "navigate then generate" flows (e.g. blocks/components must be created in /studio/components),
 	// store the last user request and re-send it after navigation so Swatchy can continue seamlessly.
@@ -419,7 +426,7 @@ export function useSwatchyChat() {
 	// Sync messages to store when they change (only after initial restore)
 	useEffect(() => {
 		if (hasRestoredRef.current && hasHydrated) {
-			setChatMessages(messages);
+			setChatMessages(withoutTransientFiles(messages));
 		}
 	}, [messages, setChatMessages, hasHydrated]);
 
@@ -778,6 +785,7 @@ export function useSwatchyChat() {
 								primaryColor: args.primaryColor,
 								radius: args.radius,
 								style: args.style,
+								inspirationImage: themeInspirationRef.current,
 								userId: ordAddress,
 								paymentTxid: txid,
 							}),
@@ -1384,22 +1392,28 @@ export function useSwatchyChat() {
 
 	// Form submission handler
 	const handleSubmit = useCallback(
-		async (e?: React.FormEvent) => {
-			e?.preventDefault();
-			if (!chatInput.trim() || isBusy) return;
+		async ({ text, files }: { text: string; files: FileUIPart[] }) => {
+			const inspiration = files.find((file) =>
+				file.mediaType.startsWith("image/"),
+			);
+			const message =
+				text.trim() ||
+				(inspiration ? "Create a theme inspired by this image." : "");
+			if (!message || isBusy) return;
 
 			// Clear any previous generation state
 			clearGeneration();
 
-			const message = chatInput.trim();
+			themeInspirationRef.current = inspiration?.url ?? null;
 			lastUserMessageRef.current = message;
 			setChatInput(""); // Clear input immediately
 
 			await sendMessage({
 				text: message,
+				files,
 			});
 		},
-		[chatInput, isBusy, sendMessage, clearGeneration, setChatInput],
+		[isBusy, sendMessage, clearGeneration, setChatInput],
 	);
 
 	// Handle free retry for failed paid tool (user already paid, just retry the generation)

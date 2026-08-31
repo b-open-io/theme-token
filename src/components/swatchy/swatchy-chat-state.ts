@@ -1,6 +1,7 @@
 import {
 	type ChatStatus,
 	type DynamicToolUIPart,
+	isFileUIPart,
 	isTextUIPart,
 	isToolUIPart,
 	lastAssistantMessageIsCompleteWithToolCalls,
@@ -78,6 +79,21 @@ export function finalizeInterruptedToolCalls(
 		});
 
 		return changed ? { ...message, parts } : message;
+	});
+}
+
+/**
+ * Image data URLs are useful during the live conversation but are too large
+ * for the persisted Zustand chat history. Keep the visible text and tool state
+ * while treating uploaded files as session-only context.
+ */
+export function withoutTransientFiles(messages: UIMessage[]): UIMessage[] {
+	return messages.map((message) => {
+		if (!message.parts?.some(isFileUIPart)) return message;
+		return {
+			...message,
+			parts: message.parts.filter((part) => !isFileUIPart(part)),
+		};
 	});
 }
 

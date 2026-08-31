@@ -7,6 +7,7 @@ import {
 	isSupportedSwatchyPaidTool,
 	shouldAutoContinueAfterTools,
 	shouldShowThinking,
+	withoutTransientFiles,
 } from "./swatchy-chat-state";
 
 describe("getGeneratedThemeHandoff", () => {
@@ -63,6 +64,31 @@ describe("finalizeInterruptedToolCalls", () => {
 			}),
 		]);
 		expect(messages[0].parts[0]).toMatchObject({ state: "input-available" });
+	});
+});
+
+describe("withoutTransientFiles", () => {
+	test("keeps chat text while removing uploaded image data from persistence", () => {
+		const messages: UIMessage[] = [
+			{
+				id: "user-image",
+				role: "user",
+				parts: [
+					{ type: "text", text: "Use these colors" },
+					{
+						type: "file",
+						mediaType: "image/png",
+						filename: "inspiration.png",
+						url: "data:image/png;base64,aGVsbG8=",
+					},
+				],
+			},
+		];
+
+		expect(withoutTransientFiles(messages)[0].parts).toEqual([
+			{ type: "text", text: "Use these colors" },
+		]);
+		expect(messages[0].parts).toHaveLength(2);
 	});
 });
 
