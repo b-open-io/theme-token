@@ -310,13 +310,16 @@ export function SwatchyAvatar({
 		>
 			{/* The Avatar Visuals */}
 			<motion.button
-				className={`relative w-full h-full rounded-full focus:outline-none focus-visible:outline-none ${
+				className={`relative h-full w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
 					isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
 				}`}
 				onClick={handleClick}
 				whileHover={{ scale: 1.05 }}
 				whileTap={{ scale: 0.95 }}
 				aria-label="Swatchy Assistant"
+				aria-expanded={isExpanded}
+				aria-controls="swatchy-chat"
+				aria-haspopup="dialog"
 			>
 				{/* Inner wrapper for aspect ratio */}
 				<motion.div className="relative h-full w-full">

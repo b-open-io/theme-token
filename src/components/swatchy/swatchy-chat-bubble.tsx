@@ -269,7 +269,7 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
 	generateComponent: "Generating component",
 };
 
-export function SwatchyChatBubble() {
+export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 	const pathname = usePathname();
 	const { closeChat, registryItemsCache } = useSwatchyStore();
 	const {
@@ -303,23 +303,21 @@ export function SwatchyChatBubble() {
 		[pathname, flags],
 	);
 
-	// Close on Escape (only when textarea not focused)
+	// Close the non-modal dialog on Escape from anywhere, including the composer.
 	useEffect(() => {
+		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
-				const activeElement = document.activeElement;
-				const isTextareaFocused = activeElement?.tagName === "TEXTAREA";
-				if (!isTextareaFocused) {
-					closeChat();
-				}
+				closeChat();
 			}
 		};
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [closeChat]);
+	}, [closeChat, isOpen]);
 
 	// Close on click outside
 	useEffect(() => {
+		if (!isOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
 			if (
 				chatContainerRef.current &&
@@ -330,12 +328,13 @@ export function SwatchyChatBubble() {
 		};
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [closeChat]);
+	}, [closeChat, isOpen]);
 
 	// The mobile chat behaves like a viewport sheet. Keep the studio behind it
 	// stationary so browser chrome and on-screen keyboards do not make the
 	// composer jump while the user is chatting.
 	useEffect(() => {
+		if (!isOpen) return;
 		const mobileQuery = window.matchMedia("(max-width: 767px)");
 		if (!mobileQuery.matches) return;
 
@@ -344,7 +343,7 @@ export function SwatchyChatBubble() {
 		return () => {
 			document.body.style.overflow = previousOverflow;
 		};
-	}, []);
+	}, [isOpen]);
 
 	const handleSuggestionClick = (suggestion: string) => {
 		setInput(suggestion);
@@ -372,12 +371,13 @@ export function SwatchyChatBubble() {
 	const latestMessage = messages.at(-1) as UIMessage | undefined;
 	const showThinking =
 		!paymentPending && shouldShowThinking(messages as UIMessage[], status);
+	if (!isOpen) return null;
 
 	return (
 		<motion.div
 			ref={chatContainerRef}
+			id="swatchy-chat"
 			role="dialog"
-			aria-modal="true"
 			aria-label="Swatchy theme assistant"
 			className="fixed right-[250px] top-20 z-[60] flex h-[500px] w-[380px] origin-top-right flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl max-md:inset-x-2 max-md:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-md:top-[max(0.5rem,env(safe-area-inset-top))] max-md:h-auto max-md:w-auto max-md:rounded-xl"
 			initial={{ opacity: 0, scale: 0.9, x: 20 }}

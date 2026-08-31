@@ -5,8 +5,8 @@ import { DefaultChatTransport } from "ai";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-	dispatchRemixTheme,
 	saveAIThemeToDrafts,
+	storeRemixTheme,
 } from "@/components/theme-gallery";
 import { useTheme } from "@/components/theme-provider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -31,6 +31,7 @@ import {
 } from "@/lib/stores/studio-store";
 import {
 	finalizeInterruptedToolCalls,
+	getGeneratedThemeHandoff,
 	isSupportedSwatchyPaidTool,
 	shouldAutoContinueAfterTools,
 } from "./swatchy-chat-state";
@@ -789,34 +790,26 @@ export function useSwatchyChat() {
 						// UNIFIED FLOW: Always save to drafts first (ensures persistence)
 						saveAIThemeToDrafts(data.theme, txid);
 
-						// Set in Swatchy store - theme-studio will react to this for modal/confetti
-						setAIGeneratedTheme(data.theme, txid);
-
-						// If already on theme studio, dispatch event to load theme directly
-						if (pathname === "/studio/theme") {
-							dispatchRemixTheme(data.theme);
+						// Theme Studio consumes exactly one handoff: the transient store when
+						// already mounted, or the existing persisted remix handoff when the
+						// route still needs to change.
+						if (getGeneratedThemeHandoff(pathname) === "in-place") {
+							setAIGeneratedTheme(data.theme, txid);
 							setGenerationSuccess(data.theme);
 							return paidToolSuccess(
 								`Theme "${data.theme.name}" generated and saved to drafts!`,
 							);
 						}
 
-						// Otherwise hard-navigate to the studio with the FULL theme in the
-						// URL. This is a single SSR load (like pasting the link), so the
-						// generated theme is rendered from the URL on arrival. The old
-						// approach — soft-push to a clean /studio/theme then rewrite the
-						// URL client-side — loaded the session theme first and never
-						// re-read the rewritten styles, so you saw the previous theme; it
-						// also turned the long URL into a failing RSC fetch.
+						storeRemixTheme(data.theme, {
+							source: "ai-generate",
+							paymentTxid: txid,
+						});
 						setNavigating(true);
 						setGenerationSuccess(data.theme);
-						const params = new URLSearchParams({
-							styles: btoa(JSON.stringify(data.theme.styles)),
-							name: data.theme.name,
-						});
+						router.push("/studio/theme");
 						return paidToolSuccess(
 							`Theme "${data.theme.name}" generated! Opening studio...`,
-							`/studio/theme?${params.toString()}`,
 						);
 					} catch (err) {
 						const errorMsg =

@@ -2,11 +2,23 @@ import { describe, expect, test } from "bun:test";
 import type { DynamicToolUIPart, ToolUIPart, UIMessage } from "ai";
 import {
 	finalizeInterruptedToolCalls,
+	getGeneratedThemeHandoff,
 	getToolPresentationKind,
 	isSupportedSwatchyPaidTool,
 	shouldAutoContinueAfterTools,
 	shouldShowThinking,
 } from "./swatchy-chat-state";
+
+describe("getGeneratedThemeHandoff", () => {
+	test("applies once through the store when already in Theme Studio", () => {
+		expect(getGeneratedThemeHandoff("/studio/theme")).toBe("in-place");
+	});
+
+	test("uses the persisted handoff when navigating into Theme Studio", () => {
+		expect(getGeneratedThemeHandoff("/")).toBe("persisted");
+		expect(getGeneratedThemeHandoff("/themes")).toBe("persisted");
+	});
+});
 
 function toolPart(
 	toolCallId: string,

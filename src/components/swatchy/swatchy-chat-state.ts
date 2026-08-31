@@ -23,6 +23,12 @@ export function isSupportedSwatchyPaidTool(toolName: ToolName): boolean {
 	return supportedPaidTools.has(toolName);
 }
 
+export function getGeneratedThemeHandoff(
+	pathname: string,
+): "in-place" | "persisted" {
+	return pathname === "/studio/theme" ? "in-place" : "persisted";
+}
+
 export type GenerationPresentationStatus =
 	| "idle"
 	| "generating"

@@ -42,7 +42,6 @@ import { PurchaseSuccessModal } from "@/components/market/purchase-success-modal
 import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import {
 	getAndClearRemixTheme,
-	REMIX_THEME_EVENT,
 	storeRemixTheme,
 } from "@/components/theme-gallery";
 import { ThemePreviewPanel } from "@/components/theme-preview-panel";
@@ -494,6 +493,13 @@ export function ThemeStudio() {
 			setSelectedTheme(remixData.theme);
 			setOriginalTheme(remixData.theme);
 			setCustomName(remixData.theme.name);
+			if (remixData.source === "ai-generate" && remixData.paymentTxid) {
+				setAiGenerationInfo({
+					txid: remixData.paymentTxid,
+					themeName: remixData.theme.name,
+				});
+				setDrafts(loadDrafts());
+			}
 		}
 	}, []);
 
@@ -548,26 +554,16 @@ export function ThemeStudio() {
 
 	const isConnected = status === "connected";
 	const canMint = isConnected && addresses !== null && !isInscribing;
+	const paymentTransactionId =
+		aiGenerationInfo && /^[0-9a-f]{64}$/i.test(aiGenerationInfo.txid)
+			? aiGenerationInfo.txid
+			: null;
 
 	// Apply theme to DOM directly for preview (skip during animated transitions)
 	useEffect(() => {
 		if (isAnimatingRef.current || !selectedTheme) return;
 		applyThemeToDOM(selectedTheme.styles[mode]);
 	}, [selectedTheme, mode]);
-
-	// Listen for remix events from gallery
-	useEffect(() => {
-		const handleRemix = (e: Event) => {
-			const theme = (e as CustomEvent<ThemeToken>).detail;
-			loadedExplicitTheme.current = true;
-			setSelectedTheme(theme);
-			setOriginalTheme(theme);
-			setCustomName(""); // Clear custom name for remix
-		};
-
-		window.addEventListener(REMIX_THEME_EVENT, handleRemix);
-		return () => window.removeEventListener(REMIX_THEME_EVENT, handleRemix);
-	}, []);
 
 	// Subscribe to Swatchy's pending color changes via store
 	const pendingColorChange = useStudioStore(selectPendingColorChange);
@@ -751,19 +747,27 @@ export function ThemeStudio() {
 							{/* Transaction Link */}
 							<div className="rounded-lg border border-border bg-muted/50 p-3">
 								<p className="mb-1 text-xs font-medium text-muted-foreground">
-									Payment Transaction
+									{paymentTransactionId
+										? "Payment Transaction"
+										: "Generation Credit"}
 								</p>
-								<a
-									href={`https://whatsonchain.com/tx/${aiGenerationInfo?.txid}`}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="flex items-center gap-2 text-sm text-primary hover:underline"
-								>
-									<span className="truncate font-mono">
-										{aiGenerationInfo?.txid?.slice(0, 20)}...
-									</span>
-									<ExternalLink className="h-3 w-3 shrink-0" />
-								</a>
+								{paymentTransactionId ? (
+									<a
+										href={`https://whatsonchain.com/tx/${paymentTransactionId}`}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="flex items-center gap-2 text-sm text-primary hover:underline"
+									>
+										<span className="truncate font-mono">
+											{paymentTransactionId.slice(0, 20)}...
+										</span>
+										<ExternalLink className="h-3 w-3 shrink-0" />
+									</a>
+								) : (
+									<p className="text-sm text-foreground">
+										Free generation applied
+									</p>
+								)}
 							</div>
 
 							{/* Action Buttons */}

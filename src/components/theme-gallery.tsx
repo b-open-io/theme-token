@@ -22,9 +22,6 @@ function formatPrice(satoshis: number): string {
 	return `${satoshis.toLocaleString()} sats`;
 }
 
-// Custom event for theme remixing (works on same page)
-export const REMIX_THEME_EVENT = "remix-theme";
-
 // LocalStorage key for cross-page theme loading
 const REMIX_STORAGE_KEY = "theme-token-remix";
 
@@ -32,10 +29,6 @@ export interface StoredRemixTheme {
 	theme: ThemeToken;
 	source?: "ai-generate" | "remix";
 	paymentTxid?: string;
-}
-
-export function dispatchRemixTheme(theme: ThemeToken) {
-	window.dispatchEvent(new CustomEvent(REMIX_THEME_EVENT, { detail: theme }));
 }
 
 export function storeRemixTheme(

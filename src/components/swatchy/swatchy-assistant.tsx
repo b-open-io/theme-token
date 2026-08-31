@@ -114,9 +114,7 @@ export function SwatchyAssistant() {
 				</AnimatePresence>
 			</SwatchyAvatar>
 
-			<AnimatePresence>
-				{position === "expanded" && <SwatchyChatBubble />}
-			</AnimatePresence>
+			<SwatchyChatBubble isOpen={position === "expanded"} />
 		</>
 	);
 }
