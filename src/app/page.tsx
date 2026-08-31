@@ -82,7 +82,7 @@ export default function Home() {
 		);
 		openChat();
 	}, [openChat, setPendingPrefill]);
-	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}`;
+	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}.json`;
 
 	const copyCommand = useCallback(() => {
 		navigator.clipboard.writeText(installCommand);

@@ -8,13 +8,12 @@ import {
 	FolderKanban,
 	Image,
 	Palette,
-	Shapes,
 	Type,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { CodeBlock } from "@/components/code-block";
 
-type AssetType = "theme" | "font" | "tile" | "wallpaper" | "icon" | "project";
+type AssetType = "theme" | "font" | "pattern" | "wallpaper" | "project";
 
 interface FieldDef {
 	key: string;
@@ -24,7 +23,9 @@ interface FieldDef {
 
 const FIELDS: FieldDef[] = [
 	{ key: "app", type: "string", description: 'Always "theme-token"' },
-	{ key: "type", type: "string", description: "shadcn registry type" },
+	{ key: "type", type: "string", description: "Discovery type" },
+	{ key: "kind", type: "string", description: "Asset kind" },
+	{ key: "mediaType", type: "string", description: "Canonical MIME type" },
 	{ key: "name", type: "string", description: "Display name" },
 	{ key: "version", type: "string", description: "Semver, e.g. 1.0.0" },
 	{ key: "description", type: "string", description: "Short summary" },
@@ -45,46 +46,41 @@ const FIELD_MAP: Record<AssetType, { active: string[]; required: string[] }> = {
 	font: {
 		active: [
 			...BASE_REQUIRED,
+			"kind",
+			"mediaType",
 			"author",
 			"license",
 			"prompt",
 			"provider",
 			"model",
 		],
-		required: BASE_REQUIRED,
+		required: [...BASE_REQUIRED, "kind", "mediaType"],
 	},
-	tile: {
+	pattern: {
 		active: [
 			...BASE_REQUIRED,
+			"kind",
+			"mediaType",
 			"author",
 			"license",
 			"prompt",
 			"provider",
 			"model",
 		],
-		required: BASE_REQUIRED,
+		required: [...BASE_REQUIRED, "kind", "mediaType"],
 	},
 	wallpaper: {
 		active: [
 			...BASE_REQUIRED,
+			"kind",
+			"mediaType",
 			"author",
 			"license",
 			"prompt",
 			"provider",
 			"model",
 		],
-		required: BASE_REQUIRED,
-	},
-	icon: {
-		active: [
-			...BASE_REQUIRED,
-			"author",
-			"license",
-			"prompt",
-			"provider",
-			"model",
-		],
-		required: BASE_REQUIRED,
+		required: [...BASE_REQUIRED, "kind", "mediaType"],
 	},
 	project: {
 		active: [...BASE_REQUIRED, "author"],
@@ -99,57 +95,43 @@ const JSON_DATA: Record<AssetType, string> = {
   "name": "Cyberpunk Neon",
   "version": "1.0.0",
   "description": "Cyberpunk neon theme",
-  "prompt": "cyberpunk neon",
-  "provider": "anthropic",
-  "model": "claude-opus-4-5"
+  "prompt": "cyberpunk neon"
 }`,
 	font: `{
   "app": "theme-token",
-  "type": "registry:font",
+  "type": "theme-token:asset",
+  "kind": "font",
+  "mediaType": "font/woff2",
   "name": "Elegant Serif",
   "version": "1.0.0",
   "description": "Elegant serif typeface",
   "author": "John Doe",
   "license": "OFL",
-  "prompt": "elegant serif",
-  "provider": "anthropic",
-  "model": "claude-opus-4-5"
+  "prompt": "elegant serif"
 }`,
-	tile: `{
+	pattern: `{
   "app": "theme-token",
-  "type": "registry:file",
+  "type": "theme-token:asset",
+  "kind": "pattern",
+  "mediaType": "image/svg+xml",
   "name": "Dot Grid",
   "version": "1.0.0",
   "description": "Evenly spaced dot grid",
   "author": "Jane Smith",
   "license": "CC0",
-  "prompt": "evenly spaced dots",
-  "provider": "google",
-  "model": "gemini-3.5-flash"
+  "prompt": "evenly spaced dots"
 }`,
 	wallpaper: `{
   "app": "theme-token",
-  "type": "registry:file",
+  "type": "theme-token:asset",
+  "kind": "wallpaper",
+  "mediaType": "image/png",
   "name": "Gradient Mesh",
   "version": "1.0.0",
   "description": "Abstract gradient mesh wallpaper",
   "author": "Alex Chen",
   "license": "CC0",
-  "prompt": "abstract gradient",
-  "provider": "google",
-  "model": "gemini-3-pro-image"
-}`,
-	icon: `{
-  "app": "theme-token",
-  "type": "registry:file",
-  "name": "Settings",
-  "version": "1.0.0",
-  "description": "Minimal gear icon",
-  "author": "Icon Studio",
-  "license": "CC0",
-  "prompt": "minimal gear icon",
-  "provider": "google",
-  "model": "gemini-3-pro-image"
+  "prompt": "abstract gradient"
 }`,
 	project: `{
   "app": "theme-token",
@@ -167,9 +149,8 @@ const ASSET_META: Record<
 > = {
 	theme: { icon: FileCode, label: "Theme", format: "JSON" },
 	font: { icon: Type, label: "Font", format: "WOFF2" },
-	tile: { icon: Palette, label: "Tile", format: "SVG" },
+	pattern: { icon: Palette, label: "Pattern", format: "SVG" },
 	wallpaper: { icon: Image, label: "Wallpaper", format: "PNG/WebP" },
-	icon: { icon: Shapes, label: "Icon", format: "SVG" },
 	project: { icon: FolderKanban, label: "Project", format: "JSON" },
 };
 
@@ -194,14 +175,7 @@ export function OnChainProtocol() {
 			<div className="flex justify-center">
 				<div className="inline-flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
 					{(
-						[
-							"theme",
-							"font",
-							"tile",
-							"wallpaper",
-							"icon",
-							"project",
-						] as AssetType[]
+						["theme", "font", "pattern", "wallpaper", "project"] as AssetType[]
 					).map((tab) => {
 						const meta = ASSET_META[tab];
 						const Icon = meta.icon;
@@ -336,11 +310,11 @@ export function OnChainProtocol() {
 
 			{/* Compact Footer Note */}
 			<p className="mx-auto max-w-2xl text-center text-[10px] text-muted-foreground">
-				MAP (Magic Attribute Protocol) metadata tags the package's{" "}
+				MAP (Magic Attribute Protocol) metadata tags the package&apos;s{" "}
 				<code className="text-primary">ord-fs/json</code> directory manifest —
-				the tradeable ordinal — declaring its shadcn registry type. The asset
-				files (theme JSON, font binary, SVG) are separate inscriptions the
-				directory references.
+				the tradeable ordinal — declaring its discovery type. The asset files
+				(theme JSON, font binary, SVG) are separate inscriptions the directory
+				references.
 			</p>
 		</div>
 	);

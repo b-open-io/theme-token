@@ -314,7 +314,7 @@ Theme Token is a platform for creating, publishing, and trading ShadCN-compatibl
 
 ### Installing Themes
 \`\`\`bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
 \`\`\`
 Replace [origin] with the ordinal origin ID (e.g., abc123_0).
 

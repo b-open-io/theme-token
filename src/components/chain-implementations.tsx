@@ -6,7 +6,7 @@ const code = `import { fetchThemeByOrigin, applyTheme } from "@theme-token/sdk";
 const published = await fetchThemeByOrigin("<txid>_1");
 if (!published) throw new Error("Theme not found");
 
-applyTheme(published.theme);`;
+applyTheme(published.theme.styles.light);`;
 
 export function ChainImplementations() {
 	return (

@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"$id": "https://themetoken.dev/v1/schema.json",
 	"title": "Theme Token",
-	"description": "ShadCN UI theme token for blockchain inscription. ShadCN Registry Format compatible. Install via: bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]",
+	"description": "Stable Theme Token v1 source document for blockchain inscription. Compiled to the current ShadCN Registry Format by the gateway. Install via: bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json",
 	"type": "object",
 	"required": ["$schema", "name", "styles"],
 	"properties": {
@@ -18,7 +18,7 @@
 		},
 		"author": {
 			"type": "string",
-			"description": "Creator's paymail or identity"
+			"description": "Free-form creator identity; npm person-string syntax is recommended when including an email or URL"
 		},
 		"styles": {
 			"type": "object",

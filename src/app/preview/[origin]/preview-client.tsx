@@ -192,7 +192,7 @@ export function PreviewClient({
 	const [activeTab, setActiveTab] = useState<TabId>(activeTabFromUrl);
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}`;
+	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}.json`;
 
 	// Sync with URL changes
 	useEffect(() => {

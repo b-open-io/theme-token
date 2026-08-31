@@ -4,7 +4,6 @@ import {
 	type ThemeToken,
 	toCss,
 	toJson,
-	toShadcnCliCommand,
 	toTailwindConfig,
 } from "@theme-token/sdk";
 import { Check, Copy, Download, Terminal } from "lucide-react";
@@ -40,7 +39,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 				return toTailwindConfig(theme);
 			case "cli":
 				return origin
-					? toShadcnCliCommand(origin)
+					? `bunx shadcn@latest add https://themetoken.dev/r/themes/${origin}.json`
 					: "// Theme must be inscribed first to use CLI";
 			case "json":
 				return toJson(theme);
@@ -154,7 +153,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 						<p className="text-xs text-muted-foreground">
 							<span className="font-medium text-primary">Registry URL:</span>{" "}
 							<code className="rounded bg-muted px-1">
-								https://themetoken.dev/r/themes/{origin}
+								https://themetoken.dev/r/themes/{origin}.json
 							</code>
 						</p>
 					</div>

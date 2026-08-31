@@ -1,36 +1,49 @@
 # Theme Token — Technical Reference
 
-Theme Token is a BSV application and data format for publishing ShadCN-compatible
-themes as 1Sat Ordinals. The Theme Token JSON document is the durable content;
-themetoken.dev is the validation, preview, discovery, and ShadCN registry gateway.
+Theme Token publishes ShadCN-compatible themes as 1Sat Ordinals on BSV. The
+Theme Token JSON document is the durable on-chain source. themetoken.dev is the
+validation, preview, discovery, and ShadCN registry gateway.
 
 ## URLs
 
 - Specification: https://themetoken.dev/spec
-- JSON Schema: https://themetoken.dev/v1/schema.json
+- Stable v1 schema: https://themetoken.dev/v1/schema.json
+- Gateway-preview v2 schema: https://themetoken.dev/v2/schema.json
 - Theme Studio: https://themetoken.dev/studio/theme
-- Registry item: https://themetoken.dev/r/themes/[origin]
+- Registry item: https://themetoken.dev/r/themes/[origin].json
 - Raw 1Sat content: https://api.1sat.app/content/[origin]
 - SDK: https://www.npmjs.com/package/@theme-token/sdk
 
-Both suffixless registry URLs and `.json` URLs work. The suffixless form is
-canonical:
+The suffixless registry route also works. Public examples use `.json`:
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
 ```
 
-## Theme Token v1 document
+`[origin]` is a canonical 1Sat origin outpoint: 64 lowercase hexadecimal
+characters, an underscore, and a non-negative output index.
+
+## Two different JSON layers
+
+Do not confuse the durable Theme Token document with the generated registry
+response:
+
+1. `[origin]/theme.json` is the protocol document stored in an `ord-fs/json`
+   package.
+2. `/r/themes/[origin].json` validates that document and compiles a ShadCN
+   `registry-item.json` response for the CLI.
+
+## Stable Theme Token v1 document
 
 Root requirements:
 
 - `$schema`: exactly `https://themetoken.dev/v1/schema.json`
-- `name`: non-empty theme name
-- `styles.light` and `styles.dark`: style maps
+- `name`: non-empty display name
+- `styles.light` and `styles.dark`: complete style maps
 
 `author`, `css`, `bundle`, and `generation` are optional.
 
-Each style map requires these 19 semantic colors:
+Each style map requires these 19 values:
 
 - `background`, `foreground`
 - `card`, `card-foreground`
@@ -42,26 +55,20 @@ Each style map requires these 19 semantic colors:
 - `destructive`, `destructive-foreground`
 - `border`, `input`, `ring`
 
-Each style map also requires `radius`. Additional string-valued CSS variables are
-allowed. Common optional variables include `chart-1` through `chart-5`, sidebar
-colors, font families, letter spacing, spacing, shadows, and background images.
-Colors normally use direct CSS OKLCH values such as `oklch(0.55 0.22 255)`.
+Each style map also requires `radius`. Additional string-valued CSS variables
+are allowed. Common optional variables include `chart-1` through `chart-5`, the
+eight sidebar variables, font families, letter spacing, spacing, shadows, and
+legacy background-image fields.
 
-## Optional assets and provenance
+The Studio emits complete CSS color values such as `oklch(0.55 0.22 255)`,
+matching current ShadCN themes. The v1 validator accepts CSS strings and does
+not enforce OKLCH. Do not wrap complete values in another `oklch()` call.
 
-On-chain assets can be referenced with `/content/[origin]` in font or image
-properties. A theme bundle may list sibling outputs:
+Theme Token v1 requires `destructive-foreground` for compatibility with
+existing documents. Current ShadCN's core token list requires `destructive` but
+does not require that paired field.
 
-```json
-{
-  "bundle": {
-    "version": 1,
-    "assets": [{ "vout": 0, "type": "font", "slot": "sans" }]
-  }
-}
-```
-
-AI generation metadata is optional:
+AI generation provenance is optional:
 
 ```json
 {
@@ -74,10 +81,43 @@ AI generation metadata is optional:
 }
 ```
 
-## Storage and discovery
+The v1 `bundle` and background-image fields are legacy, unverified relationship
+mechanisms. New relationship-aware work belongs in v2.
 
-New themes are `ord-fs/json` directory packages containing `theme.json`. MAP
-metadata is attached to the directory manifest, not duplicated inside the theme:
+## Theme Token v2 gateway preview
+
+Version 2 keeps the v1 `name`, `author`, `styles`, `css`, and `generation`
+fields, changes `$schema` to `https://themetoken.dev/v2/schema.json`, and
+requires an `assets` array.
+
+Each relationship declares:
+
+- a semantic `role`
+- `kind`: `font`, `pattern`, `wallpaper`, or `icon`
+- a sibling output or external origin source, optionally with an ord-fs path
+- canonical `mediaType`
+- `integrity` in `sha256:<64 lowercase hex>` form
+- optional `delivery`, `required`, and background `render` settings
+
+The current gateway compiler supports:
+
+- `font.sans`, `font.serif`, `font.mono`, and `font.heading`
+- `background.page`, `background.card`, and `background.sidebar`
+- linked verified fonts, patterns, and wallpapers
+- vendored verified UTF-8 assets such as SVG patterns
+
+Binary fonts and raster images cannot be vendored. Required `icon.set` delivery
+is not implemented. Missing required indexed content produces a retryable
+gateway error; media-type and integrity mismatches are hard failures.
+
+The Theme Studio and `@theme-token/sdk` currently author, validate, and fetch v1
+documents. Use v2 only as the documented gateway relationship contract until
+those clients are upgraded.
+
+## Storage and MAP discovery
+
+New themes are `ord-fs/json` packages containing `theme.json`. MAP metadata is
+attached to the package directory manifest:
 
 ```json
 {
@@ -85,33 +125,46 @@ metadata is attached to the directory manifest, not duplicated inside the theme:
   "type": "registry:style",
   "name": "Theme Name",
   "version": "1.0.0",
-  "description": "ShadCN theme: Theme Name"
+  "description": "Theme Name"
 }
 ```
 
-Current registry mappings:
+Theme Token uses `registry:style` as the historical discovery identifier for
+existing theme inscriptions and currently emits the same type from its gateway.
+Current ShadCN distinguishes `registry:theme` (color themes) from
+`registry:style` (component styles). A migration must preserve discovery of v1
+inscriptions and therefore cannot silently rename existing on-chain metadata.
 
-| Asset | MAP `type` | Package content |
+Current MAP mappings:
+
+| Package | MAP fields | Status |
 |---|---|---|
-| Theme | `registry:style` | `theme.json` |
-| Font | `registry:font` | font file |
-| Pattern, wallpaper, icon | `registry:file` | image/SVG file |
-| Project preset | `registry:base` | `project.json` |
+| Theme | `type=registry:style` | Stable compatibility identifier |
+| Font | `type=theme-token:asset`, `kind=font`, `mediaType=...` | Published |
+| Pattern | `type=theme-token:asset`, `kind=pattern`, `mediaType=image/svg+xml` | Published |
+| Wallpaper/image | `type=theme-token:asset`, `kind=wallpaper` or `image`, `mediaType=...` | Published |
+| Project preset | `type=registry:base` | Experimental draft |
 
-All MAP records require `app`, `type`, `name`, `version`, and `description`.
-`author`, `license`, `prompt`, `provider`, and `model` are optional metadata.
+All package MAP records include `app`, `type`, `name`, `version`, and
+`description`. Asset records also include `kind` and `mediaType`. `author`,
+`license`, `prompt`, `provider`, and `model` are optional provenance fields.
 
 ## Registry response
 
-`GET /r/themes/[origin]` fetches `[origin]/theme.json`, validates it, and returns
-the current ShadCN registry item shape:
+`GET /r/themes/[origin].json` fetches `[origin]/theme.json`, validates it, and
+returns a ShadCN registry item. A v1 response currently uses `registry:style`
+for compatibility:
 
 ```json
 {
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "theme-name",
   "type": "registry:style",
-  "css": {},
+  "css": {
+    "@layer base": {
+      "body": { "letter-spacing": "var(--tracking-normal)" }
+    }
+  },
   "cssVars": {
     "theme": { "radius": "0.625rem" },
     "light": { "background": "oklch(1 0 0)" },
@@ -120,10 +173,13 @@ the current ShadCN registry item shape:
 }
 ```
 
-OKLCH values are preserved. Tailwind CSS v4 consumes the ShadCN registry item;
-consumers should not wrap these already-complete values in another `oklch()`.
+The current ShadCN CLI accepts this response. Verify a concrete origin with:
 
-## SDK
+```bash
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json --dry-run
+```
+
+## SDK (v1)
 
 ```ts
 import {
@@ -133,31 +189,38 @@ import {
   toShadcnRegistry,
   validateThemeToken,
 } from "@theme-token/sdk";
+
+const published = await fetchThemeByOrigin("<txid>_0");
+if (!published) throw new Error("Theme not found");
+applyTheme(published.theme.styles.light);
 ```
 
-- `validateThemeToken(data)` validates a Theme Token document.
-- `parseCss(css, name)` parses `:root` and `.dark` variables and validates the
-  complete result.
-- `fetchThemeByOrigin(origin)` loads packaged themes with a legacy direct-content
-  fallback.
-- `toShadcnRegistry(theme)` emits `registry:style`.
-- `applyTheme(theme)` applies variables in a browser.
+- `validateThemeToken(data)` validates v1 documents.
+- `parseCss(css, name)` parses `:root` and `.dark` variables into v1.
+- `fetchThemeByOrigin(origin)` loads packaged v1 themes with a legacy direct
+  content fallback.
+- `toShadcnRegistry(theme)` emits the current compatibility
+  `registry:style` response.
+- `applyTheme(styles)` applies one `ThemeStyleProps` map, not a whole
+  `ThemeToken` object.
 
-## Project presets
+## Experimental project presets
 
-Project packages contain `project.json` and use MAP type `registry:base`.
-They are served through:
+The project publisher and `/init?project=[origin]` route predate ShadCN's current
+top-level `registry:base` fields (`style`, `iconLibrary`, `baseColor`, and
+`theme`). They are not part of the stable protocol and should not be used as a
+production example until migrated and verified end to end with the latest CLI.
+
+The intended future command is:
 
 ```bash
-bunx shadcn@latest create --preset "https://themetoken.dev/init?project=[origin]" --template next
+bunx shadcn@latest create --template next --preset "https://themetoken.dev/init?project=[origin]"
 ```
 
 ## Scope
 
-The JSON format can be copied to other storage systems, but themetoken.dev
-publishing, discovery, ownership, marketplace, and gateway behavior currently
-target BSV 1Sat Ordinals only. Other-chain examples are not part of this spec.
-
-On-chain data is durable, but friendly registry, preview, and optimized-media URLs
-depend on gateway infrastructure. Consumers that need independent verification
-can fetch the content by origin from compatible 1Sat infrastructure.
+The JSON format is portable, but themetoken.dev publishing, discovery,
+ownership, marketplace, and gateway behavior currently target BSV 1Sat Ordinals.
+Friendly registry, preview, and optimized-media URLs depend on gateway
+infrastructure. Consumers that need independent verification can fetch durable
+content by origin from compatible 1Sat infrastructure.
