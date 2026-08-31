@@ -371,6 +371,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 			{/* Custom prompt input */}
 			<div className="mb-2 sm:mb-4">
 				<textarea
+					aria-label="Theme generation prompt"
 					value={prompt}
 					onChange={(e) => setPrompt(e.target.value)}
 					placeholder="Or describe your ideal theme..."
@@ -460,11 +461,13 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 									setRecoveryTxid("");
 								}}
 								className="text-muted-foreground/50 hover:text-muted-foreground"
+								aria-label="Dismiss payment recovery"
 							>
 								×
 							</button>
 						</div>
 						<input
+							aria-label="Payment transaction ID"
 							type="text"
 							value={recoveryTxid}
 							onChange={(e) => setRecoveryTxid(e.target.value)}

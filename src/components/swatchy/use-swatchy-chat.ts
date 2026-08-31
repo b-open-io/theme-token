@@ -265,7 +265,9 @@ export function useSwatchyChat() {
 	// context at request time so automatic tool continuations never send stale
 	// state and context changes do not replace the active transport mid-stream.
 	const contextRef = useRef(context);
-	contextRef.current = context;
+	useEffect(() => {
+		contextRef.current = context;
+	}, [context]);
 	const transport = useMemo(
 		() =>
 			new DefaultChatTransport({
@@ -371,7 +373,9 @@ export function useSwatchyChat() {
 	// Store addToolOutput in ref so we can call it after payment
 	// Using typeof to get the exact type from useChat return value
 	const addToolOutputRef = useRef<typeof addToolOutput>(addToolOutput);
-	addToolOutputRef.current = addToolOutput;
+	useEffect(() => {
+		addToolOutputRef.current = addToolOutput;
+	}, [addToolOutput]);
 	const pendingPaidToolCallRef = useRef<string | null>(null);
 
 	// For "navigate then generate" flows (e.g. blocks/components must be created in /studio/components),

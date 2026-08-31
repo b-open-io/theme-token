@@ -107,6 +107,7 @@ export function PriceInput({
 				<div className="relative inline-flex items-baseline">
 					<span className="mr-1 text-2xl text-muted-foreground/60">$</span>
 					<input
+						aria-label="Listing price in US dollars"
 						type="text"
 						inputMode="decimal"
 						value={isEditing ? manualInput : value.toFixed(2)}
@@ -117,7 +118,7 @@ export function PriceInput({
 						}}
 						onBlur={() => setIsEditing(false)}
 						className={cn(
-							"w-32 bg-transparent text-center text-5xl font-bold tracking-tight text-primary outline-none",
+							"w-32 rounded-sm bg-transparent text-center text-5xl font-bold tracking-tight text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring",
 							"placeholder:text-muted-foreground/30",
 							"transition-transform duration-100 ease-out",
 							isAnimating ? "scale-110" : "scale-100",

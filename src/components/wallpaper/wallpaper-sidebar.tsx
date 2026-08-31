@@ -120,9 +120,9 @@ export function WallpaperSidebar() {
 					<AnimatePresence mode="wait">
 						{sourceMode === "remix" && (
 							<motion.div
-								initial={{ opacity: 0, height: 0 }}
-								animate={{ opacity: 1, height: "auto" }}
-								exit={{ opacity: 0, height: 0 }}
+								initial={{ opacity: 0, y: -4 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -4 }}
 								className="space-y-3"
 							>
 								<Label className="text-xs text-muted-foreground">
@@ -171,6 +171,11 @@ export function WallpaperSidebar() {
 								: "Describe your wallpaper"}
 						</Label>
 						<textarea
+							aria-label={
+								sourceMode === "remix"
+									? "Describe the wallpaper transformation"
+									: "Describe your wallpaper"
+							}
 							value={params.prompt}
 							onChange={(e) => updateParam("prompt", e.target.value)}
 							placeholder={
@@ -269,9 +274,9 @@ export function WallpaperSidebar() {
 						<AnimatePresence mode="wait">
 							{useThemeContext && (
 								<motion.div
-									initial={{ opacity: 0, height: 0 }}
-									animate={{ opacity: 1, height: "auto" }}
-									exit={{ opacity: 0, height: 0 }}
+									initial={{ opacity: 0, y: -4 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -4 }}
 									className="space-y-2"
 								>
 									<Select

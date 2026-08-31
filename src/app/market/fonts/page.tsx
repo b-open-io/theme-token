@@ -205,7 +205,7 @@ export default function FontBrowsePage() {
 							<Sheet>
 								<SheetTrigger asChild>
 									<Button variant="outline" size="sm" className="lg:hidden">
-										<Filter className="mr-2 h-4 w-4" />
+										<Filter className="mr-2 h-4 w-4" data-icon="inline-start" />
 										Filters
 									</Button>
 								</SheetTrigger>
@@ -226,6 +226,7 @@ export default function FontBrowsePage() {
 								disabled={isLoading}
 							>
 								<RefreshCw
+									data-icon="inline-start"
 									className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
 								/>
 								Refresh
@@ -234,7 +235,10 @@ export default function FontBrowsePage() {
 					</div>
 
 					{error && (
-						<div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+						<div
+							className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive"
+							role="alert"
+						>
 							<AlertCircle className="h-5 w-5" />
 							{error}
 						</div>
@@ -297,7 +301,10 @@ export default function FontBrowsePage() {
 												Be the first to create and list an AI-generated font!
 											</p>
 											<Button onClick={handleCreateWithSwatchy}>
-												<MessageCircle className="mr-2 h-4 w-4" />
+												<MessageCircle
+													className="mr-2 h-4 w-4"
+													data-icon="inline-start"
+												/>
 												Create Font
 											</Button>
 										</div>
@@ -344,7 +351,7 @@ export default function FontBrowsePage() {
 // Card to link to font generation
 function GenerateFontCard() {
 	return (
-		<Link href="/studio/font" className="block">
+		<div className="block">
 			<div className="flex h-full min-h-[280px] flex-col rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 p-5 transition-all hover:border-primary/50 hover:shadow-lg">
 				{/* Header */}
 				<div className="mb-4 flex items-center gap-3">
@@ -370,12 +377,14 @@ function GenerateFontCard() {
 
 				{/* CTA */}
 				<div className="mt-4">
-					<Button className="w-full gap-2" size="sm">
-						<Sparkles className="h-4 w-4" />
-						Start Creating
+					<Button className="w-full gap-2" size="sm" asChild>
+						<Link href="/studio/font">
+							<Sparkles className="h-4 w-4" data-icon="inline-start" />
+							Start Creating
+						</Link>
 					</Button>
 				</div>
 			</div>
-		</Link>
+		</div>
 	);
 }

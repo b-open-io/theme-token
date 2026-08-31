@@ -248,7 +248,7 @@ export default function BrowsePage() {
 					<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
 						<div>
 							<h2 className="text-xl font-semibold">All Themes</h2>
-							<p className="text-sm text-muted-foreground">
+							<p className="text-sm text-muted-foreground" aria-live="polite">
 								{filteredListings.length} theme
 								{filteredListings.length !== 1 ? "s" : ""} available
 								{filters.primaryColor && " matching your color"}
@@ -259,7 +259,7 @@ export default function BrowsePage() {
 							<Sheet>
 								<SheetTrigger asChild>
 									<Button variant="outline" size="sm" className="lg:hidden">
-										<Filter className="mr-2 h-4 w-4" />
+										<Filter data-icon="inline-start" className="mr-2 h-4 w-4" />
 										Filters
 									</Button>
 								</SheetTrigger>
@@ -284,6 +284,7 @@ export default function BrowsePage() {
 								disabled={isLoading}
 							>
 								<RefreshCw
+									data-icon="inline-start"
 									className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
 								/>
 								Refresh

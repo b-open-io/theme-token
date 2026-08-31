@@ -434,7 +434,13 @@ export function ThemeDemo() {
 					<div className="space-y-4">
 						<div className="space-y-2">
 							<Label htmlFor="email">Email</Label>
-							<Input id="email" type="email" placeholder="name@example.com" />
+							<Input
+								autoComplete="email"
+								id="email"
+								name="email"
+								placeholder="name@example.com"
+								type="email"
+							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="message">Message</Label>

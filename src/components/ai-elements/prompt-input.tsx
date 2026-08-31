@@ -198,7 +198,9 @@ export function PromptInputProvider({
 
 	// Keep a ref to attachments for cleanup on unmount (avoids stale closure)
 	const attachmentsRef = useRef(attachmentFiles);
-	attachmentsRef.current = attachmentFiles;
+	useEffect(() => {
+		attachmentsRef.current = attachmentFiles;
+	}, [attachmentFiles]);
 
 	// Cleanup blob URLs on unmount to prevent memory leaks
 	useEffect(() => {
@@ -482,7 +484,9 @@ export const PromptInput = ({
 
 	// Keep a ref to files for cleanup on unmount (avoids stale closure)
 	const filesRef = useRef(files);
-	filesRef.current = files;
+	useEffect(() => {
+		filesRef.current = files;
+	}, [files]);
 
 	const openFileDialogLocal = useCallback(() => {
 		inputRef.current?.click();
@@ -1219,6 +1223,7 @@ export const PromptInputSelectTrigger = ({
 	...props
 }: PromptInputSelectTriggerProps) => (
 	<SelectTrigger
+		aria-label="Options"
 		className={cn(
 			"border-none bg-transparent font-medium text-muted-foreground shadow-none transition-colors",
 			"hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",

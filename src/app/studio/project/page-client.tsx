@@ -216,8 +216,11 @@ export function ProjectStudioPageClient() {
 
 							{/* Project Name */}
 							<div className="space-y-2">
-								<Label className="text-xs font-medium">Project Name</Label>
+								<Label htmlFor="project-name" className="text-xs font-medium">
+									Project Name
+								</Label>
 								<Input
+									id="project-name"
 									value={config.name}
 									onChange={(e) =>
 										setConfig({ ...config, name: e.target.value })
@@ -310,7 +313,7 @@ export function ProjectStudioPageClient() {
 											setSelectedTheme(theme ?? null);
 										}}
 									>
-										<SelectTrigger className="flex-1 h-9">
+										<SelectTrigger aria-label="Theme" className="flex-1 h-9">
 											<SelectValue
 												placeholder={
 													themesLoading ? "Loading..." : "Select theme..."
@@ -359,7 +362,7 @@ export function ProjectStudioPageClient() {
 										className="h-9 w-9 shrink-0"
 										asChild
 									>
-										<a href="/studio/theme">
+										<a href="/studio/theme" aria-label="Open Theme Studio">
 											<ExternalLink className="h-4 w-4" />
 										</a>
 									</Button>
@@ -379,7 +382,7 @@ export function ProjectStudioPageClient() {
 											setConfig({ ...config, font: v as ProjectFont })
 										}
 									>
-										<SelectTrigger className="flex-1 h-9">
+										<SelectTrigger aria-label="Font" className="flex-1 h-9">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -396,7 +399,7 @@ export function ProjectStudioPageClient() {
 										className="h-9 w-9 shrink-0"
 										asChild
 									>
-										<a href="/studio/font">
+										<a href="/studio/font" aria-label="Open Font Studio">
 											<ExternalLink className="h-4 w-4" />
 										</a>
 									</Button>
@@ -415,7 +418,7 @@ export function ProjectStudioPageClient() {
 										})
 									}
 								>
-									<SelectTrigger className="h-9">
+									<SelectTrigger aria-label="Heading font" className="h-9">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -441,7 +444,7 @@ export function ProjectStudioPageClient() {
 										setConfig({ ...config, iconLibrary: v as IconLibrary })
 									}
 								>
-									<SelectTrigger className="h-9">
+									<SelectTrigger aria-label="Icon library" className="h-9">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -471,7 +474,7 @@ export function ProjectStudioPageClient() {
 											setConfig({ ...config, baseColor: v as BaseColor })
 										}
 									>
-										<SelectTrigger className="h-9">
+										<SelectTrigger aria-label="Base color" className="h-9">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -492,7 +495,7 @@ export function ProjectStudioPageClient() {
 											setConfig({ ...config, menuColor: v as MenuColor })
 										}
 									>
-										<SelectTrigger className="h-9">
+										<SelectTrigger aria-label="Menu color" className="h-9">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -513,7 +516,7 @@ export function ProjectStudioPageClient() {
 											setConfig({ ...config, menuAccent: v as MenuAccent })
 										}
 									>
-										<SelectTrigger className="h-9">
+										<SelectTrigger aria-label="Menu accent" className="h-9">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -534,7 +537,7 @@ export function ProjectStudioPageClient() {
 											setConfig({ ...config, radius: v as ProjectRadius })
 										}
 									>
-										<SelectTrigger className="h-9">
+										<SelectTrigger aria-label="Radius" className="h-9">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>

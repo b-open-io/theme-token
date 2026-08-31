@@ -2,6 +2,7 @@
 
 import { WalletProvider as OneSatWalletProvider } from "@1sat/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "framer-motion";
 import { type ReactNode, useState } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BsvRateProvider } from "@/hooks/use-bsv-rate-context";
@@ -49,7 +50,9 @@ export function Providers({
 					]}
 				>
 					<WalletProvider>
-						<BsvRateProvider>{children}</BsvRateProvider>
+						<BsvRateProvider>
+							<MotionConfig reducedMotion="user">{children}</MotionConfig>
+						</BsvRateProvider>
 					</WalletProvider>
 				</OneSatWalletProvider>
 			</ThemeProvider>

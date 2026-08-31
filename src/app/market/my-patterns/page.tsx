@@ -162,7 +162,12 @@ export default function MyPatternsPage() {
 								Cloud Sync
 							</Badge>
 						)}
-						<Button variant="ghost" size="sm" onClick={fetchDrafts}>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={fetchDrafts}
+							aria-label="Refresh pattern drafts"
+						>
 							<RefreshCw className="h-4 w-4" />
 						</Button>
 					</div>
@@ -246,6 +251,7 @@ export default function MyPatternsPage() {
 										size="sm"
 										className="h-8 w-8 p-0 text-destructive hover:text-destructive"
 										onClick={() => handleDelete(draft.id)}
+										aria-label={`Delete ${draft.name || "pattern"}`}
 									>
 										<Trash2 className="h-3 w-3" />
 									</Button>

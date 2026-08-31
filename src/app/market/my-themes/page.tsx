@@ -51,9 +51,9 @@ export default function MyThemesPage() {
 					<p className="mb-4 text-muted-foreground">
 						You don&apos;t own any theme tokens yet
 					</p>
-					<Link href="/studio/theme">
-						<Button>Inscribe a Theme</Button>
-					</Link>
+					<Button asChild>
+						<Link href="/studio/theme">Inscribe a Theme</Link>
+					</Button>
 				</div>
 			);
 		}

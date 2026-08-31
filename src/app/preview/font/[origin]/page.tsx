@@ -298,10 +298,11 @@ export default function FontPreviewPage({
 
 								<TabsContent value="custom">
 									<textarea
+										aria-label="Custom font preview text"
 										value={customText}
 										onChange={(e) => setCustomText(e.target.value)}
 										placeholder="Type your own text..."
-										className="h-32 w-full resize-none rounded border border-border bg-transparent p-3 focus:border-primary focus:outline-none"
+										className="h-32 w-full resize-none rounded border border-border bg-transparent p-3 focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 										style={{
 											fontFamily: fontFamily || "inherit",
 											fontSize: `${selectedSize}px`,

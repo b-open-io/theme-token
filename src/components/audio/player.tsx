@@ -258,6 +258,7 @@ const AudioPlayerSeekBar = ({
 
 	return (
 		<Slider
+			aria-label="Playback position"
 			bufferValue={bufferedProgress}
 			className={cn("min-w-20 flex-1", className)}
 			disabled={isLiveStream}
@@ -337,16 +338,21 @@ const AudioPlayerVolume = ({
 					</span>
 				</div>
 				<div className="flex items-center gap-2">
-					<VolumeXIcon
-						aria-hidden="true"
-						className={cn(
-							"size-4 shrink-0 cursor-pointer",
-							isMuted ? "opacity-40" : "opacity-60",
-						)}
+					<Button
+						aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+						className="size-6 shrink-0"
 						onClick={toggleMute}
-						role="button"
-					/>
+						size="icon"
+						type="button"
+						variant="ghost"
+					>
+						<VolumeXIcon
+							aria-hidden="true"
+							className={cn("size-4", isMuted ? "opacity-40" : "opacity-60")}
+						/>
+					</Button>
 					<Slider
+						aria-label="Volume"
 						className={cn(className)}
 						max={100}
 						min={0}
@@ -388,20 +394,16 @@ const AudioPlayerPlay = React.memo(
 
 		const togglePlay = useAudioStore((state) => state.togglePlay);
 
-		const handleKeyPress = React.useCallback(
-			(event: KeyboardEvent) => {
+		React.useEffect(() => {
+			const handleKeyPress = (event: KeyboardEvent) => {
 				if (event.code === "Space" && event.target === document.body) {
 					event.preventDefault();
 					togglePlay();
 				}
-			},
-			[togglePlay],
-		);
-
-		React.useEffect(() => {
+			};
 			document.addEventListener("keydown", handleKeyPress);
 			return () => document.removeEventListener("keydown", handleKeyPress);
-		}, [handleKeyPress]);
+		}, [togglePlay]);
 
 		const showSpinner = isLoading || isBuffering;
 

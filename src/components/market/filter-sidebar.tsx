@@ -266,6 +266,7 @@ export function FilterSidebar({
 					<AccordionTrigger className="text-sm">Price Range</AccordionTrigger>
 					<AccordionContent>
 						<Slider
+							aria-label="Maximum price"
 							value={[filters.priceRange[1]]}
 							onValueChange={([v]) => updateFilter("priceRange", [0, v])}
 							max={maxPrice}

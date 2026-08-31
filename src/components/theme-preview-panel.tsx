@@ -615,16 +615,32 @@ function FormDemo() {
 				<div className="grid gap-4 md:grid-cols-2">
 					<div className="space-y-2">
 						<Label htmlFor="firstName">First Name</Label>
-						<Input id="firstName" placeholder="John" />
+						<Input
+							autoComplete="given-name"
+							id="firstName"
+							name="firstName"
+							placeholder="John"
+						/>
 					</div>
 					<div className="space-y-2">
 						<Label htmlFor="lastName">Last Name</Label>
-						<Input id="lastName" placeholder="Doe" />
+						<Input
+							autoComplete="family-name"
+							id="lastName"
+							name="lastName"
+							placeholder="Doe"
+						/>
 					</div>
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="email">Email</Label>
-					<Input id="email" type="email" placeholder="john@example.com" />
+					<Input
+						autoComplete="email"
+						id="email"
+						name="email"
+						placeholder="john@example.com"
+						type="email"
+					/>
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="bio">Bio</Label>
@@ -873,21 +889,41 @@ function TabsDemo() {
 					<TabsContent value="account" className="space-y-4 pt-4">
 						<div className="space-y-2">
 							<Label htmlFor="name">Name</Label>
-							<Input id="name" defaultValue="John Doe" />
+							<Input
+								autoComplete="name"
+								defaultValue="John Doe"
+								id="name"
+								name="name"
+							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="username">Username</Label>
-							<Input id="username" defaultValue="@johndoe" />
+							<Input
+								autoComplete="username"
+								defaultValue="@johndoe"
+								id="username"
+								name="username"
+							/>
 						</div>
 					</TabsContent>
 					<TabsContent value="password" className="space-y-4 pt-4">
 						<div className="space-y-2">
 							<Label htmlFor="current">Current Password</Label>
-							<Input id="current" type="password" />
+							<Input
+								autoComplete="current-password"
+								id="current"
+								name="currentPassword"
+								type="password"
+							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="new">New Password</Label>
-							<Input id="new" type="password" />
+							<Input
+								autoComplete="new-password"
+								id="new"
+								name="newPassword"
+								type="password"
+							/>
 						</div>
 					</TabsContent>
 					<TabsContent value="settings" className="space-y-4 pt-4">

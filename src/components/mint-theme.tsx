@@ -267,6 +267,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 						or any ShadCN theme generator. Include both :root and .dark blocks.
 					</p>
 					<textarea
+						aria-label="Theme CSS"
 						value={customCss}
 						onChange={(e) => handleCustomCssChange(e.target.value)}
 						placeholder={`:root {
@@ -303,6 +304,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			{activeTab === "json" && (
 				<div className="space-y-3">
 					<textarea
+						aria-label="Theme Token JSON"
 						value={customJson}
 						onChange={(e) => handleCustomJsonChange(e.target.value)}
 						placeholder="Paste your Theme Token JSON here..."

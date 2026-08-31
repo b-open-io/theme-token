@@ -260,6 +260,7 @@ export function FontSelector({
 
 			{/* Source Selection */}
 			<RadioGroup
+				aria-label="Font source"
 				value={source}
 				onValueChange={(v) => handleSourceChange(v as FontSource)}
 				className="flex flex-wrap gap-x-4 gap-y-2"
@@ -328,6 +329,7 @@ export function FontSelector({
 				<>
 					{/* Hidden file input */}
 					<input
+						aria-label="Upload font file"
 						ref={fileInputRef}
 						type="file"
 						accept=".woff2,.woff,.ttf,.otf"
@@ -456,6 +458,7 @@ export function FontSelector({
 			{source === "custom" && (
 				<div className="flex gap-2">
 					<Input
+						aria-label="Custom font origin"
 						placeholder="Enter font origin (txid_vout)"
 						value={customOrigin}
 						onChange={(e) => setCustomOrigin(e.target.value)}

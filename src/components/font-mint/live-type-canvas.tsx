@@ -109,6 +109,7 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 				<div className="flex items-center gap-2 font-mono text-xs">
 					<span className="text-muted-foreground">SIZE:</span>
 					<button
+						aria-label="Decrease preview font size"
 						type="button"
 						onClick={() => setFontSize((s) => Math.max(12, s - 8))}
 						className="rounded border border-border p-1 hover:bg-muted"
@@ -117,6 +118,7 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 					</button>
 					<span className="w-10 text-center tabular-nums">{fontSize}px</span>
 					<button
+						aria-label="Increase preview font size"
 						type="button"
 						onClick={() => setFontSize((s) => Math.min(120, s + 8))}
 						className="rounded border border-border p-1 hover:bg-muted"
@@ -201,10 +203,11 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 						)}
 
 						{/* Main Preview */}
-						<div
-							contentEditable
-							suppressContentEditableWarning
-							className="break-words outline-none"
+						<textarea
+							aria-label="Editable font preview text"
+							defaultValue={PANGRAM}
+							rows={3}
+							className="w-full resize-none break-words rounded-sm bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							style={{
 								fontFamily: '"PreviewFont", monospace',
 								fontSize: `${fontSize}px`,
@@ -212,9 +215,7 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 								color: fgColor,
 								lineHeight: 1.2,
 							}}
-						>
-							{PANGRAM}
-						</div>
+						/>
 
 						{/* Character Sample */}
 						<div

@@ -100,6 +100,7 @@ export function ImportModal({ onImport, trigger }: ImportModalProps) {
 
 				<div className="space-y-4">
 					<textarea
+						aria-label="Theme CSS or JSON"
 						value={input}
 						onChange={(e) => handleInputChange(e.target.value)}
 						placeholder={`:root {

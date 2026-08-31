@@ -134,6 +134,9 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 	);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [generationProgress, setGenerationProgress] = useState(0);
+	const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+		null,
+	);
 	const [ambientColors, setAmbientColors] = useState<string[]>([
 		"#1a1a1a",
 		"#333333",
@@ -145,6 +148,14 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 	const { activeTheme, availableThemes, mode } = useTheme();
 	const [useThemeContext, setUseThemeContext] = useState(false);
 	const [selectedTheme, setSelectedTheme] = useState<ThemeToken | null>(null);
+
+	useEffect(
+		() => () => {
+			if (progressIntervalRef.current)
+				clearInterval(progressIntervalRef.current);
+		},
+		[],
+	);
 
 	// Sync selectedTheme with activeTheme when enabled and no selection made
 	useEffect(() => {
@@ -432,25 +443,30 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 				}
 			}
 
-			setGeneratedWallpapers((prev) => {
-				const newWallpapers = prev.filter((w) => w.id !== id);
-				if (selectedWallpaperId === id) {
-					const removedIndex = prev.findIndex((w) => w.id === id);
-					const nextWallpaper =
-						newWallpapers[removedIndex] ||
-						newWallpapers[removedIndex - 1] ||
-						null;
-					setSelectedWallpaperId(nextWallpaper?.id || null);
-					if (nextWallpaper) {
-						updateAmbientColors(nextWallpaper);
-					} else {
-						setAmbientColors(["#1a1a1a", "#333333", "#666666"]);
-					}
+			const removedIndex = generatedWallpapers.findIndex((w) => w.id === id);
+			const nextWallpapers = generatedWallpapers.filter((w) => w.id !== id);
+			setGeneratedWallpapers(nextWallpapers);
+
+			if (selectedWallpaperId === id) {
+				const nextWallpaper =
+					nextWallpapers[removedIndex] ||
+					nextWallpapers[removedIndex - 1] ||
+					null;
+				setSelectedWallpaperId(nextWallpaper?.id || null);
+				if (nextWallpaper) {
+					updateAmbientColors(nextWallpaper);
+				} else {
+					setAmbientColors(["#1a1a1a", "#333333", "#666666"]);
 				}
-				return newWallpapers;
-			});
+			}
 		},
-		[selectedWallpaperId, updateAmbientColors, ordAddress, cloudUsage],
+		[
+			selectedWallpaperId,
+			generatedWallpapers,
+			updateAmbientColors,
+			ordAddress,
+			cloudUsage,
+		],
 	);
 
 	// Clear gallery
@@ -484,7 +500,7 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 		setGenerationProgress(0);
 
 		// Simulate progress for loading animation
-		const progressInterval = setInterval(() => {
+		progressIntervalRef.current = setInterval(() => {
 			setGenerationProgress((prev) => {
 				if (prev >= 90) return prev;
 				return prev + Math.random() * 10;
@@ -582,7 +598,10 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 			console.error("Wallpaper generation error:", error);
 			toast.error(error instanceof Error ? error.message : "Generation failed");
 		} finally {
-			clearInterval(progressInterval);
+			if (progressIntervalRef.current) {
+				clearInterval(progressIntervalRef.current);
+				progressIntervalRef.current = null;
+			}
 			setIsGenerating(false);
 			setIsPaying(false);
 			setGenerationProgress(0);

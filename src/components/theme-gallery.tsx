@@ -189,46 +189,48 @@ function ThemeCard({
 		: undefined;
 
 	return (
-		<Link
-			href={`/preview/${origin}`}
-			className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
-		>
-			<div className="relative flex h-16 w-40 overflow-hidden rounded-t-lg">
+		<div className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md">
+			<Link
+				aria-label={`Preview ${theme.name}`}
+				className="relative flex h-16 w-40 overflow-hidden rounded-t-lg"
+				href={`/preview/${origin}`}
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+			>
 				{/* Color stripes - only hovered card gets the real ViewTransition name */}
 				<ViewTransition name={viewTransitionName}>
 					{colorStripes}
 				</ViewTransition>
-				{/* For Sale Badge */}
-				{listing && (
-					<button
-						type="button"
-						className="absolute top-1.5 right-1.5 z-10"
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							onBuy?.();
-						}}
-					>
-						<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-0.5 text-[9px] px-1.5 py-0.5 hover:bg-primary/90 cursor-pointer">
-							<ShoppingCart className="h-2 w-2" fill="currentColor" />
-							{formatPrice(listing.price)}
-						</Badge>
-					</button>
-				)}
 				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
 					<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
 				</div>
-			</div>
+			</Link>
+			{listing && (
+				<button
+					aria-label={`Buy ${theme.name} for ${formatPrice(listing.price)}`}
+					className="absolute top-1.5 right-1.5 z-10"
+					onClick={onBuy}
+					type="button"
+				>
+					<Badge className="cursor-pointer gap-0.5 border-0 bg-primary px-1.5 py-0.5 text-[9px] text-primary-foreground shadow-lg hover:bg-primary/90">
+						<ShoppingCart className="h-2 w-2" fill="currentColor" />
+						{formatPrice(listing.price)}
+					</Badge>
+				</button>
+			)}
 
 			{/* Theme name */}
-			<div className="px-2 py-1.5">
+			<Link
+				className="block px-2 py-1.5"
+				href={`/preview/${origin}`}
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+			>
 				<p className="truncate text-xs font-medium" title={theme.name}>
 					{theme.name}
 				</p>
-			</div>
-		</Link>
+			</Link>
+		</div>
 	);
 }
 

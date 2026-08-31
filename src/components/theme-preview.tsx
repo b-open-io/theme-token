@@ -205,6 +205,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 							or any ShadCN theme generator.
 						</p>
 						<textarea
+							aria-label="Theme CSS"
 							value={customCss}
 							onChange={(e) => handleCustomCssChange(e.target.value)}
 							placeholder={`:root {
@@ -241,6 +242,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 				{activeTab === "json" && (
 					<div className="space-y-3">
 						<textarea
+							aria-label="Theme Token JSON"
 							value={customJson}
 							onChange={(e) => handleCustomJsonChange(e.target.value)}
 							placeholder="Paste your Theme Token JSON here..."
@@ -348,6 +350,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<input
+								aria-label="Sample input"
 								type="text"
 								placeholder="Input field example"
 								className="w-full rounded-md border px-3 py-2 text-sm"

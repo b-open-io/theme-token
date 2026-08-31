@@ -122,6 +122,7 @@ export function ImageFilterSidebar({
 					<AccordionTrigger className="text-sm">Price Range</AccordionTrigger>
 					<AccordionContent>
 						<Slider
+							aria-label="Maximum image price"
 							value={[filters.priceRange[1]]}
 							onValueChange={([v]) => updateFilter("priceRange", [0, v])}
 							max={maxPrice}

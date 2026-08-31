@@ -387,6 +387,7 @@ export function UnifiedRemixDialog({
 							Model:
 						</label>
 						<RadioGroup
+							aria-label="Remix model"
 							id="remix-model"
 							value={model}
 							onValueChange={(v) => setModel(v as ModelOption)}

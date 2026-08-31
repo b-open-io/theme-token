@@ -497,6 +497,7 @@ export function AIGenerateTab({
 						CUSTOM_PROMPT:
 					</div>
 					<textarea
+						aria-label="Custom font generation prompt"
 						value={prompt}
 						onChange={(e) => {
 							handlePromptChange(e.target.value);
@@ -504,7 +505,7 @@ export function AIGenerateTab({
 						}}
 						disabled={isProcessing}
 						placeholder="Describe your font style in detail... e.g., 'Elegant serif with tall ascenders, delicate hairlines, and subtle contrast between thick and thin strokes. Inspired by 18th century French typography.'"
-						className="h-24 w-full resize-none rounded border border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none disabled:opacity-50"
+						className="h-24 w-full resize-none rounded border border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
 					/>
 				</div>
 

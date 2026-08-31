@@ -255,9 +255,9 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 			<AnimatePresence>
 				{showPreview && (previewHtml || previewUrl) && (
 					<motion.div
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
+						initial={{ opacity: 0, y: -4 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -4 }}
 						transition={{ duration: 0.2 }}
 						className="border-b"
 					>
@@ -363,9 +363,9 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 						{/* File content */}
 						{expandedFile === index && (
 							<motion.div
-								initial={{ height: 0, opacity: 0 }}
-								animate={{ height: "auto", opacity: 1 }}
-								exit={{ height: 0, opacity: 0 }}
+								initial={{ opacity: 0, y: -4 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -4 }}
 								transition={{ duration: 0.2 }}
 							>
 								<pre className="px-3 py-2 bg-muted/30 text-[10px] leading-relaxed font-mono overflow-x-auto max-h-48 overflow-y-auto">

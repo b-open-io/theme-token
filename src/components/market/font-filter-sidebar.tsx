@@ -106,6 +106,7 @@ export function FontFilterSidebar({
 					<AccordionTrigger className="text-sm">Price Range</AccordionTrigger>
 					<AccordionContent>
 						<Slider
+							aria-label="Maximum font price"
 							value={[filters.priceRange[1]]}
 							onValueChange={([v]) => updateFilter("priceRange", [0, v])}
 							max={maxPrice}
@@ -124,6 +125,7 @@ export function FontFilterSidebar({
 					<AccordionTrigger className="text-sm">Min Glyphs</AccordionTrigger>
 					<AccordionContent>
 						<Slider
+							aria-label="Minimum glyph count"
 							value={[filters.glyphCountMin]}
 							onValueChange={([v]) => updateFilter("glyphCountMin", v)}
 							max={200}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Image, Shapes } from "lucide-react";
+import { Image as ImageIcon, Shapes } from "lucide-react";
 import { useMemo } from "react";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -92,14 +93,17 @@ export default function IconStudioPage() {
 										Icon Set
 									</TabsTrigger>
 									<TabsTrigger value="favicon" className="gap-1.5">
-										<Image className="h-4 w-4" />
+										<ImageIcon className="h-4 w-4" />
 										Favicon
 									</TabsTrigger>
 								</TabsList>
 
 								<TabsContent value="icon-set" className="m-0 pt-6 space-y-5">
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">
+										<Label
+											htmlFor="icon-set-preset"
+											className="text-xs font-medium"
+										>
 											Required Icon List
 										</Label>
 										<Select
@@ -109,16 +113,18 @@ export default function IconStudioPage() {
 												applyIconSetSlotPreset(v as "theme-token");
 											}}
 										>
-											<SelectTrigger className="h-9">
+											<SelectTrigger id="icon-set-preset" className="h-9">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="theme-token">
-													Theme Token (used in app)
-												</SelectItem>
-												<SelectItem value="custom">
-													Custom (edit list below)
-												</SelectItem>
+												<SelectGroup>
+													<SelectItem value="theme-token">
+														Theme Token (used in app)
+													</SelectItem>
+													<SelectItem value="custom">
+														Custom (edit list below)
+													</SelectItem>
+												</SelectGroup>
 											</SelectContent>
 										</Select>
 										<p className="text-[11px] text-muted-foreground">
@@ -127,8 +133,14 @@ export default function IconStudioPage() {
 									</div>
 
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">Prompt</Label>
+										<Label
+											htmlFor="icon-set-prompt"
+											className="text-xs font-medium"
+										>
+											Prompt
+										</Label>
 										<Textarea
+											id="icon-set-prompt"
 											value={iconSet.prompt}
 											onChange={(e) => setIconSetPrompt(e.target.value)}
 											placeholder="e.g. rounded, friendly outline icons for a modern dashboard"
@@ -137,14 +149,19 @@ export default function IconStudioPage() {
 									</div>
 
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">Style</Label>
+										<Label
+											htmlFor="icon-set-style"
+											className="text-xs font-medium"
+										>
+											Style
+										</Label>
 										<Select
 											value={iconSet.params.style}
 											onValueChange={(v) =>
 												setIconSetParams({ style: v as IconSetStyle })
 											}
 										>
-											<SelectTrigger className="h-9">
+											<SelectTrigger id="icon-set-style" className="h-9">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -159,6 +176,7 @@ export default function IconStudioPage() {
 											Stroke Width: {iconSet.params.strokeWidth}px
 										</Label>
 										<Slider
+											aria-label="Icon stroke width"
 											value={[iconSet.params.strokeWidth]}
 											onValueChange={([v]) =>
 												setIconSetParams({ strokeWidth: v })
@@ -174,6 +192,7 @@ export default function IconStudioPage() {
 											Padding: {iconSet.params.padding}px
 										</Label>
 										<Slider
+											aria-label="Icon padding"
 											value={[iconSet.params.padding]}
 											onValueChange={([v]) => setIconSetParams({ padding: v })}
 											min={0}
@@ -183,8 +202,14 @@ export default function IconStudioPage() {
 									</div>
 
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">Icon Names</Label>
+										<Label
+											htmlFor="icon-set-names"
+											className="text-xs font-medium"
+										>
+											Icon Names
+										</Label>
 										<Textarea
+											id="icon-set-names"
 											value={iconSet.iconNamesText}
 											onChange={(e) => setIconSetNamesText(e.target.value)}
 											className="min-h-40 font-mono text-xs"
@@ -199,8 +224,14 @@ export default function IconStudioPage() {
 
 								<TabsContent value="favicon" className="m-0 pt-6 space-y-5">
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">Prompt</Label>
+										<Label
+											htmlFor="favicon-prompt"
+											className="text-xs font-medium"
+										>
+											Prompt
+										</Label>
 										<Textarea
+											id="favicon-prompt"
 											value={favicon.prompt}
 											onChange={(e) => setFaviconPrompt(e.target.value)}
 											placeholder="e.g. a minimalist rocket icon with rounded corners"
@@ -209,14 +240,19 @@ export default function IconStudioPage() {
 									</div>
 
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">Shape</Label>
+										<Label
+											htmlFor="favicon-shape"
+											className="text-xs font-medium"
+										>
+											Shape
+										</Label>
 										<Select
 											value={favicon.params.shape}
 											onValueChange={(v) =>
 												setFaviconParams({ shape: v as FaviconShape })
 											}
 										>
-											<SelectTrigger className="h-9">
+											<SelectTrigger id="favicon-shape" className="h-9">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -227,14 +263,19 @@ export default function IconStudioPage() {
 									</div>
 
 									<div className="space-y-2">
-										<Label className="text-xs font-medium">Background</Label>
+										<Label
+											htmlFor="favicon-background"
+											className="text-xs font-medium"
+										>
+											Background
+										</Label>
 										<Select
 											value={favicon.params.background}
 											onValueChange={(v) =>
 												setFaviconParams({ background: v as FaviconBackground })
 											}
 										>
-											<SelectTrigger className="h-9">
+											<SelectTrigger id="favicon-background" className="h-9">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -247,8 +288,14 @@ export default function IconStudioPage() {
 
 									<div className="grid grid-cols-2 gap-3">
 										<div className="space-y-2">
-											<Label className="text-xs font-medium">Foreground</Label>
+											<Label
+												htmlFor="favicon-foreground"
+												className="text-xs font-medium"
+											>
+												Foreground
+											</Label>
 											<Input
+												id="favicon-foreground"
 												value={favicon.params.foreground}
 												onChange={(e) =>
 													setFaviconParams({ foreground: e.target.value })
@@ -258,10 +305,14 @@ export default function IconStudioPage() {
 											/>
 										</div>
 										<div className="space-y-2">
-											<Label className="text-xs font-medium">
+											<Label
+												htmlFor="favicon-background-color"
+												className="text-xs font-medium"
+											>
 												Background Color
 											</Label>
 											<Input
+												id="favicon-background-color"
 												value={favicon.params.backgroundColor}
 												onChange={(e) =>
 													setFaviconParams({ backgroundColor: e.target.value })
@@ -365,7 +416,7 @@ export default function IconStudioPage() {
 								<Empty>
 									<EmptyHeader>
 										<EmptyMedia variant="icon">
-											<Image />
+											<ImageIcon />
 										</EmptyMedia>
 										<EmptyTitle>Favicon Studio</EmptyTitle>
 										<EmptyDescription>

@@ -7,7 +7,7 @@ import {
 	Copy,
 	ExternalLink,
 	Filter,
-	Image,
+	Image as ImageIcon,
 	Loader2,
 	RefreshCw,
 	ShoppingCart,
@@ -216,7 +216,10 @@ export default function ImageBrowsePage() {
 					</div>
 
 					{error && (
-						<div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+						<div
+							className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive"
+							role="alert"
+						>
 							<AlertCircle className="h-5 w-5" />
 							{error}
 						</div>
@@ -279,7 +282,7 @@ export default function ImageBrowsePage() {
 							{/* Empty state */}
 							{listings.length === 0 && (
 								<div className="mt-8 rounded-xl border border-dashed border-border py-12 text-center">
-									<Image className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+									<ImageIcon className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
 									<h3 className="mb-2 text-lg font-semibold">
 										No assets available yet
 									</h3>
@@ -339,7 +342,7 @@ function ImageCard({
 			<div className="relative aspect-square bg-muted/30">
 				{imageError ? (
 					<div className="flex h-full items-center justify-center">
-						<Image className="h-8 w-8 text-muted-foreground/50" />
+						<ImageIcon className="h-8 w-8 text-muted-foreground/50" />
 					</div>
 				) : listing.metadata.assetType === "tile" ? (
 					<div
@@ -354,7 +357,7 @@ function ImageCard({
 					// biome-ignore lint/performance/noImgElement: dynamic/generated image (data URL or runtime dimensions); next/image not suitable
 					<img
 						src={listing.previewUrl}
-						alt={listing.metadata.name}
+						alt="On-chain asset preview"
 						className={`h-full w-full ${getPreviewClass()}`}
 						onError={() => setImageError(true)}
 					/>
@@ -366,6 +369,7 @@ function ImageCard({
 					onClick={onCopyOrigin}
 					className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-md bg-background/80 backdrop-blur transition-colors hover:bg-background"
 					title="Copy origin path for theme"
+					aria-label="Copy origin path"
 				>
 					{isCopied ? (
 						<Check className="h-4 w-4 text-green-500" />
@@ -381,6 +385,7 @@ function ImageCard({
 					rel="noopener noreferrer"
 					className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-md bg-background/80 backdrop-blur transition-colors hover:bg-background"
 					title="View full image"
+					aria-label="View full image"
 				>
 					<ExternalLink className="h-4 w-4" />
 				</a>

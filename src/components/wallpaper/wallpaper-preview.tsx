@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Image, Loader2 } from "lucide-react";
+import { Download, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -223,7 +223,7 @@ export function WallpaperPreview() {
 								maxHeight: "60vh",
 							}}
 						>
-							<Image className="h-16 w-16 text-muted-foreground/30" />
+							<ImageIcon className="h-16 w-16 text-muted-foreground/30" />
 							<div className="text-center">
 								<h3 className="text-lg font-medium text-muted-foreground/60">
 									No wallpaper yet

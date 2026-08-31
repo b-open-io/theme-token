@@ -229,6 +229,7 @@ const SortableDragHandle = () => {
 
 	return (
 		<Button
+			aria-label="Reorder track"
 			size="icon-sm"
 			variant="ghost"
 			{...attributes}

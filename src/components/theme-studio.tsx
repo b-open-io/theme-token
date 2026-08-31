@@ -148,6 +148,7 @@ function ColorControl({ label, value, onChange }: ColorControlProps) {
 		<div className="flex items-center gap-2">
 			<ColorPicker value={value} onChange={onChange} />
 			<input
+				aria-label={`${label} color value`}
 				type="text"
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
@@ -414,6 +415,13 @@ export function ThemeStudio() {
 	useEffect(() => {
 		syncToUrl();
 	}, [syncToUrl]);
+
+	useEffect(
+		() => () => {
+			if (urlSyncTimeout.current) clearTimeout(urlSyncTimeout.current);
+		},
+		[],
+	);
 
 	// Sync with wallet's active theme when it changes externally.
 	// Skip if an explicit theme was loaded (shared URL, AI generation, or remix)
@@ -1765,6 +1773,7 @@ export function ThemeStudio() {
 						)}
 						{/* Theme Name Input */}
 						<input
+							aria-label="Theme name"
 							type="text"
 							value={customName}
 							onChange={(e) => setCustomName(e.target.value)}

@@ -138,6 +138,7 @@ export function PatternSidebar() {
 								Seed
 							</Label>
 							<Input
+								aria-label="Pattern seed"
 								value={params.geoSeed}
 								onChange={(e) => updateParam("geoSeed", e.target.value)}
 								placeholder="Enter seed text..."
@@ -154,6 +155,7 @@ export function PatternSidebar() {
 						<div className="relative">
 							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 							<Input
+								aria-label="Search patterns"
 								value={heroSearch}
 								onChange={(e) => setHeroSearch(e.target.value)}
 								placeholder="Search 87 patterns..."
@@ -209,6 +211,7 @@ export function PatternSidebar() {
 								Describe your pattern
 							</Label>
 							<textarea
+								aria-label="Pattern generation prompt"
 								value={aiPrompt}
 								onChange={(e) => setAiPrompt(e.target.value)}
 								placeholder="A geometric pattern with interlocking hexagons..."
@@ -260,6 +263,7 @@ export function PatternSidebar() {
 										Foreground
 									</Label>
 									<Input
+										aria-label="Pattern foreground color"
 										type="color"
 										value={params.foregroundColor}
 										onChange={(e) =>
@@ -276,6 +280,7 @@ export function PatternSidebar() {
 										Background
 									</Label>
 									<Input
+										aria-label="Pattern background color"
 										type="color"
 										value={params.backgroundColor}
 										onChange={(e) =>
@@ -296,6 +301,7 @@ export function PatternSidebar() {
 									</span>
 								</div>
 								<Slider
+									aria-label="Pattern opacity"
 									value={[params.opacity]}
 									onValueChange={([v]) => updateParam("opacity", v)}
 									min={10}

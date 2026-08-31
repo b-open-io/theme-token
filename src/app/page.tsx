@@ -292,7 +292,7 @@ export default function Home() {
 							<div className="mb-4 inline-flex rounded-lg bg-primary/20 p-3 shadow-lg shadow-primary/20">
 								<Palette className="h-6 w-6 text-primary" />
 							</div>
-							<h3 className="mb-2 text-xl font-semibold">For Designers</h3>
+							<h2 className="mb-2 text-xl font-semibold">For Designers</h2>
 							<p className="mb-4 text-sm text-muted-foreground">
 								Immutable attribution & royalties
 							</p>
@@ -326,7 +326,7 @@ export default function Home() {
 							<div className="mb-4 inline-flex rounded-lg bg-chart-2/20 p-3 shadow-lg shadow-chart-2/20">
 								<Code2 className="h-6 w-6 text-chart-2" />
 							</div>
-							<h3 className="mb-2 text-xl font-semibold">For Developers</h3>
+							<h2 className="mb-2 text-xl font-semibold">For Developers</h2>
 							<p className="mb-4 text-sm text-muted-foreground">
 								Native CLI integration
 							</p>
@@ -360,7 +360,7 @@ export default function Home() {
 							<div className="mb-4 inline-flex rounded-lg bg-chart-5/20 p-3 shadow-lg shadow-chart-5/20">
 								<Wallet className="h-6 w-6 text-chart-5" />
 							</div>
-							<h3 className="mb-2 text-xl font-semibold">For Users</h3>
+							<h2 className="mb-2 text-xl font-semibold">For Users</h2>
 							<p className="mb-4 text-sm text-muted-foreground">
 								Cross-app theme persistence
 							</p>

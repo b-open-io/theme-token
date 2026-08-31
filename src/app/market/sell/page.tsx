@@ -130,9 +130,9 @@ export default function SellPage() {
 							? "All your themes are already listed on the marketplace"
 							: "You need to own a theme token to list it for sale"}
 					</p>
-					<Link href="/studio/theme">
-						<Button>Create a Theme</Button>
-					</Link>
+					<Button asChild>
+						<Link href="/studio/theme">Create a Theme</Link>
+					</Button>
 				</div>
 			);
 		}

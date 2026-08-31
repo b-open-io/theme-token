@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import useSound from "use-sound";
 import { ConfettiExplosion } from "@/components/confetti";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface PurchaseSuccessModalProps {
 	isOpen: boolean;
@@ -134,6 +134,7 @@ export function PurchaseSuccessModal({
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent className="max-w-md overflow-hidden border-0 p-0 shadow-2xl sm:rounded-2xl">
+				<DialogTitle className="sr-only">Theme purchase complete</DialogTitle>
 				{/* Magical glow background using theme's primary color */}
 				<div
 					className="absolute inset-0 opacity-20 blur-3xl"

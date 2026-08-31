@@ -133,6 +133,7 @@ export function GeneratedFontPreview({
 					// AI_GENERATED: {font.name}
 				</span>
 				<button
+					aria-label="Clear generated font"
 					type="button"
 					onClick={onClear}
 					className="text-muted-foreground hover:text-foreground"
@@ -148,6 +149,7 @@ export function GeneratedFontPreview({
 				<div className="flex items-center gap-2 font-mono text-xs">
 					<span className="text-muted-foreground">SIZE:</span>
 					<button
+						aria-label="Decrease preview font size"
 						type="button"
 						onClick={() => setFontSize((s) => Math.max(12, s - 8))}
 						className="rounded border border-border p-1 hover:bg-muted"
@@ -156,6 +158,7 @@ export function GeneratedFontPreview({
 					</button>
 					<span className="w-10 text-center tabular-nums">{fontSize}px</span>
 					<button
+						aria-label="Increase preview font size"
 						type="button"
 						onClick={() => setFontSize((s) => Math.min(120, s + 8))}
 						className="rounded border border-border p-1 hover:bg-muted"
@@ -220,10 +223,11 @@ export function GeneratedFontPreview({
 					{/* Editable Sample Text */}
 					<div>
 						<input
+							aria-label="Font preview text"
 							type="text"
 							value={sampleText}
 							onChange={(e) => setSampleText(e.target.value)}
-							className="mb-2 w-full bg-transparent font-mono text-xs text-muted-foreground outline-none placeholder:text-muted-foreground/30"
+							className="mb-2 w-full rounded-sm bg-transparent font-mono text-xs text-muted-foreground outline-none placeholder:text-muted-foreground/30 focus-visible:ring-2 focus-visible:ring-ring"
 							placeholder="Type to preview..."
 						/>
 						{fontLoaded ? (

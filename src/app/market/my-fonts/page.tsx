@@ -40,9 +40,9 @@ export default function MyFontsPage() {
 					<p className="mb-4 text-muted-foreground">
 						You don&apos;t own any font tokens yet
 					</p>
-					<Link href="/studio/font">
-						<Button>Create a Font</Button>
-					</Link>
+					<Button asChild>
+						<Link href="/studio/font">Create a Font</Link>
+					</Button>
 				</div>
 			);
 		}
@@ -148,7 +148,9 @@ function OwnedFontCard({
 					}}
 				>
 					{isLoading ? (
-						<span className="text-muted-foreground text-sm">Loading...</span>
+						<span className="text-muted-foreground text-sm" role="status">
+							Loading...
+						</span>
 					) : (
 						"Aa"
 					)}

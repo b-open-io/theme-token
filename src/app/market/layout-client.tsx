@@ -182,6 +182,7 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 											/>
 										)}
 										<Icon className="relative z-10 h-3.5 w-3.5" />
+										<span className="sr-only">Open market section: </span>
 										<span className="relative z-10 hidden sm:inline">
 											{tab.label}
 										</span>

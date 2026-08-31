@@ -55,12 +55,19 @@ export function FormsDemo() {
 					<div className="grid gap-4">
 						<div className="space-y-2">
 							<Label htmlFor="contact-name">Full Name</Label>
-							<Input id="contact-name" placeholder="Alex Johnson" />
+							<Input
+								id="contact-name"
+								name="name"
+								autoComplete="name"
+								placeholder="Alex Johnson"
+							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="contact-email">Email</Label>
 							<Input
 								id="contact-email"
+								name="email"
+								autoComplete="email"
 								type="email"
 								placeholder="alex@email.com"
 							/>

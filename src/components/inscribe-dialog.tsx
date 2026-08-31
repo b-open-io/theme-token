@@ -42,19 +42,20 @@ export function InscribeDialog({
 
 	// Reset state when dialog opens
 	useEffect(() => {
-		if (isOpen) {
-			setName(themeName || theme.name);
-			setAuthor(profileDisplayName || "Anonymous");
+		if (!isOpen) return;
+		setName(themeName || theme.name);
+		setAuthor(profileDisplayName || "Anonymous");
 
-			// Auto-focus: If profile exists, focus confirm button; otherwise focus author input
-			setTimeout(() => {
-				if (profileDisplayName) {
-					confirmButtonRef.current?.focus();
-				} else {
-					authorInputRef.current?.focus();
-				}
-			}, 100);
-		}
+		// Auto-focus: If profile exists, focus confirm button; otherwise focus author input
+		const timeout = setTimeout(() => {
+			if (profileDisplayName) {
+				confirmButtonRef.current?.focus();
+			} else {
+				authorInputRef.current?.focus();
+			}
+		}, 100);
+
+		return () => clearTimeout(timeout);
 	}, [isOpen, theme.name, themeName, profileDisplayName]);
 
 	const handleConfirm = async () => {

@@ -321,6 +321,7 @@ export function DropZoneCLI({
 						SELECT_FONT_FROM_ZIP
 					</span>
 					<button
+						aria-label="Clear selected font package"
 						type="button"
 						onClick={() => setZipPackage(null)}
 						className="text-muted-foreground hover:text-foreground"
@@ -514,6 +515,7 @@ export function DropZoneCLI({
 											{f.style}
 										</span>
 										<button
+											aria-label={`Remove ${f.name}`}
 											type="button"
 											onClick={() => removeFile(i)}
 											className="flex items-center justify-center text-muted-foreground hover:text-destructive"

@@ -169,6 +169,13 @@ function FontMintPageContent() {
 		syncToUrl();
 	}, [syncToUrl]);
 
+	useEffect(
+		() => () => {
+			if (urlSyncTimeout.current) clearTimeout(urlSyncTimeout.current);
+		},
+		[],
+	);
+
 	// Calculate bytes - for uploaded files or compiled WOFF2
 	const totalBytes = compiledFont
 		? compiledFont.woff2Size
@@ -337,6 +344,7 @@ function FontMintPageContent() {
 							<span className="text-muted-foreground">ORDFS: </span>
 							<a
 								href={mintResult.ordfsUrl}
+								aria-label="View inscription on ORDFS"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="break-all text-primary hover:underline"

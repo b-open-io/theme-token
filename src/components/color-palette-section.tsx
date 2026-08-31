@@ -450,10 +450,11 @@ export function ColorPaletteSection({
 							className="h-6 w-6 rounded"
 						/>
 						<input
+							aria-label="Palette seed color"
 							type="text"
 							value={color}
 							onChange={(e) => setColor(e.target.value)}
-							className="h-6 w-20 rounded border border-border bg-background px-1.5 font-mono text-[10px] uppercase focus:border-primary focus:outline-none"
+							className="h-6 w-20 rounded border border-border bg-background px-1.5 font-mono text-[10px] uppercase focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						/>
 						<button
 							type="button"

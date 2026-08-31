@@ -155,6 +155,7 @@ export const WebPreviewUrl = ({
 
 	return (
 		<Input
+			aria-label="Preview URL"
 			className="h-8 flex-1 text-sm"
 			onChange={onChange ?? handleChange}
 			onKeyDown={handleKeyDown}

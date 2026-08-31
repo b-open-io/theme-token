@@ -100,8 +100,11 @@ function ThemeCard({
 			onMouseLeave={() => setIsHovered(false)}
 		>
 			{/* Color Preview */}
-			<Link href={`/preview/${origin}`}>
-				<div className="relative h-32 cursor-pointer overflow-hidden">
+			<div className="relative h-32 overflow-hidden">
+				<Link
+					className="block h-full cursor-pointer"
+					href={`/preview/${origin}`}
+				>
 					{/* Color stripes - only hovered card gets the real ViewTransition name */}
 					<ViewTransition name={viewTransitionName}>
 						<div className="absolute inset-0 flex">
@@ -115,28 +118,24 @@ function ThemeCard({
 							))}
 						</div>
 					</ViewTransition>
-					{/* For Sale Badge - clickable */}
-					{listing && (
-						<button
-							type="button"
-							className="absolute top-2 right-2 z-10"
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								onBuy?.();
-							}}
-						>
-							<Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1 hover:bg-primary/90 cursor-pointer">
-								<ShoppingCart className="h-3 w-3" fill="currentColor" />
-								{formatPrice(listing.price)}
-							</Badge>
-						</button>
-					)}
 					<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/40">
 						<Eye className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
 					</div>
-				</div>
-			</Link>
+				</Link>
+				{listing && (
+					<button
+						aria-label={`Buy ${theme.name} for ${formatPrice(listing.price)}`}
+						className="absolute top-2 right-2 z-10"
+						onClick={onBuy}
+						type="button"
+					>
+						<Badge className="cursor-pointer gap-1 border-0 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90">
+							<ShoppingCart className="h-3 w-3" fill="currentColor" />
+							{formatPrice(listing.price)}
+						</Badge>
+					</button>
+				)}
+			</div>
 
 			{/* Info */}
 			<div className="p-4">

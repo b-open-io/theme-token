@@ -74,6 +74,7 @@ export function PaletteExplorer({
 					className="h-10 w-10 rounded-lg border-2"
 				/>
 				<input
+					aria-label="Palette color"
 					type="text"
 					value={color}
 					onChange={(e) => setColor(e.target.value)}
@@ -83,6 +84,7 @@ export function PaletteExplorer({
 				<button
 					type="button"
 					onClick={handleColorPick}
+					aria-label="Pick color from screen"
 					disabled={isLoading}
 					className="flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
 				>

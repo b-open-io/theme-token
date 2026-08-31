@@ -49,42 +49,27 @@ export function SwatchyAssistant() {
 		setActiveScriptEvent(null);
 
 		// 20% chance to start a script (10% think + 10% say approx)
+		const scripts = Math.random() <= 0.2 ? getScriptsForPath(pathname) : [];
 
-		if (Math.random() > 0.2) return;
+		if (scripts.length > 0) {
+			const script = scripts[Math.floor(Math.random() * scripts.length)];
+			let stepIndex = 0;
 
-		const scripts = getScriptsForPath(pathname);
+			const playStep = () => {
+				if (stepIndex >= script.length) {
+					setActiveScriptEvent(null);
+					return;
+				}
 
-		if (scripts.length === 0) return;
+				const event = script[stepIndex];
+				setActiveScriptEvent(event.type === "wait" ? null : event);
+				stepIndex++;
+				scriptTimeoutRef.current = setTimeout(playStep, event.duration || 3000);
+			};
 
-		const script = scripts[Math.floor(Math.random() * scripts.length)];
-
-		let stepIndex = 0;
-
-		const playStep = () => {
-			if (stepIndex >= script.length) {
-				setActiveScriptEvent(null);
-
-				return;
-			}
-
-			const event = script[stepIndex];
-
-			if (event.type === "wait") {
-				setActiveScriptEvent(null);
-			} else {
-				setActiveScriptEvent(event);
-			}
-
-			const duration = event.duration || 3000;
-
-			stepIndex++;
-
-			scriptTimeoutRef.current = setTimeout(playStep, duration);
-		};
-
-		// Start with a small delay after navigation (1s) to let page load
-
-		scriptTimeoutRef.current = setTimeout(playStep, 1000);
+			// Start after navigation so the page can settle first.
+			scriptTimeoutRef.current = setTimeout(playStep, 1000);
+		}
 
 		return () => {
 			if (scriptTimeoutRef.current) clearTimeout(scriptTimeoutRef.current);

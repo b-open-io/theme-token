@@ -57,9 +57,9 @@ export function WallpaperGallery() {
 						// Collapsed: Just show count
 						<motion.div
 							key="collapsed"
-							initial={{ opacity: 0, height: 0 }}
-							animate={{ opacity: 1, height: "auto" }}
-							exit={{ opacity: 0, height: 0 }}
+							initial={{ opacity: 0, y: -4 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -4 }}
 							className="px-4 py-2 flex items-center gap-2"
 						>
 							<span className="text-xs text-muted-foreground">
@@ -71,9 +71,9 @@ export function WallpaperGallery() {
 						// Expanded: Show thumbnails
 						<motion.div
 							key="expanded"
-							initial={{ opacity: 0, height: 0 }}
-							animate={{ opacity: 1, height: "auto" }}
-							exit={{ opacity: 0, height: 0 }}
+							initial={{ opacity: 0, y: -4 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -4 }}
 							className="p-2"
 						>
 							<ScrollArea className="w-[min(80vw,600px)]">

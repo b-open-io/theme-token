@@ -105,6 +105,7 @@ export default function StudioLayout({
 											/>
 										)}
 										{Icon && <Icon className="relative z-10 h-3.5 w-3.5" />}
+										<span className="sr-only">Open Studio section: </span>
 										<span className="relative z-10 hidden sm:inline">
 											{tab.label}
 										</span>
