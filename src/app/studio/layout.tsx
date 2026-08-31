@@ -2,10 +2,10 @@
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { useFeatureFlags } from "@/lib/feature-flags";
-import { getStudioTabs } from "@/lib/routes";
+import { getStudioTabs, isRouteEnabled } from "@/lib/routes";
 
 export default function StudioLayout({
 	children,
@@ -13,8 +13,10 @@ export default function StudioLayout({
 	children: React.ReactNode;
 }) {
 	const pathname = usePathname();
+	const router = useRouter();
 	const barRef = useRef<HTMLDivElement>(null);
 	const flags = useFeatureFlags();
+	const routeEnabled = isRouteEnabled(pathname, flags);
 
 	// Get studio tabs from route registry (filtered by Vercel feature flags)
 	const tabs = useMemo(() => getStudioTabs(flags), [flags]);
@@ -26,12 +28,16 @@ export default function StudioLayout({
 	// Lock the document so rounding at the viewport boundary cannot add a second,
 	// browser-native scrollbar beside the themed pane scrollbar.
 	useEffect(() => {
-		if (!isSubroute) return;
+		if (!isSubroute || !routeEnabled) return;
 		document.documentElement.classList.add("studio-viewport");
 		return () => {
 			document.documentElement.classList.remove("studio-viewport");
 		};
-	}, [isSubroute]);
+	}, [isSubroute, routeEnabled]);
+
+	useEffect(() => {
+		if (!routeEnabled) router.replace("/studio");
+	}, [routeEnabled, router]);
 
 	// Mouse tracking for spotlight effect
 	const mouseX = useMotionValue(0);
@@ -50,6 +56,8 @@ export default function StudioLayout({
 		window.addEventListener("mousemove", handleMouseMove);
 		return () => window.removeEventListener("mousemove", handleMouseMove);
 	}, [mouseX]);
+
+	if (!routeEnabled) return null;
 
 	if (!isSubroute) {
 		return <>{children}</>;

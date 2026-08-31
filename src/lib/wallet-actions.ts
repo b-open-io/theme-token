@@ -9,9 +9,9 @@ import {
 import type { WalletInterface, WalletOutput } from "@bsv/sdk";
 import { Utils } from "@bsv/sdk";
 import {
+	buildImageMetadata,
 	buildThemeMetadata,
 	buildTileMetadata,
-	type PackageMapMetadata,
 } from "@/lib/asset-metadata";
 import {
 	type PackageFile,
@@ -128,7 +128,7 @@ export async function inscribeTheme(
 }
 
 /**
- * Inscribe an SVG pattern on-chain as a registry:file package.
+ * Inscribe an SVG pattern on-chain as a Theme Token asset package.
  * Produces 2 outputs: the SVG file + ord-fs/json manifest with MAP metadata.
  */
 export async function inscribePattern(
@@ -165,7 +165,7 @@ export async function inscribePattern(
 }
 
 /**
- * Inscribe an image on-chain as a registry:file package.
+ * Inscribe an image on-chain as a Theme Token asset package.
  * Produces 2 outputs: the image file + ord-fs/json manifest with MAP metadata.
  */
 export async function inscribeImage(
@@ -194,26 +194,12 @@ export async function inscribeImage(
 	];
 
 	const isWallpaper = !!(imageMetadata?.aspectRatio || imageMetadata?.style);
-	const metadata: PackageMapMetadata = {
-		app: "theme-token",
-		type: "registry:file",
+	const metadata = buildImageMetadata({
+		...imageMetadata,
 		name,
-		version: "1.0.0",
-		description: name,
-		categories: isWallpaper
-			? JSON.stringify(["wallpaper", "image"])
-			: JSON.stringify(["image"]),
-		license: "CC0",
-		...(imageMetadata?.prompt && { prompt: imageMetadata.prompt }),
-		...(imageMetadata?.provider && { provider: imageMetadata.provider }),
-		...(imageMetadata?.model && { model: imageMetadata.model }),
-		...(imageMetadata?.aspectRatio && {
-			aspectRatio: imageMetadata.aspectRatio,
-		}),
-		...(imageMetadata?.style && { style: imageMetadata.style }),
-		...(imageMetadata?.width && { width: imageMetadata.width.toString() }),
-		...(imageMetadata?.height && { height: imageMetadata.height.toString() }),
-	};
+		mediaType: mimeType,
+		kind: isWallpaper ? "wallpaper" : "image",
+	});
 
 	return publishPackage(wallet, files, metadata);
 }

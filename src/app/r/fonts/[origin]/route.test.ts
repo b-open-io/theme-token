@@ -15,6 +15,7 @@ describe("on-chain font stylesheet", () => {
 			"text/css; charset=utf-8",
 		);
 		expect(css).toContain('font-family: "tt-aaaaaaaa"');
+		expect(css).toContain('format("woff2")');
 		expect(css).toContain(`api.1sat.app/content/${TXID}_2`);
 	});
 
@@ -24,5 +25,27 @@ describe("on-chain font stylesheet", () => {
 		});
 
 		expect(response.status).toBe(400);
+	});
+
+	test("supports a verified compiler's path and family without allowing traversal", async () => {
+		const response = await GET(
+			new Request(
+				`https://themetoken.dev/r/fonts/${TXID}_2.css?family=tt-aaaaaaaa-2&path=fonts%2Fbrand.woff2`,
+			),
+			{ params: Promise.resolve({ origin: `${TXID}_2.css` }) },
+		);
+		const css = await response.text();
+
+		expect(response.status).toBe(200);
+		expect(css).toContain('font-family: "tt-aaaaaaaa-2"');
+		expect(css).toContain(`${TXID}_2/fonts/brand.woff2`);
+
+		const invalid = await GET(
+			new Request(
+				`https://themetoken.dev/r/fonts/${TXID}_2.css?path=..%2Fsecret`,
+			),
+			{ params: Promise.resolve({ origin: `${TXID}_2.css` }) },
+		);
+		expect(invalid.status).toBe(400);
 	});
 });

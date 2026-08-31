@@ -7,7 +7,11 @@ import {
 	Utils,
 	type WalletInterface,
 } from "@bsv/sdk";
-import type { PackageMapMetadata } from "@/lib/asset-metadata";
+import {
+	type PackageMapMetadata,
+	THEME_TOKEN_ASSET_TYPE,
+	type ThemeTokenAssetKind,
+} from "@/lib/asset-metadata";
 import { type OneSatRelayResult, relayAtomicBeef } from "@/lib/onesat-relay";
 import { submitToIndexer } from "@/lib/yours-wallet";
 
@@ -136,6 +140,9 @@ export async function publishPackage(
 	}
 	for (const [dirName, vout] of subdirVouts) {
 		manifest[dirName] = `_${vout}`;
+	}
+	if (metadata.type === THEME_TOKEN_ASSET_TYPE && files.length > 0) {
+		manifest["."] = "_0";
 	}
 	const manifestBytes = new Uint8Array(
 		Utils.toArray(JSON.stringify(manifest), "utf8"),
@@ -270,9 +277,6 @@ export function bundleItemsToPackage(
 	const primaryItem = items[items.length - 1];
 	const typeMap: Record<string, string> = {
 		theme: "registry:style",
-		font: "registry:font",
-		pattern: "registry:file",
-		wallpaper: "registry:file",
 		block: "registry:block",
 		component: "registry:component",
 		hook: "registry:hook",
@@ -280,11 +284,20 @@ export function bundleItemsToPackage(
 		project: "registry:base",
 		file: "registry:file",
 	};
+	const assetKind: ThemeTokenAssetKind | undefined =
+		primaryItem.type === "font" ||
+		primaryItem.type === "pattern" ||
+		primaryItem.type === "wallpaper"
+			? primaryItem.type
+			: undefined;
 
 	const registryType =
-		items.find((item) => item.metadata?.registryType)?.metadata?.registryType ||
-		typeMap[primaryItem.type] ||
-		"registry:file";
+		assetKind != null
+			? THEME_TOKEN_ASSET_TYPE
+			: items.find((item) => item.metadata?.registryType)?.metadata
+					?.registryType ||
+				typeMap[primaryItem.type] ||
+				"registry:file";
 
 	const files: PackageFile[] = items.map((item, i) => {
 		const ext = mimeToExt(item.mimeType);
@@ -321,6 +334,10 @@ export function bundleItemsToPackage(
 				}
 			}
 		}
+	}
+	if (assetKind) {
+		metadata.kind = assetKind;
+		metadata.mediaType = primaryItem.mimeType;
 	}
 
 	return { files, metadata };

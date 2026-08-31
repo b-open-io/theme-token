@@ -17,6 +17,7 @@ import {
 	useState,
 } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { getPublishedAssetKind } from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import { bundleItemsToPackage, publishPackage } from "@/lib/package-builder";
@@ -255,6 +256,7 @@ async function categorizeOrdinals(outputs: WalletOutput[]): Promise<{
 	await Promise.allSettled(
 		metas.map(async (meta) => {
 			const type = meta.map?.type;
+			const assetKind = getPublishedAssetKind(meta.map);
 			const { origin, outpoint } = meta;
 			const name =
 				typeof meta.map?.name === "string" ? meta.map.name : undefined;
@@ -268,13 +270,13 @@ async function categorizeOrdinals(outputs: WalletOutput[]): Promise<{
 				if (!validation.valid) return;
 				tokens.push(validation.theme);
 				owned.push({ theme: validation.theme, outpoint, origin });
-			} else if (type === "registry:font") {
+			} else if (assetKind === "font") {
 				fonts.push({
 					outpoint,
 					origin,
 					metadata: { name: name ?? "Font", weight: "400", style: "normal" },
 				});
-			} else if (type === "registry:file") {
+			} else if (assetKind === "pattern") {
 				patterns.push({ outpoint, origin, metadata: { name } });
 			}
 		}),

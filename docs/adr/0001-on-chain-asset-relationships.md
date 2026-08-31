@@ -1,6 +1,6 @@
 # ADR 0001: On-chain asset relationships
 
-- Status: Accepted; resolver core implemented behind disabled features (OPL-3941)
+- Status: Accepted; resolver and ShadCN compiler implemented behind disabled features (OPL-3941, OPL-3946)
 - Date: 2026-08-30
 
 ## Context
@@ -234,6 +234,9 @@ immutable Theme Token source documents.
 ## Implementation status
 
 The deterministic resolver and integrity boundary lives in
-`src/lib/theme-assets-v2.ts`, with non-network conformance tests alongside it.
-Pattern, wallpaper, and local-font publishing remain disabled until their
-publishers and ShadCN compiler paths consume that boundary end to end.
+`src/lib/theme-assets-v2.ts`. The registry gateway compiles verified v2 assets
+into current ShadCN CSS, font imports, and targeted vendored files; the current
+ShadCN CLI accepts the emitted item. Raw pattern, wallpaper, and font packages
+publish as `theme-token:asset` and resolve their primary file through the
+package origin. Composed v2 theme authoring remains disabled until a studio can
+publish the theme document and its declared asset integrity values end to end.

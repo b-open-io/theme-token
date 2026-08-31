@@ -165,4 +165,4 @@ This plan *is* the test plan. New tests live in the three files above, asserting
 ## Maintenance notes
 
 - Wire `bun test` into CI (the CI workflow from plan 007 currently runs lint + typecheck — add a `bun test` step once this lands).
-- This baseline is intentionally small; the next high-value targets are `inscription-bundler.ts` `resolveVoutRefs` (the `{{vout:N}}` resolver) and a `registry-gateway` hydration round-trip with a fixture manifest.
+- The unused inscription bundler prototype was removed; the active bundle and registry gateway paths now have colocated round-trip coverage.

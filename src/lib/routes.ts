@@ -211,6 +211,12 @@ export function getEnabledRoutes(flags: FeatureFlags): RouteInfo[] {
 	return routes.filter((r) => !r.feature || flags[r.feature]);
 }
 
+/** Whether a registered route may render under the current feature flags. */
+export function isRouteEnabled(pathname: string, flags: FeatureFlags): boolean {
+	const route = routes.find(({ path }) => path === pathname);
+	return !route?.feature || flags[route.feature];
+}
+
 /**
  * Get enabled routes by category
  */

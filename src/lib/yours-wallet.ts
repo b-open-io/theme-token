@@ -3,6 +3,11 @@
  * https://yours-wallet.gitbook.io/provider-api
  */
 
+import {
+	getPublishedAssetKind,
+	THEME_TOKEN_ASSET_TYPE,
+} from "@/lib/asset-metadata";
+import { getOrdfsUrl } from "@/lib/ordfs";
 import { normalizeOutpoint } from "@/lib/outpoint";
 
 export interface OrdinalData {
@@ -310,6 +315,7 @@ export interface ThemeMarketListing extends MarketListing {
 
 export interface FontMetadata {
 	name: string;
+	mediaType?: string;
 	author?: string;
 	license?: string;
 	weight?: string;
@@ -320,6 +326,15 @@ export interface FontMetadata {
 
 export interface FontMarketListing extends MarketListing {
 	metadata: FontMetadata;
+}
+
+export function isFontMarketAsset(
+	mapData: Record<string, unknown> | undefined,
+): boolean {
+	return (
+		mapData?.app === "theme-token" &&
+		(mapData.type === "font" || getPublishedAssetKind(mapData) === "font")
+	);
 }
 
 /**
@@ -473,8 +488,8 @@ export async function fetchThemeListingByOrigin(
  */
 export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 	try {
-		// Query the market API for font types (woff2, woff, ttf)
-		const fontTypes = ["font/woff2", "font/woff", "font/ttf"];
+		// Query both legacy raw fonts and current package manifests.
+		const fontTypes = ["font/woff2", "font/woff", "font/ttf", "ord-fs/json"];
 		const allListings: FontMarketListing[] = [];
 
 		for (const fontType of fontTypes) {
@@ -508,7 +523,7 @@ export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 						};
 					}) => {
 						const mapData = item.origin?.data?.map || item.data?.map;
-						return mapData?.app === "theme-token" && mapData?.type === "font";
+						return isFontMarketAsset(mapData);
 					},
 				)
 				.map(
@@ -531,17 +546,20 @@ export async function fetchFontMarketListings(): Promise<FontMarketListing[]> {
 						};
 					}) => {
 						const mapData = item.origin?.data?.map || item.data?.map || {};
+						const inscData = item.origin?.data?.insc || item.data?.insc;
 						return {
 							outpoint: item.outpoint,
 							origin: item.origin?.outpoint || item.outpoint,
 							price: item.data?.list?.price || 0,
 							owner: item.owner,
 							data: {
-								insc: item.origin?.data?.insc || item.data?.insc,
+								insc: inscData,
 								map: mapData,
 							},
 							metadata: {
 								name: mapData.name || "Unknown Font",
+								mediaType:
+									mapData.mediaType || inscData?.file?.type || fontType,
 								author: mapData.author,
 								license: mapData.license,
 								weight: mapData.weight || "400",
@@ -672,6 +690,25 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 
 export type AssetType = "tile" | "wallpaper" | "icon";
 
+export function getImageMarketAssetType(
+	mapData: Record<string, unknown> | undefined,
+): AssetType | undefined {
+	if (mapData?.app !== "theme-token") return undefined;
+	if (
+		mapData.type === "tile" ||
+		mapData.type === "wallpaper" ||
+		mapData.type === "icon"
+	) {
+		return mapData.type;
+	}
+	if (mapData.type !== THEME_TOKEN_ASSET_TYPE) return undefined;
+
+	const kind = getPublishedAssetKind(mapData);
+	if (kind === "pattern") return "tile";
+	if (kind === "wallpaper") return "wallpaper";
+	return undefined;
+}
+
 export interface ImageMetadata {
 	name?: string;
 	contentType: string;
@@ -686,7 +723,7 @@ export interface ImageMarketListing extends MarketListing {
 
 /**
  * Fetch curated theme-token image assets from the marketplace
- * Only returns assets with map.app === "theme-token" AND map.type in (tile, wallpaper, icon)
+ * Supports current Theme Token asset metadata and legacy tile/wallpaper/icon records.
  */
 export async function fetchImageMarketListings(): Promise<
 	ImageMarketListing[]
@@ -699,10 +736,9 @@ export async function fetchImageMarketListings(): Promise<
 			"image/gif",
 			"image/webp",
 			"image/svg+xml",
+			"ord-fs/json",
 		];
 		const allListings: ImageMarketListing[] = [];
-		const validAssetTypes: AssetType[] = ["tile", "wallpaper", "icon"];
-
 		for (const imageType of imageTypes) {
 			const response = await fetch(
 				`${ORDINALS_API}/market?limit=50&dir=DESC&type=${encodeURIComponent(imageType)}`,
@@ -734,10 +770,7 @@ export async function fetchImageMarketListings(): Promise<
 						};
 					}) => {
 						const mapData = item.origin?.data?.map || item.data?.map;
-						return (
-							mapData?.app === "theme-token" &&
-							validAssetTypes.includes(mapData?.type as AssetType)
-						);
+						return getImageMarketAssetType(mapData) != null;
 					},
 				)
 				.map(
@@ -762,7 +795,7 @@ export async function fetchImageMarketListings(): Promise<
 						const mapData = item.origin?.data?.map || item.data?.map || {};
 						const inscData = item.origin?.data?.insc || item.data?.insc;
 						const origin = item.origin?.outpoint || item.outpoint;
-						const assetType = mapData.type as AssetType;
+						const assetType = getImageMarketAssetType(mapData) as AssetType;
 						return {
 							outpoint: item.outpoint,
 							origin,
@@ -774,11 +807,12 @@ export async function fetchImageMarketListings(): Promise<
 							},
 							metadata: {
 								name: mapData.name || `${assetType} ${origin.slice(0, 8)}`,
-								contentType: inscData?.file?.type || imageType,
+								contentType:
+									mapData.mediaType || inscData?.file?.type || imageType,
 								size: inscData?.file?.size,
 								assetType,
 							},
-							previewUrl: `/content/${origin}`, // Will use SDK's getContentUrl at runtime
+							previewUrl: getOrdfsUrl(origin),
 						};
 					},
 				);

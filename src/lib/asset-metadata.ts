@@ -22,6 +22,26 @@ export interface PackageMapMetadata {
 	[key: string]: string | undefined;
 }
 
+export const THEME_TOKEN_ASSET_TYPE = "theme-token:asset";
+
+export type ThemeTokenAssetKind = "font" | "pattern" | "wallpaper" | "image";
+
+export function getPublishedAssetKind(
+	metadata: Record<string, unknown> | undefined,
+): ThemeTokenAssetKind | undefined {
+	if (metadata?.type === "registry:font") return "font";
+	if (metadata?.type === "registry:file") return "pattern";
+	if (metadata?.type !== THEME_TOKEN_ASSET_TYPE) return undefined;
+
+	const kind = metadata.kind;
+	return kind === "font" ||
+		kind === "pattern" ||
+		kind === "wallpaper" ||
+		kind === "image"
+		? kind
+		: undefined;
+}
+
 export function buildTileMetadata(params: {
 	name: string;
 	version?: string;
@@ -34,7 +54,9 @@ export function buildTileMetadata(params: {
 }): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: "registry:file",
+		type: THEME_TOKEN_ASSET_TYPE,
+		kind: "pattern",
+		mediaType: "image/svg+xml",
 		name: params.name,
 		version: params.version || "1.0.0",
 		description: params.description || params.name,
@@ -59,10 +81,13 @@ export function buildFontMetadata(params: {
 	"font.family"?: string;
 	"font.variable"?: string;
 	"font.weight"?: string;
+	mediaType: string;
 }): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: "registry:font",
+		type: THEME_TOKEN_ASSET_TYPE,
+		kind: "font",
+		mediaType: params.mediaType,
 		name: params.name,
 		version: params.version || "1.0.0",
 		description: params.description || params.name,
@@ -76,6 +101,40 @@ export function buildFontMetadata(params: {
 			"font.variable": params["font.variable"],
 		}),
 		...(params["font.weight"] && { "font.weight": params["font.weight"] }),
+	};
+}
+
+export function buildImageMetadata(params: {
+	name: string;
+	mediaType: string;
+	kind: "image" | "wallpaper";
+	aspectRatio?: string;
+	style?: string;
+	width?: number;
+	height?: number;
+	prompt?: string;
+	provider?: string;
+	model?: string;
+}): PackageMapMetadata {
+	return {
+		app: "theme-token",
+		type: THEME_TOKEN_ASSET_TYPE,
+		kind: params.kind,
+		mediaType: params.mediaType,
+		name: params.name,
+		version: "1.0.0",
+		description: params.name,
+		categories: JSON.stringify(
+			params.kind === "wallpaper" ? ["wallpaper", "image"] : ["image"],
+		),
+		license: "CC0",
+		...(params.prompt && { prompt: params.prompt }),
+		...(params.provider && { provider: params.provider }),
+		...(params.model && { model: params.model }),
+		...(params.aspectRatio && { aspectRatio: params.aspectRatio }),
+		...(params.style && { style: params.style }),
+		...(params.width && { width: params.width.toString() }),
+		...(params.height && { height: params.height.toString() }),
 	};
 }
 

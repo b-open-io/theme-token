@@ -4,6 +4,7 @@ import {
 	compileAssetDelivery,
 	locateThemeAsset,
 	normalizeV1BundleAssets,
+	parseThemeAssetsV2,
 	resolveThemeAsset,
 	ThemeAssetError,
 	type ThemeAssetV2,
@@ -172,5 +173,39 @@ describe("Theme Token v2 asset resolution", () => {
 				verified: false,
 			},
 		]);
+	});
+
+	test("rejects properties outside the published v2 asset contract", () => {
+		for (const asset of [
+			{ ...fontAsset, surprise: true },
+			{
+				...fontAsset,
+				source: { ...fontAsset.source, surprise: true },
+			},
+			{ ...fontAsset, render: { mode: "mask", surprise: true } },
+		]) {
+			expect(() => parseThemeAssetsV2([asset])).toThrow(ThemeAssetError);
+		}
+	});
+
+	test("accepts only CSS-valid mask color forms", () => {
+		expect(() =>
+			parseThemeAssetsV2([
+				{
+					...fontAsset,
+					kind: "pattern",
+					render: { mode: "mask", color: "#1234" },
+				},
+			]),
+		).not.toThrow();
+		expect(() =>
+			parseThemeAssetsV2([
+				{
+					...fontAsset,
+					kind: "pattern",
+					render: { mode: "mask", color: "#12345" },
+				},
+			]),
+		).toThrow(ThemeAssetError);
 	});
 });

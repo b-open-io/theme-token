@@ -3,13 +3,14 @@
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Image, ShoppingCart, Tag, Type, Wallet } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	BsvRateProvider,
 	useBsvRateContext,
 } from "@/hooks/use-bsv-rate-context";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { isRouteEnabled } from "@/lib/routes";
 import {
 	type FontMarketListing,
 	fetchFontMarketListings,
@@ -61,11 +62,13 @@ function formatBSV(sats: number): string {
 
 function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
+	const router = useRouter();
 	const barRef = useRef<HTMLDivElement>(null);
 	const [themeListings, setThemeListings] = useState<ThemeMarketListing[]>([]);
 	const [fontListings, setFontListings] = useState<FontMarketListing[]>([]);
 	const { formatUsd } = useBsvRateContext();
 	const flags = useFeatureFlags();
+	const routeEnabled = isRouteEnabled(pathname, flags);
 
 	// Filter tabs based on feature flags
 	const tabs = useMemo(
@@ -95,6 +98,7 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 
 	// Fetch listings directly
 	useEffect(() => {
+		if (!routeEnabled) return;
 		async function loadListings() {
 			try {
 				const [themes, fonts] = await Promise.all([
@@ -108,7 +112,11 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 			}
 		}
 		loadListings();
-	}, []);
+	}, [routeEnabled]);
+
+	useEffect(() => {
+		if (!routeEnabled) router.replace("/market/browse");
+	}, [routeEnabled, router]);
 
 	// Compute stats based on current tab
 	const getStats = () => {
@@ -127,6 +135,8 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 	const totalCount = listings.length;
 	const floorPrice =
 		listings.length > 0 ? Math.min(...listings.map((l) => l.price)) : 0;
+
+	if (!routeEnabled) return null;
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-background">

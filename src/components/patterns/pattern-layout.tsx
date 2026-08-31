@@ -35,6 +35,8 @@ export function PatternLayout() {
 			if (response?.txid) {
 				setInscribedOrigin(`${response.txid}_0`);
 				toast.success("Pattern inscribed!");
+			} else {
+				toast.error("Pattern inscription was cancelled or failed");
 			}
 		} catch (error) {
 			console.error("Inscribe error:", error);

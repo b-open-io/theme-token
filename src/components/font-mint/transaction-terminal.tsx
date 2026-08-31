@@ -183,9 +183,10 @@ export function TransactionTerminal({
 
 			addLog("SIGNING_TX (WAITING_FOR_WALLET)...", "waiting");
 
-			// Build metadata for registry:font package
+			// Build metadata for the raw on-chain font asset package.
 			const fontMapMetadata = buildFontMetadata({
 				name: fontName,
+				mediaType: fontMimeType,
 				author: metadata.author || undefined,
 				license: metadata.license,
 				prompt: metadata.prompt,
