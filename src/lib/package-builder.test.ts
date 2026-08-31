@@ -11,11 +11,11 @@ afterEach(() => mock.restore());
 
 describe("publishPackage", () => {
 	it("gives Theme Token asset packages a resolvable default file", async () => {
-		let outputs: Array<{ lockingScript: string }> = [];
+		let outputs: Array<{ lockingScript: string; tags?: string[] }> = [];
 		const wallet = {
 			getPublicKey: async () => ({ publicKey: PUBLIC_KEY }),
 			createAction: async (args: {
-				outputs: Array<{ lockingScript: string }>;
+				outputs: Array<{ lockingScript: string; tags?: string[] }>;
 			}) => {
 				outputs = args.outputs;
 				return { txid: "a".repeat(64) };
@@ -50,6 +50,12 @@ describe("publishPackage", () => {
 			new TextDecoder().decode(inscription?.getContent()),
 		);
 		expect(manifest).toEqual({ "dots.svg": "_0", ".": "_0" });
+		expect(outputs.at(-1)?.tags).toEqual(
+			expect.arrayContaining(["origin", "type:ord-fs/json", "app:theme-token"]),
+		);
+		expect(
+			outputs.at(-1)?.tags?.some((tag) => /^id:[0-9a-f]+_1$/.test(tag)),
+		).toBe(true);
 
 		outputs = [];
 		await publishPackage(

@@ -39,23 +39,23 @@ export interface CompiledFont {
 }
 
 type RemixType = "font" | "theme";
-type ModelOption = "gemini" | "claude-opus-4.5";
+type ModelOption = "luna" | "grok-4.6";
 
 // Pricing matrix: cost in satoshis by type and model
 const MODEL_COSTS: Record<ModelOption, Record<RemixType, number>> = {
-	gemini: {
+	luna: {
 		font: 10_000_000, // 0.1 BSV
 		theme: 1_000_000, // 0.01 BSV
 	},
-	"claude-opus-4.5": {
+	"grok-4.6": {
 		font: 50_000_000, // 0.5 BSV
 		theme: 5_000_000, // 0.05 BSV
 	},
 };
 
 const MODEL_LABELS: Record<ModelOption, string> = {
-	gemini: "Gemini 3 Pro",
-	"claude-opus-4.5": "Claude Opus 4.5",
+	luna: "GPT-5.6 Luna",
+	"grok-4.6": "Grok 4.6",
 };
 
 interface UnifiedRemixDialogProps {
@@ -105,7 +105,7 @@ export function UnifiedRemixDialog({
 	const { status, connect, sendPayment, isSending } = useYoursWallet();
 	const [state, setState] = useState<RemixState>("idle");
 	const [prompt, setPrompt] = useState("");
-	const [model, setModel] = useState<ModelOption>("gemini");
+	const [model, setModel] = useState<ModelOption>("luna");
 	const [error, setError] = useState<string | null>(null);
 
 	const isConnected = status === "connected";
@@ -179,7 +179,7 @@ export function UnifiedRemixDialog({
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						prompt: `Remix this font: ${prompt}`,
-						model: model === "claude-opus-4.5" ? "claude-opus-4.5" : "gemini",
+						model,
 						paymentTxid,
 						previousFont: {
 							name: previousFont.name,
@@ -237,7 +237,7 @@ export function UnifiedRemixDialog({
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						prompt: `Remix this theme: ${prompt}`,
-						model: model === "claude-opus-4.5" ? "claude-opus-4.5" : "gemini",
+						model,
 						paymentTxid,
 						previousTheme,
 					}),
@@ -331,7 +331,7 @@ export function UnifiedRemixDialog({
 				{/* Header */}
 				<div className="flex items-center justify-between border-b border-border px-4 py-3">
 					<h2 className="font-mono text-sm font-medium">
-						// REMIX_{type.toUpperCase()}
+						{`// REMIX_${type.toUpperCase()}`}
 					</h2>
 					<button
 						aria-label="Close remix dialog"
@@ -395,7 +395,7 @@ export function UnifiedRemixDialog({
 							disabled={isProcessing}
 							className="space-y-2"
 						>
-							{(["gemini", "claude-opus-4.5"] as const).map((modelOption) => (
+							{(["luna", "grok-4.6"] as const).map((modelOption) => (
 								<div
 									key={modelOption}
 									className="flex items-center space-x-3 rounded border border-border px-3 py-2 hover:bg-muted/50"

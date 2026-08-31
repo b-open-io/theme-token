@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
 		// The model string format "provider/model" is used by Vercel AI Gateway
 		const result = streamText({
 			model: conversationModel as Parameters<typeof streamText>[0]["model"],
+			reasoning: "low",
 			system: systemPrompt,
 			messages: await convertToModelMessages(validatedMessages),
 			tools: availableTools,

@@ -53,19 +53,18 @@ interface AIGenerateTabProps {
 	onPresetChange?: (preset: string | null) => void;
 }
 
-type AIModel = "gemini-3-pro" | "claude-opus-4.5";
+type AIModel = "luna" | "grok-4.6";
 
 const AI_MODELS: { id: AIModel; name: string; description: string }[] = [
 	{
-		id: "gemini-3-pro",
-		name: "Gemini 3 Pro",
-		description:
-			"Google's latest multimodal model with strong visual understanding",
+		id: "luna",
+		name: "GPT-5.6 Luna",
+		description: "Fast, capable generation for complete font systems",
 	},
 	{
-		id: "claude-opus-4.5",
-		name: "Claude Opus 4.5",
-		description: "Anthropic's most capable model with nuanced creative output",
+		id: "grok-4.6",
+		name: "Grok 4.6",
+		description: "Premium creative generation with stronger style exploration",
 	},
 ];
 
@@ -108,8 +107,12 @@ const STYLE_PRESETS = [
 
 const STORAGE_KEY = "font:activeGeneration";
 
-// Fetcher for SWR
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+	const response = await fetch(url);
+	if (!response.ok)
+		throw new Error(`Font status request failed (${response.status})`);
+	return response.json();
+};
 
 // Generation status type from API
 interface GenerationStatus {
@@ -136,7 +139,7 @@ export function AIGenerateTab({
 	generatedFont: externalFont,
 	compiledFont: externalCompiled,
 	onClear,
-	initialModel = "gemini-3-pro",
+	initialModel = "luna",
 	initialPrompt = "",
 	initialPreset,
 	onModelChange,

@@ -1,5 +1,6 @@
 import { generateText, streamText } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
+import { AI_MODELS } from "@/lib/ai-models";
 import {
 	type GeneratorType,
 	type GridParams,
@@ -281,9 +282,8 @@ Apply the requested changes and return the modified SVG.`;
 		// Streaming mode
 		if (stream) {
 			const result = await streamText({
-				model: "google/gemini-3.5-flash" as Parameters<
-					typeof streamText
-				>[0]["model"],
+				model: AI_MODELS.pattern,
+				reasoning: "medium",
 				system: activeSystemPrompt,
 				prompt: userPrompt,
 				tools: patternTools,
@@ -301,9 +301,8 @@ Apply the requested changes and return the modified SVG.`;
 
 		// Non-streaming mode
 		const { text: svgResult, toolCalls: resultToolCalls } = await generateText({
-			model: "google/gemini-3.5-flash" as Parameters<
-				typeof generateText
-			>[0]["model"],
+			model: AI_MODELS.pattern,
+			reasoning: "medium",
 			system: activeSystemPrompt,
 			prompt: userPrompt,
 			tools: patternTools,
@@ -352,8 +351,8 @@ Apply the requested changes and return the modified SVG.`;
 		return NextResponse.json({
 			svg,
 			seed: seed || Math.random().toString(36).substring(2, 10),
-			provider: "google",
-			model: "gemini-3.5-flash",
+			provider: AI_MODELS.pattern.split("/")[0],
+			model: AI_MODELS.pattern,
 			mode: isAugment ? "augment" : "generate",
 			meta,
 			toolCalls,

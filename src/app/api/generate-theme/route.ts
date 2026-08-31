@@ -1,13 +1,13 @@
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { AI_MODELS, wantsPremiumModel } from "@/lib/ai-models";
 import { FONT_NAMES, SYSTEM_FONTS, sanitizeStyleModeFonts } from "@/lib/fonts";
 import { createDraft } from "@/lib/storage";
 import { generateTintsPalette } from "@/lib/tints";
 
-// Flash generation is seconds, but the generateObject call is also bounded by
-// AbortSignal.timeout(60s) below. Keep a maxDuration backstop above that so the
-// abort fires first and returns a clean error rather than a platform timeout.
+// Keep a platform backstop above the model timeout so the abort can return a
+// useful error instead of letting the function itself time out.
 export const maxDuration = 90;
 
 // Theme color schema for OKLCH colors
@@ -127,13 +127,8 @@ export async function POST(request: NextRequest) {
 			paymentTxid,
 		} = body;
 
-		// Determine which model to use. Default to the latest Gemini Flash:
-		// structured theme JSON doesn't need a reasoning-tier model, and flash is
-		// ~50x cheaper and seconds (vs minutes) per request on the gateway.
-		const modelId =
-			model === "claude-opus-4.5"
-				? "anthropic/claude-opus-4.5"
-				: "google/gemini-3.5-flash";
+		const premium = wantsPremiumModel(model);
+		const modelId = premium ? AI_MODELS.premium : AI_MODELS.theme;
 
 		// If primaryColor provided, generate palette locally using tints.dev library
 		let paletteContext = "";
@@ -267,9 +262,14 @@ Maintain the core identity and color harmony but apply the user's modifications.
 		// ~50 tok/s and take minutes) keeps the gateway request — and its billing —
 		// running long after the function itself times out. Aborting cancels the
 		// upstream request and surfaces a clean error instead of a runaway cost.
-		const { object: theme } = await generateObject({
-			model: modelId as Parameters<typeof generateObject>[0]["model"],
-			schema: themeSchema,
+		const { output: theme } = await generateText({
+			model: modelId,
+			reasoning: premium ? "low" : "medium",
+			output: Output.object({
+				schema: themeSchema,
+				name: "theme",
+				description: "A complete accessible light and dark UI theme",
+			}),
 			system: systemPrompt,
 			prompt: userPrompt,
 			maxRetries: 1,
@@ -283,7 +283,7 @@ Maintain the core identity and color harmony but apply the user's modifications.
 		sanitizeStyleModeFonts(theme.light);
 		sanitizeStyleModeFonts(theme.dark);
 
-		// Extract provider from modelId (e.g., "anthropic/claude-opus-4.5" → "anthropic")
+		// Gateway model ids are provider/model.
 		const provider = modelId.split("/")[0];
 
 		// Transform to ThemeToken format

@@ -1,7 +1,8 @@
-import { generateText } from "ai";
+import { generateImage } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
+import { AI_MODELS } from "@/lib/ai-models";
 
-export const maxDuration = 60; // Allow up to 60 seconds for image generation
+export const maxDuration = 120;
 
 type AspectRatio = "16:9" | "9:16" | "1:1" | "4:3" | "3:2";
 type WallpaperStyle =
@@ -29,14 +30,6 @@ interface WallpaperRequest {
 	paymentTxid?: string;
 	// Optional theme context for color-aware generation
 	themeContext?: ThemeContext;
-}
-
-interface GeneratedFile {
-	base64?: string;
-	uint8Array?: Uint8Array;
-	mediaType?: string;
-	mimeType?: string;
-	url?: string;
 }
 
 // Aspect ratio to dimensions mapping
@@ -150,65 +143,25 @@ export async function POST(request: NextRequest) {
 			themeContext,
 		);
 
-		// Build messages for the API
-		type MessageContent =
-			| { type: "text"; text: string }
-			| { type: "image"; image: string };
-		const content: MessageContent[] = [];
-
-		// If we have a source image, include it first
-		if (sourceImage) {
-			content.push({
-				type: "image",
-				image: sourceImage.startsWith("data:")
-					? sourceImage
-					: `data:image/png;base64,${sourceImage}`,
-			});
-		}
-
-		content.push({
-			type: "text",
-			text: fullPrompt,
+		const result = await generateImage({
+			model: AI_MODELS.wallpaper,
+			prompt: sourceImage
+				? {
+						images: [
+							sourceImage.startsWith("data:")
+								? sourceImage
+								: `data:image/png;base64,${sourceImage}`,
+						],
+						text: fullPrompt,
+					}
+				: fullPrompt,
+			aspectRatio,
+			maxRetries: 1,
+			abortSignal: AbortSignal.timeout(100_000),
 		});
 
-		// Use Gemini 3 Pro Image via Vercel AI Gateway
-		const result = await generateText({
-			model: "google/gemini-3-pro-image" as Parameters<
-				typeof generateText
-			>[0]["model"],
-			messages: [
-				{
-					role: "user",
-					content,
-				},
-			],
-		});
-
-		// Extract generated image from result.files
-		const files = (result as unknown as { files?: GeneratedFile[] }).files;
-		if (!files || files.length === 0) {
-			return NextResponse.json(
-				{ error: "No image was generated" },
-				{ status: 500 },
-			);
-		}
-
-		const generatedImage = files[0];
-		const imageBase64 =
-			generatedImage.base64 ||
-			(generatedImage.uint8Array
-				? Buffer.from(generatedImage.uint8Array).toString("base64")
-				: null);
-
-		if (!imageBase64) {
-			return NextResponse.json(
-				{ error: "Failed to extract image data" },
-				{ status: 500 },
-			);
-		}
-
-		const mimeType =
-			generatedImage.mediaType || generatedImage.mimeType || "image/png";
+		const imageBase64 = result.image.base64;
+		const mimeType = result.image.mediaType || "image/png";
 
 		return NextResponse.json({
 			image: imageBase64,
@@ -217,8 +170,8 @@ export async function POST(request: NextRequest) {
 			aspectRatio,
 			style: style || null,
 			dimensions: ASPECT_DIMENSIONS[aspectRatio],
-			provider: "google",
-			model: "gemini-3-pro-image",
+			provider: "openai",
+			model: AI_MODELS.wallpaper,
 		});
 	} catch (error) {
 		console.error("Wallpaper generation error:", error);

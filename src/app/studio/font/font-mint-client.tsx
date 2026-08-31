@@ -71,7 +71,7 @@ function FontMintPageContent() {
 		website: "",
 	});
 	const [attestations, setAttestations] = useState<FontAttestations>(
-		getDefaultAttestations(),
+		getDefaultAttestations,
 	);
 	const [isMinting, setIsMinting] = useState(false);
 	const [mintResult, setMintResult] = useState<{
@@ -80,8 +80,8 @@ function FontMintPageContent() {
 	} | null>(null);
 
 	// AI generation settings (lifted for URL sync)
-	type AIModel = "gemini-3-pro" | "claude-opus-4.5";
-	const [aiModel, setAiModel] = useState<AIModel>("gemini-3-pro");
+	type AIModel = "luna" | "grok-4.6";
+	const [aiModel, setAiModel] = useState<AIModel>("luna");
 	const [aiPrompt, setAiPrompt] = useState("");
 	const [aiPreset, setAiPreset] = useState<string | null>(null);
 
@@ -122,10 +122,7 @@ function FontMintPageContent() {
 		}
 
 		// AI settings
-		if (
-			modelParam &&
-			["gemini-3-pro", "claude-opus-4.5"].includes(modelParam)
-		) {
+		if (modelParam && ["luna", "grok-4.6"].includes(modelParam)) {
 			setAiModel(modelParam as AIModel);
 		}
 		if (promptParam) setAiPrompt(promptParam);
@@ -153,7 +150,7 @@ function FontMintPageContent() {
 
 			// AI settings (only when in AI mode)
 			if (inputMode === "ai") {
-				if (aiModel !== "gemini-3-pro") params.set("model", aiModel);
+				if (aiModel !== "luna") params.set("model", aiModel);
 				if (aiPrompt.trim()) params.set("prompt", aiPrompt.trim());
 				if (aiPreset) params.set("preset", aiPreset);
 			}

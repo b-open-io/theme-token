@@ -1,8 +1,9 @@
 import { waitUntil } from "@vercel/functions";
 import { kv } from "@vercel/kv";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { AI_MODELS, wantsPremiumModel } from "@/lib/ai-models";
 
 /**
  * AI Font Generation API (Async Job Pattern)
@@ -106,11 +107,9 @@ export async function POST(request: NextRequest) {
 
 		// Generate job ID server-side
 		const jobId = crypto.randomUUID();
-		const modelId =
-			model === "claude-opus-4.5"
-				? "anthropic/claude-opus-4.5"
-				: "google/gemini-3.1-pro-preview";
-		const modelName = model || "gemini-3-pro";
+		const premium = wantsPremiumModel(model);
+		const modelId = premium ? AI_MODELS.premium : AI_MODELS.font;
+		const modelName = premium ? "grok-4.6" : "luna";
 
 		// Store initial state immediately
 		const initialState: GenerationState = {
@@ -231,9 +230,14 @@ M 280 650 C 280 680 260 700 220 700 C 180 700 150 680 150 550 C 150 420 180 400 
 Generate glyphs for: ${CHARS_TO_GENERATE}`;
 
 		// Generate font with AI
-		const { object: font } = await generateObject({
-			model: modelId as Parameters<typeof generateObject>[0]["model"],
-			schema: fontSchema,
+		const { output: font } = await generateText({
+			model: modelId,
+			reasoning: "high",
+			output: Output.object({
+				schema: fontSchema,
+				name: "font",
+				description: "A complete font with SVG paths for every requested glyph",
+			}),
 			system: systemPrompt,
 			prompt: `Design a professional font with this style: "${prompt}"
 

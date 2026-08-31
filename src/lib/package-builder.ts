@@ -3,6 +3,7 @@ import {
 	ORDINALS_BASKET,
 	REGISTRY_TYPE_SET,
 	type RegistryType,
+	stampManagedOutputIds,
 } from "@1sat/actions";
 import { Inscription, MAP, MAP_PREFIX } from "@1sat/templates";
 import {
@@ -216,7 +217,12 @@ export async function publishPackage(
 		satoshis: 1,
 		outputDescription: "manifest (ord-fs/json)",
 		basket: ORDINALS_BASKET,
-		tags: [`${metadata.type}:${metadata.name}@${metadata.version}`],
+		tags: [
+			"origin",
+			`type:${MANIFEST_CONTENT_TYPE}`,
+			`app:${metadata.app}`,
+			`${metadata.type}:${metadata.name}@${metadata.version}`,
+		],
 		customInstructions: JSON.stringify({
 			protocolID: ONESAT_PROTOCOL,
 			keyID,
@@ -227,13 +233,15 @@ export async function publishPackage(
 	// -------------------------------------------------------------------
 	// 5. Submit via wallet.createAction
 	// -------------------------------------------------------------------
-	const result = await wallet.createAction({
+	const actionArgs = {
 		description: `Publish ${metadata.type}: ${metadata.name}@${metadata.version}`,
 		outputs,
 		options: {
 			randomizeOutputs: false,
 		},
-	});
+	};
+	stampManagedOutputIds(actionArgs);
+	const result = await wallet.createAction(actionArgs);
 
 	if (!result.txid) {
 		throw new Error("Package inscription succeeded but no txid was returned");

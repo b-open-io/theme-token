@@ -5,8 +5,9 @@
  * with error feedback if validation fails.
  */
 
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import type { z } from "zod";
+import { AI_MODELS } from "./ai-models";
 import {
 	type CodeValidationResult,
 	validateCode,
@@ -27,7 +28,7 @@ export interface ValidatedGenerationConfig<T> {
 	) => string | Array<{ content: string; filename?: string }>;
 	/** Maximum retry attempts (default: 3) */
 	maxRetries?: number;
-	/** Model ID to use (default: google/gemini-3.1-pro-preview) */
+	/** Model ID to use */
 	model?: string;
 }
 
@@ -48,7 +49,7 @@ export interface ValidatedGenerationResult<T> {
 /**
  * Generate code with validation and automatic retry
  *
- * 1. Calls generateObject with the provided schema and prompts
+ * 1. Calls generateText with a schema-validated object output
  * 2. Extracts code and validates it
  * 3. If invalid, retries with error feedback in the prompt
  * 4. Returns after success or max retries
@@ -62,7 +63,7 @@ export async function generateWithValidation<T>(
 		userPrompt,
 		codeExtractor,
 		maxRetries = 3,
-		model = "google/gemini-3.1-pro-preview",
+		model = AI_MODELS.code,
 	} = config;
 
 	let attempts = 0;
@@ -99,9 +100,10 @@ Please regenerate the code with these errors fixed. Pay careful attention to:
 				`[ValidatedGen] Attempt ${attempts}/${maxRetries}${attempts > 1 ? " (retry)" : ""}`,
 			);
 
-			const { object } = await generateObject({
+			const { output: object } = await generateText({
 				model,
-				schema,
+				reasoning: "high",
+				output: Output.object({ schema }),
 				system: systemPrompt,
 				prompt: enhancedPrompt,
 			});

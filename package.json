@@ -22,10 +22,9 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@1sat/actions": "^0.0.201",
+		"@1sat/actions": "^0.0.202",
 		"@1sat/react": "^0.0.86",
 		"@1sat/templates": "^0.0.32",
-		"@ai-sdk/google": "^4.0.58",
 		"@ai-sdk/react": "^4.0.88",
 		"@base-ui/react": "^1.7.0",
 		"@bsv/sdk": "^2.4.2",
