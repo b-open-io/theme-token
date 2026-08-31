@@ -88,13 +88,14 @@ export async function fetchFontMetadata(
  */
 export async function loadThemeFonts(styles: {
 	"font-sans"?: string;
+	"font-heading"?: string;
 	"font-serif"?: string;
 	"font-mono"?: string;
 }): Promise<Record<string, string>> {
 	const loads: Promise<{ slot: string; familyName: string } | null>[] = [];
 	const resolved: Record<string, string> = {};
 
-	const slots = ["sans", "serif", "mono"] as const;
+	const slots = ["sans", "heading", "serif", "mono"] as const;
 
 	for (const slot of slots) {
 		const fontKey = `font-${slot}` as keyof typeof styles;

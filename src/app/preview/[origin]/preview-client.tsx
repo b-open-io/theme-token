@@ -244,7 +244,12 @@ export function PreviewClient({
 	// Load fonts when theme changes (Google Fonts and on-chain fonts)
 	useEffect(() => {
 		const styles = theme.styles[previewMode];
-		const fontProps = ["font-sans", "font-serif", "font-mono"] as const;
+		const fontProps = [
+			"font-sans",
+			"font-heading",
+			"font-serif",
+			"font-mono",
+		] as const;
 
 		// Check if any fonts are on-chain
 		const hasOnChainFonts = fontProps.some(

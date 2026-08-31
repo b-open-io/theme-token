@@ -65,6 +65,13 @@ describe("sanitizeStyleModeFonts", () => {
 		// font-serif and font-mono were absent — they should remain absent
 		expect("font-serif" in mode).toBe(false);
 		expect("font-mono" in mode).toBe(false);
+		expect("font-heading" in mode).toBe(false);
 		expect(mode["font-sans"]).toBe('"Roboto", sans-serif');
+	});
+
+	test("sanitizes a malformed heading font", () => {
+		const mode = { "font-heading": "bad\nfont" } as Record<string, string>;
+		sanitizeStyleModeFonts(mode);
+		expect(mode["font-heading"]).toBe(SYSTEM_FONTS.heading);
 	});
 });

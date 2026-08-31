@@ -6,7 +6,10 @@
  *
  * Query parameters:
  * - project: Origin outpoint of the inscribed project (required)
+ * - base: Override component primitives (optional)
  * - iconLibrary: Override icon library (optional)
+ * - font/fontHeading: Override font registry items (optional)
+ * - radius: Override the theme radius (optional)
  * - menuColor: Override menu color (optional)
  * - menuAccent: Override menu accent (optional)
  * - baseColor: Override Tailwind base color (optional)
@@ -18,48 +21,70 @@ import type {
 	IconLibrary,
 	MenuAccent,
 	MenuColor,
+	ProjectBase,
+	ProjectFont,
+	ProjectHeadingFont,
 	ProjectManifest,
+	ProjectRadius,
+} from "@/lib/project-types";
+import {
+	BASE_COLORS,
+	ICON_LIBRARIES,
+	ICON_LIBRARY_PACKAGES,
+	MENU_ACCENTS,
+	MENU_COLORS,
+	PROJECT_BASE_PACKAGES,
+	PROJECT_BASES,
+	PROJECT_FONTS,
+	PROJECT_RADII,
+	PROJECT_RADIUS_VALUES,
+	qualifyProjectStyle,
 } from "@/lib/project-types";
 import { fetchJsonFromOrdfs } from "@/lib/registry-gateway";
 
 // Valid parameter values
-const VALID_ICON_LIBRARIES: IconLibrary[] = ["lucide", "hugeicons", "tabler"];
-const VALID_BASE_COLORS: BaseColor[] = [
-	"neutral",
-	"gray",
-	"zinc",
-	"stone",
-	"slate",
-];
-const VALID_MENU_COLORS: MenuColor[] = ["default", "primary", "accent"];
-const VALID_MENU_ACCENTS: MenuAccent[] = ["subtle", "normal", "bold"];
-
-interface InitParams {
+export interface InitParams {
 	project: string | null;
+	base: ProjectBase | null;
 	iconLibrary: IconLibrary | null;
+	font: ProjectFont | null;
+	fontHeading: ProjectHeadingFont | null;
+	radius: ProjectRadius | null;
 	baseColor: BaseColor | null;
 	menuColor: MenuColor | null;
 	menuAccent: MenuAccent | null;
 }
 
-function parseParams(searchParams: URLSearchParams): InitParams {
-	const iconLibrary = searchParams.get("iconLibrary") as IconLibrary | null;
-	const baseColor = searchParams.get("baseColor") as BaseColor | null;
-	const menuColor = searchParams.get("menuColor") as MenuColor | null;
-	const menuAccent = searchParams.get("menuAccent") as MenuAccent | null;
+function isOneOf<const T extends readonly string[]>(
+	values: T,
+	value: string | null,
+): value is T[number] {
+	return value !== null && values.includes(value as T[number]);
+}
+
+export function parseParams(searchParams: URLSearchParams): InitParams {
+	const base = searchParams.get("base");
+	const iconLibrary = searchParams.get("iconLibrary");
+	const font = searchParams.get("font");
+	const fontHeading = searchParams.get("fontHeading");
+	const radius = searchParams.get("radius");
+	const baseColor = searchParams.get("baseColor");
+	const menuColor = searchParams.get("menuColor");
+	const menuAccent = searchParams.get("menuAccent");
 
 	return {
 		project: searchParams.get("project"),
-		iconLibrary:
-			iconLibrary && VALID_ICON_LIBRARIES.includes(iconLibrary)
-				? iconLibrary
+		base: isOneOf(PROJECT_BASES, base) ? base : null,
+		iconLibrary: isOneOf(ICON_LIBRARIES, iconLibrary) ? iconLibrary : null,
+		font: isOneOf(PROJECT_FONTS, font) ? font : null,
+		fontHeading:
+			fontHeading === "inherit" || isOneOf(PROJECT_FONTS, fontHeading)
+				? fontHeading
 				: null,
-		baseColor:
-			baseColor && VALID_BASE_COLORS.includes(baseColor) ? baseColor : null,
-		menuColor:
-			menuColor && VALID_MENU_COLORS.includes(menuColor) ? menuColor : null,
-		menuAccent:
-			menuAccent && VALID_MENU_ACCENTS.includes(menuAccent) ? menuAccent : null,
+		radius: isOneOf(PROJECT_RADII, radius) ? radius : null,
+		baseColor: isOneOf(BASE_COLORS, baseColor) ? baseColor : null,
+		menuColor: isOneOf(MENU_COLORS, menuColor) ? menuColor : null,
+		menuAccent: isOneOf(MENU_ACCENTS, menuAccent) ? menuAccent : null,
 	};
 }
 
@@ -139,14 +164,29 @@ export async function GET(request: Request) {
 /**
  * Apply query parameter overrides to the manifest
  */
-function applyOverrides(
+export function applyOverrides(
 	manifest: ProjectManifest,
 	params: InitParams,
 ): ProjectManifest {
 	// Deep clone to avoid mutating original
 	const result = JSON.parse(JSON.stringify(manifest)) as ProjectManifest;
 
-	// Apply config overrides
+	// Old manifests used an unqualified style. Current ShadCN styles include
+	// their primitive base (for example, radix-vega or base-vega).
+	const currentBase = params.base ?? getProjectBase(result.config.style);
+	result.config.style = qualifyProjectStyle(currentBase, result.config.style);
+	result.dependencies = updatePrimitiveDependencies(
+		result.dependencies,
+		currentBase,
+	);
+	result.config.rtl ??= false;
+	result.config.menuColor = normalizeMenuColor(result.config.menuColor);
+	result.config.menuAccent = normalizeMenuAccent(result.config.menuAccent);
+
+	if (params.base) {
+		result.config.style = `${params.base}-${getStyleName(result.config.style)}`;
+	}
+
 	if (params.iconLibrary) {
 		result.config.iconLibrary = params.iconLibrary;
 		// Update dependencies to match new icon library
@@ -154,6 +194,19 @@ function applyOverrides(
 			result.dependencies,
 			params.iconLibrary,
 		);
+	}
+
+	if (params.font || params.fontHeading) {
+		result.registryDependencies = updateFontDependencies(
+			result.registryDependencies,
+			params.font,
+			params.fontHeading,
+		);
+	}
+
+	if (params.radius) {
+		result.cssVars.light.radius = PROJECT_RADIUS_VALUES[params.radius];
+		result.cssVars.dark.radius = PROJECT_RADIUS_VALUES[params.radius];
 	}
 
 	if (params.baseColor) {
@@ -171,6 +224,60 @@ function applyOverrides(
 	return result;
 }
 
+function getProjectBase(style: string): ProjectBase {
+	return style.startsWith("base-") ? "base" : "radix";
+}
+
+function getStyleName(style: string): string {
+	return style.replace(/^(radix|base|aria)-/, "");
+}
+
+function normalizeMenuColor(value: string): MenuColor {
+	return isOneOf(MENU_COLORS, value) ? value : "default";
+}
+
+function normalizeMenuAccent(value: string): MenuAccent {
+	return isOneOf(MENU_ACCENTS, value) ? value : "subtle";
+}
+
+function updatePrimitiveDependencies(
+	dependencies: string[],
+	base: ProjectBase,
+): string[] {
+	const primitivePackages = Object.values(PROJECT_BASE_PACKAGES).flat();
+	return [
+		...dependencies.filter(
+			(dependency) => !primitivePackages.includes(dependency),
+		),
+		...PROJECT_BASE_PACKAGES[base],
+	];
+}
+
+function updateFontDependencies(
+	dependencies: string[],
+	font: ProjectFont | null,
+	fontHeading: ProjectHeadingFont | null,
+): string[] {
+	let result = dependencies;
+	if (font) {
+		result = result.filter(
+			(dependency) =>
+				!dependency.startsWith("font-") ||
+				dependency.startsWith("font-heading-"),
+		);
+		result.push(`font-${font}`);
+	}
+	if (fontHeading) {
+		result = result.filter(
+			(dependency) => !dependency.startsWith("font-heading-"),
+		);
+		if (fontHeading !== "inherit") {
+			result.push(`font-heading-${fontHeading}`);
+		}
+	}
+	return result;
+}
+
 /**
  * Update dependencies when icon library changes
  */
@@ -179,23 +286,12 @@ function updateIconDependencies(
 	iconLibrary: IconLibrary,
 ): string[] {
 	// Remove existing icon library packages
-	const iconPackages = [
-		"lucide-react",
-		"@hugeicons/react",
-		"@hugeicons/core-free-icons",
-		"@tabler/icons-react",
-	];
+	const iconPackages = Object.values(ICON_LIBRARY_PACKAGES).flat();
 
 	const filtered = deps.filter((d) => !iconPackages.includes(d));
 
 	// Add new icon library packages
-	const newPackages: Record<IconLibrary, string[]> = {
-		lucide: ["lucide-react"],
-		hugeicons: ["@hugeicons/react", "@hugeicons/core-free-icons"],
-		tabler: ["@tabler/icons-react"],
-	};
-
-	return [...filtered, ...newPackages[iconLibrary]];
+	return [...filtered, ...ICON_LIBRARY_PACKAGES[iconLibrary]];
 }
 
 // Handle preflight requests for CORS

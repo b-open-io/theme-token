@@ -49,20 +49,41 @@ import type {
 	IconLibrary,
 	MenuAccent,
 	MenuColor,
+	ProjectBase,
+	ProjectFont,
+	ProjectHeadingFont,
+	ProjectRadius,
 } from "@/lib/project-types";
-import { ICON_LIBRARY_PACKAGES } from "@/lib/project-types";
+import {
+	BASE_COLORS,
+	ICON_LIBRARIES,
+	ICON_LIBRARY_PACKAGES,
+	MENU_ACCENTS,
+	MENU_COLORS,
+	PROJECT_FONTS,
+	PROJECT_RADII,
+} from "@/lib/project-types";
 import type { CachedTheme } from "@/lib/themes-cache";
 import { cn } from "@/lib/utils";
 
 interface ProjectConfig {
 	name: string;
-	base: "radix" | "base";
+	base: ProjectBase;
 	style: string;
 	iconLibrary: IconLibrary;
-	font: string;
+	font: ProjectFont;
+	fontHeading: ProjectHeadingFont;
+	radius: ProjectRadius;
 	baseColor: BaseColor;
 	menuColor: MenuColor;
 	menuAccent: MenuAccent;
+}
+
+function optionLabel(value: string): string {
+	return value
+		.split("-")
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(" ");
 }
 
 export function ProjectStudioPageClient() {
@@ -79,7 +100,9 @@ export function ProjectStudioPageClient() {
 		base: "radix",
 		style: "vega",
 		iconLibrary: "lucide",
-		font: "geist",
+		font: "inter",
+		fontHeading: "inherit",
+		radius: "default",
 		baseColor: "neutral",
 		menuColor: "default",
 		menuAccent: "subtle",
@@ -114,6 +137,8 @@ export function ProjectStudioPageClient() {
 			style: preset.style,
 			iconLibrary: preset.iconLibrary as IconLibrary,
 			font: preset.font,
+			fontHeading: preset.fontHeading ?? "inherit",
+			radius: preset.radius ?? "default",
 			baseColor: preset.baseColor as BaseColor,
 			menuColor: preset.menuColor as MenuColor,
 			menuAccent: preset.menuAccent as MenuAccent,
@@ -143,9 +168,13 @@ export function ProjectStudioPageClient() {
 		const { items } = buildProjectBundle({
 			theme: projectTheme,
 			config: {
+				base: config.base,
 				style: config.style,
 				tailwind: { baseColor: config.baseColor },
 				iconLibrary: config.iconLibrary,
+				font: config.font,
+				fontHeading: config.fontHeading,
+				radius: config.radius,
 				menuColor: config.menuColor,
 				menuAccent: config.menuAccent,
 			},
@@ -351,18 +380,19 @@ export function ProjectStudioPageClient() {
 								<div className="flex gap-2">
 									<Select
 										value={config.font}
-										onValueChange={(v) => setConfig({ ...config, font: v })}
+										onValueChange={(v) =>
+											setConfig({ ...config, font: v as ProjectFont })
+										}
 									>
 										<SelectTrigger className="flex-1 h-9">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="geist">Geist Sans</SelectItem>
-											<SelectItem value="inter">Inter</SelectItem>
-											<SelectItem value="figtree">Figtree</SelectItem>
-											<SelectItem value="jetbrains-mono">
-												JetBrains Mono
-											</SelectItem>
+											{PROJECT_FONTS.map((font) => (
+												<SelectItem key={font} value={font}>
+													{optionLabel(font)}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 									<Button
@@ -376,6 +406,32 @@ export function ProjectStudioPageClient() {
 										</a>
 									</Button>
 								</div>
+							</div>
+
+							{/* Heading Font Selection */}
+							<div className="space-y-2">
+								<Label className="text-xs font-medium">Heading Font</Label>
+								<Select
+									value={config.fontHeading}
+									onValueChange={(v) =>
+										setConfig({
+											...config,
+											fontHeading: v as ProjectHeadingFont,
+										})
+									}
+								>
+									<SelectTrigger className="h-9">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="inherit">Inherit Body Font</SelectItem>
+										{PROJECT_FONTS.map((font) => (
+											<SelectItem key={font} value={font}>
+												{optionLabel(font)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 
 							{/* Icon Library */}
@@ -394,9 +450,11 @@ export function ProjectStudioPageClient() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="lucide">Lucide Icons</SelectItem>
-										<SelectItem value="hugeicons">Hugeicons</SelectItem>
-										<SelectItem value="tabler">Tabler Icons</SelectItem>
+										{ICON_LIBRARIES.map((library) => (
+											<SelectItem key={library} value={library}>
+												{optionLabel(library)}
+											</SelectItem>
+										))}
 									</SelectContent>
 								</Select>
 								<p className="text-xs text-muted-foreground">
@@ -460,11 +518,11 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="neutral">Neutral</SelectItem>
-											<SelectItem value="gray">Gray</SelectItem>
-											<SelectItem value="zinc">Zinc</SelectItem>
-											<SelectItem value="stone">Stone</SelectItem>
-											<SelectItem value="slate">Slate</SelectItem>
+											{BASE_COLORS.map((color) => (
+												<SelectItem key={color} value={color}>
+													{optionLabel(color)}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</div>
@@ -481,9 +539,11 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="default">Default</SelectItem>
-											<SelectItem value="primary">Primary</SelectItem>
-											<SelectItem value="accent">Accent</SelectItem>
+											{MENU_COLORS.map((color) => (
+												<SelectItem key={color} value={color}>
+													{optionLabel(color)}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</div>
@@ -500,9 +560,32 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="subtle">Subtle</SelectItem>
-											<SelectItem value="normal">Normal</SelectItem>
-											<SelectItem value="bold">Bold</SelectItem>
+											{MENU_ACCENTS.map((accent) => (
+												<SelectItem key={accent} value={accent}>
+													{optionLabel(accent)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
+								<div className="space-y-2">
+									<Label className="text-xs">Radius</Label>
+									<Select
+										value={config.radius}
+										onValueChange={(v) =>
+											setConfig({ ...config, radius: v as ProjectRadius })
+										}
+									>
+										<SelectTrigger className="h-9">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{PROJECT_RADII.map((radius) => (
+												<SelectItem key={radius} value={radius}>
+													{optionLabel(radius)}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</div>
@@ -632,17 +715,13 @@ export function ProjectStudioPageClient() {
 									</div>
 									<div>
 										<h3 className="font-medium text-sm">Icons</h3>
-										<p className="text-xs text-muted-foreground capitalize">
-											{config.iconLibrary === "lucide" && "Lucide React"}
-											{config.iconLibrary === "hugeicons" && "Hugeicons"}
-											{config.iconLibrary === "tabler" && "Tabler Icons"}
+										<p className="text-xs text-muted-foreground">
+											{optionLabel(config.iconLibrary)}
 										</p>
 									</div>
 								</div>
 								<div className="flex items-center justify-center h-8 rounded-md bg-muted/50 text-xs text-muted-foreground font-mono">
-									{config.iconLibrary === "lucide" && "lucide-react"}
-									{config.iconLibrary === "hugeicons" && "@hugeicons/react"}
-									{config.iconLibrary === "tabler" && "@tabler/icons-react"}
+									{iconDeps.join(", ")}
 								</div>
 							</div>
 

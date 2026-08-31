@@ -15,10 +15,11 @@ import {
 	createProjectManifest,
 	ICON_LIBRARY_PACKAGES,
 	type IconLibrary,
+	PROJECT_BASE_PACKAGES,
 	type ProjectAsset,
 	type ProjectBundle,
-	type ProjectConfig,
 	type ProjectManifest,
+	type ProjectPresetConfig,
 } from "./project-types";
 
 /** Unicode-safe base64 encoding */
@@ -51,7 +52,7 @@ export interface BuildProjectBundleOptions {
 	/** Base theme for the project */
 	theme: ThemeToken;
 	/** Project configuration */
-	config: Partial<ProjectConfig>;
+	config: Partial<ProjectPresetConfig>;
 	/** Assets to bundle (fonts, icons, wallpaper) */
 	assets?: ProjectBundleAsset[];
 	/** Author identifier (paymail or identity) */
@@ -133,17 +134,6 @@ export function buildProjectBundle(
 		});
 	}
 
-	// Build registry dependencies with vout references for fonts
-	const registryDependencies: string[] = ["utils"];
-	for (const asset of assets) {
-		if (asset.type === "font" && asset.slot) {
-			const vout = assetVouts.get(`font-${asset.slot}`);
-			if (vout !== undefined) {
-				registryDependencies.push(`_${vout}`);
-			}
-		}
-	}
-
 	// Create bundle metadata
 	const bundle: ProjectBundle | undefined =
 		bundleAssets.length > 0
@@ -156,18 +146,25 @@ export function buildProjectBundle(
 	// Create manifest
 	const manifest = createProjectManifest(theme, config, bundle);
 
-	// Update registryDependencies with font references
-	manifest.registryDependencies = registryDependencies;
+	// Replace hosted font items with relative references for bundled fonts.
+	for (const asset of assets) {
+		if (asset.type !== "font") continue;
+		const vout = assetVouts.get(`font-${asset.slot}`);
+		if (vout === undefined) continue;
 
-	// Add icon library dependencies based on config
-	const iconLibrary = config.iconLibrary ?? "lucide";
-	const iconDeps = ICON_LIBRARY_PACKAGES[iconLibrary];
-	manifest.dependencies = [
-		...manifest.dependencies.filter(
-			(d) => !Object.values(ICON_LIBRARY_PACKAGES).flat().includes(d),
-		),
-		...iconDeps,
-	];
+		if (asset.slot === "heading") {
+			manifest.registryDependencies = manifest.registryDependencies.filter(
+				(dependency) => !dependency.startsWith("font-heading-"),
+			);
+		} else if (!asset.slot || asset.slot === "sans") {
+			manifest.registryDependencies = manifest.registryDependencies.filter(
+				(dependency) =>
+					!dependency.startsWith("font-") ||
+					dependency.startsWith("font-heading-"),
+			);
+		}
+		manifest.registryDependencies.push(`_${vout}`);
+	}
 
 	// Convert manifest to base64 for inscription
 	const manifestJson = JSON.stringify(manifest, null, 2);
@@ -208,9 +205,9 @@ export function estimateProjectBundleSize(items: BundleItem[]): number {
  * Get required dependencies for a project configuration
  */
 export function getProjectDependencies(
-	config: Partial<ProjectConfig>,
+	config: Partial<ProjectPresetConfig>,
 ): string[] {
-	const baseDeps = [
+	const defaultDependencies = [
 		"shadcn@latest",
 		"class-variance-authority",
 		"tw-animate-css",
@@ -218,6 +215,7 @@ export function getProjectDependencies(
 
 	const iconLibrary = config.iconLibrary ?? "lucide";
 	const iconDeps = ICON_LIBRARY_PACKAGES[iconLibrary];
+	const primitiveDeps = PROJECT_BASE_PACKAGES[config.base ?? "radix"];
 
-	return [...baseDeps, ...iconDeps];
+	return [...defaultDependencies, ...primitiveDeps, ...iconDeps];
 }

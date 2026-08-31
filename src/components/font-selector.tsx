@@ -39,7 +39,7 @@ import {
 type FontSource = "google" | "onchain" | "uploaded" | "custom";
 
 interface FontSelectorProps {
-	slot: "sans" | "serif" | "mono";
+	slot: "sans" | "serif" | "mono" | "heading";
 	value: string; // Current font value (Google Font name or /content/{origin})
 	onChange: (value: string) => void;
 	label?: string;
@@ -61,9 +61,9 @@ const SUGGESTED_FONTS: Record<string, string[]> = {
 		"Playfair Display",
 		"Merriweather",
 		"Lora",
-		"Crimson Text",
+		"Crimson Pro",
 		"Libre Baskerville",
-		"Source Serif Pro",
+		"Source Serif 4",
 	],
 	mono: [
 		"JetBrains Mono",
@@ -72,6 +72,14 @@ const SUGGESTED_FONTS: Record<string, string[]> = {
 		"IBM Plex Mono",
 		"Roboto Mono",
 		"Space Mono",
+	],
+	heading: [
+		"Playfair Display",
+		"Bebas Neue",
+		"Oxanium",
+		"Righteous",
+		"Montserrat",
+		"Abril Fatface",
 	],
 };
 

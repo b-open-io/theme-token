@@ -16,5 +16,6 @@ describe("outpoint normalization", () => {
 	test("strips registry and social-image route extensions", () => {
 		expect(normalizeOriginRouteParam(`${TXID}_1.json`)).toBe(`${TXID}_1`);
 		expect(normalizeOriginRouteParam(`${TXID}_1.png`)).toBe(`${TXID}_1`);
+		expect(normalizeOriginRouteParam(`${TXID}_1.css`)).toBe(`${TXID}_1`);
 	});
 });

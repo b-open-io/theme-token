@@ -70,6 +70,7 @@ import { Slider } from "@/components/ui/slider";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
 import { loadThemeFonts, sanitizeStyleModeFonts } from "@/lib/fonts";
 import { getOrdfsUrl } from "@/lib/ordfs";
+import { isUploadedFontPath } from "@/lib/stores/font-upload-store";
 import {
 	selectPendingColorChange,
 	selectPendingRadiusChange,
@@ -89,6 +90,14 @@ interface ThemeDraft {
 	id: string;
 	theme: ThemeToken;
 	savedAt: number;
+}
+
+function hasLocalFontReference(theme: ThemeToken): boolean {
+	return Object.values(theme.styles).some((styles) =>
+		Object.entries(styles).some(
+			([key, value]) => key.startsWith("font-") && isUploadedFontPath(value),
+		),
+	);
 }
 
 function loadDrafts(): ThemeDraft[] {
@@ -1368,6 +1377,16 @@ export function ThemeStudio() {
 													label="Sans-Serif (--font-sans)"
 												/>
 												<FontSelector
+													slot="heading"
+													value={
+														selectedTheme.styles[mode]["font-heading"] || ""
+													}
+													onChange={(value) =>
+														updateColor("font-heading", value)
+													}
+													label="Heading (--font-heading)"
+												/>
+												<FontSelector
 													slot="serif"
 													value={selectedTheme.styles[mode]["font-serif"] || ""}
 													onChange={(value) => updateColor("font-serif", value)}
@@ -1803,7 +1822,17 @@ export function ThemeStudio() {
 							variant={selectedListing ? "outline" : "default"}
 							disabled={status === "connecting" || (isConnected && !canMint)}
 							onClick={
-								isConnected ? () => setShowInscribeDialog(true) : connect
+								isConnected
+									? () => {
+											if (hasLocalFontReference(selectedTheme)) {
+												window.alert(
+													"Upload this font on-chain and select it from your wallet before inscribing. Local uploaded fonts cannot be published inside a theme yet.",
+												);
+												return;
+											}
+											setShowInscribeDialog(true);
+										}
+									: connect
 							}
 							className="h-10 min-w-0 w-full gap-2 whitespace-nowrap px-3 sm:w-auto sm:px-4"
 						>

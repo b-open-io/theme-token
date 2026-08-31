@@ -15,14 +15,20 @@ export function TypographyDemo({
 			<div className="space-y-6">
 				<div className="space-y-2">
 					<p className="text-sm font-medium text-muted-foreground">Heading 1</p>
-					<h1 className="text-4xl font-extrabold tracking-tight">
+					<h1
+						className="text-4xl font-extrabold tracking-tight"
+						style={{ fontFamily: "var(--font-heading, var(--font-display))" }}
+					>
 						The quick brown fox jumps
 					</h1>
 					<p className="text-sm text-primary/80">Primary tone example</p>
 				</div>
 				<div className="space-y-2">
 					<p className="text-sm font-medium text-muted-foreground">Heading 2</p>
-					<h2 className="text-2xl font-semibold tracking-tight">
+					<h2
+						className="text-2xl font-semibold tracking-tight"
+						style={{ fontFamily: "var(--font-heading, var(--font-display))" }}
+					>
 						Over the lazy dog
 					</h2>
 					<p className="text-sm text-secondary-foreground">
@@ -49,6 +55,7 @@ export function TypographyDemo({
 
 				{/* Font Info */}
 				{(theme.styles[mode]["font-sans"] ||
+					theme.styles[mode]["font-heading"] ||
 					theme.styles[mode]["font-serif"] ||
 					theme.styles[mode]["font-mono"]) && (
 					<div className="rounded-lg bg-muted p-4">
@@ -56,6 +63,9 @@ export function TypographyDemo({
 						<div className="space-y-1 font-mono text-sm">
 							{theme.styles[mode]["font-sans"] && (
 								<p>Sans: {theme.styles[mode]["font-sans"]}</p>
+							)}
+							{theme.styles[mode]["font-heading"] && (
+								<p>Heading: {theme.styles[mode]["font-heading"]}</p>
 							)}
 							{theme.styles[mode]["font-serif"] && (
 								<p>Serif: {theme.styles[mode]["font-serif"]}</p>

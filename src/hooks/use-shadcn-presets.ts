@@ -5,6 +5,15 @@
  */
 
 import { useEffect, useState } from "react";
+import type {
+	BaseColor,
+	IconLibrary,
+	MenuAccent,
+	MenuColor,
+	ProjectFont,
+	ProjectHeadingFont,
+	ProjectRadius,
+} from "@/lib/project-types";
 
 const SHADCN_REGISTRY_URL = "https://ui.shadcn.com/r/config.json";
 
@@ -15,14 +24,16 @@ export interface ShadcnPreset {
 	description: string;
 	base: "radix" | "base";
 	style: string;
-	baseColor: string;
+	baseColor: BaseColor;
 	theme: string;
-	iconLibrary: "lucide" | "hugeicons" | "tabler";
-	font: string;
+	chartColor: string;
+	iconLibrary: IconLibrary;
+	font: ProjectFont;
+	fontHeading: ProjectHeadingFont;
 	item: string;
-	menuAccent: "subtle" | "normal" | "bold";
-	menuColor: "default" | "primary" | "accent";
-	radius: string;
+	menuAccent: MenuAccent;
+	menuColor: MenuColor;
+	radius: ProjectRadius;
 }
 
 interface ShadcnConfig {
@@ -56,7 +67,11 @@ export function useShadcnPresets(): UseShadcnPresetsResult {
 				}
 				const config: ShadcnConfig = await response.json();
 				if (!cancelled) {
-					setPresets(config.presets);
+					setPresets(
+						config.presets.filter(
+							(preset) => preset.base === "radix" || preset.base === "base",
+						),
+					);
 					setIsLoading(false);
 				}
 			} catch (err) {

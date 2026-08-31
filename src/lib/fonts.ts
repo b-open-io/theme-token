@@ -123,6 +123,8 @@ export const FONT_CATALOG = {
 // System font stacks for fallbacks
 export const SYSTEM_FONTS = {
 	sans: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+	heading:
+		"ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
 	serif: "ui-serif, Georgia, Cambria, Times New Roman, serif",
 	mono: "ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace",
 };
@@ -151,7 +153,7 @@ export function sanitizeFontValue(
 }
 
 /**
- * Sanitize the three font fields on a style-mode record in place, replacing
+ * Sanitize the supported font fields on a style-mode record in place, replacing
  * any present-but-malformed value with the system stack while leaving absent
  * fields absent. Mutates and returns the record.
  */
@@ -159,6 +161,7 @@ export function sanitizeStyleModeFonts<T extends object>(mode: T): T {
 	const record = mode as Record<string, string | undefined>;
 	for (const [key, role] of [
 		["font-sans", "sans"],
+		["font-heading", "heading"],
 		["font-serif", "serif"],
 		["font-mono", "mono"],
 	] as const) {
@@ -278,7 +281,12 @@ export async function loadThemeFonts(theme: {
 		dark: Record<string, string>;
 	};
 }): Promise<void> {
-	const fontKeys = ["font-sans", "font-serif", "font-mono"] as const;
+	const fontKeys = [
+		"font-sans",
+		"font-heading",
+		"font-serif",
+		"font-mono",
+	] as const;
 	const onChainLoads: Promise<string>[] = [];
 
 	for (const key of fontKeys) {
@@ -297,6 +305,7 @@ export async function loadThemeFonts(theme: {
 							// Update CSS custom property with the loaded font family
 							const slot = key.replace("font-", "") as
 								| "sans"
+								| "heading"
 								| "serif"
 								| "mono";
 							document.documentElement.style.setProperty(
@@ -352,7 +361,7 @@ ${FONT_NAMES.serif.join(", ")}
 #### Monospace Fonts (--font-mono)
 ${FONT_NAMES.mono.join(", ")}
 
-#### Display/Decorative Fonts
+#### Heading Fonts (--font-heading)
 ${FONT_NAMES.display.join(", ")}
 
 ### On-Chain Fonts

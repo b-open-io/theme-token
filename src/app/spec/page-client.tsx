@@ -232,6 +232,7 @@ export function SpecPageClient() {
 										{[
 											"radius",
 											"font-sans",
+											"font-heading",
 											"font-serif",
 											"font-mono",
 											"letter-spacing",
@@ -263,14 +264,12 @@ export function SpecPageClient() {
 									</p>
 									<div className="flex flex-wrap gap-1 font-mono text-xs">
 										{[
-											"shadow-2xs",
-											"shadow-xs",
-											"shadow-sm",
-											"shadow",
-											"shadow-md",
-											"shadow-lg",
-											"shadow-xl",
-											"shadow-2xl",
+											"shadow-color",
+											"shadow-opacity",
+											"shadow-blur",
+											"shadow-spread",
+											"shadow-offset-x",
+											"shadow-offset-y",
 										].map((name) => (
 											<div
 												key={name}
@@ -280,6 +279,10 @@ export function SpecPageClient() {
 											</div>
 										))}
 									</div>
+									<p className="mt-1 text-[10px] text-muted-foreground/70">
+										The SDK derives the public shadow-2xs through shadow-2xl
+										scale.
+									</p>
 								</div>
 							</div>
 
@@ -435,9 +438,9 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							Project presets bundle themes, fonts, icons, and configuration
-							into complete shadcn/create bases. Create entire projects with one
-							command.
+							Project presets publish themes, dependencies, fonts, icons, and
+							configuration as complete shadcn/create bases. Create an entire
+							project with one command.
 						</motion.p>
 					</motion.div>
 
@@ -535,13 +538,16 @@ export function SpecPageClient() {
 								<div className="rounded-lg border border-border bg-card p-4">
 									<div className="flex items-center gap-2 mb-2">
 										<div className="h-2 w-2 rounded-full bg-primary" />
-										<span className="font-medium text-sm">On-Chain Assets</span>
+										<span className="font-medium text-sm">
+											Asset Relationships
+										</span>
 										<span className="text-[10px] text-muted-foreground">
-											(optional)
+											(planned v2)
 										</span>
 									</div>
 									<p className="text-xs text-muted-foreground">
-										Bundled fonts, patterns, or wallpapers via vout references
+										Linked or vendored fonts, patterns, and wallpapers use the
+										v2 asset contract after compiler support lands
 									</p>
 								</div>
 							</div>
@@ -551,16 +557,23 @@ export function SpecPageClient() {
 									Query parameter overrides:
 								</p>
 								<div className="flex flex-wrap gap-1 font-mono text-xs">
-									{["iconLibrary", "baseColor", "menuColor", "menuAccent"].map(
-										(param) => (
-											<div
-												key={param}
-												className="rounded border border-border bg-muted/30 px-2 py-1"
-											>
-												{param}
-											</div>
-										),
-									)}
+									{[
+										"base",
+										"iconLibrary",
+										"font",
+										"fontHeading",
+										"radius",
+										"baseColor",
+										"menuColor",
+										"menuAccent",
+									].map((param) => (
+										<div
+											key={param}
+											className="rounded border border-border bg-muted/30 px-2 py-1"
+										>
+											{param}
+										</div>
+									))}
 								</div>
 							</div>
 						</motion.div>
@@ -576,6 +589,7 @@ export function SpecPageClient() {
 							<CodeBlock
 								code={JSON.stringify(
 									{
+										$schema: "https://ui.shadcn.com/schema/registry-item.json",
 										type: "registry:base",
 										name: "My Project",
 										extends: "none",
@@ -583,9 +597,10 @@ export function SpecPageClient() {
 											"shadcn@latest",
 											"class-variance-authority",
 											"tw-animate-css",
+											"radix-ui",
 											"lucide-react",
 										],
-										registryDependencies: ["utils"],
+										registryDependencies: ["utils", "font-inter"],
 										cssVars: {
 											light: {
 												background: "oklch(...)",
@@ -604,20 +619,17 @@ export function SpecPageClient() {
 											'@import "tw-animate-css"': {},
 											'@import "shadcn/tailwind.css"': {},
 											"@layer base": {
-												"*": { "@apply border-border outline-ring/50": "" },
-												body: { "@apply bg-background text-foreground": "" },
+												"*": { "@apply border-border outline-ring/50": {} },
+												body: { "@apply bg-background text-foreground": {} },
 											},
 										},
 										config: {
-											style: "my-style",
-											tailwind: { baseColor: "zinc" },
+											style: "radix-my-style",
+											tailwind: { baseColor: "neutral" },
 											iconLibrary: "lucide",
+											rtl: false,
 											menuColor: "default",
 											menuAccent: "subtle",
-										},
-										bundle: {
-											version: 2,
-											assets: [{ vout: 0, type: "font", slot: "sans" }],
 										},
 									},
 									null,
@@ -635,9 +647,8 @@ export function SpecPageClient() {
 								<code className="rounded bg-muted px-1">
 									shadcn create --preset
 								</code>
-								. Bundle assets use{" "}
-								<code className="rounded bg-muted px-1">{"_N"}</code> relative
-								vout references resolved to ORDFS URLs.
+								. Asset relationships are intentionally excluded from v1 presets
+								until the v2 resolver and integrity checks are implemented.
 							</p>
 						</motion.div>
 					</div>

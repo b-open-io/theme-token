@@ -1,6 +1,6 @@
 import { parse } from "bitcoin-image";
 
-const ROUTE_EXTENSION = /\.(?:json|png)$/i;
+const ROUTE_EXTENSION = /\.(?:css|json|png)$/i;
 
 /**
  * Canonical internal outpoint format is `txid_vout` (underscore) — what
@@ -27,8 +27,8 @@ export function normalizeOutpoint(outpoint: string): string {
 
 /**
  * Normalize an origin received through a file-like application route. Shadcn
- * registry URLs end in `.json` and social-image URLs end in `.png`; neither
- * suffix is part of the ordinal outpoint itself.
+ * Registry, stylesheet, and social-image URLs use file-like suffixes; none of
+ * them are part of the ordinal outpoint itself.
  */
 export function normalizeOriginRouteParam(origin: string): string {
 	return normalizeOutpoint(origin.replace(ROUTE_EXTENSION, ""));
