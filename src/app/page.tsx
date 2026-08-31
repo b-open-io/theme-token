@@ -134,7 +134,7 @@ export default function Home() {
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
 							<Button size="lg" className="gap-2" asChild>
 								<Link href="/themes">
-									<LayoutGrid className="h-5 w-5" />
+									<LayoutGrid data-icon="inline-start" className="h-5 w-5" />
 									Browse Themes
 								</Link>
 							</Button>
@@ -144,7 +144,7 @@ export default function Home() {
 								className="gap-2"
 								onClick={handleCreateWithSwatchy}
 							>
-								<Wand2 className="h-5 w-5" />
+								<Wand2 data-icon="inline-start" className="h-5 w-5" />
 								Create Theme
 							</Button>
 						</div>

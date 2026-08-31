@@ -187,7 +187,7 @@ export default function ImageBrowsePage() {
 							<Sheet>
 								<SheetTrigger asChild>
 									<Button variant="outline" size="sm" className="lg:hidden">
-										<Filter className="mr-2 h-4 w-4" />
+										<Filter className="mr-2 h-4 w-4" data-icon="inline-start" />
 										Filters
 									</Button>
 								</SheetTrigger>
@@ -208,6 +208,7 @@ export default function ImageBrowsePage() {
 								disabled={isLoading}
 							>
 								<RefreshCw
+									data-icon="inline-start"
 									className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
 								/>
 								Refresh
@@ -445,7 +446,7 @@ function ImageCard({
 							onClick={onConnect}
 							className="h-7 text-xs"
 						>
-							<Wallet className="mr-1 h-3 w-3" />
+							<Wallet className="mr-1 h-3 w-3" data-icon="inline-start" />
 							Connect
 						</Button>
 					)}

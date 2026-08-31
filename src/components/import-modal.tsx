@@ -76,7 +76,7 @@ export function ImportModal({ onImport, trigger }: ImportModalProps) {
 			<DialogTrigger asChild>
 				{trigger || (
 					<Button variant="outline" size="sm" className="gap-2">
-						<Upload className="h-4 w-4" />
+						<Upload data-icon="inline-start" className="h-4 w-4" />
 						Import
 					</Button>
 				)}
@@ -177,7 +177,7 @@ export function ImportModal({ onImport, trigger }: ImportModalProps) {
 							Cancel
 						</Button>
 						<Button onClick={handleImport} disabled={!success}>
-							<Upload className="mr-2 h-4 w-4" />
+							<Upload data-icon="inline-start" className="mr-2 h-4 w-4" />
 							Import Theme
 						</Button>
 					</div>

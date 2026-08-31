@@ -112,7 +112,11 @@ export function FontCard({
 							</div>
 						</div>
 					) : isLoading ? (
-						<div className="flex items-center gap-2 text-muted-foreground">
+						<div
+							aria-live="polite"
+							className="flex items-center gap-2 text-muted-foreground"
+							role="status"
+						>
 							<Loader2 className="h-4 w-4 animate-spin" />
 							<span className="text-sm">Loading font...</span>
 						</div>
@@ -198,7 +202,10 @@ export function FontCard({
 			<div className="flex gap-2">
 				<Button variant="outline" size="sm" className="flex-1" asChild>
 					<Link href={`/preview/font/${origin}`}>
-						<ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+						<ExternalLink
+							data-icon="inline-start"
+							className="mr-1.5 h-3.5 w-3.5"
+						/>
 						Details
 					</Link>
 				</Button>
@@ -210,14 +217,20 @@ export function FontCard({
 				>
 					{isPurchasing ? (
 						<>
-							<Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+							<Loader2
+								data-icon="inline-start"
+								className="mr-1.5 h-3.5 w-3.5 animate-spin"
+							/>
 							Buying...
 						</>
 					) : !isConnected ? (
 						"Connect"
 					) : (
 						<>
-							<ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+							<ShoppingCart
+								data-icon="inline-start"
+								className="mr-1.5 h-3.5 w-3.5"
+							/>
 							Buy
 						</>
 					)}

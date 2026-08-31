@@ -264,6 +264,7 @@ export function TransactionTerminal({
 					</span>
 					{!isProcessing && (
 						<button
+							aria-label="Close transaction terminal"
 							type="button"
 							onClick={onCancel}
 							className="text-muted-foreground hover:text-foreground"
@@ -274,7 +275,11 @@ export function TransactionTerminal({
 				</div>
 
 				{/* Log Output */}
-				<div className="h-[400px] overflow-y-auto bg-black p-4 font-mono text-xs">
+				<div
+					aria-live="polite"
+					className="h-[400px] overflow-y-auto bg-black p-4 font-mono text-xs"
+					role="log"
+				>
 					{logs.map((log) => (
 						<div
 							key={log.id}

@@ -142,7 +142,7 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 							rel="noopener noreferrer"
 						>
 							View on Explorer
-							<ExternalLink className="ml-2 h-4 w-4" />
+							<ExternalLink data-icon="inline-end" className="ml-2 h-4 w-4" />
 						</a>
 					</Button>
 					<Button onClick={() => setTxid(null)}>Mint Another</Button>
@@ -214,6 +214,11 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			{/* Theme Selection */}
 			{activeTab === "presets" && (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					{cachedThemes.length === 0 && (
+						<div className="col-span-full rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+							No results. Paste CSS or JSON to continue.
+						</div>
+					)}
 					{cachedThemes.map((cached) => (
 						<button
 							type="button"
@@ -361,7 +366,10 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 
 			{/* Error Display */}
 			{walletError && (
-				<div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+				<div
+					role="alert"
+					className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+				>
 					<AlertCircle className="h-4 w-4" />
 					{walletError}
 				</div>
@@ -380,12 +388,15 @@ export function MintTheme({ className = "" }: MintThemeProps) {
 			>
 				{isInscribing ? (
 					<>
-						<Loader2 className="h-5 w-5 animate-spin" />
+						<Loader2
+							data-icon="inline-start"
+							className="h-5 w-5 animate-spin"
+						/>
 						Inscribing...
 					</>
 				) : (
 					<>
-						<Sparkles className="h-5 w-5" />
+						<Sparkles data-icon="inline-start" className="h-5 w-5" />
 						{isConnected
 							? "Inscribe Theme Token (~$0.001)"
 							: "Connect Wallet First"}

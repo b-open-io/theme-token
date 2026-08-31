@@ -118,7 +118,7 @@ export const ContextTrigger = ({ children, ...props }: ContextTriggerProps) => {
 					<span className="font-medium text-muted-foreground">
 						{renderedPercent}
 					</span>
-					<ContextIcon />
+					<ContextIcon data-icon="inline-end" />
 				</Button>
 			)}
 		</HoverCardTrigger>

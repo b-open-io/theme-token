@@ -216,7 +216,7 @@ export function BuyThemeModal({
 					<div className="flex gap-3">
 						<Button variant="outline" className="flex-1" asChild>
 							<Link href={`/preview/${origin}`} onClick={onClose}>
-								<Sparkles className="mr-2 h-4 w-4" />
+								<Sparkles data-icon="inline-start" className="mr-2 h-4 w-4" />
 								Preview
 							</Link>
 						</Button>
@@ -226,7 +226,10 @@ export function BuyThemeModal({
 							onClick={handlePurchase}
 						>
 							{isPurchasing ? (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<Loader2
+									data-icon="inline-start"
+									className="mr-2 h-4 w-4 animate-spin"
+								/>
 							) : !isConnected ? (
 								<>
 									<Wallet className="mr-2 h-4 w-4 fill-current" />

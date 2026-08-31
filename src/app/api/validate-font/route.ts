@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 				(w) => !w.includes("license") && !w.includes("License"),
 			);
 			// Add positive confirmation
-			if (!result.errors.length) {
+			if (result.isValid) {
 				result.warnings.unshift(
 					`Verified: "${result.metadata.familyName}" is a Google Font (open source).`,
 				);

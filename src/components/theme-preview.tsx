@@ -149,6 +149,11 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 
 				{activeTab === "presets" && (
 					<div className="space-y-3">
+						{cachedThemes.length === 0 && (
+							<div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+								No results. Paste CSS or JSON to continue.
+							</div>
+						)}
 						{cachedThemes.map((cached, i) => (
 							<motion.button
 								key={cached.origin}
@@ -272,7 +277,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 							size="sm"
 							onClick={() => setMode("light")}
 						>
-							<Sun className="mr-2 h-4 w-4" />
+							<Sun data-icon="inline-start" className="mr-2 h-4 w-4" />
 							Light
 						</Button>
 						<Button
@@ -280,7 +285,7 @@ export function ThemePreview({ className = "" }: ThemePreviewProps) {
 							size="sm"
 							onClick={() => setMode("dark")}
 						>
-							<Moon className="mr-2 h-4 w-4" />
+							<Moon data-icon="inline-start" className="mr-2 h-4 w-4" />
 							Dark
 						</Button>
 					</div>

@@ -86,7 +86,7 @@ export function StudioDashboard({
 							className="gap-2"
 							onClick={() => setIsSidebarOpen(true)}
 						>
-							<SlidersHorizontal />
+							<SlidersHorizontal data-icon="inline-start" />
 							Controls
 						</Button>
 					</div>

@@ -144,7 +144,7 @@ export function PaymentRequestCard({
 
 				{!isConnected ? (
 					<Button size="sm" onClick={() => connect()} className="flex-1 gap-2">
-						<Wallet className="h-4 w-4" />
+						<Wallet data-icon="inline-start" className="h-4 w-4" />
 						Connect Wallet
 					</Button>
 				) : (
@@ -156,12 +156,15 @@ export function PaymentRequestCard({
 					>
 						{isProcessing ? (
 							<>
-								<Loader2 className="h-4 w-4 animate-spin" />
+								<Loader2
+									data-icon="inline-start"
+									className="h-4 w-4 animate-spin"
+								/>
 								Processing...
 							</>
 						) : (
 							<>
-								<Sparkles className="h-4 w-4" />
+								<Sparkles data-icon="inline-start" className="h-4 w-4" />
 								{isFree
 									? "Claim Free Generation"
 									: paymentError

@@ -276,13 +276,16 @@ export function InscribedSuccessModal({
 							variant="default"
 							className="flex-1 gap-2"
 						>
-							<XIcon className="h-4 w-4 shrink-0" />
+							<XIcon data-icon="inline-start" className="h-4 w-4 shrink-0" />
 							<span>Share</span>
 						</Button>
 						<Button asChild variant="outline" className="flex-1 gap-2">
 							<a href={marketUrl} target="_blank" rel="noopener noreferrer">
 								<span>Market</span>
-								<ExternalLink className="h-3 w-3 shrink-0" />
+								<ExternalLink
+									data-icon="inline-end"
+									className="h-3 w-3 shrink-0"
+								/>
 							</a>
 						</Button>
 					</motion.div>

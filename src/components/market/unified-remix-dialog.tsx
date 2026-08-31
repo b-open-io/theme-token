@@ -334,6 +334,7 @@ export function UnifiedRemixDialog({
 						// REMIX_{type.toUpperCase()}
 					</h2>
 					<button
+						aria-label="Close remix dialog"
 						type="button"
 						onClick={onClose}
 						disabled={isProcessing}

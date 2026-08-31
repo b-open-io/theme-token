@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { JsonLd } from "@/components/json-ld";
 import { Providers } from "@/components/providers";
 import { SwatchyAssistant } from "@/components/swatchy/swatchy-assistant";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { FeatureFlagsProvider } from "@/lib/feature-flags";
 import { getFeatureFlags } from "@/lib/get-feature-flags";
@@ -190,18 +191,21 @@ export default async function RootLayout({
 			</head>
 			<body className="font-sans antialiased">
 				<FeatureFlagsProvider value={featureFlags}>
-					<Providers
+					<ThemeProvider
+						attribute="class"
 						initialThemeOrigin={sessionThemeOrigin}
 						hasExistingSession={!!session}
 					>
-						<div className="flex min-h-full flex-col">
-							<Header />
-							<main className="flex min-h-0 flex-1 flex-col">{children}</main>
-							<ConditionalFooter />
-						</div>
-						<Toaster position="bottom-right" richColors closeButton />
-						<SwatchyAssistant />
-					</Providers>
+						<Providers>
+							<div className="flex min-h-full flex-col">
+								<Header />
+								<main className="flex min-h-0 flex-1 flex-col">{children}</main>
+								<ConditionalFooter />
+							</div>
+							<Toaster position="bottom-right" richColors closeButton />
+							<SwatchyAssistant />
+						</Providers>
+					</ThemeProvider>
 				</FeatureFlagsProvider>
 			</body>
 		</html>

@@ -953,6 +953,14 @@ export function ThemeStudio() {
 										</SelectValue>
 									</SelectTrigger>
 									<SelectContent className="max-h-80">
+										{!loadingThemes &&
+											onChainThemes.length === 0 &&
+											availableThemes.length === 0 &&
+											drafts.length === 0 && (
+												<div className="px-3 py-6 text-center text-xs text-muted-foreground">
+													No results found. Create a theme to get started.
+												</div>
+											)}
 										{/* On-Chain Themes */}
 										{onChainThemes.length > 0 && (
 											<SelectGroup>
@@ -1425,6 +1433,7 @@ export function ThemeStudio() {
 												</span>
 											</div>
 											<Slider
+												aria-label="Letter spacing"
 												value={[
 													parseFloat(
 														selectedTheme.styles[mode][
@@ -1452,6 +1461,7 @@ export function ThemeStudio() {
 												</span>
 											</div>
 											<Slider
+												aria-label="Base spacing"
 												value={[
 													parseFloat(
 														selectedTheme.styles[mode].spacing?.replace(
@@ -1490,6 +1500,7 @@ export function ThemeStudio() {
 												</span>
 											</div>
 											<Slider
+												aria-label="Border radius"
 												value={[
 													parseFloat(selectedTheme.styles[mode].radius) || 0.5,
 												]}
@@ -1525,6 +1536,7 @@ export function ThemeStudio() {
 														</span>
 													</div>
 													<Slider
+														aria-label="Shadow opacity"
 														value={[
 															parseFloat(
 																selectedTheme.styles[mode]["shadow-opacity"] ||
@@ -1550,6 +1562,7 @@ export function ThemeStudio() {
 														</span>
 													</div>
 													<Slider
+														aria-label="Shadow blur"
 														value={[
 															parseFloat(
 																selectedTheme.styles[mode][
@@ -1576,6 +1589,7 @@ export function ThemeStudio() {
 														</span>
 													</div>
 													<Slider
+														aria-label="Shadow spread"
 														value={[
 															parseFloat(
 																selectedTheme.styles[mode][
@@ -1604,6 +1618,7 @@ export function ThemeStudio() {
 															</span>
 														</div>
 														<Slider
+															aria-label="Shadow horizontal offset"
 															value={[
 																parseFloat(
 																	selectedTheme.styles[mode][
@@ -1631,6 +1646,7 @@ export function ThemeStudio() {
 															</span>
 														</div>
 														<Slider
+															aria-label="Shadow vertical offset"
 															value={[
 																parseFloat(
 																	selectedTheme.styles[mode][
@@ -1811,7 +1827,10 @@ export function ThemeStudio() {
 					</div>
 
 					{walletError && (
-						<div className="flex w-full min-w-0 items-center gap-2 break-words text-sm text-destructive sm:w-auto">
+						<div
+							role="alert"
+							className="flex w-full min-w-0 items-center gap-2 break-words text-sm text-destructive sm:w-auto"
+						>
 							<AlertCircle className="h-4 w-4" />
 							{walletError}
 						</div>
@@ -1825,7 +1844,7 @@ export function ThemeStudio() {
 								onClick={() => setShowBuyModal(true)}
 								className="h-10 min-w-0 w-full gap-2 whitespace-nowrap px-3 sm:w-auto sm:px-4"
 							>
-								<ShoppingCart className="h-5 w-5" />
+								<ShoppingCart data-icon="inline-start" className="h-5 w-5" />
 								Buy
 							</Button>
 						)}
@@ -1851,22 +1870,28 @@ export function ThemeStudio() {
 						>
 							{isConnected && addresses ? (
 								<>
-									<PenLine className="h-5 w-5" />
+									<PenLine data-icon="inline-start" className="h-5 w-5" />
 									Inscribe Theme
 								</>
 							) : isConnected ? (
 								<>
-									<Loader2 className="h-5 w-5 animate-spin" />
+									<Loader2
+										data-icon="inline-start"
+										className="h-5 w-5 animate-spin"
+									/>
 									Preparing Wallet...
 								</>
 							) : status === "connecting" ? (
 								<>
-									<Loader2 className="h-5 w-5 animate-spin" />
+									<Loader2
+										data-icon="inline-start"
+										className="h-5 w-5 animate-spin"
+									/>
 									Connecting...
 								</>
 							) : (
 								<>
-									<PenLine className="h-5 w-5" />
+									<PenLine data-icon="inline-start" className="h-5 w-5" />
 									Connect to Inscribe
 								</>
 							)}

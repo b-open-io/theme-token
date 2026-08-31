@@ -54,20 +54,20 @@ function runPatternChecks(code: string): {
 	errors: string[];
 	warnings: string[];
 } {
-	const errors: string[] = [];
+	const issues: string[] = [];
 	const warnings: string[] = [];
 
 	for (const check of PATTERN_CHECKS) {
 		if (check.pattern.test(code)) {
 			if (check.type === "error") {
-				errors.push(check.message);
+				issues.push(check.message);
 			} else {
 				warnings.push(check.message);
 			}
 		}
 	}
 
-	return { errors, warnings };
+	return { errors: issues, warnings };
 }
 
 /**
@@ -136,18 +136,18 @@ export function validateCode(
 	filename?: string,
 ): CodeValidationResult {
 	// Run quick pattern checks first
-	const patternResult = runPatternChecks(code);
+	const { errors: patternIssues, warnings } = runPatternChecks(code);
 
 	// If we already have pattern errors, still run TS validation to catch more
-	const tsResult = validateWithTypeScript(code, filename);
+	const { errors: syntaxIssues } = validateWithTypeScript(code, filename);
 
 	// Combine results
-	const allErrors = [...patternResult.errors, ...tsResult.errors];
+	const allErrors = [...patternIssues, ...syntaxIssues];
 
 	return {
 		valid: allErrors.length === 0,
 		errors: allErrors,
-		warnings: patternResult.warnings,
+		warnings,
 	};
 }
 
@@ -164,16 +164,17 @@ export function validateMultipleFiles(
 	const allWarnings: string[] = [];
 
 	for (const file of files) {
-		const result = validateCode(file.content, file.filename);
+		const { errors: fileIssues, warnings: fileWarnings } = validateCode(
+			file.content,
+			file.filename,
+		);
 		// Prefix errors with filename if multiple files
 		if (files.length > 1 && file.filename) {
-			allErrors.push(...result.errors.map((e) => `[${file.filename}] ${e}`));
-			allWarnings.push(
-				...result.warnings.map((w) => `[${file.filename}] ${w}`),
-			);
+			allErrors.push(...fileIssues.map((e) => `[${file.filename}] ${e}`));
+			allWarnings.push(...fileWarnings.map((w) => `[${file.filename}] ${w}`));
 		} else {
-			allErrors.push(...result.errors);
-			allWarnings.push(...result.warnings);
+			allErrors.push(...fileIssues);
+			allWarnings.push(...fileWarnings);
 		}
 	}
 

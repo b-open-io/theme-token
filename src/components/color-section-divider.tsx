@@ -164,7 +164,7 @@ export function ColorBleed({
 			transition={{ duration: 1, ease: "easeOut" }}
 			className={`
         absolute ${positions[position]}
-        w-[500px] h-[500px]
+			w-[500px] max-w-[100vw] h-[500px]
         ${bgColors[color]}
         opacity-20 blur-[150px]
         rounded-full

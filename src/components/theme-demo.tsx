@@ -40,6 +40,7 @@ import { Progress } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -126,6 +127,7 @@ function AudioPlayerDemo() {
 				{/* Seek Bar */}
 				<div className="mb-2 space-y-2">
 					<Slider
+						aria-label="Playback position"
 						value={currentTime}
 						onValueChange={setCurrentTime}
 						max={duration}
@@ -145,6 +147,7 @@ function AudioPlayerDemo() {
 							variant="ghost"
 							size="icon"
 							className="h-9 w-9"
+							aria-label="Rewind 10 seconds"
 							onClick={() => setCurrentTime([Math.max(0, currentTime[0] - 10)])}
 						>
 							<SkipBack className="h-4 w-4" />
@@ -153,6 +156,7 @@ function AudioPlayerDemo() {
 							variant="default"
 							size="icon"
 							className="h-11 w-11 rounded-full"
+							aria-label={isPlaying ? "Pause track" : "Play track"}
 							onClick={() => setIsPlaying(!isPlaying)}
 						>
 							{isPlaying ? (
@@ -165,6 +169,7 @@ function AudioPlayerDemo() {
 							variant="ghost"
 							size="icon"
 							className="h-9 w-9"
+							aria-label="Forward 10 seconds"
 							onClick={() =>
 								setCurrentTime([Math.min(duration, currentTime[0] + 10)])
 							}
@@ -179,6 +184,7 @@ function AudioPlayerDemo() {
 							variant="ghost"
 							size="icon"
 							className="h-9 w-9"
+							aria-label={isMuted ? "Unmute audio" : "Mute audio"}
 							onClick={() => setIsMuted(!isMuted)}
 						>
 							{isMuted ? (
@@ -189,6 +195,7 @@ function AudioPlayerDemo() {
 						</Button>
 						<div className="w-24">
 							<Slider
+								aria-label="Volume"
 								value={isMuted ? [0] : volume}
 								onValueChange={(v) => {
 									setVolume(v);
@@ -325,14 +332,14 @@ export function ThemeDemo() {
 					<Button size="sm">Small</Button>
 					<Button size="default">Default</Button>
 					<Button size="lg">Large</Button>
-					<Button size="icon">
+					<Button size="icon" aria-label="Settings">
 						<Settings className="h-4 w-4" />
 					</Button>
 				</div>
 				<div className="flex flex-wrap gap-3">
 					<Button disabled>Disabled</Button>
 					<Button>
-						<Mail className="mr-2 h-4 w-4" /> With Icon
+						<Mail data-icon="inline-start" className="mr-2 h-4 w-4" /> With Icon
 					</Button>
 				</div>
 			</DemoSection>
@@ -449,13 +456,15 @@ export function ThemeDemo() {
 						<div className="space-y-2">
 							<Label>Select Option</Label>
 							<Select>
-								<SelectTrigger>
+								<SelectTrigger aria-label="Select an option">
 									<SelectValue placeholder="Select..." />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="option1">Option 1</SelectItem>
-									<SelectItem value="option2">Option 2</SelectItem>
-									<SelectItem value="option3">Option 3</SelectItem>
+									<SelectGroup>
+										<SelectItem value="option1">Option 1</SelectItem>
+										<SelectItem value="option2">Option 2</SelectItem>
+										<SelectItem value="option3">Option 3</SelectItem>
+									</SelectGroup>
 								</SelectContent>
 							</Select>
 						</div>
@@ -472,7 +481,12 @@ export function ThemeDemo() {
 						</div>
 						<div className="space-y-2">
 							<Label>Volume</Label>
-							<Slider defaultValue={[50]} max={100} step={1} />
+							<Slider
+								aria-label="Volume"
+								defaultValue={[50]}
+								max={100}
+								step={1}
+							/>
 						</div>
 						<div className="flex gap-2">
 							<Toggle aria-label="Bold">
@@ -677,6 +691,7 @@ export function ThemeDemo() {
 								<div className="flex items-center gap-3">
 									<Volume2 className="h-4 w-4 text-muted-foreground" />
 									<Slider
+										aria-label="Master volume"
 										defaultValue={[75]}
 										max={100}
 										step={1}
@@ -693,6 +708,7 @@ export function ThemeDemo() {
 								<div className="flex items-center gap-3">
 									<span className="text-xs text-muted-foreground">−</span>
 									<Slider
+										aria-label="Bass"
 										defaultValue={[50]}
 										max={100}
 										step={1}
@@ -707,6 +723,7 @@ export function ThemeDemo() {
 								<div className="flex items-center gap-3">
 									<span className="text-xs text-muted-foreground">−</span>
 									<Slider
+										aria-label="Treble"
 										defaultValue={[50]}
 										max={100}
 										step={1}

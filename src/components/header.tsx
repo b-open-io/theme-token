@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AppCommandMenu } from "@/components/app-command-menu";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { WalletConnect } from "@/components/wallet-connect";
@@ -104,6 +105,7 @@ export function Header() {
 
 					{/* Right Side */}
 					<div className="flex items-center gap-1">
+						<AppCommandMenu />
 						{/* GitHub - Desktop only */}
 						<a
 							href="https://github.com/b-open-io/theme-token"

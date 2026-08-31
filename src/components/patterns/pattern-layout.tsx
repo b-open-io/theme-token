@@ -88,22 +88,28 @@ export function PatternLayout() {
 					>
 						{isInscribing ? (
 							<>
-								<Loader2 className="h-5 w-5 animate-spin" />
+								<Loader2
+									data-icon="inline-start"
+									className="h-5 w-5 animate-spin"
+								/>
 								Inscribing...
 							</>
 						) : isConnected ? (
 							<>
-								<PenLine className="h-5 w-5" />
+								<PenLine data-icon="inline-start" className="h-5 w-5" />
 								Inscribe Pattern
 							</>
 						) : status === "connecting" ? (
 							<>
-								<Loader2 className="h-5 w-5 animate-spin" />
+								<Loader2
+									data-icon="inline-start"
+									className="h-5 w-5 animate-spin"
+								/>
 								Connecting...
 							</>
 						) : (
 							<>
-								<PenLine className="h-5 w-5" />
+								<PenLine data-icon="inline-start" className="h-5 w-5" />
 								Connect to Inscribe
 							</>
 						)}
@@ -158,7 +164,7 @@ export function PatternLayout() {
 						onClick={randomize}
 						type="button"
 					>
-						<RefreshCw className="mr-2 h-3 w-3" />
+						<RefreshCw data-icon="inline-start" className="mr-2 h-3 w-3" />
 						Randomize
 					</Button>
 				</div>

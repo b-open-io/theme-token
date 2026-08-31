@@ -22,14 +22,15 @@ export function ButtonsDemo() {
 						<Button size="sm">Small</Button>
 						<Button size="default">Default</Button>
 						<Button size="lg">Large</Button>
-						<Button size="icon">
+						<Button aria-label="Settings" size="icon">
 							<Settings className="h-4 w-4" />
 						</Button>
 					</div>
 					<div className="flex flex-wrap gap-3">
 						<Button disabled>Disabled</Button>
 						<Button>
-							<Mail className="mr-2 h-4 w-4" /> With Icon
+							<Mail className="mr-2 h-4 w-4" data-icon="inline-start" /> With
+							Icon
 						</Button>
 					</div>
 				</div>

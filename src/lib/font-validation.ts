@@ -359,13 +359,13 @@ export async function validateFont(
 	const embedding = getEmbeddingInfo(font);
 	const fingerprint = generateGlyphFingerprint(font);
 
-	const errors: string[] = [];
+	const violations: string[] = [];
 	const warnings: string[] = [];
 
 	// Check 1: Known commercial font by name
 	const isKnownCommercial = isKnownCommercialFont(metadata);
 	if (isKnownCommercial) {
-		errors.push(
+		violations.push(
 			`"${metadata.familyName}" appears to be a commercial font that requires a license for redistribution. Blockchain inscription is not permitted.`,
 		);
 	}
@@ -373,7 +373,7 @@ export async function validateFont(
 	// Check 2: Embedding restrictions
 	const hasRestrictiveEmbedding = embedding.isRestricted;
 	if (hasRestrictiveEmbedding) {
-		errors.push(
+		violations.push(
 			"This font has embedding restrictions set by the font creator. It cannot be redistributed.",
 		);
 	}
@@ -419,13 +419,13 @@ export async function validateFont(
 	}
 
 	// Determine final status
-	const isValid = errors.length === 0;
-	const canProceed = errors.length === 0; // Can't proceed if there are errors
+	const isValid = violations.length === 0;
+	const canProceed = violations.length === 0; // Can't proceed if there are errors
 
 	return {
 		isValid,
 		canProceed,
-		errors,
+		errors: violations,
 		warnings,
 		metadata,
 		embedding,

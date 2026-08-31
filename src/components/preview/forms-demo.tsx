@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -88,14 +89,16 @@ export function FormsDemo() {
 						<div className="space-y-2">
 							<Label>Project Category</Label>
 							<Select defaultValue="audio">
-								<SelectTrigger>
+								<SelectTrigger aria-label="Project category">
 									<SelectValue placeholder="Choose a category" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="audio">Audio UI</SelectItem>
-									<SelectItem value="design">Design System</SelectItem>
-									<SelectItem value="dev">Development</SelectItem>
-									<SelectItem value="ops">Ops / Tooling</SelectItem>
+									<SelectGroup>
+										<SelectItem value="audio">Audio UI</SelectItem>
+										<SelectItem value="design">Design System</SelectItem>
+										<SelectItem value="dev">Development</SelectItem>
+										<SelectItem value="ops">Ops / Tooling</SelectItem>
+									</SelectGroup>
 								</SelectContent>
 							</Select>
 						</div>

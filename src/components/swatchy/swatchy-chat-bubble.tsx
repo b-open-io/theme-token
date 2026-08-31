@@ -539,7 +539,10 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 																	onClick={() => void handleRetry()}
 																	className="h-8 gap-1 text-primary"
 																>
-																	<RotateCcw className="size-3" />
+																	<RotateCcw
+																		data-icon="inline-start"
+																		className="size-3"
+																	/>
 																	Free Retry
 																</Button>
 															</div>
@@ -661,7 +664,7 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 									void regenerate();
 								}}
 							>
-								<RotateCcw className="size-3" />
+								<RotateCcw data-icon="inline-start" className="size-3" />
 								Retry
 							</Button>
 						</div>

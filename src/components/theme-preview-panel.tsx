@@ -54,6 +54,7 @@ import { Progress } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -386,10 +387,20 @@ function CalendarCard() {
 				<div className="flex items-center justify-between">
 					<CardTitle className="text-base">{currentMonth}</CardTitle>
 					<div className="flex gap-1">
-						<Button variant="ghost" size="icon" className="h-7 w-7">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7"
+							aria-label="Previous month"
+						>
 							<ChevronRight className="h-4 w-4 rotate-180" />
 						</Button>
-						<Button variant="ghost" size="icon" className="h-7 w-7">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7"
+							aria-label="Next month"
+						>
 							<ChevronRight className="h-4 w-4" />
 						</Button>
 					</div>
@@ -438,6 +449,7 @@ function MoveGoalCard() {
 						variant="outline"
 						size="icon"
 						className="h-10 w-10 rounded-full"
+						aria-label="Decrease calorie target"
 					>
 						<Minus className="h-4 w-4" />
 					</Button>
@@ -451,6 +463,7 @@ function MoveGoalCard() {
 						variant="outline"
 						size="icon"
 						className="h-10 w-10 rounded-full"
+						aria-label="Increase calorie target"
 					>
 						<Plus className="h-4 w-4" />
 					</Button>
@@ -649,13 +662,17 @@ function FormDemo() {
 				<div className="space-y-2">
 					<Label>Plan</Label>
 					<Select defaultValue="pro">
-						<SelectTrigger>
+						<SelectTrigger aria-label="Select a plan">
 							<SelectValue placeholder="Select a plan" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="free">Free</SelectItem>
-							<SelectItem value="pro">Pro - $9/month</SelectItem>
-							<SelectItem value="enterprise">Enterprise - $49/month</SelectItem>
+							<SelectGroup>
+								<SelectItem value="free">Free</SelectItem>
+								<SelectItem value="pro">Pro - $9/month</SelectItem>
+								<SelectItem value="enterprise">
+									Enterprise - $49/month
+								</SelectItem>
+							</SelectGroup>
 						</SelectContent>
 					</Select>
 				</div>
@@ -694,7 +711,7 @@ function NotificationsCard() {
 							</p>
 						</div>
 					</div>
-					<Switch defaultChecked />
+					<Switch aria-label="Email notifications" defaultChecked />
 				</div>
 				<Separator />
 				<div className="flex items-center justify-between">
@@ -707,7 +724,7 @@ function NotificationsCard() {
 							</p>
 						</div>
 					</div>
-					<Switch />
+					<Switch aria-label="Push notifications" />
 				</div>
 				<Separator />
 				<div className="flex items-center justify-between">
@@ -720,7 +737,7 @@ function NotificationsCard() {
 							</p>
 						</div>
 					</div>
-					<Switch />
+					<Switch aria-label="SMS notifications" />
 				</div>
 			</CardContent>
 		</Card>
@@ -767,7 +784,7 @@ function TeamMembers() {
 			</CardContent>
 			<CardFooter>
 				<Button variant="outline" className="w-full">
-					<Plus className="mr-2 h-4 w-4" />
+					<Plus data-icon="inline-start" className="mr-2 h-4 w-4" />
 					Invite Member
 				</Button>
 			</CardFooter>
@@ -797,7 +814,7 @@ function ButtonsShowcase() {
 					<Button size="lg">Large</Button>
 					<Button size="default">Default</Button>
 					<Button size="sm">Small</Button>
-					<Button size="icon">
+					<Button size="icon" aria-label="Settings">
 						<Settings className="h-4 w-4" />
 					</Button>
 				</div>
@@ -805,7 +822,7 @@ function ButtonsShowcase() {
 				<div className="flex flex-wrap gap-2">
 					<Button disabled>Disabled</Button>
 					<Button>
-						<Download className="mr-2 h-4 w-4" />
+						<Download data-icon="inline-start" className="mr-2 h-4 w-4" />
 						With Icon
 					</Button>
 				</div>
@@ -857,14 +874,19 @@ function ProgressDemo() {
 						<span>Volume</span>
 						<span className="text-muted-foreground">50%</span>
 					</div>
-					<Slider defaultValue={[50]} max={100} step={1} />
+					<Slider aria-label="Volume" defaultValue={[50]} max={100} step={1} />
 				</div>
 				<div className="space-y-2">
 					<div className="flex justify-between text-sm">
 						<span>Brightness</span>
 						<span className="text-muted-foreground">80%</span>
 					</div>
-					<Slider defaultValue={[80]} max={100} step={1} />
+					<Slider
+						aria-label="Brightness"
+						defaultValue={[80]}
+						max={100}
+						step={1}
+					/>
 				</div>
 			</CardContent>
 		</Card>

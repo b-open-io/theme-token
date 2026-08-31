@@ -192,7 +192,10 @@ export function WallpaperPreview() {
 										className="shadow-lg"
 										onClick={handleDownload}
 									>
-										<Download className="mr-2 h-4 w-4" />
+										<Download
+											data-icon="inline-start"
+											className="mr-2 h-4 w-4"
+										/>
 										Download
 									</Button>
 								</div>

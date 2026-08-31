@@ -371,7 +371,7 @@ export function AIGenerateTab({
 						onClick={onClear}
 						className="w-full gap-2 font-mono text-xs"
 					>
-						<RotateCcw className="h-3 w-3" />
+						<RotateCcw data-icon="inline-start" className="h-3 w-3" />
 						Generate New Font
 					</Button>
 				</div>

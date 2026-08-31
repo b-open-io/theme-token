@@ -133,6 +133,7 @@ export function WallpaperSidebar() {
 										{generatedWallpapers.slice(0, 6).map((wp) => (
 											<button
 												type="button"
+												aria-label="Use this wallpaper as the remix source"
 												key={wp.id}
 												onClick={() => setSourceWallpaper(wp)}
 												className={cn(
@@ -266,6 +267,7 @@ export function WallpaperSidebar() {
 								</Label>
 							</div>
 							<Switch
+								aria-label="Use active theme colors"
 								checked={useThemeContext}
 								onCheckedChange={setUseThemeContext}
 							/>
@@ -285,7 +287,10 @@ export function WallpaperSidebar() {
 										}
 										onValueChange={handleThemeSelect}
 									>
-										<SelectTrigger className="w-full h-9">
+										<SelectTrigger
+											aria-label="Select a theme"
+											className="w-full h-9"
+										>
 											<SelectValue placeholder="Select a theme" />
 										</SelectTrigger>
 										<SelectContent>

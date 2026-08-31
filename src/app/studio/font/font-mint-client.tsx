@@ -494,7 +494,7 @@ function FontMintPageContent() {
 							onClick={handleReset}
 							className="h-7 gap-1.5 px-2 font-mono text-xs text-muted-foreground hover:text-foreground"
 						>
-							<RotateCcw className="h-3 w-3" />
+							<RotateCcw data-icon="inline-start" className="h-3 w-3" />
 							Clear
 						</Button>
 					)}
@@ -510,19 +510,22 @@ function FontMintPageContent() {
 						>
 							{isMinting ? (
 								<>
-									<Loader2 className="h-3 w-3 animate-spin" />
+									<Loader2
+										data-icon="inline-start"
+										className="h-3 w-3 animate-spin"
+									/>
 									INSCRIBING...
 								</>
 							) : (
 								<>
-									<Wallet className="h-3 w-3" />
+									<Wallet data-icon="inline-start" className="h-3 w-3" />
 									INSCRIBE
 								</>
 							)}
 						</Button>
 					) : (
 						<Button onClick={connect} className="gap-2 font-mono text-xs">
-							<Wallet className="h-3 w-3" />
+							<Wallet data-icon="inline-start" className="h-3 w-3" />
 							Connect Wallet
 						</Button>
 					)}

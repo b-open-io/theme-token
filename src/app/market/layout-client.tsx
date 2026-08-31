@@ -1,10 +1,19 @@
 "use client";
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Image, ShoppingCart, Tag, Type, Wallet } from "lucide-react";
+import { Image, Menu, ShoppingCart, Tag, Type, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import {
 	BsvRateProvider,
 	useBsvRateContext,
@@ -133,6 +142,11 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 
 	const { listings, label } = getStats();
 	const totalCount = listings.length;
+	const activeTab = tabs.find(
+		(tab) =>
+			pathname === tab.href ||
+			(tab.href === "/market/browse" && pathname === "/market"),
+	);
 	const floorPrice =
 		listings.length > 0 ? Math.min(...listings.map((l) => l.price)) : 0;
 
@@ -153,8 +167,41 @@ function MarketLayoutInner({ children }: { children: React.ReactNode }) {
 						{/* Divider - hidden on mobile */}
 						<div className="hidden h-4 w-px bg-border sm:block" />
 
+						<Sheet>
+							<SheetTrigger asChild>
+								<Button className="sm:hidden" size="sm" variant="ghost">
+									<Menu data-icon="inline-start" />
+									{activeTab?.label ?? "Market"}
+								</Button>
+							</SheetTrigger>
+							<SheetContent side="left">
+								<SheetHeader>
+									<SheetTitle>Market</SheetTitle>
+								</SheetHeader>
+								<nav aria-label="Market sections" className="grid gap-1 px-4">
+									{tabs.map((tab) => {
+										const Icon = tab.icon;
+										return (
+											<SheetClose asChild key={tab.href}>
+												<Link
+													className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent"
+													href={tab.href}
+												>
+													<Icon className="size-4" />
+													{tab.label}
+												</Link>
+											</SheetClose>
+										);
+									})}
+								</nav>
+							</SheetContent>
+						</Sheet>
+
 						{/* Tab Navigation */}
-						<nav className="flex items-center gap-0.5 sm:gap-1">
+						<nav
+							aria-label="Market sections"
+							className="hidden items-center gap-1 sm:flex"
+						>
 							{tabs.map((tab) => {
 								const Icon = tab.icon;
 								const isActive =

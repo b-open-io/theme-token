@@ -22,8 +22,7 @@ type AudioStore = {
 	progress: number;
 	bufferedTime: number;
 	insertMode: InsertMode;
-	isError: boolean;
-	errorMessage: string | null;
+	playbackIssue: string | null;
 	currentQueueIndex: number;
 
 	// Playback Actions
@@ -158,8 +157,7 @@ const calculatePreviousIndex = (params: QueueNavigationParams): number =>
  */
 const getSuccessState = (params: { isPlaying?: boolean } = {}) => ({
 	isLoading: false,
-	isError: false,
-	errorMessage: null,
+	playbackIssue: null,
 	isBuffering: false,
 	isPlaying: params.isPlaying ?? false,
 });
@@ -167,11 +165,10 @@ const getSuccessState = (params: { isPlaying?: boolean } = {}) => ({
 /**
  * Default state after loading error
  */
-const getErrorState = (params: { errorMessage: string }) => ({
+const getErrorState = (params: { playbackIssue: string }) => ({
 	isLoading: false,
 	isPlaying: false,
-	isError: true,
-	errorMessage: params.errorMessage,
+	playbackIssue: params.playbackIssue,
 	isBuffering: false,
 });
 
@@ -180,7 +177,7 @@ type LoadAndPlayTrackParams = {
 	queueIndex: number;
 	set: (partial: Partial<AudioStore>) => void;
 	get: () => AudioStore;
-	errorMessage: string;
+	playbackIssue: string;
 };
 
 /**
@@ -189,7 +186,7 @@ type LoadAndPlayTrackParams = {
 const loadAndPlayTrack = async (
 	params: LoadAndPlayTrackParams,
 ): Promise<void> => {
-	const { track, queueIndex, set, get, errorMessage } = params;
+	const { track, queueIndex, set, get, playbackIssue } = params;
 	const isLiveStream = isLive(track);
 
 	set({
@@ -218,8 +215,8 @@ const loadAndPlayTrack = async (
 		await $audio.play();
 		set(getSuccessState({ isPlaying: true }));
 	} catch (error) {
-		console.error(errorMessage, error);
-		set(getErrorState({ errorMessage }));
+		console.error(playbackIssue, error);
+		set(getErrorState({ playbackIssue }));
 		throw error;
 	}
 };
@@ -243,8 +240,7 @@ const useAudioStore = create<AudioStore>()(
 			progress: 0,
 			bufferedTime: 0,
 			insertMode: "last",
-			isError: false,
-			errorMessage: null,
+			playbackIssue: null,
 			currentQueueIndex: -1,
 
 			// Playback Actions
@@ -299,7 +295,7 @@ const useAudioStore = create<AudioStore>()(
 					queueIndex: nextIndex,
 					set,
 					get,
-					errorMessage: "Error loading/playing next track",
+					playbackIssue: "Error loading/playing next track",
 				});
 			},
 
@@ -346,7 +342,7 @@ const useAudioStore = create<AudioStore>()(
 					queueIndex: prevIndex,
 					set,
 					get,
-					errorMessage: "Error loading/playing previous track",
+					playbackIssue: "Error loading/playing previous track",
 				});
 			},
 
@@ -372,13 +368,13 @@ const useAudioStore = create<AudioStore>()(
 
 				get().setQueue(songs, startIndex);
 
-				const errorMessage = `Error playing ${targetTrack.title || "track"}`;
+				const playbackIssue = `Error playing ${targetTrack.title || "track"}`;
 				await loadAndPlayTrack({
 					track: targetTrack,
 					queueIndex: startIndex,
 					set,
 					get,
-					errorMessage,
+					playbackIssue,
 				});
 			},
 
@@ -562,8 +558,7 @@ const useAudioStore = create<AudioStore>()(
 						duration: 0,
 						queue: [],
 						isLoading: false,
-						isError: false,
-						errorMessage: null,
+						playbackIssue: null,
 					});
 					return;
 				}
@@ -573,7 +568,7 @@ const useAudioStore = create<AudioStore>()(
 					return;
 				}
 
-				const errorMessage = `Error: ${track.title || "Unknown track"}`;
+				const playbackIssue = `Error: ${track.title || "Unknown track"}`;
 
 				// Update queue with a single track
 				set({
@@ -584,8 +579,7 @@ const useAudioStore = create<AudioStore>()(
 					isPlaying: false,
 					currentTime: 0,
 					duration: 0,
-					isError: false,
-					errorMessage: null,
+					playbackIssue: null,
 				});
 
 				await loadAndPlayTrack({
@@ -593,13 +587,12 @@ const useAudioStore = create<AudioStore>()(
 					queueIndex: 0,
 					set,
 					get,
-					errorMessage,
+					playbackIssue,
 				});
 			},
 			setError: (message) => {
 				set({
-					isError: !!message,
-					errorMessage: message,
+					playbackIssue: message,
 					isLoading: false,
 					isPlaying: false,
 				});

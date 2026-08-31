@@ -91,6 +91,7 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 					// PREVIEW_RENDER_TARGET
 				</span>
 				<span
+					aria-live="polite"
 					className={`font-mono text-xs ${
 						derivedStatus === "READY"
 							? "text-primary"
@@ -98,6 +99,7 @@ export function LiveTypeCanvas({ files, fontName }: LiveTypeCanvasProps) {
 								? "text-destructive"
 								: "text-muted-foreground"
 					}`}
+					role="status"
 				>
 					STATUS: {derivedStatus}
 				</span>

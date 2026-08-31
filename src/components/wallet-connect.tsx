@@ -81,10 +81,18 @@ export function WalletConnect() {
 					className="gap-1.5"
 					title="Connect wallet"
 				>
-					<Wallet className="h-4 w-4" fill="currentColor" />
+					<Wallet
+						data-icon="inline-start"
+						className="h-4 w-4"
+						fill="currentColor"
+					/>
 					<span className="hidden sm:inline">Connect</span>
 				</Button>
-				{error && <span className="text-xs text-destructive">{error}</span>}
+				{error && (
+					<span role="alert" className="text-xs text-destructive">
+						{error}
+					</span>
+				)}
 			</div>
 		);
 	}
@@ -95,7 +103,7 @@ export function WalletConnect() {
 			<div className="flex items-center gap-1">
 				<ModeToggle />
 				<Button variant="ghost" size="sm" disabled className="gap-1.5">
-					<Loader2 className="h-4 w-4 animate-spin" />
+					<Loader2 data-icon="inline-start" className="h-4 w-4 animate-spin" />
 					<span className="hidden sm:inline">Connecting...</span>
 				</Button>
 			</div>
@@ -125,15 +133,20 @@ export function WalletConnect() {
 					<span className="hidden max-w-[120px] truncate sm:inline">
 						{activeTheme?.name ?? "Select Theme"}
 					</span>
-					{isLoading ? (
-						<Loader2 className="h-3 w-3 animate-spin" />
-					) : (
-						<ChevronDown
-							className={`h-3 w-3 transition-transform ${
-								isOpen ? "rotate-180" : ""
-							}`}
-						/>
-					)}
+					<span role="status" aria-live="polite" className="inline-flex">
+						<span className="sr-only">
+							{isLoading ? "Loading themes" : "Themes ready"}
+						</span>
+						{isLoading ? (
+							<Loader2 className="h-3 w-3 animate-spin" />
+						) : (
+							<ChevronDown
+								className={`h-3 w-3 transition-transform ${
+									isOpen ? "rotate-180" : ""
+								}`}
+							/>
+						)}
+					</span>
 				</Button>
 
 				<AnimatePresence>

@@ -12,6 +12,7 @@ import {
 	Sparkles,
 	Type,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { StudioDashboard } from "@/components/studio/studio-dashboard";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -321,50 +323,53 @@ export function ProjectStudioPageClient() {
 											/>
 										</SelectTrigger>
 										<SelectContent>
-											{themesLoading ? (
-												<SelectItem value="__loading__" disabled>
-													<span className="flex items-center gap-2">
-														<Loader2 className="h-3 w-3 animate-spin" />
-														Loading themes...
-													</span>
-												</SelectItem>
-											) : themes.length === 0 ? (
-												<SelectItem value="__empty__" disabled>
-													No themes available
-												</SelectItem>
-											) : (
-												themes.map((cached) => {
-													const colors = getThemePreviewColors(
-														cached.theme,
-														mode,
-													);
-													return (
-														<SelectItem
-															key={cached.origin}
-															value={cached.origin}
-														>
-															<span className="flex items-center gap-2">
-																<span
-																	className="h-3 w-3 rounded-full border border-border"
-																	style={{ backgroundColor: colors.primary }}
-																/>
-																{cached.theme.name}
-															</span>
-														</SelectItem>
-													);
-												})
-											)}
+											<SelectGroup>
+												{themesLoading ? (
+													<SelectItem value="__loading__" disabled>
+														<span className="flex items-center gap-2">
+															<Loader2 className="h-3 w-3 animate-spin" />
+															Loading themes...
+														</span>
+													</SelectItem>
+												) : themes.length === 0 ? (
+													<SelectItem value="__empty__" disabled>
+														No themes available
+													</SelectItem>
+												) : (
+													themes.map((cached) => {
+														const colors = getThemePreviewColors(
+															cached.theme,
+															mode,
+														);
+														return (
+															<SelectItem
+																key={cached.origin}
+																value={cached.origin}
+															>
+																<span className="flex items-center gap-2">
+																	<span
+																		className="h-3 w-3 rounded-full border border-border"
+																		style={{ backgroundColor: colors.primary }}
+																	/>
+																	{cached.theme.name}
+																</span>
+															</SelectItem>
+														);
+													})
+												)}
+											</SelectGroup>
 										</SelectContent>
 									</Select>
 									<Button
+										aria-label="Open Theme Studio"
 										variant="outline"
 										size="icon"
 										className="h-9 w-9 shrink-0"
 										asChild
 									>
-										<a href="/studio/theme" aria-label="Open Theme Studio">
+										<Link href="/studio/theme" aria-label="Open Theme Studio">
 											<ExternalLink className="h-4 w-4" />
-										</a>
+										</Link>
 									</Button>
 								</div>
 							</div>
@@ -386,22 +391,25 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{PROJECT_FONTS.map((font) => (
-												<SelectItem key={font} value={font}>
-													{optionLabel(font)}
-												</SelectItem>
-											))}
+											<SelectGroup>
+												{PROJECT_FONTS.map((font) => (
+													<SelectItem key={font} value={font}>
+														{optionLabel(font)}
+													</SelectItem>
+												))}
+											</SelectGroup>
 										</SelectContent>
 									</Select>
 									<Button
+										aria-label="Open Font Studio"
 										variant="outline"
 										size="icon"
 										className="h-9 w-9 shrink-0"
 										asChild
 									>
-										<a href="/studio/font" aria-label="Open Font Studio">
+										<Link href="/studio/font" aria-label="Open Font Studio">
 											<ExternalLink className="h-4 w-4" />
-										</a>
+										</Link>
 									</Button>
 								</div>
 							</div>
@@ -422,12 +430,14 @@ export function ProjectStudioPageClient() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="inherit">Inherit Body Font</SelectItem>
-										{PROJECT_FONTS.map((font) => (
-											<SelectItem key={font} value={font}>
-												{optionLabel(font)}
-											</SelectItem>
-										))}
+										<SelectGroup>
+											<SelectItem value="inherit">Inherit Body Font</SelectItem>
+											{PROJECT_FONTS.map((font) => (
+												<SelectItem key={font} value={font}>
+													{optionLabel(font)}
+												</SelectItem>
+											))}
+										</SelectGroup>
 									</SelectContent>
 								</Select>
 							</div>
@@ -448,11 +458,13 @@ export function ProjectStudioPageClient() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										{ICON_LIBRARIES.map((library) => (
-											<SelectItem key={library} value={library}>
-												{optionLabel(library)}
-											</SelectItem>
-										))}
+										<SelectGroup>
+											{ICON_LIBRARIES.map((library) => (
+												<SelectItem key={library} value={library}>
+													{optionLabel(library)}
+												</SelectItem>
+											))}
+										</SelectGroup>
 									</SelectContent>
 								</Select>
 								<p className="text-xs text-muted-foreground">
@@ -478,11 +490,13 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{BASE_COLORS.map((color) => (
-												<SelectItem key={color} value={color}>
-													{optionLabel(color)}
-												</SelectItem>
-											))}
+											<SelectGroup>
+												{BASE_COLORS.map((color) => (
+													<SelectItem key={color} value={color}>
+														{optionLabel(color)}
+													</SelectItem>
+												))}
+											</SelectGroup>
 										</SelectContent>
 									</Select>
 								</div>
@@ -499,11 +513,13 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{MENU_COLORS.map((color) => (
-												<SelectItem key={color} value={color}>
-													{optionLabel(color)}
-												</SelectItem>
-											))}
+											<SelectGroup>
+												{MENU_COLORS.map((color) => (
+													<SelectItem key={color} value={color}>
+														{optionLabel(color)}
+													</SelectItem>
+												))}
+											</SelectGroup>
 										</SelectContent>
 									</Select>
 								</div>
@@ -520,11 +536,13 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{MENU_ACCENTS.map((accent) => (
-												<SelectItem key={accent} value={accent}>
-													{optionLabel(accent)}
-												</SelectItem>
-											))}
+											<SelectGroup>
+												{MENU_ACCENTS.map((accent) => (
+													<SelectItem key={accent} value={accent}>
+														{optionLabel(accent)}
+													</SelectItem>
+												))}
+											</SelectGroup>
 										</SelectContent>
 									</Select>
 								</div>
@@ -541,11 +559,13 @@ export function ProjectStudioPageClient() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{PROJECT_RADII.map((radius) => (
-												<SelectItem key={radius} value={radius}>
-													{optionLabel(radius)}
-												</SelectItem>
-											))}
+											<SelectGroup>
+												{PROJECT_RADII.map((radius) => (
+													<SelectItem key={radius} value={radius}>
+														{optionLabel(radius)}
+													</SelectItem>
+												))}
+											</SelectGroup>
 										</SelectContent>
 									</Select>
 								</div>
@@ -575,17 +595,20 @@ export function ProjectStudioPageClient() {
 				>
 					{isConnected ? (
 						<>
-							<PenLine className="h-5 w-5" />
+							<PenLine data-icon="inline-start" className="h-5 w-5" />
 							Inscribe Project
 						</>
 					) : status === "connecting" ? (
 						<>
-							<Loader2 className="h-5 w-5 animate-spin" />
+							<Loader2
+								data-icon="inline-start"
+								className="h-5 w-5 animate-spin"
+							/>
 							Connecting...
 						</>
 					) : (
 						<>
-							<PenLine className="h-5 w-5" />
+							<PenLine data-icon="inline-start" className="h-5 w-5" />
 							Connect to Inscribe
 						</>
 					)}
@@ -822,7 +845,10 @@ export function ProjectStudioPageClient() {
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<ExternalLink className="h-4 w-4 mr-2" />
+									<ExternalLink
+										data-icon="inline-start"
+										className="h-4 w-4 mr-2"
+									/>
 									View on Chain
 								</a>
 							</Button>

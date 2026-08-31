@@ -184,7 +184,7 @@ export default function FontPreviewPage({
 					</h2>
 					<p className="mb-4 text-sm text-destructive/80">{error}</p>
 					<Button variant="outline" onClick={loadFont}>
-						<RefreshCw className="mr-2 h-4 w-4" />
+						<RefreshCw data-icon="inline-start" className="mr-2 h-4 w-4" />
 						Try Again
 					</Button>
 				</div>
@@ -336,14 +336,20 @@ export default function FontPreviewPage({
 								>
 									{purchasing ? (
 										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											<Loader2
+												data-icon="inline-start"
+												className="mr-2 h-4 w-4 animate-spin"
+											/>
 											Purchasing...
 										</>
 									) : !isConnected ? (
 										"Connect Wallet"
 									) : (
 										<>
-											<ShoppingCart className="mr-2 h-4 w-4" />
+											<ShoppingCart
+												data-icon="inline-start"
+												className="mr-2 h-4 w-4"
+											/>
 											Buy Now
 										</>
 									)}
@@ -353,7 +359,7 @@ export default function FontPreviewPage({
 
 						{/* Metadata Card */}
 						<div className="rounded-xl border border-border bg-card p-4">
-							<h3 className="mb-3 font-semibold">Font Details</h3>
+							<h2 className="mb-3 font-semibold">Font Details</h2>
 							<dl className="space-y-2 text-sm">
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">Style</dt>
@@ -380,7 +386,7 @@ export default function FontPreviewPage({
 
 						{/* Origin Card */}
 						<div className="rounded-xl border border-border bg-card p-4">
-							<h3 className="mb-3 font-semibold">On-Chain Data</h3>
+							<h2 className="mb-3 font-semibold">On-Chain Data</h2>
 							<div className="rounded bg-muted/30 p-2">
 								<p className="mb-1 break-all font-mono text-[10px] text-muted-foreground">
 									{origin}
@@ -392,7 +398,7 @@ export default function FontPreviewPage({
 										className="h-7 text-xs"
 										onClick={copyOrigin}
 									>
-										<Copy className="mr-1 h-3 w-3" />
+										<Copy data-icon="inline-start" className="mr-1 h-3 w-3" />
 										Copy
 									</Button>
 									<Button
@@ -406,7 +412,10 @@ export default function FontPreviewPage({
 											target="_blank"
 											rel="noopener noreferrer"
 										>
-											<ExternalLink className="mr-1 h-3 w-3" />
+											<ExternalLink
+												data-icon="inline-start"
+												className="mr-1 h-3 w-3"
+											/>
 											View
 										</a>
 									</Button>
@@ -418,7 +427,7 @@ export default function FontPreviewPage({
 						<div className="space-y-2">
 							<Button variant="outline" className="w-full" asChild>
 								<Link href={`/studio/theme?font=${origin}`}>
-									<Palette className="mr-2 h-4 w-4" />
+									<Palette data-icon="inline-start" className="mr-2 h-4 w-4" />
 									Use in Theme
 								</Link>
 							</Button>
@@ -429,7 +438,7 @@ export default function FontPreviewPage({
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<Download className="mr-2 h-4 w-4" />
+									<Download data-icon="inline-start" className="mr-2 h-4 w-4" />
 									Download Font
 								</a>
 							</Button>

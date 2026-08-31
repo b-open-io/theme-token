@@ -140,6 +140,7 @@ export function WallpaperLayout() {
 									<Button
 										size="icon"
 										variant="outline"
+										aria-label="Download wallpaper"
 										onClick={handleDownload}
 										type="button"
 										className="h-8 w-8"
@@ -154,6 +155,7 @@ export function WallpaperLayout() {
 									<Button
 										size="icon"
 										variant="outline"
+										aria-label="Use wallpaper as remix source"
 										onClick={() => {
 											setSourceWallpaper(selectedWallpaper);
 											toast.success("Set as remix source");
@@ -171,6 +173,7 @@ export function WallpaperLayout() {
 									<Button
 										size="icon"
 										variant="outline"
+										aria-label="Delete wallpaper"
 										onClick={() => {
 											removeWallpaper(selectedWallpaper.id);
 											toast.success("Wallpaper deleted");

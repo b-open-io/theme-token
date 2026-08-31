@@ -81,7 +81,7 @@ function TheArtifact({
 	bsvAmount: string | null;
 }) {
 	return (
-		<div className="perspective-[1000px]">
+		<div className="w-full max-w-[340px] perspective-[1000px] sm:max-w-[380px]">
 			<motion.div
 				animate={{
 					rotateY: active ? 180 : 0,
@@ -89,7 +89,7 @@ function TheArtifact({
 				}}
 				transition={{ type: "spring", stiffness: 260, damping: 25 }}
 				style={{ transformStyle: "preserve-3d" }}
-				className="relative h-[480px] w-[340px] sm:h-[520px] sm:w-[380px]"
+				className="relative h-[480px] w-full sm:h-[520px]"
 			>
 				{/* Glow effect for subscriber mode */}
 				<motion.div
@@ -225,12 +225,15 @@ function TheArtifact({
 								>
 									{isMinting ? (
 										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
+											<Loader2
+												data-icon="inline-start"
+												className="h-4 w-4 animate-spin"
+											/>
 											Minting...
 										</>
 									) : (
 										<>
-											<Sparkles className="h-4 w-4" />
+											<Sparkles data-icon="inline-start" className="h-4 w-4" />
 											Mint Pass — ${PRISM_PASS_USD_PRICE}
 										</>
 									)}
@@ -241,7 +244,7 @@ function TheArtifact({
 									onClick={onConnect}
 									className="w-full gap-2 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.02]"
 								>
-									<Bitcoin className="h-4 w-4" />
+									<Bitcoin data-icon="inline-start" className="h-4 w-4" />
 									Connect Wallet — ${PRISM_PASS_USD_PRICE}
 								</Button>
 							)}
@@ -344,7 +347,7 @@ function SwatchyMascot({ active }: { active: boolean }) {
 				alt=""
 				width={500}
 				height={500}
-				className="h-auto w-[400px] sm:w-[500px]"
+				className="h-auto w-full max-w-[400px] sm:max-w-[500px]"
 			/>
 		</motion.div>
 	);
@@ -523,9 +526,9 @@ function PricingPageInner() {
 							<div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
 								<Sparkles className="h-6 w-6 text-green-400" />
 							</div>
-							<h3 className="text-lg font-semibold text-green-400">
+							<h2 className="text-lg font-semibold text-green-400">
 								Prism Pass Activated!
-							</h3>
+							</h2>
 							<p className="mt-2 text-sm text-muted-foreground">
 								Your membership benefits are now active. Enjoy 50% off AI
 								generations and expanded draft storage.

@@ -157,7 +157,7 @@ export function validateGeneratedRegistryCode(params: {
 		registryDependencies = [],
 	} = params;
 
-	const errors: string[] = [];
+	const issues: string[] = [];
 	const warnings: string[] = [];
 
 	const deps = getDependencySet();
@@ -169,7 +169,7 @@ export function validateGeneratedRegistryCode(params: {
 	for (const dep of declaredDependencies) {
 		const pkg = packageNameFromSpecifier(dep);
 		if (!deps.has(pkg)) {
-			errors.push(`Dependency "${dep}" is not installed in this project`);
+			issues.push(`Dependency "${dep}" is not installed in this project`);
 		}
 	}
 
@@ -177,7 +177,7 @@ export function validateGeneratedRegistryCode(params: {
 	if (uiComponents.size > 0) {
 		for (const dep of registryDependencies) {
 			if (!uiComponents.has(dep)) {
-				errors.push(
+				issues.push(
 					`registryDependency "${dep}" is not available in src/components/ui (missing ${dep}.tsx)`,
 				);
 			}
@@ -195,7 +195,7 @@ export function validateGeneratedRegistryCode(params: {
 		for (const spec of specs) {
 			// Disallow next.js runtime imports in registry items (breaks preview & portability)
 			if (spec === "next" || spec.startsWith("next/")) {
-				errors.push(
+				issues.push(
 					`[${filename}] Import "${spec}" is not allowed in registry items`,
 				);
 				continue;
@@ -204,7 +204,7 @@ export function validateGeneratedRegistryCode(params: {
 			// Local alias imports
 			if (spec.startsWith("@/")) {
 				if (!resolveProjectAtImport(spec)) {
-					errors.push(
+					issues.push(
 						`[${filename}] Import "${spec}" does not exist in this project`,
 					);
 				}
@@ -214,7 +214,7 @@ export function validateGeneratedRegistryCode(params: {
 			// Relative imports must exist in the generated file set
 			if (spec.startsWith("./") || spec.startsWith("../")) {
 				if (!resolveRelativeImport(filename, spec, availableFiles)) {
-					errors.push(
+					issues.push(
 						`[${filename}] Relative import "${spec}" is missing from generated files`,
 					);
 				}
@@ -224,10 +224,10 @@ export function validateGeneratedRegistryCode(params: {
 			// Bare package imports must exist in package.json
 			const pkg = packageNameFromSpecifier(spec);
 			if (!deps.has(pkg)) {
-				errors.push(`[${filename}] Package "${pkg}" is not installed`);
+				issues.push(`[${filename}] Package "${pkg}" is not installed`);
 			}
 		}
 	}
 
-	return { valid: errors.length === 0, errors, warnings };
+	return { valid: issues.length === 0, errors: issues, warnings };
 }

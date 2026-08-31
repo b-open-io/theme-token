@@ -86,7 +86,7 @@ export default function RegistryStudioPage() {
 			}
 			bottomRight={
 				<Button size="lg" disabled className="gap-2">
-					<Blocks className="h-5 w-5" />
+					<Blocks data-icon="inline-start" className="h-5 w-5" />
 					Inscribe Block
 				</Button>
 			}
@@ -115,7 +115,7 @@ export default function RegistryStudioPage() {
 							</EmptyHeader>
 							<EmptyContent className="flex gap-3">
 								<Button onClick={handleGenerateWithSwatchy} className="gap-2">
-									<MessageCircle className="h-4 w-4" />
+									<MessageCircle data-icon="inline-start" className="h-4 w-4" />
 									Generate with Swatchy
 								</Button>
 								<Button variant="outline" asChild>
@@ -125,7 +125,10 @@ export default function RegistryStudioPage() {
 										rel="noopener noreferrer"
 										className="gap-2"
 									>
-										<ExternalLink className="h-4 w-4" />
+										<ExternalLink
+											data-icon="inline-start"
+											className="h-4 w-4"
+										/>
 										Registry Docs
 									</a>
 								</Button>

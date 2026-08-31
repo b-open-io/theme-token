@@ -434,6 +434,8 @@ export type PromptInputMessage = {
 	files: FileUIPart[];
 };
 
+const PromptInputPendingContext = createContext(false);
+
 export type PromptInputProps = Omit<
 	HTMLAttributes<HTMLFormElement>,
 	"onSubmit" | "onError"
@@ -468,7 +470,7 @@ export const PromptInput = ({
 	onError,
 	onSubmit,
 	children,
-	...props
+	...formProps
 }: PromptInputProps) => {
 	// Try to use a provider controller if present
 	const controller = useOptionalPromptInputController();
@@ -480,6 +482,7 @@ export const PromptInput = ({
 
 	// ----- Local attachments (only used when no provider)
 	const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const files = usingProvider ? controller.attachments.files : items;
 
 	// Keep a ref to files for cleanup on unmount (avoids stale closure)
@@ -677,6 +680,7 @@ export const PromptInput = ({
 	): Promise<string | null> => {
 		try {
 			const response = await fetch(url);
+			if (!response.ok) return null;
 			const blob = await response.blob();
 			return new Promise((resolve) => {
 				const reader = new FileReader();
@@ -701,10 +705,15 @@ export const PromptInput = ({
 		[files, add, remove, clear, openFileDialog],
 	);
 
-	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+	const handleSubmit: FormEventHandler<HTMLFormElement> = async (event) => {
 		event.preventDefault();
+		if (isSubmitting) return;
 
 		const form = event.currentTarget;
+		const messageInput = form.elements.namedItem("message");
+		if (messageInput instanceof HTMLTextAreaElement) {
+			messageInput.minLength = 1;
+		}
 		const text = usingProvider
 			? controller.textInput.value
 			: (() => {
@@ -718,50 +727,29 @@ export const PromptInput = ({
 			form.reset();
 		}
 
-		// Convert blob URLs to data URLs asynchronously
-		Promise.all(
-			files.map(async ({ id, ...item }) => {
-				if (item.url && item.url.startsWith("blob:")) {
-					const dataUrl = await convertBlobUrlToDataUrl(item.url);
-					// If conversion failed, keep the original blob URL
-					return {
-						...item,
-						url: dataUrl ?? item.url,
-					};
-				}
-				return item;
-			}),
-		)
-			.then((convertedFiles: FileUIPart[]) => {
-				try {
-					const result = onSubmit({ text, files: convertedFiles }, event);
-
-					// Handle both sync and async onSubmit
-					if (result instanceof Promise) {
-						result
-							.then(() => {
-								clear();
-								if (usingProvider) {
-									controller.textInput.clear();
-								}
-							})
-							.catch(() => {
-								// Don't clear on error - user may want to retry
-							});
-					} else {
-						// Sync function completed without throwing, clear attachments
-						clear();
-						if (usingProvider) {
-							controller.textInput.clear();
-						}
+		setIsSubmitting(true);
+		try {
+			const convertedFiles = await Promise.all(
+				files.map(async ({ id, ...item }) => {
+					if (item.url && item.url.startsWith("blob:")) {
+						const dataUrl = await convertBlobUrlToDataUrl(item.url);
+						// If conversion failed, keep the original blob URL
+						return {
+							...item,
+							url: dataUrl ?? item.url,
+						};
 					}
-				} catch {
-					// Don't clear on error - user may want to retry
-				}
-			})
-			.catch(() => {
-				// Don't clear on error - user may want to retry
-			});
+					return item;
+				}),
+			);
+			await onSubmit({ text, files: convertedFiles }, event);
+			clear();
+			if (usingProvider) controller.textInput.clear();
+		} catch {
+			// Preserve the draft and attachments so the user can retry.
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	// Render with or without local provider
@@ -778,12 +766,26 @@ export const PromptInput = ({
 				type="file"
 			/>
 			<form
+				{...formProps}
+				aria-busy={isSubmitting}
 				className={cn("w-full", className)}
 				onSubmit={handleSubmit}
 				ref={formRef}
-				{...props}
 			>
-				<InputGroup className="overflow-hidden">{children}</InputGroup>
+				<PromptInputPendingContext.Provider value={isSubmitting}>
+					<fieldset
+						aria-label="Message composer"
+						className="contents"
+						disabled={isSubmitting}
+					>
+						<InputGroup className="overflow-hidden">{children}</InputGroup>
+					</fieldset>
+					{isSubmitting && (
+						<span className="sr-only" role="status">
+							Submitting message…
+						</span>
+					)}
+				</PromptInputPendingContext.Provider>
 			</form>
 		</>
 	);
@@ -813,7 +815,10 @@ export type PromptInputTextareaProps = ComponentProps<
 export const PromptInputTextarea = ({
 	onChange,
 	className,
+	minLength = 1,
+	name = "message",
 	placeholder = "What would you like to know?",
+	required = true,
 	...props
 }: PromptInputTextareaProps) => {
 	const controller = useOptionalPromptInputController();
@@ -894,14 +899,16 @@ export const PromptInputTextarea = ({
 
 	return (
 		<InputGroupTextarea
+			{...props}
 			className={cn("field-sizing-content max-h-48 min-h-16", className)}
-			name="message"
+			minLength={minLength}
+			name={name}
 			onCompositionEnd={() => setIsComposing(false)}
 			onCompositionStart={() => setIsComposing(true)}
 			onKeyDown={handleKeyDown}
 			onPaste={handlePaste}
 			placeholder={placeholder}
-			{...props}
+			required={required}
 			{...controlledProps}
 		/>
 	);
@@ -1018,15 +1025,17 @@ export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
 
 export const PromptInputSubmit = ({
 	className,
+	disabled,
 	variant = "default",
 	size = "icon-sm",
 	status,
 	children,
 	...props
 }: PromptInputSubmitProps) => {
+	const isSubmitting = useContext(PromptInputPendingContext);
 	let Icon = <CornerDownLeftIcon className="size-4" />;
 
-	if (status === "submitted") {
+	if (status === "submitted" || isSubmitting) {
 		Icon = <Loader2Icon className="size-4 animate-spin" />;
 	} else if (status === "streaming") {
 		Icon = <SquareIcon className="size-4" />;
@@ -1039,6 +1048,7 @@ export const PromptInputSubmit = ({
 			aria-label="Submit"
 			className={cn(className)}
 			size={size}
+			disabled={isSubmitting || disabled}
 			type="submit"
 			variant={variant}
 			{...props}

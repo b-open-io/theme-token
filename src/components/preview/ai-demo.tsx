@@ -8,6 +8,7 @@ import {
 	ThumbsDown,
 	ThumbsUp,
 } from "lucide-react";
+import { useState } from "react";
 import {
 	Message,
 	MessageAction,
@@ -30,6 +31,14 @@ import { Card } from "@/components/ui/card";
 import { DemoSection } from "./utils";
 
 export function AiDemo() {
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const handleSubmit = async () => {
+		setIsSubmitting(true);
+		await new Promise((resolve) => setTimeout(resolve, 600));
+		setIsSubmitting(false);
+	};
+
 	return (
 		<div className="grid gap-6 lg:grid-cols-3 items-start">
 			<div className="lg:col-span-2">
@@ -113,15 +122,20 @@ export function AiDemo() {
 					description="Prompt input with attachments"
 				>
 					<Card className="p-4">
-						<PromptInput onSubmit={() => {}}>
+						<PromptInput onSubmit={handleSubmit}>
 							<PromptInputTextarea placeholder="Ask anything..." />
 							<PromptInputFooter>
-								<Button variant="ghost" size="icon" type="button">
+								<Button
+									aria-label="Attach a file"
+									size="icon"
+									type="button"
+									variant="ghost"
+								>
 									<Paperclip className="h-4 w-4" />
 								</Button>
 								<div className="flex-1" />
-								<Button size="sm" type="submit">
-									Send
+								<Button disabled={isSubmitting} size="sm" type="submit">
+									{isSubmitting ? "Sending…" : "Send"}
 								</Button>
 							</PromptInputFooter>
 						</PromptInput>

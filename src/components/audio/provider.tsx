@@ -83,6 +83,7 @@ function AudioProvider({
 }) {
 	const preloadAudioRef = React.useRef<HTMLAudioElement | null>(null);
 	const errorRetryCountRef = React.useRef<number>(0);
+	const playbackIssue = useAudioStore((state) => state.playbackIssue);
 
 	const setState = React.useCallback(
 		(
@@ -290,8 +291,7 @@ function AudioProvider({
 				isPlaying: false,
 				isLoading: false,
 				isBuffering: false,
-				isError: true,
-				errorMessage: finalMessage,
+				playbackIssue: finalMessage,
 			});
 		};
 
@@ -303,8 +303,7 @@ function AudioProvider({
 			if (state.currentTrack && isLive(state.currentTrack)) {
 				console.warn("Live stream ended unexpectedly");
 				setState({
-					isError: true,
-					errorMessage: "Live stream connection lost",
+					playbackIssue: "Live stream connection lost",
 				});
 				return;
 			}
@@ -332,16 +331,14 @@ function AudioProvider({
 			isLoading: false,
 			isBuffering: false,
 			duration,
-			isError: false,
-			errorMessage: null,
+			playbackIssue: null,
 		});
 
 		const handleLoadStart = () => {
 			setState({
 				isLoading: true,
 				isBuffering: false,
-				isError: false,
-				errorMessage: null,
+				playbackIssue: null,
 			});
 		};
 
@@ -404,8 +401,7 @@ function AudioProvider({
 			} catch (error) {
 				console.error("State restoration error:", error);
 				setState({
-					isError: true,
-					errorMessage: "Error restoring audio state",
+					playbackIssue: "Error restoring audio state",
 					isPlaying: false,
 					isLoading: false,
 					isBuffering: false,
@@ -490,7 +486,16 @@ function AudioProvider({
 		return unsubscribe;
 	}, []);
 
-	return children;
+	return (
+		<>
+			{children}
+			{playbackIssue && (
+				<span className="sr-only" role="alert">
+					{playbackIssue}
+				</span>
+			)}
+		</>
+	);
 }
 const demoTracks: Track[] = [
 	{

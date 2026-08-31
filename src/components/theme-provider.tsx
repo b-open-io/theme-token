@@ -45,6 +45,8 @@ interface ThemeContextValue {
 
 interface ThemeProviderProps {
 	children: ReactNode;
+	/** DOM attribute used to expose the active color mode */
+	attribute?: "class";
 	/** Theme origin from SSR session */
 	initialThemeOrigin?: string | null;
 	/** Whether user already has a session cookie */
@@ -55,6 +57,12 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = "theme-token-selection";
 const MODE_STORAGE_KEY = "theme-token-mode";
+
+function syncModeClass(mode: "light" | "dark", attribute?: "class") {
+	if (attribute === "class") {
+		document.documentElement.classList.toggle("dark", mode === "dark");
+	}
+}
 
 // Calculate max radius for circular reveal animation
 function getMaxRadius(x: number, y: number): number {
@@ -225,6 +233,7 @@ function applyThemeToDocument(
 }
 
 export function ThemeProvider({
+	attribute = "class",
 	children,
 	initialThemeOrigin,
 	hasExistingSession,
@@ -255,23 +264,17 @@ export function ThemeProvider({
 		const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
 		if (savedMode === "dark" || savedMode === "light") {
 			setModeState(savedMode);
+			syncModeClass(savedMode, attribute);
 		} else {
 			// Check system preference
 			const prefersDark = window.matchMedia(
 				"(prefers-color-scheme: dark)",
 			).matches;
-			setModeState(prefersDark ? "dark" : "light");
+			const systemMode = prefersDark ? "dark" : "light";
+			setModeState(systemMode);
+			syncModeClass(systemMode, attribute);
 		}
-	}, []);
-
-	// Apply dark class to html element
-	useEffect(() => {
-		if (mode === "dark") {
-			document.documentElement.classList.add("dark");
-		} else {
-			document.documentElement.classList.remove("dark");
-		}
-	}, [mode]);
+	}, [attribute]);
 
 	// Apply theme when activeTheme or mode changes
 	useEffect(() => {
@@ -340,9 +343,48 @@ export function ThemeProvider({
 		[applyTheme],
 	);
 
-	const setMode = useCallback((newMode: "light" | "dark") => {
-		setModeState(newMode);
-		localStorage.setItem(MODE_STORAGE_KEY, newMode);
+	const setMode = useCallback(
+		(newMode: "light" | "dark") => {
+			setModeState(newMode);
+			syncModeClass(newMode, attribute);
+			localStorage.setItem(MODE_STORAGE_KEY, newMode);
+		},
+		[attribute],
+	);
+
+	const modeRef = useRef(mode);
+	const setModeRef = useRef(setMode);
+	useEffect(() => {
+		modeRef.current = mode;
+		setModeRef.current = setMode;
+	}, [mode, setMode]);
+
+	useEffect(() => {
+		function handleThemeShortcut(event: KeyboardEvent) {
+			const target = event.target;
+			if (
+				target instanceof HTMLElement &&
+				(target.isContentEditable ||
+					["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+			) {
+				return;
+			}
+
+			if (
+				event.key.toLowerCase() === "d" &&
+				!event.metaKey &&
+				!event.ctrlKey &&
+				!event.altKey
+			) {
+				event.preventDefault();
+				const nextMode = modeRef.current === "light" ? "dark" : "light";
+				document.documentElement.classList.toggle("dark", nextMode === "dark");
+				setModeRef.current(nextMode);
+			}
+		}
+
+		document.addEventListener("keydown", handleThemeShortcut);
+		return () => document.removeEventListener("keydown", handleThemeShortcut);
 	}, []);
 
 	const toggleMode = useCallback(

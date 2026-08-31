@@ -397,7 +397,7 @@ export function GenerateCard({ filters }: GenerateCardProps) {
 								disabled={isProcessing}
 								className="h-7 gap-1 px-2 text-xs"
 							>
-								<RotateCcw className="h-3 w-3" />
+								<RotateCcw data-icon="inline-start" className="h-3 w-3" />
 								Resume
 							</Button>
 							<button

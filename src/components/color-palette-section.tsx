@@ -469,6 +469,11 @@ export function ColorPaletteSection({
 							)}
 							Generate
 						</button>
+						{isLoading && (
+							<span className="sr-only" role="status">
+								Generating color palette…
+							</span>
+						)}
 					</div>
 				</CardHeader>
 				<CardContent className="grid gap-1.5 px-3 pt-0">

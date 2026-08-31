@@ -242,7 +242,10 @@ export function ThemeCard({
 					asChild
 				>
 					<Link href={`/preview/${origin}`}>
-						<ExternalLink className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
+						<ExternalLink
+							data-icon="inline-start"
+							className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5"
+						/>
 						<span className="hidden sm:inline">Details</span>
 						<span className="sm:hidden">Info</span>
 					</Link>
@@ -259,7 +262,10 @@ export function ThemeCard({
 						"Connect"
 					) : (
 						<>
-							<ShoppingCart className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
+							<ShoppingCart
+								data-icon="inline-start"
+								className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5"
+							/>
 							Buy
 						</>
 					)}

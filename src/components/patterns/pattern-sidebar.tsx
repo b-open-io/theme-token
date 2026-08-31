@@ -188,7 +188,7 @@ export function PatternSidebar() {
 								onClick={() => setShowAllHero(true)}
 							>
 								Show all 87 patterns
-								<ChevronDown className="ml-2 h-3 w-3" />
+								<ChevronDown data-icon="inline-end" className="ml-2 h-3 w-3" />
 							</Button>
 						)}
 						{showAllHero && !heroSearch && (
@@ -199,7 +199,7 @@ export function PatternSidebar() {
 								onClick={() => setShowAllHero(false)}
 							>
 								Show featured only
-								<ChevronUp className="ml-2 h-3 w-3" />
+								<ChevronUp data-icon="inline-end" className="ml-2 h-3 w-3" />
 							</Button>
 						)}
 					</TabsContent>
@@ -225,12 +225,15 @@ export function PatternSidebar() {
 						>
 							{isGenerating ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<Loader2
+										data-icon="inline-start"
+										className="mr-2 h-4 w-4 animate-spin"
+									/>
 									Generating...
 								</>
 							) : (
 								<>
-									<Wand2 className="mr-2 h-4 w-4" />
+									<Wand2 data-icon="inline-start" className="mr-2 h-4 w-4" />
 									Generate with AI
 								</>
 							)}
@@ -318,6 +321,7 @@ export function PatternSidebar() {
 									</span>
 								</div>
 								<Slider
+									aria-label="Pattern scale"
 									value={[params.scale]}
 									onValueChange={([v]) => updateParam("scale", v)}
 									min={20}
@@ -348,6 +352,7 @@ export function PatternSidebar() {
 							<div className="flex items-center justify-between">
 								<Label className="text-xs text-muted-foreground">Rotate</Label>
 								<Switch
+									aria-label="Rotate animation"
 									checked={params.animation.rotate?.enabled ?? false}
 									onCheckedChange={(checked) =>
 										updateAnimation("rotate", {
@@ -363,6 +368,7 @@ export function PatternSidebar() {
 									Scale Pulse
 								</Label>
 								<Switch
+									aria-label="Scale pulse animation"
 									checked={params.animation.scale?.enabled ?? false}
 									onCheckedChange={(checked) =>
 										updateAnimation("scale", {
@@ -378,6 +384,7 @@ export function PatternSidebar() {
 									Opacity Fade
 								</Label>
 								<Switch
+									aria-label="Opacity fade animation"
 									checked={params.animation.opacity?.enabled ?? false}
 									onCheckedChange={(checked) =>
 										updateAnimation("opacity", {
@@ -393,6 +400,7 @@ export function PatternSidebar() {
 									Translate
 								</Label>
 								<Switch
+									aria-label="Translate animation"
 									checked={params.animation.translate?.enabled ?? false}
 									onCheckedChange={(checked) =>
 										updateAnimation("translate", {
@@ -441,12 +449,15 @@ export function PatternSidebar() {
 								>
 									{isSaving ? (
 										<>
-											<Loader2 className="mr-2 h-3 w-3 animate-spin" />
+											<Loader2
+												data-icon="inline-start"
+												className="mr-2 h-3 w-3 animate-spin"
+											/>
 											Saving...
 										</>
 									) : (
 										<>
-											<Save className="mr-2 h-3 w-3" />
+											<Save data-icon="inline-start" className="mr-2 h-3 w-3" />
 											Save to Cloud
 										</>
 									)}
@@ -481,6 +492,7 @@ export function PatternSidebar() {
 											{cloudDrafts.length !== 1 ? "s" : ""}
 										</span>
 										<Button
+											aria-label="Refresh saved patterns"
 											variant="ghost"
 											size="sm"
 											className="h-6 w-6 p-0"
@@ -491,20 +503,16 @@ export function PatternSidebar() {
 									</div>
 									<div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
 										{cloudDrafts.map((draft) => (
-											// biome-ignore lint/a11y/useSemanticElements: card contains a nested delete button, so it cannot itself be a button element
 											<div
 												key={draft.id}
-												role="button"
-												tabIndex={0}
 												className="group relative aspect-square rounded-md border bg-muted/50 cursor-pointer hover:border-primary transition-colors overflow-hidden"
-												onClick={() => loadDraft(draft)}
-												onKeyDown={(e) => {
-													if (e.key === "Enter" || e.key === " ") {
-														e.preventDefault();
-														loadDraft(draft);
-													}
-												}}
 											>
+												<button
+													aria-label={`Load ${draft.name}`}
+													className="absolute inset-0 z-10 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+													onClick={() => loadDraft(draft)}
+													type="button"
+												/>
 												{draft.svg && (
 													<div
 														className="absolute inset-0"
@@ -528,12 +536,13 @@ export function PatternSidebar() {
 													</div>
 												)}
 												<button
+													aria-label={`Delete ${draft.name}`}
 													type="button"
 													onClick={(e) => {
 														e.stopPropagation();
 														deleteDraft(draft.id);
 													}}
-													className="absolute top-1 right-1 p-1 rounded bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+													className="absolute top-1 right-1 z-20 p-1 rounded bg-background/80 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity"
 												>
 													<Trash2 className="h-3 w-3 text-destructive" />
 												</button>

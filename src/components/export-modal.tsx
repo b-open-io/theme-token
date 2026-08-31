@@ -73,7 +73,7 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 			<DialogTrigger asChild>
 				{trigger || (
 					<Button variant="outline" size="sm" className="gap-2">
-						<Download className="h-4 w-4" />
+						<Download data-icon="inline-start" className="h-4 w-4" />
 						Export
 					</Button>
 				)}
@@ -128,12 +128,18 @@ export function ExportModal({ theme, origin, trigger }: ExportModalProps) {
 										>
 											{copied === format ? (
 												<>
-													<Check className="h-3.5 w-3.5" />
+													<Check
+														data-icon="inline-start"
+														className="h-3.5 w-3.5"
+													/>
 													Copied
 												</>
 											) : (
 												<>
-													<Copy className="h-3.5 w-3.5" />
+													<Copy
+														data-icon="inline-start"
+														className="h-3.5 w-3.5"
+													/>
 													Copy
 												</>
 											)}

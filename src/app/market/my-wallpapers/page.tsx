@@ -130,6 +130,14 @@ export default function MyWallpapersPage() {
 	// Delete draft
 	const deleteDraft = async (id: string) => {
 		if (!ordAddress) return;
+		const draft = drafts.find((candidate) => candidate.id === id);
+		if (
+			!window.confirm(
+				`Delete ${draft?.name ? `“${draft.name}”` : "this wallpaper"}? This cannot be undone.`,
+			)
+		) {
+			return;
+		}
 
 		try {
 			const params = new URLSearchParams({
@@ -223,7 +231,7 @@ export default function MyWallpapersPage() {
 						Generate some wallpapers in the studio
 					</p>
 					<Button onClick={handleCreateWithSwatchy}>
-						<MessageCircle className="mr-2 h-4 w-4" />
+						<MessageCircle className="mr-2 h-4 w-4" data-icon="inline-start" />
 						Create Wallpaper
 					</Button>
 				</div>
@@ -320,7 +328,10 @@ export default function MyWallpapersPage() {
 										onClick={() => handleDownload(draft)}
 										disabled={!draft.imageBase64}
 									>
-										<Download className="mr-1 h-3 w-3" />
+										<Download
+											data-icon="inline-start"
+											className="mr-1 h-3 w-3"
+										/>
 										Save
 									</Button>
 									<Button
@@ -336,12 +347,18 @@ export default function MyWallpapersPage() {
 									>
 										{inscribingId === draft.id ? (
 											<>
-												<Loader2 className="mr-1 h-3 w-3 animate-spin" />
+												<Loader2
+													data-icon="inline-start"
+													className="mr-1 h-3 w-3 animate-spin"
+												/>
 												Inscribing
 											</>
 										) : (
 											<>
-												<PenLine className="mr-1 h-3 w-3" />
+												<PenLine
+													data-icon="inline-start"
+													className="mr-1 h-3 w-3"
+												/>
 												Inscribe
 											</>
 										)}

@@ -305,12 +305,16 @@ export function ThemesPageClient() {
 							disabled={isRefreshing}
 						>
 							<RefreshCw
+								data-icon="inline-start"
 								className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
 							/>
 							Refresh
 						</Button>
 						<Button size="sm" onClick={handleCreateWithSwatchy}>
-							<MessageCircle className="mr-2 h-4 w-4" />
+							<MessageCircle
+								data-icon="inline-start"
+								className="mr-2 h-4 w-4"
+							/>
 							Create Theme
 						</Button>
 					</div>
@@ -347,12 +351,15 @@ export function ThemesPageClient() {
 				) : themes.length === 0 ? (
 					<div className="rounded-xl border border-dashed border-border py-20 text-center">
 						<Sparkles className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-						<h3 className="mb-2 text-lg font-semibold">No themes yet</h3>
+						<h2 className="mb-2 text-lg font-semibold">No results found</h2>
 						<p className="mb-4 text-muted-foreground">
 							Be the first to inscribe a theme on the blockchain
 						</p>
 						<Button onClick={handleCreateWithSwatchy}>
-							<MessageCircle className="mr-2 h-4 w-4" />
+							<MessageCircle
+								data-icon="inline-start"
+								className="mr-2 h-4 w-4"
+							/>
 							Create Theme
 						</Button>
 					</div>

@@ -8,6 +8,7 @@ import {
 	Upload,
 	Wallet,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -304,7 +305,10 @@ export function FontSelector({
 							style={{ fontFamily: !isOnChainFont(value) ? value : undefined }}
 						>
 							<span className="truncate">{getDisplayLabel()}</span>
-							<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+							<ChevronDown
+								data-icon="inline-end"
+								className="ml-2 h-4 w-4 shrink-0 opacity-50"
+							/>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
@@ -345,7 +349,7 @@ export function FontSelector({
 							onClick={() => fileInputRef.current?.click()}
 							disabled={isUploading}
 						>
-							<Upload className="mr-2 h-4 w-4" />
+							<Upload data-icon="inline-start" className="mr-2 h-4 w-4" />
 							{isUploading ? "Uploading..." : "Upload Font File"}
 						</Button>
 					) : (
@@ -358,7 +362,10 @@ export function FontSelector({
 										style={{ fontFamily: loadedFontFamily || undefined }}
 									>
 										<span className="truncate">{getDisplayLabel()}</span>
-										<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+										<ChevronDown
+											data-icon="inline-end"
+											className="ml-2 h-4 w-4 shrink-0 opacity-50"
+										/>
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent className="w-64 max-h-64 overflow-y-auto">
@@ -404,19 +411,19 @@ export function FontSelector({
 			{source === "onchain" &&
 				(!isConnected ? (
 					<Button variant="outline" className="w-full" onClick={connect}>
-						<Wallet className="mr-2 h-4 w-4" />
+						<Wallet data-icon="inline-start" className="mr-2 h-4 w-4" />
 						Connect to see your fonts
 					</Button>
 				) : ownedFonts.length === 0 ? (
 					<div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
 						<Type className="mx-auto mb-2 h-6 w-6 opacity-50" />
 						<p>No fonts owned</p>
-						<a
+						<Link
 							href="/market/fonts"
 							className="text-primary hover:underline text-xs"
 						>
 							Browse marketplace
-						</a>
+						</Link>
 					</div>
 				) : (
 					<DropdownMenu>
@@ -427,7 +434,10 @@ export function FontSelector({
 								style={{ fontFamily: loadedFontFamily || undefined }}
 							>
 								<span className="truncate">{getDisplayLabel()}</span>
-								<ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+								<ChevronDown
+									data-icon="inline-end"
+									className="ml-2 h-4 w-4 shrink-0 opacity-50"
+								/>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent className="w-64 max-h-64 overflow-y-auto">
@@ -465,6 +475,7 @@ export function FontSelector({
 						className="flex-1 font-mono text-xs"
 					/>
 					<Button
+						aria-label="Apply custom font origin"
 						variant="outline"
 						size="icon"
 						onClick={handleCustomOriginSubmit}

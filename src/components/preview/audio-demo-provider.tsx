@@ -12,6 +12,8 @@ export function AudioDemoProvider({
 	tracks?: Track[];
 	children: React.ReactNode;
 }) {
+	const playbackIssue = useAudioStore((state) => state.playbackIssue);
+
 	React.useEffect(() => {
 		// Initialize audio
 		$audio.init();
@@ -80,8 +82,7 @@ export function AudioDemoProvider({
 			useAudioStore.setState({
 				isPlaying: false,
 				isLoading: false,
-				isError: true,
-				errorMessage: "Failed to load audio",
+				playbackIssue: "Failed to load audio",
 			});
 		};
 
@@ -106,5 +107,14 @@ export function AudioDemoProvider({
 		};
 	}, [tracks]);
 
-	return <>{children}</>;
+	return (
+		<>
+			{children}
+			{playbackIssue && (
+				<span className="sr-only" role="alert">
+					{playbackIssue}
+				</span>
+			)}
+		</>
+	);
 }

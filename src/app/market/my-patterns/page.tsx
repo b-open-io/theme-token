@@ -83,6 +83,7 @@ export default function MyPatternsPage() {
 	};
 
 	const handleDelete = async (id: string) => {
+		if (!window.confirm("Delete this pattern draft?")) return;
 		const success = await deleteDraft(id);
 		if (success && selectedId === id) {
 			setSelectedId(null);
@@ -137,7 +138,7 @@ export default function MyPatternsPage() {
 						Generate some patterns in the studio
 					</p>
 					<Button onClick={handleCreateWithSwatchy}>
-						<MessageCircle className="mr-2 h-4 w-4" />
+						<MessageCircle className="mr-2 h-4 w-4" data-icon="inline-start" />
 						Create Pattern
 					</Button>
 				</div>
@@ -189,6 +190,7 @@ export default function MyPatternsPage() {
 							{/* Pattern Preview */}
 							<button
 								type="button"
+								aria-label={`Select ${draft.name || "pattern"}`}
 								onClick={() => setSelectedId(draft.id)}
 								className="relative aspect-square w-full overflow-hidden bg-muted"
 							>
@@ -222,7 +224,10 @@ export default function MyPatternsPage() {
 										onClick={() => handleDownload(draft)}
 										disabled={!draft.svg}
 									>
-										<Download className="mr-1 h-3 w-3" />
+										<Download
+											className="mr-1 h-3 w-3"
+											data-icon="inline-start"
+										/>
 										SVG
 									</Button>
 									<Button
@@ -236,12 +241,18 @@ export default function MyPatternsPage() {
 									>
 										{inscribingId === draft.id ? (
 											<>
-												<Loader2 className="mr-1 h-3 w-3 animate-spin" />
+												<Loader2
+													className="mr-1 h-3 w-3 animate-spin"
+													data-icon="inline-start"
+												/>
 												Inscribing
 											</>
 										) : (
 											<>
-												<PenLine className="mr-1 h-3 w-3" />
+												<PenLine
+													className="mr-1 h-3 w-3"
+													data-icon="inline-start"
+												/>
 												Inscribe
 											</>
 										)}

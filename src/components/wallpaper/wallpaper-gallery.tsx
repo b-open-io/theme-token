@@ -41,6 +41,9 @@ export function WallpaperGallery() {
 						size="icon"
 						variant="outline"
 						className="h-6 w-6 rounded-full bg-background/90 backdrop-blur border-white/10 hover:bg-background"
+						aria-label={
+							isGalleryCollapsed ? "Expand gallery" : "Collapse gallery"
+						}
 						onClick={() => setGalleryCollapsed(!isGalleryCollapsed)}
 						type="button"
 					>
@@ -137,10 +140,14 @@ export function WallpaperGallery() {
 										size="sm"
 										variant="ghost"
 										className="h-6 text-xs text-muted-foreground hover:text-destructive"
-										onClick={clearGallery}
+										onClick={() => {
+											if (window.confirm("Clear every generated wallpaper?")) {
+												clearGallery();
+											}
+										}}
 										type="button"
 									>
-										<Trash2 className="h-3 w-3 mr-1" />
+										<Trash2 data-icon="inline-start" className="h-3 w-3 mr-1" />
 										Clear
 									</Button>
 								</div>

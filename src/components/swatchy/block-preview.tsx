@@ -393,7 +393,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 							className="h-6 text-xs"
 							onClick={copyInstallCommand}
 						>
-							<Copy className="h-3 w-3 mr-1" />
+							<Copy data-icon="inline-start" className="h-3 w-3 mr-1" />
 							Copy Install
 						</Button>
 					</>

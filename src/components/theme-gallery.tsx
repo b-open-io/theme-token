@@ -320,7 +320,10 @@ export function ThemeGallery() {
 						)}
 					</div>
 				) : publishedThemes.length === 0 ? (
-					<p className="text-center text-sm text-muted-foreground py-4">
+					<p
+						className="text-center text-sm text-muted-foreground py-4"
+						role="status"
+					>
 						No themes published yet. Be the first!
 					</p>
 				) : (

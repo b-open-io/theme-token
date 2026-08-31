@@ -188,13 +188,13 @@ export function ThemeNotFound() {
 							<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
 								<Button asChild size="lg" className="gap-2">
 									<Link href="/themes">
-										<Compass className="h-4 w-4" />
+										<Compass data-icon="inline-start" className="h-4 w-4" />
 										Browse Themes
 									</Link>
 								</Button>
 								<Button asChild variant="outline" size="lg" className="gap-2">
 									<Link href="/">
-										<ArrowLeft className="h-4 w-4" />
+										<ArrowLeft data-icon="inline-start" className="h-4 w-4" />
 										Back Home
 									</Link>
 								</Button>

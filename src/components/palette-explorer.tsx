@@ -95,6 +95,11 @@ export function PaletteExplorer({
 					)}
 					Generate
 				</button>
+				{isLoading && (
+					<span className="sr-only" role="status">
+						Generating palette…
+					</span>
+				)}
 			</div>
 
 			{/* Palette Display */}

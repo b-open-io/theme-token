@@ -238,7 +238,7 @@ export const OpenInTrigger = ({ children, ...props }: OpenInTriggerProps) => (
 		{children ?? (
 			<Button type="button" variant="outline">
 				Open in chat
-				<ChevronDownIcon className="size-4" />
+				<ChevronDownIcon data-icon="inline-end" className="size-4" />
 			</Button>
 		)}
 	</DropdownMenuTrigger>

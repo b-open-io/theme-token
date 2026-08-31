@@ -193,13 +193,13 @@ function OwnedFontCard({
 			<div className="flex gap-2">
 				<Button variant="outline" size="sm" className="flex-1" asChild>
 					<Link href={`/preview/font/${font.origin}`}>
-						<Eye className="mr-2 h-4 w-4" />
+						<Eye className="mr-2 h-4 w-4" data-icon="inline-start" />
 						Preview
 					</Link>
 				</Button>
 				<Button variant="outline" size="sm" className="flex-1" asChild>
 					<Link href="/market/sell">
-						<Tag className="mr-2 h-4 w-4" />
+						<Tag className="mr-2 h-4 w-4" data-icon="inline-start" />
 						Sell
 					</Link>
 				</Button>

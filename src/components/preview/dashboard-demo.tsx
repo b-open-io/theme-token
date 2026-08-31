@@ -58,7 +58,10 @@ export function DashboardDemo() {
 								size="sm"
 								className="w-full justify-start"
 							>
-								<LayoutDashboard className="mr-2 h-4 w-4" />
+								<LayoutDashboard
+									data-icon="inline-start"
+									className="mr-2 h-4 w-4"
+								/>
 								Dashboard
 							</Button>
 							<Button
@@ -66,7 +69,7 @@ export function DashboardDemo() {
 								size="sm"
 								className="w-full justify-start"
 							>
-								<CreditCard className="mr-2 h-4 w-4" />
+								<CreditCard data-icon="inline-start" className="mr-2 h-4 w-4" />
 								Transactions
 							</Button>
 							<Button
@@ -74,7 +77,7 @@ export function DashboardDemo() {
 								size="sm"
 								className="w-full justify-start"
 							>
-								<Grid3X3 className="mr-2 h-4 w-4" />
+								<Grid3X3 data-icon="inline-start" className="mr-2 h-4 w-4" />
 								Integrations
 							</Button>
 							<Button
@@ -82,7 +85,7 @@ export function DashboardDemo() {
 								size="sm"
 								className="w-full justify-start"
 							>
-								<Palette className="mr-2 h-4 w-4" />
+								<Palette data-icon="inline-start" className="mr-2 h-4 w-4" />
 								Appearance
 							</Button>
 						</div>
@@ -296,6 +299,7 @@ export function DashboardDemo() {
 													variant="outline"
 													size="icon"
 													className="h-11 w-11 rounded-xl"
+													aria-label={label}
 												>
 													<ArrowLeft
 														className={`h-4 w-4 ${i === 1 ? "rotate-180" : i === 2 ? "hidden" : ""}`}
@@ -344,6 +348,7 @@ export function DashboardDemo() {
 							{/* Bottom Nav */}
 							<div className="h-14 border-t bg-background flex items-center justify-around px-2">
 								<Button
+									aria-label="Dashboard"
 									variant="ghost"
 									size="icon"
 									className="h-9 w-9 rounded-lg text-primary bg-primary/10"
@@ -351,6 +356,7 @@ export function DashboardDemo() {
 									<LayoutDashboard className="h-4 w-4" />
 								</Button>
 								<Button
+									aria-label="Payments"
 									variant="ghost"
 									size="icon"
 									className="h-9 w-9 rounded-lg text-muted-foreground"
@@ -358,6 +364,7 @@ export function DashboardDemo() {
 									<CreditCard className="h-4 w-4" />
 								</Button>
 								<Button
+									aria-label="Assistant"
 									variant="ghost"
 									size="icon"
 									className="h-9 w-9 rounded-lg text-muted-foreground"
@@ -365,6 +372,7 @@ export function DashboardDemo() {
 									<Bot className="h-4 w-4" />
 								</Button>
 								<Button
+									aria-label="Typography"
 									variant="ghost"
 									size="icon"
 									className="h-9 w-9 rounded-lg text-muted-foreground"
@@ -408,16 +416,27 @@ export function DashboardDemo() {
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
-								<Button variant="ghost" size="icon" className="h-10 w-10">
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-10 w-10"
+									aria-label="Previous track"
+								>
 									<SkipBack className="h-5 w-5" />
 								</Button>
 								<Button
 									size="icon"
 									className="h-12 w-12 rounded-full shadow-lg hover:scale-105 transition-transform"
+									aria-label="Play track"
 								>
 									<Play className="h-5 w-5 fill-current ml-0.5" />
 								</Button>
-								<Button variant="ghost" size="icon" className="h-10 w-10">
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-10 w-10"
+									aria-label="Next track"
+								>
 									<SkipForward className="h-5 w-5" />
 								</Button>
 							</div>
@@ -466,7 +485,7 @@ export function DashboardDemo() {
 								<div className="p-2 rounded-lg bg-chart-4/10 text-chart-4">
 									<Sun className="h-4 w-4" />
 								</div>
-								<Switch checked id="light-switch" />
+								<Switch aria-label="Smart lighting" checked id="light-switch" />
 							</div>
 							<div className="font-bold text-sm">Smart Lighting</div>
 							<div className="text-xs text-muted-foreground mt-1">
@@ -493,7 +512,7 @@ export function DashboardDemo() {
 								<div className="p-2 rounded-lg bg-chart-2/10 text-chart-2">
 									<Sparkles className="h-4 w-4" />
 								</div>
-								<Switch id="ambiance-switch" />
+								<Switch aria-label="Ambiance" id="ambiance-switch" />
 							</div>
 							<div className="font-bold text-sm">Ambiance</div>
 							<div className="text-xs text-muted-foreground mt-1">

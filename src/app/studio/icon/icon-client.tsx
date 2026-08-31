@@ -165,8 +165,10 @@ export default function IconStudioPage() {
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="outline">Outline</SelectItem>
-												<SelectItem value="solid">Solid</SelectItem>
+												<SelectGroup>
+													<SelectItem value="outline">Outline</SelectItem>
+													<SelectItem value="solid">Solid</SelectItem>
+												</SelectGroup>
 											</SelectContent>
 										</Select>
 									</div>
@@ -256,8 +258,10 @@ export default function IconStudioPage() {
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="glyph">Glyph</SelectItem>
-												<SelectItem value="badge">Badge</SelectItem>
+												<SelectGroup>
+													<SelectItem value="glyph">Glyph</SelectItem>
+													<SelectItem value="badge">Badge</SelectItem>
+												</SelectGroup>
 											</SelectContent>
 										</Select>
 									</div>
@@ -279,9 +283,13 @@ export default function IconStudioPage() {
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="transparent">Transparent</SelectItem>
-												<SelectItem value="theme">Theme</SelectItem>
-												<SelectItem value="solid">Solid</SelectItem>
+												<SelectGroup>
+													<SelectItem value="transparent">
+														Transparent
+													</SelectItem>
+													<SelectItem value="theme">Theme</SelectItem>
+													<SelectItem value="solid">Solid</SelectItem>
+												</SelectGroup>
 											</SelectContent>
 										</Select>
 									</div>
@@ -340,7 +348,7 @@ export default function IconStudioPage() {
 					className="gap-2"
 					title="Generation is currently driven via Swatchy tools"
 				>
-					<Shapes className="h-5 w-5" />
+					<Shapes data-icon="inline-start" className="h-5 w-5" />
 					Generate
 				</Button>
 			}

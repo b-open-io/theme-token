@@ -67,25 +67,25 @@ function hasUnsafeCssUrl(svg: string): boolean {
  * Validate an SVG pattern string
  */
 export function validatePatternSvg(svg: string): ValidationResult {
-	const errors: string[] = [];
+	const issues: string[] = [];
 	const warnings: string[] = [];
 
 	if (/<!DOCTYPE|<!ENTITY|<\?(?!xml\s)/i.test(svg)) {
-		errors.push("Unsafe XML declaration detected");
+		issues.push("Unsafe XML declaration detected");
 	}
 	if (/&(?!(?:amp|lt|gt|quot|apos);|#\d+;|#x[0-9a-f]+;)/i.test(svg)) {
-		errors.push("Unknown XML entity detected");
+		issues.push("Unknown XML entity detected");
 	}
 
 	// Keep one standalone SVG root. Pattern libraries emit either a tile SVG or
 	// an SVG containing a <pattern>; both are valid seamless pattern assets.
 	if (!/^\s*(?:<\?xml\s+[^?]*\?>\s*)?<svg\b[\s\S]*<\/svg>\s*$/i.test(svg)) {
-		errors.push("Missing <svg> root element");
-		return { valid: false, errors, warnings };
+		issues.push("Missing <svg> root element");
+		return { valid: false, errors: issues, warnings };
 	}
 
 	if ((svg.match(/<svg\b/gi) ?? []).length !== 1) {
-		errors.push("SVG must contain exactly one root element");
+		issues.push("SVG must contain exactly one root element");
 	}
 
 	const patternTag = svg.match(/<pattern\b[^>]*>/i)?.[0];
@@ -94,7 +94,7 @@ export function validatePatternSvg(svg: string): ValidationResult {
 		!patternTag.endsWith("/>") &&
 		!/<\/pattern\s*>/i.test(svg)
 	) {
-		errors.push("Unclosed <pattern> element");
+		issues.push("Unclosed <pattern> element");
 	}
 
 	// patternUnits check
@@ -110,26 +110,26 @@ export function validatePatternSvg(svg: string): ValidationResult {
 	// Unsafe element checks
 	for (const elem of UNSAFE_ELEMENTS) {
 		if (unsafeElementPattern(elem).test(svg)) {
-			errors.push(`Unsafe element <${elem}> detected`);
+			issues.push(`Unsafe element <${elem}> detected`);
 		}
 	}
 	if (/(?:^|\s)(?:[\w.-]+:)?on[\w.-]*\s*=/i.test(svg)) {
-		errors.push("Unsafe event handler attribute detected");
+		issues.push("Unsafe event handler attribute detected");
 	}
 
 	if (/(?:^|\s)(?:[\w.-]+:)?href\s*=/i.test(svg)) {
-		errors.push('Unsafe attribute "href" detected');
+		issues.push('Unsafe attribute "href" detected');
 	}
 
 	// External resource checks
 	if (hasUnsafeCssUrl(svg) || /@import\b/i.test(svg)) {
-		errors.push("External URL references not allowed");
+		issues.push("External URL references not allowed");
 	}
 
 	// Size checks
 	const svgBytes = byteSize(svg);
 	if (svgBytes > MAX_SVG_BYTES) {
-		errors.push(`SVG exceeds ${MAX_SVG_BYTES} byte limit (${svgBytes} bytes)`);
+		issues.push(`SVG exceeds ${MAX_SVG_BYTES} byte limit (${svgBytes} bytes)`);
 	}
 
 	// Node count estimate (rough)
@@ -149,8 +149,8 @@ export function validatePatternSvg(svg: string): ValidationResult {
 	}
 
 	return {
-		valid: errors.length === 0,
-		errors,
+		valid: issues.length === 0,
+		errors: issues,
 		warnings,
 	};
 }

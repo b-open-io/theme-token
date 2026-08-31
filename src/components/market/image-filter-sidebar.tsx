@@ -89,7 +89,7 @@ export function ImageFilterSidebar({
 					className={`h-7 px-2 text-xs ${hasActiveFilters ? "opacity-100" : "pointer-events-none opacity-0"}`}
 					onClick={clearFilters}
 				>
-					<RotateCcw className="mr-1 h-3 w-3" />
+					<RotateCcw data-icon="inline-start" className="mr-1 h-3 w-3" />
 					Clear
 				</Button>
 			</div>

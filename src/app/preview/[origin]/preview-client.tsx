@@ -173,7 +173,11 @@ export function PreviewClient({
 	const { openWithRemix } = useSwatchyStore();
 
 	// Fetch listing to check if for sale
-	const { data: listing, refetch: refetchListing } = useQuery({
+	const {
+		data: listing,
+		isPending: isListingPending,
+		refetch: refetchListing,
+	} = useQuery({
 		queryKey: ["theme-listing", origin],
 		queryFn: () => fetchThemeListingByOrigin(origin),
 		staleTime: 5 * 60 * 1000, // 5 minutes
@@ -339,7 +343,10 @@ export function PreviewClient({
 									className="h-10"
 									onClick={handleBack}
 								>
-									<ArrowLeft className="mr-2 h-4 w-4" />
+									<ArrowLeft
+										data-icon="inline-start"
+										className="mr-2 h-4 w-4"
+									/>
 									Themes
 								</Button>
 							</div>
@@ -377,7 +384,7 @@ export function PreviewClient({
 									onClick={() => openWithRemix(theme, origin)}
 									className="gap-1.5"
 								>
-									<Sparkles className="h-4 w-4" />
+									<Sparkles data-icon="inline-start" className="h-4 w-4" />
 									<span className="hidden sm:inline">Remix</span>
 								</Button>
 
@@ -388,7 +395,10 @@ export function PreviewClient({
 										onClick={() => setShowBuyModal(true)}
 										className="gap-1.5"
 									>
-										<ShoppingCart className="h-4 w-4" />
+										<ShoppingCart
+											data-icon="inline-start"
+											className="h-4 w-4"
+										/>
 										<span className="hidden sm:inline">Buy</span>
 									</Button>
 								)}
@@ -427,6 +437,15 @@ export function PreviewClient({
 												</Badge>
 											);
 										})()}
+										{!isListingPending && listing === null && (
+											<Badge
+												title="No active market listing"
+												variant="secondary"
+											>
+												<span className="sr-only">No results. </span>
+												Not for sale
+											</Badge>
+										)}
 									</div>
 									{theme.author && (
 										<p
