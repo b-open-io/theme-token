@@ -22,7 +22,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@1sat/actions": "^0.0.200",
+		"@1sat/actions": "^0.0.201",
 		"@1sat/react": "^0.0.86",
 		"@1sat/templates": "^0.0.32",
 		"@ai-sdk/google": "^4.0.58",
@@ -81,7 +81,7 @@
 		"@tanstack/react-query": "^5.102.8",
 		"@tanstack/react-table": "^9.2.4",
 		"@tanstack/react-virtual": "^3.14.10",
-		"@theme-token/sdk": "^0.0.17",
+		"@theme-token/sdk": "^0.0.19",
 		"@types/sharp": "^0.32.0",
 		"@types/three": "^0.185.4",
 		"@vercel/blob": "^2.8.0",

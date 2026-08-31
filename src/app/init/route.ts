@@ -128,7 +128,7 @@ export async function GET(request: Request) {
 					error: "Invalid project type",
 					expected: "registry:base",
 					received: rawManifest.type,
-					hint: "This endpoint requires a registry:base project. For themes, use /r/themes/{origin}",
+					hint: "This endpoint requires a registry:base project. For themes, use /r/themes/{origin}.json",
 				},
 				{ status: 400 },
 			);

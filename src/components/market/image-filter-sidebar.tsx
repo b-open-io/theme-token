@@ -39,6 +39,7 @@ const ASSET_TYPE_OPTIONS: {
 		label: "Wallpapers",
 		description: "Full-screen backgrounds",
 	},
+	{ id: "image", label: "Images", description: "General-purpose artwork" },
 	{ id: "icon", label: "Icons", description: "Centered graphic elements" },
 ];
 

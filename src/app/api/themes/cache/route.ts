@@ -1,6 +1,7 @@
 import { type ThemeToken, validateThemeToken } from "@theme-token/sdk";
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { THEME_REGISTRY_TYPES } from "@/lib/asset-metadata";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import { extractTxid } from "@/lib/registry-gateway";
 
@@ -193,26 +194,38 @@ export async function POST(request: Request) {
 	}
 }
 
-// Fetch themes from GorillaPool API — search by the on-chain MAP type
-// `registry:style` (the shadcn registry type our theme directories declare).
+// Fetch current themes plus immutable records published under the older type.
 async function fetchFromChain(): Promise<CachedTheme[]> {
 	const ORDINALS_API = "https://ordinals.gorillapool.io/api";
+	type ChainItem = {
+		origin?: { outpoint?: string };
+		height?: number;
+		owner?: string;
+	};
 
-	const response = await fetch(`${ORDINALS_API}/inscriptions/search`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ map: { type: "registry:style" } }),
-		next: { revalidate: 60 },
-	});
-
-	if (!response.ok) {
-		throw new Error(`GorillaPool API error: ${response.status}`);
+	const searches = await Promise.allSettled(
+		THEME_REGISTRY_TYPES.map(async (type) => {
+			const response = await fetch(`${ORDINALS_API}/inscriptions/search`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ map: { type } }),
+				next: { revalidate: 60 },
+			});
+			if (!response.ok) {
+				throw new Error(`GorillaPool API error: ${response.status}`);
+			}
+			const results: unknown = await response.json();
+			if (!Array.isArray(results)) throw new Error("Invalid API response");
+			return results as ChainItem[];
+		}),
+	);
+	const resultSets = searches.flatMap((search) =>
+		search.status === "fulfilled" ? [search.value] : [],
+	);
+	if (resultSets.length === 0) {
+		throw new Error("GorillaPool theme searches failed");
 	}
-
-	const results = await response.json();
-	if (!Array.isArray(results)) {
-		throw new Error("Invalid API response");
-	}
+	const results = resultSets.flat();
 
 	const seenOrigins = new Set<string>();
 	const uniqueItems = results.filter((item: (typeof results)[number]) => {

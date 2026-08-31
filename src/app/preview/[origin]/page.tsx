@@ -3,6 +3,7 @@ import { kv } from "@vercel/kv";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { CachedTheme } from "@/app/api/themes/cache/route";
+import { THEME_REGISTRY_TYPES } from "@/lib/asset-metadata";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import { PreviewClient } from "./preview-client";
 
@@ -37,23 +38,32 @@ async function getTheme(origin: string): Promise<GetThemeResult | null> {
 	// Check if theme is indexed on-chain by GorillaPool
 	let isOnChain = false;
 	try {
-		const searchRes = await fetch(
-			"https://ordinals.gorillapool.io/api/inscriptions/search",
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ map: { type: "registry:style" } }),
-				next: { revalidate: 300 }, // Check every 5 minutes
-			},
+		const searches = await Promise.allSettled(
+			THEME_REGISTRY_TYPES.map(async (type) => {
+				const response = await fetch(
+					"https://ordinals.gorillapool.io/api/inscriptions/search",
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ map: { type } }),
+						next: { revalidate: 300 },
+					},
+				);
+				if (!response.ok) return [];
+				const results: unknown = await response.json();
+				return Array.isArray(results) ? results : [];
+			}),
 		);
-		if (searchRes.ok) {
-			const results = await searchRes.json();
+		for (const search of searches) {
+			if (search.status !== "fulfilled") continue;
+			const results = search.value;
 			isOnChain =
 				Array.isArray(results) &&
 				results.some(
 					(item: { origin?: { outpoint?: string } }) =>
 						item.origin?.outpoint === origin,
 				);
+			if (isOnChain) break;
 		}
 	} catch {
 		// Ignore chain check errors

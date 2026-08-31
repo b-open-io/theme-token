@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrdfsUrl } from "@/lib/ordfs";
+import { normalizeOriginRouteParam } from "@/lib/outpoint";
 import {
 	hydrateRegistryManifest,
 	toShadcnRegistryItem,
@@ -10,7 +11,7 @@ import {
  * Registry endpoint for components
  *
  * Serves registry:component items to the shadcn CLI:
- *   bunx shadcn@latest add https://themetoken.dev/r/components/{origin}
+ *   bunx shadcn@latest add https://themetoken.dev/r/components/{origin}.json
  *
  * Handles:
  * - Single-file components (most common)
@@ -22,7 +23,7 @@ export async function GET(
 	{ params }: { params: Promise<{ origin: string }> },
 ) {
 	try {
-		const { origin } = await params;
+		const origin = normalizeOriginRouteParam((await params).origin);
 
 		// Fetch the manifest from ORDFS
 		const response = await fetch(getOrdfsUrl(origin));

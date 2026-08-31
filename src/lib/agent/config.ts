@@ -365,8 +365,8 @@ Blocks and components are shadcn-compatible React code inscribed on-chain:
 
 **Installing from blockchain:**
 \`\`\`bash
-bunx shadcn@latest add https://themetoken.dev/r/blocks/[origin]
-bunx shadcn@latest add https://themetoken.dev/r/components/[origin]
+bunx shadcn@latest add https://themetoken.dev/r/blocks/[origin].json
+bunx shadcn@latest add https://themetoken.dev/r/components/[origin].json
 \`\`\`
 
 **What's a Block vs Component?**

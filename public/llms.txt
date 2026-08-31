@@ -25,7 +25,7 @@ style includes the semantic colors and radius used by ShadCN. Charts, sidebar
 colors, fonts, spacing, letter spacing, shadows, custom CSS variables, and
 generation details are optional.
 
-The Studio writes OKLCH colors. The validator accepts other CSS color values.
+The Studio writes complete OKLCH color values.
 
 ## Publishing and discovery
 
@@ -35,15 +35,16 @@ uses MAP metadata for discovery:
 ```json
 {
   "app": "theme-token",
-  "type": "registry:style",
+  "type": "registry:theme",
   "name": "Theme Name",
   "version": "1.0.0",
   "description": "Theme Name"
 }
 ```
 
-Standalone assets use `type: "theme-token:asset"` with `kind` and `mediaType`.
-Raw on-chain content is available from `https://api.1sat.app/content/[origin]`.
+Standalone fonts, patterns, wallpapers, and images use the 1Sat MAP extension
+`type: "registry:asset"`, plus `kind` and `mediaType`. Raw on-chain content is
+available from `https://api.1sat.app/content/[origin]`.
 
 ## SDK
 

@@ -86,7 +86,7 @@ The package manifest carries the MAP record:
 ```json
 {
   "app": "theme-token",
-  "type": "registry:style",
+  "type": "registry:theme",
   "name": "Theme Name",
   "version": "1.0.0",
   "description": "Theme Name"
@@ -97,10 +97,11 @@ Current package mappings:
 
 | Package | MAP fields |
 |---|---|
-| Theme | `type=registry:style` |
-| Font | `type=theme-token:asset`, `kind=font`, `mediaType=...` |
-| Pattern | `type=theme-token:asset`, `kind=pattern`, `mediaType=image/svg+xml` |
-| Wallpaper | `type=theme-token:asset`, `kind=wallpaper`, `mediaType=...` |
+| Theme | `type=registry:theme` |
+| Font | `type=registry:asset`, `kind=font`, `mediaType=...` |
+| Pattern | `type=registry:asset`, `kind=pattern`, `mediaType=image/svg+xml` |
+| Wallpaper | `type=registry:asset`, `kind=wallpaper`, `mediaType=...` |
+| Image | `type=registry:asset`, `kind=image`, `mediaType=...` |
 
 MAP records include `app`, `type`, `name`, `version`, and `description`.
 Asset records also include `kind` and `mediaType`. Author, license, prompt,
@@ -108,13 +109,17 @@ provider, and model are optional provenance fields.
 
 ## Registry response
 
-`GET /r/themes/[origin].json` returns a ShadCN `registry:style` item with the
-theme's CSS variables, optional CSS rules, and verified asset behavior. Verify
-an origin with:
+`GET /r/themes/[origin].json` returns a ShadCN `registry:theme` item with the
+theme's CSS variables, optional CSS rules, and verified asset behavior.
+Vendored text assets appear in its `files` array as `registry:file` entries.
+Verify an origin with:
 
 ```bash
 bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json --dry-run
 ```
+
+Readers accept the earlier MAP types `registry:style`, `theme-token:asset`,
+`registry:file`, and `registry:font`; publishers use the mappings above.
 
 ## SDK
 

@@ -5,7 +5,7 @@ import { FileCode, Image, Palette, Type } from "lucide-react";
 import { useState } from "react";
 import { CodeBlock } from "@/components/code-block";
 
-type AssetType = "theme" | "font" | "pattern" | "wallpaper";
+type AssetType = "theme" | "font" | "pattern" | "wallpaper" | "image";
 
 const EXAMPLES: Record<
 	AssetType,
@@ -16,7 +16,7 @@ const EXAMPLES: Record<
 		label: "Theme",
 		json: `{
   "app": "theme-token",
-  "type": "registry:style",
+  "type": "registry:theme",
   "name": "Cyberpunk Neon",
   "version": "1.0.0",
   "description": "A bright cyberpunk theme"
@@ -27,7 +27,7 @@ const EXAMPLES: Record<
 		label: "Font",
 		json: `{
   "app": "theme-token",
-  "type": "theme-token:asset",
+  "type": "registry:asset",
   "kind": "font",
   "mediaType": "font/woff2",
   "name": "Elegant Serif",
@@ -42,7 +42,7 @@ const EXAMPLES: Record<
 		label: "Pattern",
 		json: `{
   "app": "theme-token",
-  "type": "theme-token:asset",
+  "type": "registry:asset",
   "kind": "pattern",
   "mediaType": "image/svg+xml",
   "name": "Dot Grid",
@@ -57,13 +57,28 @@ const EXAMPLES: Record<
 		label: "Wallpaper",
 		json: `{
   "app": "theme-token",
-  "type": "theme-token:asset",
+  "type": "registry:asset",
   "kind": "wallpaper",
   "mediaType": "image/png",
   "name": "Gradient Mesh",
   "version": "1.0.0",
   "description": "An abstract gradient wallpaper",
   "author": "Alex Chen",
+  "license": "CC0"
+}`,
+	},
+	image: {
+		icon: Image,
+		label: "Image",
+		json: `{
+  "app": "theme-token",
+  "type": "registry:asset",
+  "kind": "image",
+  "mediaType": "image/webp",
+  "name": "Paper Texture",
+  "version": "1.0.0",
+  "description": "A subtle paper texture",
+  "author": "Sam Rivera",
   "license": "CC0"
 }`,
 	},

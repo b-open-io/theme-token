@@ -41,7 +41,7 @@ export function ChainImplementations() {
 				</div>
 				<div className="rounded-lg border border-border bg-card p-4">
 					<div className="mb-1 text-xs text-muted-foreground">Discovery</div>
-					<div className="font-medium">MAP registry:style</div>
+					<div className="font-medium">MAP registry:theme</div>
 				</div>
 				<div className="rounded-lg border border-border bg-card p-4">
 					<div className="mb-1 text-xs text-muted-foreground">Gateway</div>

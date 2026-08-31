@@ -57,7 +57,7 @@ test("route distinguishes propagation misses from hard verification errors", asy
 		expect(plain.status).toBe(200);
 		expect(await plain.json()).toMatchObject({
 			name: "plain-theme",
-			type: "registry:style",
+			type: "registry:theme",
 		});
 
 		themeResponse = () =>

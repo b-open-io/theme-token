@@ -1,37 +1,31 @@
-/**
- * MAP metadata for a registry package manifest.
- * Mirrors PackageMapMetadata from @1sat/actions.
- */
-export interface PackageMapMetadata {
-	app: string;
-	type: string;
-	name: string;
-	version: string;
-	description: string;
-	language?: string;
-	homepage?: string;
-	prev?: string;
-	"opns.name"?: string;
-	"opns.outpoint"?: string;
-	title?: string;
-	author?: string;
-	dependencies?: string;
-	devDependencies?: string;
-	registryDependencies?: string;
-	categories?: string;
-	[key: string]: string | undefined;
-}
+import type { PackageMapMetadata } from "@1sat/actions";
 
-export const THEME_TOKEN_ASSET_TYPE = "theme-token:asset";
+export type { PackageMapMetadata };
+
+export const REGISTRY_ASSET_TYPE = "registry:asset";
+export const REGISTRY_THEME_TYPE = "registry:theme";
+export const LEGACY_THEME_ASSET_TYPE = "theme-token:asset";
+export const LEGACY_THEME_TYPE = "registry:style";
+
+export const THEME_REGISTRY_TYPES = [
+	REGISTRY_THEME_TYPE,
+	LEGACY_THEME_TYPE,
+] as const;
 
 export type ThemeTokenAssetKind = "font" | "pattern" | "wallpaper" | "image";
 
 export function getPublishedAssetKind(
 	metadata: Record<string, unknown> | undefined,
 ): ThemeTokenAssetKind | undefined {
-	if (metadata?.type === "registry:font") return "font";
-	if (metadata?.type === "registry:file") return "pattern";
-	if (metadata?.type !== THEME_TOKEN_ASSET_TYPE) return undefined;
+	if (metadata?.app === "theme-token" && metadata.type === "registry:font")
+		return "font";
+	if (metadata?.app === "theme-token" && metadata.type === "registry:file")
+		return "pattern";
+	if (
+		metadata?.type !== REGISTRY_ASSET_TYPE &&
+		metadata?.type !== LEGACY_THEME_ASSET_TYPE
+	)
+		return undefined;
 
 	const kind = metadata.kind;
 	return kind === "font" ||
@@ -40,6 +34,10 @@ export function getPublishedAssetKind(
 		kind === "image"
 		? kind
 		: undefined;
+}
+
+export function isThemeRegistryType(type: unknown): boolean {
+	return type === REGISTRY_THEME_TYPE || type === LEGACY_THEME_TYPE;
 }
 
 export function buildTileMetadata(params: {
@@ -54,7 +52,7 @@ export function buildTileMetadata(params: {
 }): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: THEME_TOKEN_ASSET_TYPE,
+		type: REGISTRY_ASSET_TYPE,
 		kind: "pattern",
 		mediaType: "image/svg+xml",
 		name: params.name,
@@ -85,7 +83,7 @@ export function buildFontMetadata(params: {
 }): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: THEME_TOKEN_ASSET_TYPE,
+		type: REGISTRY_ASSET_TYPE,
 		kind: "font",
 		mediaType: params.mediaType,
 		name: params.name,
@@ -118,7 +116,7 @@ export function buildImageMetadata(params: {
 }): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: THEME_TOKEN_ASSET_TYPE,
+		type: REGISTRY_ASSET_TYPE,
 		kind: params.kind,
 		mediaType: params.mediaType,
 		name: params.name,
@@ -148,7 +146,7 @@ export function buildThemeMetadata(params: {
 }): PackageMapMetadata {
 	return {
 		app: "theme-token",
-		type: "registry:style",
+		type: REGISTRY_THEME_TYPE,
 		name: params.name,
 		version: params.version || "1.0.0",
 		description: params.description || params.name,

@@ -3,22 +3,17 @@
 - Status: Accepted; resolver and registry compiler implemented behind disabled studios
 - Date: 2026-08-30
 
-## Context
-
-Theme Token uses three contracts:
-
-1. `ord-fs/json` stores immutable files and a directory manifest.
-2. A Theme Token document describes styles and their related assets.
-3. The registry gateway emits the ShadCN item installed by the CLI.
-
-The storage package stays generic. Theme semantics belong in `theme.json`, and
-ShadCN-specific installation behavior belongs in the registry gateway.
-
 ## Decision
 
-Theme Token has one document format. Its existing schema URL remains
-`https://themetoken.dev/v1/schema.json` because published inscriptions already
-contain that immutable value. The format is presented simply as Theme Token.
+Theme Token uses three small contracts:
+
+1. `ord-fs/json` stores immutable files and a directory manifest.
+2. `theme.json` describes a theme and its related assets.
+3. The registry gateway serves the ShadCN item installed by the CLI.
+
+The existing schema URL remains `https://themetoken.dev/v1/schema.json` so
+published inscriptions continue to resolve. Theme Token has one document
+format.
 
 The optional top-level `assets` array relates a theme to immutable fonts,
 patterns, and wallpapers. Existing themes remain valid without it. Older
@@ -107,8 +102,11 @@ The gateway compiles a Theme Token into a document that follows
 - vendored text assets become targeted `registry:file` entries;
 - relationship provenance may appear in `meta.themeToken`.
 
-Theme Token asset packages use MAP type `theme-token:asset`. Theme installations
-continue to use ShadCN's `registry:style` output.
+Theme packages use MAP type `registry:theme`. Raw font, pattern, wallpaper, and
+image packages use the 1Sat MAP extension `registry:asset`, with `kind` and
+`mediaType` describing their contents. The registry gateway emits ShadCN
+`registry:theme` items; vendored text files inside them use ShadCN
+`registry:file`.
 
 ## Example
 

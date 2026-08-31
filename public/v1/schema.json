@@ -38,7 +38,17 @@
 		"generation": { "$ref": "#/$defs/generation" },
 		"css": {
 			"type": "object",
-			"description": "Optional CSS rules, including @layer base"
+			"description": "Optional CSS rules for @layer base",
+			"additionalProperties": false,
+			"properties": {
+				"@layer base": {
+					"type": "object",
+					"additionalProperties": {
+						"type": "object",
+						"additionalProperties": { "type": "string" }
+					}
+				}
+			}
 		}
 	},
 	"$defs": {

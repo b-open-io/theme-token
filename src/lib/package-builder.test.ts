@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { Inscription } from "@1sat/templates";
 import { Script, type WalletInterface } from "@bsv/sdk";
+import { buildRegistryBundle } from "./bundle-builder";
 import { bundleItemsToPackage, publishPackage } from "./package-builder";
 
 const PUBLIC_KEY =
@@ -33,7 +34,7 @@ describe("publishPackage", () => {
 			],
 			{
 				app: "theme-token",
-				type: "theme-token:asset",
+				type: "registry:asset",
 				kind: "pattern",
 				mediaType: "image/svg+xml",
 				name: "dots",
@@ -62,7 +63,7 @@ describe("publishPackage", () => {
 			],
 			{
 				app: "theme-token",
-				type: "registry:style",
+				type: "registry:theme",
 				name: "theme",
 				version: "1.0.0",
 				description: "theme",
@@ -75,9 +76,130 @@ describe("publishPackage", () => {
 			JSON.parse(new TextDecoder().decode(themeManifest?.getContent())),
 		).toEqual({ "theme.json": "_0" });
 	});
+
+	it("routes block and component package roots to their registry manifests", async () => {
+		let outputs: Array<{ lockingScript: string }> = [];
+		const wallet = {
+			getPublicKey: async () => ({ publicKey: PUBLIC_KEY }),
+			createAction: async (args: {
+				outputs: Array<{ lockingScript: string }>;
+			}) => {
+				outputs = args.outputs;
+				return { txid: "b".repeat(64) };
+			},
+		} as unknown as WalletInterface;
+		spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+
+		for (const type of ["registry:block", "registry:component"] as const) {
+			outputs = [];
+			const bundle = buildRegistryBundle({
+				manifest: {
+					name: "hello",
+					type,
+					description: "A registry item",
+					dependencies: [],
+					registryDependencies: [],
+					files: [
+						{
+							path: "components/hello.tsx",
+							type: "registry:component",
+							content: "export const hello = true",
+						},
+					],
+				},
+			});
+			const packageData = bundleItemsToPackage(
+				bundle.items,
+				"hello",
+				"A registry item",
+			);
+
+			await publishPackage(wallet, packageData.files, packageData.metadata);
+
+			const root = Inscription.decode(
+				Script.fromHex(outputs.at(-1)?.lockingScript ?? ""),
+			);
+			const directory = JSON.parse(
+				new TextDecoder().decode(root?.getContent()),
+			) as Record<string, string>;
+			expect(directory["."]).toBe("_0");
+
+			const defaultVout = Number(directory["."].slice(1));
+			const defaultFile = Inscription.decode(
+				Script.fromHex(outputs[defaultVout]?.lockingScript ?? ""),
+			);
+			expect(
+				JSON.parse(new TextDecoder().decode(defaultFile?.getContent())),
+			).toEqual(bundle.manifestWithRefs);
+		}
+	});
 });
 
 describe("bundleItemsToPackage", () => {
+	it("does not let bundle metadata republish legacy or unknown types", () => {
+		expect(() =>
+			bundleItemsToPackage(
+				[
+					{
+						type: "file",
+						base64Data: "AA==",
+						mimeType: "application/octet-stream",
+						metadata: { registryType: "theme-token:asset" },
+					},
+				],
+				"Legacy",
+				"Legacy type",
+			),
+		).toThrow("Unsupported registry package type: theme-token:asset");
+
+		expect(() =>
+			bundleItemsToPackage(
+				[
+					{
+						type: "file",
+						base64Data: "AA==",
+						mimeType: "application/octet-stream",
+						metadata: { registryType: "registry:style" },
+					},
+				],
+				"Legacy theme",
+				"Legacy theme type",
+			),
+		).toThrow("Unsupported registry package type: registry:style");
+
+		expect(() =>
+			bundleItemsToPackage(
+				[
+					{
+						type: "file",
+						base64Data: "AA==",
+						mimeType: "application/octet-stream",
+						metadata: { registryType: "registry:made-up" },
+					},
+				],
+				"Unknown",
+				"Unknown type",
+			),
+		).toThrow("Unsupported registry package type: registry:made-up");
+	});
+
+	it("keeps theme publishing canonical despite a legacy metadata hint", () => {
+		const { metadata } = bundleItemsToPackage(
+			[
+				{
+					type: "theme",
+					base64Data: btoa("{}"),
+					mimeType: "application/json",
+					metadata: { registryType: "registry:style" },
+				},
+			],
+			"Theme",
+			"Canonical theme",
+		);
+
+		expect(metadata.type).toBe("registry:theme");
+	});
+
 	it("classifies a raw asset without claiming a ShadCN registry type", () => {
 		const { metadata } = bundleItemsToPackage(
 			[
@@ -93,7 +215,7 @@ describe("bundleItemsToPackage", () => {
 		);
 
 		expect(metadata).toMatchObject({
-			type: "theme-token:asset",
+			type: "registry:asset",
 			kind: "font",
 			mediaType: "font/woff2",
 		});

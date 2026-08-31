@@ -1,4 +1,9 @@
-import { ONESAT_PROTOCOL, ORDINALS_BASKET } from "@1sat/actions";
+import {
+	ONESAT_PROTOCOL,
+	ORDINALS_BASKET,
+	REGISTRY_TYPE_SET,
+	type RegistryType,
+} from "@1sat/actions";
 import { Inscription, MAP, MAP_PREFIX } from "@1sat/templates";
 import {
 	P2PKH,
@@ -8,8 +13,10 @@ import {
 	type WalletInterface,
 } from "@bsv/sdk";
 import {
+	getPublishedAssetKind,
+	LEGACY_THEME_TYPE,
 	type PackageMapMetadata,
-	THEME_TOKEN_ASSET_TYPE,
+	REGISTRY_ASSET_TYPE,
 	type ThemeTokenAssetKind,
 } from "@/lib/asset-metadata";
 import { type OneSatRelayResult, relayAtomicBeef } from "@/lib/onesat-relay";
@@ -141,7 +148,12 @@ export async function publishPackage(
 	for (const [dirName, vout] of subdirVouts) {
 		manifest[dirName] = `_${vout}`;
 	}
-	if (metadata.type === THEME_TOKEN_ASSET_TYPE && files.length > 0) {
+	if (
+		files.length > 0 &&
+		(getPublishedAssetKind(metadata) ||
+			metadata.type === "registry:block" ||
+			metadata.type === "registry:component")
+	) {
 		manifest["."] = "_0";
 	}
 	const manifestBytes = new Uint8Array(
@@ -276,7 +288,7 @@ export function bundleItemsToPackage(
 	// Determine primary type from items — the last item's type determines the package type
 	const primaryItem = items[items.length - 1];
 	const typeMap: Record<string, string> = {
-		theme: "registry:style",
+		theme: "registry:theme",
 		block: "registry:block",
 		component: "registry:component",
 		hook: "registry:hook",
@@ -287,17 +299,26 @@ export function bundleItemsToPackage(
 	const assetKind: ThemeTokenAssetKind | undefined =
 		primaryItem.type === "font" ||
 		primaryItem.type === "pattern" ||
-		primaryItem.type === "wallpaper"
+		primaryItem.type === "wallpaper" ||
+		primaryItem.type === "image"
 			? primaryItem.type
 			: undefined;
 
-	const registryType =
+	const requestedType = items.find((item) => item.metadata?.registryType)
+		?.metadata?.registryType;
+	const candidateType =
 		assetKind != null
-			? THEME_TOKEN_ASSET_TYPE
-			: items.find((item) => item.metadata?.registryType)?.metadata
-					?.registryType ||
-				typeMap[primaryItem.type] ||
-				"registry:file";
+			? REGISTRY_ASSET_TYPE
+			: primaryItem.type === "theme"
+				? "registry:theme"
+				: requestedType || typeMap[primaryItem.type] || "registry:file";
+	if (
+		candidateType === LEGACY_THEME_TYPE ||
+		!REGISTRY_TYPE_SET.has(candidateType)
+	) {
+		throw new Error(`Unsupported registry package type: ${candidateType}`);
+	}
+	const registryType = candidateType as RegistryType;
 
 	const files: PackageFile[] = items.map((item, i) => {
 		const ext = mimeToExt(item.mimeType);

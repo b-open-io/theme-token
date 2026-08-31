@@ -34,14 +34,32 @@ export type RegistryItemType =
 	| "registry:file";
 
 /**
+ * Types accepted for entries in `files`.
+ *
+ * Mirrors the current ShadCN file-entry enum. `registry:font` is root-only.
+ */
+export type RegistryFileType =
+	| "registry:lib"
+	| "registry:block"
+	| "registry:component"
+	| "registry:ui"
+	| "registry:hook"
+	| "registry:theme"
+	| "registry:page"
+	| "registry:file"
+	| "registry:style"
+	| "registry:base"
+	| "registry:item";
+
+/**
  * File entry in a registry manifest (inscribed JSON)
  */
 export interface RegistryFileEntry {
 	path: string;
-	type: RegistryItemType;
+	type: RegistryFileType;
 	vout?: number; // Reference to sibling inscription output
 	content?: string; // Already-embedded content (for single-file items)
-	target?: string; // Alternative to vout: _N relative reference
+	target?: string; // Install target, or a legacy _N relative reference
 }
 
 /**
@@ -51,13 +69,27 @@ export interface RegistryManifest {
 	$schema?: string;
 	name: string;
 	type: RegistryItemType;
+	extends?: string;
+	title?: string;
+	author?: string;
 	description?: string;
 	dependencies?: string[];
+	devDependencies?: string[];
 	registryDependencies?: string[];
-	files: RegistryFileEntry[];
+	files?: RegistryFileEntry[];
 	cssVars?: Record<string, Record<string, string>>;
 	css?: Record<string, unknown>;
 	tailwind?: Record<string, unknown>;
+	envVars?: Record<string, string>;
+	meta?: Record<string, unknown>;
+	docs?: string;
+	categories?: string[];
+	font?: Record<string, unknown>;
+	config?: Record<string, unknown>;
+	style?: string;
+	iconLibrary?: string;
+	baseColor?: string;
+	theme?: Record<string, unknown>;
 }
 
 interface CompiledRegistryFile {
@@ -342,25 +374,25 @@ export async function hydrateRegistryManifest(
 	manifest: RegistryManifest,
 	origin: string,
 ): Promise<RegistryManifest> {
+	if (!manifest.files) return manifest;
+
 	const hydratedFiles = await Promise.all(
 		manifest.files.map(async (file) => {
-			if (file.content) return file;
+			const normalized = toPublicRegistryFile(file);
+			if (file.content !== undefined) return normalized;
 
 			// Fetch file content via ORDFS directory traversal
 			const content = await fetchTextFromOrdfs(`${origin}/${file.path}`);
 
-			if (!content) {
-				console.warn(
-					`[Registry Gateway] Failed to fetch file at ${origin}/${file.path}`,
+			if (content === null) {
+				throw new Error(
+					`Registry file content is unavailable at ${origin}/${file.path}`,
 				);
-				return file;
 			}
 
 			return {
-				...file,
+				...normalized,
 				content,
-				vout: undefined,
-				target: undefined,
 			};
 		}),
 	);
@@ -377,22 +409,55 @@ export async function hydrateRegistryManifest(
 export function toShadcnRegistryItem(
 	manifest: RegistryManifest,
 ): Record<string, unknown> {
+	const { files, ...metadata } = manifest;
+
 	return {
+		...metadata,
 		$schema: "https://ui.shadcn.com/schema/registry-item.json",
-		name: manifest.name,
-		type: manifest.type,
-		description: manifest.description,
-		dependencies: manifest.dependencies,
-		registryDependencies: manifest.registryDependencies,
-		files: manifest.files.map((file) => ({
-			path: file.path,
-			type: file.type,
-			content: file.content,
-		})),
-		cssVars: manifest.cssVars,
-		css: manifest.css,
-		tailwind: manifest.tailwind,
+		...(files && { files: files.map(toPublicRegistryFile) }),
 	};
+}
+
+const REGISTRY_ITEM_TYPES: RegistryItemType[] = [
+	"registry:base",
+	"registry:style",
+	"registry:block",
+	"registry:component",
+	"registry:hook",
+	"registry:lib",
+	"registry:ui",
+	"registry:page",
+	"registry:font",
+	"registry:theme",
+	"registry:item",
+	"registry:file",
+];
+
+const REGISTRY_FILE_TYPES: RegistryFileType[] = [
+	"registry:lib",
+	"registry:block",
+	"registry:component",
+	"registry:ui",
+	"registry:hook",
+	"registry:theme",
+	"registry:page",
+	"registry:file",
+	"registry:style",
+	"registry:base",
+	"registry:item",
+];
+
+function isLegacyOutputTarget(target: string | undefined): boolean {
+	return Boolean(target && /^_\d+$/.test(target));
+}
+
+function toPublicRegistryFile(file: RegistryFileEntry): RegistryFileEntry {
+	const { vout: _vout, ...publicFile } = file;
+	if (isLegacyOutputTarget(publicFile.target)) {
+		const { target: _target, ...withoutLegacyTarget } = publicFile;
+		return withoutLegacyTarget;
+	}
+	return publicFile;
 }
 
 /**
@@ -417,30 +482,63 @@ export function validateRegistryManifest(
 		return { valid: false, error: "Missing required field: type" };
 	}
 
-	const validTypes: RegistryItemType[] = [
-		"registry:base",
-		"registry:style",
-		"registry:block",
-		"registry:component",
-		"registry:hook",
-		"registry:lib",
-		"registry:ui",
-		"registry:page",
-		"registry:font",
-		"registry:theme",
-		"registry:item",
-		"registry:file",
-	];
-
-	if (!validTypes.includes(obj.type as RegistryItemType)) {
+	if (!REGISTRY_ITEM_TYPES.includes(obj.type as RegistryItemType)) {
 		return {
 			valid: false,
-			error: `Invalid type: ${obj.type}. Expected one of: ${validTypes.join(", ")}`,
+			error: `Invalid type: ${obj.type}. Expected one of: ${REGISTRY_ITEM_TYPES.join(", ")}`,
 		};
 	}
 
+	if (obj.files === undefined) {
+		return { valid: true, manifest: obj as unknown as RegistryManifest };
+	}
+
 	if (!Array.isArray(obj.files)) {
-		return { valid: false, error: "Missing required field: files (array)" };
+		return { valid: false, error: "Invalid field: files must be an array" };
+	}
+
+	for (const [index, file] of obj.files.entries()) {
+		if (!isRecord(file)) {
+			return { valid: false, error: `Invalid file at index ${index}` };
+		}
+		if (typeof file.path !== "string" || !file.path) {
+			return {
+				valid: false,
+				error: `Invalid file at index ${index}: path is required`,
+			};
+		}
+		if (
+			typeof file.type !== "string" ||
+			!REGISTRY_FILE_TYPES.includes(file.type as RegistryFileType)
+		) {
+			return {
+				valid: false,
+				error: `Invalid file type at index ${index}: ${String(file.type)}`,
+			};
+		}
+		if (file.content !== undefined && typeof file.content !== "string") {
+			return {
+				valid: false,
+				error: `Invalid file at index ${index}: content must be a string`,
+			};
+		}
+		if (file.target !== undefined && typeof file.target !== "string") {
+			return {
+				valid: false,
+				error: `Invalid file at index ${index}: target must be a string`,
+			};
+		}
+		if (
+			(file.type === "registry:file" || file.type === "registry:page") &&
+			(typeof file.target !== "string" ||
+				!file.target ||
+				isLegacyOutputTarget(file.target))
+		) {
+			return {
+				valid: false,
+				error: `Invalid file at index ${index}: target is required for ${file.type}`,
+			};
+		}
 	}
 
 	return { valid: true, manifest: obj as unknown as RegistryManifest };

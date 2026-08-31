@@ -5,7 +5,8 @@
 
 import {
 	getPublishedAssetKind,
-	THEME_TOKEN_ASSET_TYPE,
+	isThemeRegistryType,
+	REGISTRY_ASSET_TYPE,
 } from "@/lib/asset-metadata";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import { normalizeOutpoint } from "@/lib/outpoint";
@@ -331,6 +332,9 @@ export interface FontMarketListing extends MarketListing {
 export function isFontMarketAsset(
 	mapData: Record<string, unknown> | undefined,
 ): boolean {
+	if (mapData?.type === REGISTRY_ASSET_TYPE) {
+		return getPublishedAssetKind(mapData) === "font";
+	}
 	return (
 		mapData?.app === "theme-token" &&
 		(mapData.type === "font" || getPublishedAssetKind(mapData) === "font")
@@ -402,9 +406,9 @@ export async function fetchThemeMarketListings(): Promise<
 	const listings = await fetchMarketListings();
 	const themeListings: ThemeMarketListing[] = [];
 
-	// Filter for theme tokens by the on-chain MAP type `registry:style`.
-	const potentialThemes = listings.filter(
-		(l) => l.data?.map?.type === "registry:style",
+	// New themes use registry:theme; published registry:style records remain valid.
+	const potentialThemes = listings.filter((l) =>
+		isThemeRegistryType(l.data?.map?.type),
 	);
 
 	const { validateThemeToken } = await import("@theme-token/sdk");
@@ -688,11 +692,17 @@ export async function fetchInscription(origin: string): Promise<unknown> {
 	}
 }
 
-export type AssetType = "tile" | "wallpaper" | "icon";
+export type AssetType = "tile" | "wallpaper" | "image" | "icon";
 
 export function getImageMarketAssetType(
 	mapData: Record<string, unknown> | undefined,
 ): AssetType | undefined {
+	if (mapData?.type === REGISTRY_ASSET_TYPE) {
+		const kind = getPublishedAssetKind(mapData);
+		if (kind === "pattern") return "tile";
+		if (kind === "wallpaper" || kind === "image") return kind;
+		return undefined;
+	}
 	if (mapData?.app !== "theme-token") return undefined;
 	if (
 		mapData.type === "tile" ||
@@ -701,8 +711,6 @@ export function getImageMarketAssetType(
 	) {
 		return mapData.type;
 	}
-	if (mapData.type !== THEME_TOKEN_ASSET_TYPE) return undefined;
-
 	const kind = getPublishedAssetKind(mapData);
 	if (kind === "pattern") return "tile";
 	if (kind === "wallpaper") return "wallpaper";

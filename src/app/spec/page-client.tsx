@@ -261,11 +261,8 @@ export function SpecPageClient() {
 										))}
 									</div>
 									<p className="mt-2 text-sm text-muted-foreground">
-										Use a font name or{" "}
-										<code className="rounded bg-muted px-1">
-											/content/&lt;txid&gt;_&lt;vout&gt;
-										</code>{" "}
-										for an on-chain font.
+										Use a font-family value here. Link an on-chain font through
+										the theme&apos;s assets list.
 									</p>
 								</div>
 
@@ -295,8 +292,8 @@ export function SpecPageClient() {
 
 							<p className="text-sm text-muted-foreground">
 								The Studio writes{" "}
-								<code className="rounded bg-muted px-1">oklch()</code> values,
-								and the validator also accepts other CSS color values.
+								<code className="rounded bg-muted px-1">oklch()</code> color
+								values.
 							</p>
 						</motion.div>
 
@@ -336,7 +333,7 @@ export function SpecPageClient() {
 												ring: "oklch(0.55 0.22 255)",
 												radius: "0.5rem",
 												"font-sans": "Inter",
-												"font-mono": `/content/${"a".repeat(64)}_0`,
+												"font-mono": "JetBrains Mono",
 											},
 											dark: {
 												background: "oklch(0.12 0.015 240)",
@@ -360,9 +357,21 @@ export function SpecPageClient() {
 												ring: "oklch(0.65 0.22 255)",
 												radius: "0.5rem",
 												"font-sans": "Inter",
-												"font-mono": `/content/${"a".repeat(64)}_0`,
+												"font-mono": "JetBrains Mono",
 											},
 										},
+										assets: [
+											{
+												role: "font.mono",
+												kind: "font",
+												source: {
+													kind: "origin",
+													origin: `${"a".repeat(64)}_0`,
+												},
+												mediaType: "font/woff2",
+												integrity: `sha256:${"b".repeat(64)}`,
+											},
+										],
 									},
 									null,
 									2,
@@ -383,15 +392,6 @@ export function SpecPageClient() {
 									className="text-primary hover:underline"
 								>
 									ShadCN CLI
-								</a>
-								. The same URL also works in{" "}
-								<a
-									href="https://tweakcn.com/editor/theme"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-primary hover:underline"
-								>
-									tweakcn
 								</a>
 								.
 							</p>
@@ -425,8 +425,9 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							MAP fields make themes and assets searchable by type, name, and
-							author.
+							MAP uses registry:theme for theme packages. The gateway returns a
+							ShadCN registry:theme item. Raw assets use the 1Sat registry:asset
+							extension, with kind and mediaType describing their contents.
 						</motion.p>
 					</motion.div>
 

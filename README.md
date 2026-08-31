@@ -5,7 +5,7 @@
 Inscribe UI themes on BSV as 1Sat Ordinals. Install them with one command.
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
+bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
 ```
 
 ---
@@ -60,14 +60,14 @@ Install any published theme into your shadcn project with the standard CLI —
 no extra tooling:
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/themes/<origin>
+bunx shadcn@latest add https://themetoken.dev/r/themes/<origin>.json
 ```
 
 Blocks and components publish the same way:
 
 ```bash
-bunx shadcn@latest add https://themetoken.dev/r/blocks/<origin>
-bunx shadcn@latest add https://themetoken.dev/r/components/<origin>
+bunx shadcn@latest add https://themetoken.dev/r/blocks/<origin>.json
+bunx shadcn@latest add https://themetoken.dev/r/components/<origin>.json
 ```
 
 ### Local CLI (this repo)

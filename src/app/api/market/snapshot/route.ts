@@ -1,5 +1,6 @@
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { isThemeRegistryType } from "@/lib/asset-metadata";
 
 const ORDINALS_API = "https://ordinals.gorillapool.io/api";
 const MAX_SNAPSHOTS = 168; // 7 days * 24 hours
@@ -67,11 +68,11 @@ export async function GET(request: Request) {
 
 		const results: MarketListingResponse[] = await response.json();
 
-		// Filter for theme listings by the on-chain MAP type `registry:style`.
+		// Include current themes and immutable records published under the old type.
 		const themeListings = results
 			.filter((item) => {
 				const mapData = item.origin?.data?.map || item.data?.map;
-				return mapData?.type === "registry:style";
+				return isThemeRegistryType(mapData?.type);
 			})
 			.map((item) => ({
 				origin: item.origin?.outpoint || item.outpoint,

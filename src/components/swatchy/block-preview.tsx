@@ -94,7 +94,7 @@ export function BlockPreview({ item }: BlockPreviewProps) {
 	const copyInstallCommand = useCallback(async () => {
 		if (!inscribedOrigin) return;
 		const route = isBlock ? "blocks" : "components";
-		const command = `bunx shadcn@latest add https://themetoken.dev/r/${route}/${inscribedOrigin}`;
+		const command = `bunx shadcn@latest add https://themetoken.dev/r/${route}/${inscribedOrigin}.json`;
 		await navigator.clipboard.writeText(command);
 	}, [inscribedOrigin, isBlock]);
 

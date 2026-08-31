@@ -1,11 +1,16 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { createThemeToken } from "@theme-token/sdk";
 import {
 	compileThemeRegistryItem,
 	extractTxid,
 	extractVout,
+	hydrateRegistryManifest,
+	toShadcnRegistryItem,
+	validateRegistryManifest,
 } from "./registry-gateway";
 import { ThemeAssetError } from "./theme-assets";
+
+afterEach(() => mock.restore());
 
 async function integrity(bytes: Uint8Array) {
 	const hash = await crypto.subtle.digest("SHA-256", bytes);
@@ -39,6 +44,149 @@ describe("registry-gateway origin parsing", () => {
 		const multi = "aabbcc_ddee_3";
 		expect(extractTxid(multi)).toBe("aabbcc_ddee");
 		expect(extractVout(multi)).toBe(3);
+	});
+});
+
+describe("ShadCN registry manifest gateway", () => {
+	test("accepts fileless root items", () => {
+		expect(
+			validateRegistryManifest({
+				name: "standalone-theme",
+				type: "registry:theme",
+			}),
+		).toEqual({
+			valid: true,
+			manifest: {
+				name: "standalone-theme",
+				type: "registry:theme",
+			},
+		});
+	});
+
+	test("rejects registry:font in file entries", () => {
+		const result = validateRegistryManifest({
+			name: "invalid-file",
+			type: "registry:block",
+			files: [{ path: "font.ts", type: "registry:font" }],
+		});
+
+		expect(result.valid).toBe(false);
+		if (!result.valid) expect(result.error).toContain("Invalid file type");
+	});
+
+	test("requires install targets for registry:file and registry:page entries", () => {
+		for (const type of ["registry:file", "registry:page"] as const) {
+			const result = validateRegistryManifest({
+				name: "missing-target",
+				type: "registry:block",
+				files: [{ path: "source.ts", type }],
+			});
+			expect(result.valid).toBe(false);
+			if (!result.valid) expect(result.error).toContain("target is required");
+		}
+	});
+
+	test("preserves targets and registry metadata while removing transport refs", () => {
+		const item = toShadcnRegistryItem({
+			name: "portable-block",
+			type: "registry:block",
+			title: "Portable Block",
+			author: "Theme Token <https://themetoken.dev>",
+			devDependencies: ["typescript"],
+			envVars: { EXAMPLE_TOKEN: "" },
+			docs: "Add your token before running the example.",
+			categories: ["example"],
+			meta: { origin: "on-chain" },
+			files: [
+				{
+					path: "components/card.tsx",
+					type: "registry:component",
+					target: "@components/card.tsx",
+					vout: 1,
+					content: "export function Card() {}",
+				},
+				{
+					path: "hooks/use-card.ts",
+					type: "registry:hook",
+					target: "_2",
+					vout: 2,
+					content: "export function useCard() {}",
+				},
+			],
+		});
+
+		expect(item).toMatchObject({
+			$schema: "https://ui.shadcn.com/schema/registry-item.json",
+			name: "portable-block",
+			type: "registry:block",
+			title: "Portable Block",
+			author: "Theme Token <https://themetoken.dev>",
+			devDependencies: ["typescript"],
+			envVars: { EXAMPLE_TOKEN: "" },
+			docs: "Add your token before running the example.",
+			categories: ["example"],
+			meta: { origin: "on-chain" },
+		});
+		expect(item.files).toEqual([
+			{
+				path: "components/card.tsx",
+				type: "registry:component",
+				target: "@components/card.tsx",
+				content: "export function Card() {}",
+			},
+			{
+				path: "hooks/use-card.ts",
+				type: "registry:hook",
+				content: "export function useCard() {}",
+			},
+		]);
+	});
+
+	test("preserves empty embedded content without fetching", async () => {
+		const fetchMock = spyOn(globalThis, "fetch");
+		const hydrated = await hydrateRegistryManifest(
+			{
+				name: "empty-file",
+				type: "registry:block",
+				files: [
+					{
+						path: "empty.ts",
+						type: "registry:component",
+						target: "@components/empty.ts",
+						vout: 1,
+						content: "",
+					},
+				],
+			},
+			`${"a".repeat(64)}_0`,
+		);
+
+		expect(fetchMock).not.toHaveBeenCalled();
+		expect(hydrated.files).toEqual([
+			{
+				path: "empty.ts",
+				type: "registry:component",
+				target: "@components/empty.ts",
+				content: "",
+			},
+		]);
+	});
+
+	test("rejects unavailable remote file content", async () => {
+		spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response("not found", { status: 404 }),
+		);
+
+		await expect(
+			hydrateRegistryManifest(
+				{
+					name: "missing-file",
+					type: "registry:block",
+					files: [{ path: "missing.ts", type: "registry:component", vout: 1 }],
+				},
+				`${"b".repeat(64)}_0`,
+			),
+		).rejects.toThrow("Registry file content is unavailable");
 	});
 });
 

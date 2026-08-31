@@ -72,7 +72,7 @@ export default function RegistryStudioPage() {
 								</h4>
 								<code className="block text-xs bg-muted p-2 rounded font-mono break-all">
 									bunx shadcn@latest add
-									https://themetoken.dev/r/blocks/&#123;origin&#125;
+									https://themetoken.dev/r/blocks/&#123;origin&#125;.json
 								</code>
 							</div>
 						</div>

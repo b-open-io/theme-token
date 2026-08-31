@@ -20,7 +20,7 @@ function packageListing(kind: "font" | "pattern", mediaType: string) {
 				insc: { file: { type: "ord-fs/json", size: 42 } },
 				map: {
 					app: "theme-token",
-					type: "theme-token:asset",
+					type: "registry:asset",
 					kind,
 					mediaType,
 					name: "Test Asset",
@@ -35,18 +35,25 @@ describe("image marketplace asset classification", () => {
 	it("maps current asset kinds into existing marketplace categories", () => {
 		expect(
 			getImageMarketAssetType({
-				app: "theme-token",
-				type: "theme-token:asset",
+				app: "another-publisher",
+				type: "registry:asset",
 				kind: "pattern",
 			}),
 		).toBe("tile");
 		expect(
 			getImageMarketAssetType({
-				app: "theme-token",
-				type: "theme-token:asset",
+				app: "another-publisher",
+				type: "registry:asset",
 				kind: "wallpaper",
 			}),
 		).toBe("wallpaper");
+		expect(
+			getImageMarketAssetType({
+				app: "another-publisher",
+				type: "registry:asset",
+				kind: "image",
+			}),
+		).toBe("image");
 	});
 
 	it("preserves legacy categories and rejects unrelated records", () => {
@@ -58,6 +65,9 @@ describe("image marketplace asset classification", () => {
 		).toBeUndefined();
 		expect(
 			getImageMarketAssetType({ app: "theme-token", type: "registry:file" }),
+		).toBe("tile");
+		expect(
+			getImageMarketAssetType({ app: "other", type: "registry:file" }),
 		).toBeUndefined();
 	});
 });
@@ -96,6 +106,13 @@ describe("packaged marketplace assets", () => {
 		expect(isFontMarketAsset({ app: "theme-token", type: "font" })).toBe(true);
 		expect(
 			isFontMarketAsset({ app: "theme-token", type: "registry:font" }),
+		).toBe(true);
+		expect(
+			isFontMarketAsset({
+				app: "another-publisher",
+				type: "registry:asset",
+				kind: "font",
+			}),
 		).toBe(true);
 
 		spyOn(globalThis, "fetch").mockImplementation(

@@ -17,7 +17,10 @@ import {
 	useState,
 } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { getPublishedAssetKind } from "@/lib/asset-metadata";
+import {
+	getPublishedAssetKind,
+	isThemeRegistryType,
+} from "@/lib/asset-metadata";
 import { type ListOrdinalResult, listOrdinal } from "@/lib/list-ordinal";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import { bundleItemsToPackage, publishPackage } from "@/lib/package-builder";
@@ -261,7 +264,7 @@ async function categorizeOrdinals(outputs: WalletOutput[]): Promise<{
 			const name =
 				typeof meta.map?.name === "string" ? meta.map.name : undefined;
 
-			if (type === "registry:style") {
+			if (isThemeRegistryType(type)) {
 				// Hydrate the theme: ORDFS resolves the `_N` directory ref to the
 				// theme.json file. Resolve by origin so transferred packages work.
 				const res = await fetch(getOrdfsUrl(`${origin}/theme.json`));

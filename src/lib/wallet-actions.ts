@@ -104,7 +104,7 @@ export async function getOwnedOrdinals(
 }
 
 /**
- * Inscribe a JSON theme on-chain as a registry:style package.
+ * Inscribe a JSON theme on-chain as a registry:theme package.
  * Produces 2 outputs: theme.json file + ord-fs/json manifest with MAP metadata.
  */
 export async function inscribeTheme(
