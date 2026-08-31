@@ -322,7 +322,7 @@ export function SwatchyAvatar({
 				<motion.div className="relative h-full w-full">
 					{/* Floating animation wrapper */}
 					<motion.div
-						className="h-full w-full"
+						className="relative h-full w-full"
 						animate={getFloatAnimation()}
 						transition={getFloatTransition()}
 					>
