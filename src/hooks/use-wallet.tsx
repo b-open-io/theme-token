@@ -727,7 +727,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			setError(null);
 
 			try {
-				const primaryName = items.find((i) => i.name)?.name || "bundle";
+				const primaryItem = items[items.length - 1];
+				const primaryName =
+					primaryItem?.metadata?.displayName ||
+					primaryItem?.name?.replace(/\.[^.]+$/, "") ||
+					"bundle";
 				const { files, metadata } = bundleItemsToPackage(
 					items,
 					primaryName,

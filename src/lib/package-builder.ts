@@ -277,11 +277,14 @@ export function bundleItemsToPackage(
 		component: "registry:component",
 		hook: "registry:hook",
 		lib: "registry:lib",
-		project: "registry:file",
+		project: "registry:base",
 		file: "registry:file",
 	};
 
-	const registryType = typeMap[primaryItem.type] || "registry:file";
+	const registryType =
+		items.find((item) => item.metadata?.registryType)?.metadata?.registryType ||
+		typeMap[primaryItem.type] ||
+		"registry:file";
 
 	const files: PackageFile[] = items.map((item, i) => {
 		const ext = mimeToExt(item.mimeType);
@@ -310,7 +313,9 @@ export function bundleItemsToPackage(
 					key !== "type" &&
 					key !== "name" &&
 					key !== "version" &&
-					key !== "description"
+					key !== "description" &&
+					key !== "registryType" &&
+					key !== "displayName"
 				) {
 					metadata[key] = value;
 				}

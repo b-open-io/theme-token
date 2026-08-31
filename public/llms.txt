@@ -1,223 +1,49 @@
 # Theme Token
 
-> A service for inscribing and serving ShadCN-compatible themes as blockchain tokens on BSV
+> Publish, discover, and install ShadCN-compatible themes as 1Sat Ordinals on BSV.
 
-Theme Token allows developers to publish, discover, and install design themes as 1Sat Ordinals on the BSV blockchain. Themes use ShadCN's registry format and can be installed directly via the ShadCN CLI.
+## Canonical links
 
-## Quick Links
-
-- Homepage: https://themetoken.dev
+- App: https://themetoken.dev
 - Specification: https://themetoken.dev/spec
-- Theme Studio: https://themetoken.dev/studio
-- Pattern Generator: https://themetoken.dev/studio/patterns
-- Market: https://themetoken.dev/market
+- Theme Studio: https://themetoken.dev/studio/theme
 - Schema: https://themetoken.dev/v1/schema.json
+- SDK: https://www.npmjs.com/package/@theme-token/sdk
 
-## Installation
-
-Install a theme into any ShadCN project:
+## Install a theme
 
 ```bash
 bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
 ```
 
-Replace `[origin]` with the ordinal origin ID (transaction ID + output index, e.g., `abc123_0`).
+`[origin]` is a 1Sat origin outpoint in `txid_vout` form. The optional `.json`
+suffix is accepted, but the suffixless URL above is canonical.
 
-## Theme Format
+## Theme document
 
-Themes are JSON files with light and dark color palettes using OKLCH color format:
+A Theme Token document requires `$schema`, `name`, and light/dark `styles`.
+`author`, chart colors, sidebar colors, fonts, shadows, backgrounds, bundle data,
+and generation provenance are optional. Each mode requires the 19 ShadCN semantic
+colors plus `radius`. Values are stored as CSS strings; colors normally use OKLCH.
+
+## On-chain package
+
+Themes are published as an `ord-fs/json` directory containing `theme.json`.
+The directory manifest carries MAP discovery metadata:
 
 ```json
 {
-  "$schema": "https://themetoken.dev/v1/schema.json",
+  "app": "theme-token",
+  "type": "registry:style",
   "name": "Theme Name",
-  "author": "Name (https://github.com/username)",
-  "styles": {
-    "light": {
-      "background": "oklch(1 0 0)",
-      "foreground": "oklch(0.145 0 0)",
-      "primary": "oklch(0.55 0.22 255)",
-      "radius": "0.5rem"
-    },
-    "dark": { /* same properties */ }
-  }
+  "version": "1.0.0",
+  "description": "ShadCN theme: Theme Name"
 }
 ```
 
-## Color Properties
+Fonts use `registry:font`; patterns, wallpapers, and icons use `registry:file`;
+project presets use `registry:base`. Raw content is served from
+`https://api.1sat.app/content/[origin]`.
 
-Each theme mode (light/dark) requires these semantic colors:
-
-- `background`, `foreground` - Base colors
-- `card`, `card-foreground` - Card surfaces
-- `popover`, `popover-foreground` - Popovers
-- `primary`, `primary-foreground` - Primary actions
-- `secondary`, `secondary-foreground` - Secondary actions
-- `muted`, `muted-foreground` - Muted elements
-- `accent`, `accent-foreground` - Accents
-- `destructive`, `destructive-foreground` - Destructive actions
-- `border` - Borders
-- `input` - Input borders
-- `ring` - Focus rings
-
-Optional chart colors: `chart-1` through `chart-5`
-
-Optional sidebar colors: `sidebar`, `sidebar-primary`, `sidebar-accent`, `sidebar-border`, `sidebar-ring`
-
-## Typography & Effects
-
-- `radius` (required) - Border radius (e.g., "0.5rem")
-- `font-sans`, `font-serif`, `font-mono` - Google Font name or on-chain path (`/content/{origin}`)
-- `letter-spacing` - Letter spacing (e.g., "0em")
-- `spacing` - Base spacing unit
-- `shadow-*` - Shadow values (2xs, xs, sm, md, lg, xl, 2xl)
-- `shadow-offset-x`, `shadow-offset-y` - Shadow offsets
-
-## Background Images & Patterns
-
-Themes support background images and patterns using the mask-image CSS approach for theme-reactive patterns:
-
-- `bg-image` - Background image URL or on-chain path (`/content/{origin}`)
-- `bg-image-opacity` - Pattern opacity (e.g., "0.1", "0.5")
-- `bg-image-size` - Pattern size (e.g., "24px", "cover", "contain")
-- `bg-image-position` - Position (e.g., "center", "top")
-- `bg-image-repeat` - Repeat behavior (e.g., "repeat", "no-repeat")
-- `bg-image-mode` - Render mode: "mask" (theme-reactive) or "image" (literal)
-- `bg-image-color` - For mask mode: color to show through the pattern
-- `card-bg-image`, `sidebar-bg-image` - Background for cards and sidebars
-
-### Pattern Generator
-
-Generate AI-powered SVG patterns at: https://themetoken.dev/studio/patterns
-
-The pattern generator uses Gemini AI to create seamless, tileable patterns. Patterns can use:
-- **currentColor mode**: Pattern inherits color from CSS (fully theme-reactive)
-- **Theme colors mode**: Hardcodes current theme colors into the SVG
-- **Grayscale mode**: Uses grayscale colors only
-
-Patterns are optimized for the CSS mask-image approach, where:
-1. The SVG pattern defines WHERE color shows (like a stencil)
-2. `background-color` defines WHAT color shows
-3. Result: 100% theme-reactive patterns that update with light/dark mode
-
-### Using Patterns
-
-```css
-.pattern-bg::before {
-  background-color: oklch(from var(--primary) l c h / 0.1);
-  mask-image: url("/content/{origin}");
-  mask-repeat: repeat;
-  mask-size: 24px;
-}
-```
-
-Or reference in theme JSON:
-```json
-{
-  "styles": {
-    "light": {
-      "bg-image": "/content/abc123_0",
-      "bg-image-opacity": "0.1",
-      "bg-image-size": "24px",
-      "bg-image-mode": "mask"
-    }
-  }
-}
-```
-
-## OKLCH Format
-
-Colors use OKLCH format: `oklch(lightness chroma hue)`
-
-- Lightness: 0-1 (0 = black, 1 = white)
-- Chroma: 0-0.4 (0 = gray, higher = more saturated)
-- Hue: 0-360 (color angle)
-
-Example: `oklch(0.55 0.22 255)` is a vibrant blue.
-
-## Registry Endpoint
-
-Themes are served at: `https://themetoken.dev/r/themes/[origin].json`
-
-Returns ShadCN registry format with theme CSS converted to custom properties.
-
-## Creating Themes
-
-1. Use Theme Studio: https://themetoken.dev/studio
-2. Design light and dark modes
-3. Export JSON
-4. Inscribe on BSV blockchain
-5. Share registry URL
-
-## On-Chain Inscription Protocol
-
-Theme Token assets are inscribed as 1Sat Ordinals with MAP (Magic Attribute Protocol) metadata for indexer discovery.
-
-### Asset Types
-
-**Themes** - Inscribed as JSON with minimal metadata:
-```json
-{
-  "app": "theme-token",
-  "type": "theme"
-}
-```
-Theme JSON is self-describing (contains name, author, colors) so no additional metadata needed.
-
-**Fonts** - Inscribed as WOFF2/WOFF/TTF binary with metadata:
-```json
-{
-  "app": "theme-token",
-  "type": "font",
-  "author": "John Doe",
-  "license": "OFL",
-  "prompt": "elegant serif with tall ascenders"
-}
-```
-Font name, weight, style are embedded in the binary. Only author, license, and AI prompt go in metadata.
-
-**Patterns** - Inscribed as SVG with metadata:
-```json
-{
-  "app": "theme-token",
-  "type": "pattern",
-  "name": "Dot Grid",
-  "author": "Jane Doe",
-  "license": "CC0",
-  "prompt": "evenly spaced dots"
-}
-```
-License defaults to CC0 (public domain) if not specified.
-
-### Field Reference
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| app | string | Yes | Always "theme-token" for indexer filtering |
-| type | string | Yes | Asset type: "theme", "font", or "pattern" |
-| name | string | Patterns only | Display name |
-| author | string | No | Creator/designer |
-| license | string | Patterns (default CC0) | License identifier (OFL, MIT, CC0) |
-| prompt | string | No | AI generation prompt (provenance) |
-
-### Referencing On-Chain Assets
-
-Use the `/content/{origin}` path format to reference inscribed assets in themes:
-
-```json
-{
-  "styles": {
-    "light": {
-      "font-sans": "/content/abc123_0",
-      "bg-image": "/content/def456_0"
-    }
-  }
-}
-```
-
-## Compatibility
-
-- Works with any ShadCN-based project
-- Compatible with tweakcn.com CSS output
-- Supports TailwindCSS v4+ with CSS custom properties
-- No build-time processing required
+The registry endpoint validates the Theme Token document and returns a ShadCN
+`registry:style` item with direct OKLCH values in `cssVars`.

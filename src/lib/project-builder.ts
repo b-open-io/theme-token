@@ -177,9 +177,10 @@ export function buildProjectBundle(
 		type: "project",
 		base64Data: manifestBase64,
 		mimeType: "application/json",
-		name: manifest.name,
+		name: "project.json",
 		metadata: {
 			registryType: "registry:base",
+			displayName: manifest.name,
 			...(author && { author }),
 		},
 	});

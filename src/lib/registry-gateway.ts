@@ -12,6 +12,7 @@ import { getOrdfsUrl } from "@/lib/ordfs";
  * Registry item types we support
  */
 export type RegistryItemType =
+	| "registry:base"
 	| "registry:style"
 	| "registry:block"
 	| "registry:component"
@@ -21,6 +22,7 @@ export type RegistryItemType =
 	| "registry:page"
 	| "registry:font"
 	| "registry:theme"
+	| "registry:item"
 	| "registry:file";
 
 /**
@@ -185,6 +187,7 @@ export function validateRegistryManifest(
 	}
 
 	const validTypes: RegistryItemType[] = [
+		"registry:base",
 		"registry:style",
 		"registry:block",
 		"registry:component",
@@ -194,6 +197,7 @@ export function validateRegistryManifest(
 		"registry:page",
 		"registry:font",
 		"registry:theme",
+		"registry:item",
 		"registry:file",
 	];
 

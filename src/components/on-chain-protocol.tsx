@@ -153,7 +153,7 @@ const JSON_DATA: Record<AssetType, string> = {
 }`,
 	project: `{
   "app": "theme-token",
-  "type": "registry:file",
+  "type": "registry:base",
   "name": "My Project",
   "version": "1.0.0",
   "description": "Theme project bundle",

@@ -2,7 +2,7 @@
 
 **On-chain themes for ShadCN UI.**
 
-Inscribe UI themes on Bitcoin. Install them with one command.
+Inscribe UI themes on BSV as 1Sat Ordinals. Install them with one command.
 
 ```bash
 bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
@@ -13,7 +13,7 @@ bunx shadcn@latest add https://themetoken.dev/r/themes/[origin]
 ## How It Works
 
 1. **Create** a theme using [tweakcn](https://tweakcn.com/editor/theme) or any CSS editor
-2. **Inscribe** it on Bitcoin via [themetoken.dev](https://themetoken.dev)
+2. **Inscribe** it on BSV via [themetoken.dev](https://themetoken.dev)
 3. **Install** in any ShadCN project using the standard CLI
 
 The registry API transforms on-chain data into the format ShadCN CLI expects.
@@ -24,9 +24,9 @@ The registry API transforms on-chain data into the format ShadCN CLI expects.
 
 | Benefit | Description |
 |:--------|:------------|
-| Ownership | Themes are inscribed as Bitcoin NFTs with cryptographic authorship |
-| Monetization | List and sell on any ordinals marketplace |
-| Permanence | On-chain forever, no hosting required |
+| Ownership | Themes are transferable 1Sat Ordinals controlled by the holder's wallet |
+| Monetization | List through marketplaces that support 1Sat Ordinals |
+| Durability | Theme data is on-chain; friendly install and preview URLs use gateway infrastructure |
 
 ## For Developers
 
@@ -43,7 +43,7 @@ The registry API transforms on-chain data into the format ShadCN CLI expects.
 Import themes programmatically into the studio:
 
 ```
-https://themetoken.dev/studio?import=<base64-css>&name=<name>&source=<source>
+https://themetoken.dev/studio/theme?import=<base64-css>&name=<name>&source=<source>
 ```
 
 | Parameter | Description |

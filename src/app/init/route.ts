@@ -22,8 +22,6 @@ import type {
 } from "@/lib/project-types";
 import { fetchJsonFromOrdfs } from "@/lib/registry-gateway";
 
-export const runtime = "edge";
-
 // Valid parameter values
 const VALID_ICON_LIBRARIES: IconLibrary[] = ["lucide", "hugeicons", "tabler"];
 const VALID_BASE_COLORS: BaseColor[] = [
@@ -83,9 +81,10 @@ export async function GET(request: Request) {
 
 	try {
 		// Fetch project manifest from ORDFS
-		const rawManifest = await fetchJsonFromOrdfs<ProjectManifest>(
-			params.project,
-		);
+		const rawManifest =
+			(await fetchJsonFromOrdfs<ProjectManifest>(
+				`${params.project}/project.json`,
+			)) || (await fetchJsonFromOrdfs<ProjectManifest>(params.project));
 
 		if (!rawManifest) {
 			return NextResponse.json(

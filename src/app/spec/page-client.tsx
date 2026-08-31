@@ -61,8 +61,8 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mx-auto mb-8 max-w-2xl text-muted-foreground"
 						>
-							Theme Token uses the ShadCN Registry Format. Install any on-chain
-							theme directly with the ShadCN CLI.
+							The registry endpoint translates validated Theme Token documents
+							into ShadCN registry items for direct CLI installation.
 						</motion.p>
 					</motion.div>
 
@@ -125,15 +125,15 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							ShadCN Registry Format
+							Theme Token v1 Format
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							Theme Token uses the same CSS custom properties that power
-							thousands of ShadCN-based applications. 100% compatible with the
-							ShadCN CLI ecosystem.
+							Theme Token stores the semantic CSS variables used by ShadCN. The
+							registry endpoint validates this document and emits the current
+							ShadCN registry-item shape.
 						</motion.p>
 					</motion.div>
 
@@ -684,7 +684,7 @@ export function SpecPageClient() {
 				</PageContainer>
 			</section>
 
-			{/* Protocol Implementations */}
+			{/* BSV implementation */}
 			<section className="border-t border-border py-16">
 				<PageContainer>
 					<motion.div
@@ -697,20 +697,21 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="font-mono text-sm text-primary"
 						>
-							{"// Blockchain Implementations"}
+							{"// BSV Implementation"}
 						</motion.p>
 						<motion.h2
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							Inscribe on Any Chain
+							Built for 1Sat Ordinals
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							Theme Tokens can be inscribed on multiple blockchains. Choose
-							based on your cost, speed, and ecosystem requirements.
+							The format is portable JSON, but Theme Token publishing,
+							discovery, ownership, and registry serving currently target BSV.
+							Other storage encodings are outside this specification.
 						</motion.p>
 					</motion.div>
 

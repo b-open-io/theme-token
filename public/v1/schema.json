@@ -8,10 +8,12 @@
 	"properties": {
 		"$schema": {
 			"type": "string",
+			"const": "https://themetoken.dev/v1/schema.json",
 			"description": "JSON Schema URL for validation"
 		},
 		"name": {
 			"type": "string",
+			"minLength": 1,
 			"description": "Theme name"
 		},
 		"author": {
@@ -25,9 +27,44 @@
 				"light": { "$ref": "#/$defs/themeStyleProps" },
 				"dark": { "$ref": "#/$defs/themeStyleProps" }
 			}
+		},
+		"bundle": { "$ref": "#/$defs/bundle" },
+		"generation": { "$ref": "#/$defs/generation" },
+		"css": {
+			"type": "object",
+			"description": "Optional CSS rules, including @layer base"
 		}
 	},
 	"$defs": {
+		"bundle": {
+			"type": "object",
+			"required": ["version", "assets"],
+			"properties": {
+				"version": { "const": 1 },
+				"assets": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"required": ["vout", "type", "slot"],
+						"properties": {
+							"vout": { "type": "integer", "minimum": 0 },
+							"type": { "enum": ["font", "pattern", "wallpaper", "icon"] },
+							"slot": { "type": "string" }
+						}
+					}
+				}
+			}
+		},
+		"generation": {
+			"type": "object",
+			"required": ["prompt"],
+			"properties": {
+				"prompt": { "type": "string" },
+				"provider": { "type": "string" },
+				"model": { "type": "string" },
+				"timestamp": { "type": "number" }
+			}
+		},
 		"themeStyleProps": {
 			"type": "object",
 			"required": [
@@ -50,11 +87,6 @@
 				"border",
 				"input",
 				"ring",
-				"chart-1",
-				"chart-2",
-				"chart-3",
-				"chart-4",
-				"chart-5",
 				"radius"
 			],
 			"properties": {
@@ -124,6 +156,14 @@
 				"shadow-spread": { "type": "string" },
 				"shadow-offset-x": { "type": "string" },
 				"shadow-offset-y": { "type": "string" },
+				"shadow-2xs": { "type": "string" },
+				"shadow-xs": { "type": "string" },
+				"shadow-sm": { "type": "string" },
+				"shadow": { "type": "string" },
+				"shadow-md": { "type": "string" },
+				"shadow-lg": { "type": "string" },
+				"shadow-xl": { "type": "string" },
+				"shadow-2xl": { "type": "string" },
 				"letter-spacing": { "type": "string" },
 				"spacing": { "type": "string" },
 				"bg-image": {
@@ -162,7 +202,8 @@
 					"type": "string",
 					"description": "Sidebar background image: URL or on-chain path"
 				}
-			}
+			},
+			"additionalProperties": { "type": "string" }
 		}
 	}
 }
