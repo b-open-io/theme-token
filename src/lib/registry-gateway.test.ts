@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createThemeToken } from "@theme-token/sdk";
 import {
-	compileThemeTokenV2,
+	compileThemeRegistryItem,
 	extractTxid,
 	extractVout,
-	THEME_TOKEN_V2_SCHEMA_URL,
 } from "./registry-gateway";
-import { ThemeAssetError } from "./theme-assets-v2";
+import { ThemeAssetError } from "./theme-assets";
 
 async function integrity(bytes: Uint8Array) {
 	const hash = await crypto.subtle.digest("SHA-256", bytes);
@@ -43,7 +42,7 @@ describe("registry-gateway origin parsing", () => {
 	});
 });
 
-describe("Theme Token v2 registry compiler", () => {
+describe("Theme Token registry compiler", () => {
 	const origin = `${"c".repeat(64)}_4`;
 
 	test("emits verified linked CSS and targeted vendored files", async () => {
@@ -52,8 +51,7 @@ describe("Theme Token v2 registry compiler", () => {
 			'<svg xmlns="http://www.w3.org/2000/svg"/>',
 		);
 		const source = {
-			...createThemeToken("V2 Assets", {}, {}),
-			$schema: THEME_TOKEN_V2_SCHEMA_URL,
+			...createThemeToken("Assets", {}, {}),
 			assets: [
 				{
 					role: "font.sans",
@@ -79,10 +77,13 @@ describe("Theme Token v2 registry compiler", () => {
 			],
 		};
 
-		const item = await compileThemeTokenV2(source, origin, async (location) =>
-			location.origin.startsWith("d")
-				? { bytes: font, mediaType: "font/woff2" }
-				: { bytes: svg, mediaType: "image/svg+xml" },
+		const item = await compileThemeRegistryItem(
+			source,
+			origin,
+			async (location) =>
+				location.origin.startsWith("d")
+					? { bytes: font, mediaType: "font/woff2" }
+					: { bytes: svg, mediaType: "image/svg+xml" },
 		);
 
 		expect(item.files).toEqual([
@@ -112,7 +113,6 @@ describe("Theme Token v2 registry compiler", () => {
 	test("omits only unavailable optional assets with a diagnostic", async () => {
 		const source = {
 			...createThemeToken("Optional", {}, {}),
-			$schema: THEME_TOKEN_V2_SCHEMA_URL,
 			assets: [
 				{
 					role: "background.page",
@@ -124,7 +124,7 @@ describe("Theme Token v2 registry compiler", () => {
 				},
 			],
 		};
-		const item = await compileThemeTokenV2(
+		const item = await compileThemeRegistryItem(
 			source,
 			origin,
 			async () => undefined,
@@ -134,7 +134,7 @@ describe("Theme Token v2 registry compiler", () => {
 		expect(item.files).toBeUndefined();
 	});
 
-	test("keeps integrity, media, and unsupported icon failures hard", async () => {
+	test("keeps media and integrity failures hard", async () => {
 		const bytes = new TextEncoder().encode("wrong");
 		for (const [asset, expectedCode] of [
 			[
@@ -149,20 +149,19 @@ describe("Theme Token v2 registry compiler", () => {
 			],
 			[
 				{
-					role: "icon.set",
-					kind: "icon",
+					role: "background.page",
+					kind: "pattern",
 					source: { kind: "sibling", vout: 2 },
 					mediaType: "image/svg+xml",
 					integrity: `sha256:${"0".repeat(64)}`,
 				},
-				"unsupported_delivery",
+				"integrity_mismatch",
 			],
 		] as const) {
 			try {
-				await compileThemeTokenV2(
+				await compileThemeRegistryItem(
 					{
 						...createThemeToken("Hard error", {}, {}),
-						$schema: THEME_TOKEN_V2_SCHEMA_URL,
 						assets: [asset],
 					},
 					origin,
@@ -175,5 +174,60 @@ describe("Theme Token v2 registry compiler", () => {
 				expect((error as ThemeAssetError).retryable).toBe(false);
 			}
 		}
+	});
+
+	test("validates extension relationships and omits only optional unknown roles", async () => {
+		try {
+			await compileThemeRegistryItem(
+				{
+					...createThemeToken("Extension", {}, {}),
+					assets: [
+						{
+							role: "example.custom",
+							kind: "pattern",
+							source: { kind: "origin", origin: "not-an-origin" },
+							mediaType: "image/svg+xml",
+							integrity: `sha256:${"0".repeat(64)}`,
+						},
+					],
+				},
+				origin,
+				async () => undefined,
+			);
+			expect.unreachable();
+		} catch (error) {
+			expect(error).toBeInstanceOf(ThemeAssetError);
+			expect((error as ThemeAssetError).code).toBe("invalid_source");
+		}
+
+		const asset = {
+			role: "example.custom",
+			kind: "pattern" as const,
+			source: { kind: "sibling" as const, vout: 1 },
+			mediaType: "image/svg+xml",
+			integrity: `sha256:${"0".repeat(64)}`,
+		};
+		try {
+			await compileThemeRegistryItem(
+				{ ...createThemeToken("Required", {}, {}), assets: [asset] },
+				origin,
+				async () => undefined,
+			);
+			expect.unreachable();
+		} catch (error) {
+			expect((error as ThemeAssetError).code).toBe("unsupported_delivery");
+		}
+
+		const optional = await compileThemeRegistryItem(
+			{
+				...createThemeToken("Optional", {}, {}),
+				assets: [{ ...asset, required: false }],
+			},
+			origin,
+			async () => undefined,
+		);
+		expect(JSON.stringify(optional.meta)).toContain(
+			"Ignored unsupported asset role",
+		);
 	});
 });

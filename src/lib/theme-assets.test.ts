@@ -3,19 +3,17 @@ import {
 	assetContentUrl,
 	compileAssetDelivery,
 	locateThemeAsset,
-	normalizeV1BundleAssets,
-	parseThemeAssetsV2,
 	resolveThemeAsset,
+	type ThemeAsset,
 	ThemeAssetError,
-	type ThemeAssetV2,
-} from "./theme-assets-v2";
+} from "./theme-assets";
 
 const TXID = "a".repeat(64);
 const FONT_BYTES = new TextEncoder().encode("font bytes");
 const FONT_HASH =
 	"sha256:ee2e88308610019dce3856035fb572b7675dc9d4c990091374349476b5beecb1";
 
-const fontAsset: ThemeAssetV2 = {
+const fontAsset: ThemeAsset = {
 	role: "font.sans",
 	kind: "font",
 	source: { kind: "sibling", vout: 2, path: "fonts/my font.woff2" },
@@ -23,7 +21,7 @@ const fontAsset: ThemeAssetV2 = {
 	integrity: FONT_HASH,
 };
 
-describe("Theme Token v2 asset resolution", () => {
+describe("Theme Token asset resolution", () => {
 	test("resolves sibling origins, verifies bytes, and compiles a linked URL", async () => {
 		const resolved = await resolveThemeAsset(
 			`${TXID}.9`,
@@ -123,7 +121,7 @@ describe("Theme Token v2 asset resolution", () => {
 		const integrity = `sha256:${Array.from(new Uint8Array(hash), (byte) =>
 			byte.toString(16).padStart(2, "0"),
 		).join("")}`;
-		const asset: ThemeAssetV2 = {
+		const asset: ThemeAsset = {
 			role: "background.page",
 			kind: "pattern",
 			source: { kind: "sibling", vout: 4, path: "pattern.svg" },
@@ -150,62 +148,5 @@ describe("Theme Token v2 asset resolution", () => {
 		expect(() =>
 			compileAssetDelivery({ ...resolved, bytes: new Uint8Array([255]) }),
 		).toThrow(/not valid UTF-8/);
-	});
-
-	test("normalizes known v1 bundle slots as explicitly unverified", () => {
-		expect(
-			normalizeV1BundleAssets([
-				{ slot: "font-sans", vout: 0 },
-				{ slot: "pattern", vout: 1 },
-				{ slot: "unknown", vout: 2 },
-			]),
-		).toEqual([
-			{
-				role: "font.sans",
-				kind: "font",
-				source: { kind: "sibling", vout: 0 },
-				verified: false,
-			},
-			{
-				role: "background.page",
-				kind: "pattern",
-				source: { kind: "sibling", vout: 1 },
-				verified: false,
-			},
-		]);
-	});
-
-	test("rejects properties outside the published v2 asset contract", () => {
-		for (const asset of [
-			{ ...fontAsset, surprise: true },
-			{
-				...fontAsset,
-				source: { ...fontAsset.source, surprise: true },
-			},
-			{ ...fontAsset, render: { mode: "mask", surprise: true } },
-		]) {
-			expect(() => parseThemeAssetsV2([asset])).toThrow(ThemeAssetError);
-		}
-	});
-
-	test("accepts only CSS-valid mask color forms", () => {
-		expect(() =>
-			parseThemeAssetsV2([
-				{
-					...fontAsset,
-					kind: "pattern",
-					render: { mode: "mask", color: "#1234" },
-				},
-			]),
-		).not.toThrow();
-		expect(() =>
-			parseThemeAssetsV2([
-				{
-					...fontAsset,
-					kind: "pattern",
-					render: { mode: "mask", color: "#12345" },
-				},
-			]),
-		).toThrow(ThemeAssetError);
 	});
 });

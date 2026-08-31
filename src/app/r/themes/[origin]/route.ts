@@ -1,16 +1,46 @@
-import { toShadcnRegistry, validateThemeToken } from "@theme-token/sdk";
 import { NextResponse } from "next/server";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import { normalizeOriginRouteParam } from "@/lib/outpoint";
-import {
-	compileThemeTokenV2,
-	isThemeTokenV2Source,
-} from "@/lib/registry-gateway";
+import { compileThemeRegistryItem } from "@/lib/registry-gateway";
 import { getThemeByOrigin } from "@/lib/server/get-session-theme";
-import {
-	type AssetContentResolver,
-	ThemeAssetError,
-} from "@/lib/theme-assets-v2";
+import { type AssetContentResolver, ThemeAssetError } from "@/lib/theme-assets";
+
+const MAX_ASSET_BYTES = 5 * 1024 * 1024;
+
+async function readAssetBytes(response: Response): Promise<Uint8Array> {
+	const declaredSize = Number(response.headers.get("content-length"));
+	if (Number.isFinite(declaredSize) && declaredSize > MAX_ASSET_BYTES) {
+		throw new ThemeAssetError(
+			"unsupported_delivery",
+			"Theme assets cannot exceed 5 MiB",
+		);
+	}
+	if (!response.body) return new Uint8Array();
+
+	const reader = response.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let total = 0;
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		total += value.byteLength;
+		if (total > MAX_ASSET_BYTES) {
+			await reader.cancel();
+			throw new ThemeAssetError(
+				"unsupported_delivery",
+				"Theme assets cannot exceed 5 MiB",
+			);
+		}
+		chunks.push(value);
+	}
+	const bytes = new Uint8Array(total);
+	let offset = 0;
+	for (const chunk of chunks) {
+		bytes.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return bytes;
+}
 
 const resolveAssetContent: AssetContentResolver = async ({ origin, path }) => {
 	try {
@@ -20,10 +50,11 @@ const resolveAssetContent: AssetContentResolver = async ({ origin, path }) => {
 		);
 		if (!response.ok) return undefined;
 		return {
-			bytes: new Uint8Array(await response.arrayBuffer()),
+			bytes: await readAssetBytes(response),
 			mediaType: response.headers.get("content-type") ?? "",
 		};
-	} catch {
+	} catch (error) {
+		if (error instanceof ThemeAssetError) throw error;
 		return undefined;
 	}
 };
@@ -41,9 +72,17 @@ export async function GET(
 		const response = await fetch(getOrdfsUrl(`${origin}/theme.json`), {
 			cache: "no-store",
 		});
-		const source = response.ok ? await response.json() : undefined;
-		if (isThemeTokenV2Source(source)) {
-			const registryItem = await compileThemeTokenV2(
+		if (response.ok) {
+			let source: unknown;
+			try {
+				source = await response.json();
+			} catch {
+				throw new ThemeAssetError(
+					"invalid_source",
+					"Theme Token contains invalid JSON",
+				);
+			}
+			const registryItem = await compileThemeRegistryItem(
 				source,
 				origin,
 				resolveAssetContent,
@@ -56,15 +95,16 @@ export async function GET(
 			});
 		}
 
-		const result = response.ok
-			? validateThemeToken(source)
-			: { valid: false as const, error: "Theme not available from 1Sat yet" };
-		const theme = result.valid ? result.theme : await getThemeByOrigin(origin);
+		const theme = await getThemeByOrigin(origin);
 		if (!theme) {
 			return NextResponse.json({ error: "Theme not found" }, { status: 404 });
 		}
 
-		const registryItem = toShadcnRegistry(theme);
+		const registryItem = await compileThemeRegistryItem(
+			theme,
+			origin,
+			resolveAssetContent,
+		);
 		return NextResponse.json(registryItem, {
 			headers: {
 				"Content-Type": "application/json",

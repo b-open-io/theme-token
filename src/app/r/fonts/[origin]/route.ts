@@ -1,5 +1,5 @@
 import { normalizeOriginRouteParam } from "@/lib/outpoint";
-import { assetContentUrl, ThemeAssetError } from "@/lib/theme-assets-v2";
+import { assetContentUrl, ThemeAssetError } from "@/lib/theme-assets";
 
 const ORIGIN_PATTERN = /^[0-9a-f]{64}_(?:0|[1-9][0-9]*)$/;
 

@@ -766,18 +766,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	/**
 	 * Mint a collection item (e.g., Prism Pass membership NFT).
 	 *
-	 * The current implementation relies on legacy YoursWallet methods
-	 * (getPaymentUtxos, getSignatures, broadcast). These are not available
-	 * in the CWI interface.
+	 * This flow needs an issuer-authorized BRC-100 design before it can be enabled.
 	 */
 	const mintCollectionItem = useCallback(
 		async (
 			_config: MintCollectionItemConfig,
 		): Promise<InscribeResponse | null> => {
-			throw new Error(
-				"Collection item minting not yet supported via CWI. " +
-					"This feature requires migration of mint-collection-item.ts to use @1sat/actions.",
-			);
+			throw new Error("Collection item minting is not available yet.");
 		},
 		[],
 	);

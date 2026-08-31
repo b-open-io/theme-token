@@ -28,6 +28,12 @@
 				"dark": { "$ref": "#/$defs/themeStyleProps" }
 			}
 		},
+		"assets": {
+			"type": "array",
+			"maxItems": 16,
+			"description": "Verified relationships to immutable fonts, patterns, and wallpapers",
+			"items": { "$ref": "#/$defs/asset" }
+		},
 		"bundle": { "$ref": "#/$defs/bundle" },
 		"generation": { "$ref": "#/$defs/generation" },
 		"css": {
@@ -36,6 +42,109 @@
 		}
 	},
 	"$defs": {
+		"asset": {
+			"type": "object",
+			"required": ["role", "kind", "source", "mediaType", "integrity"],
+			"properties": {
+				"role": { "type": "string", "minLength": 1 },
+				"kind": { "enum": ["font", "pattern", "wallpaper"] },
+				"source": {
+					"oneOf": [
+						{
+							"type": "object",
+							"required": ["kind", "vout"],
+							"properties": {
+								"kind": { "const": "sibling" },
+								"vout": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 9007199254740991
+								},
+								"path": { "$ref": "#/$defs/path" }
+							},
+							"additionalProperties": false
+						},
+						{
+							"type": "object",
+							"required": ["kind", "origin"],
+							"properties": {
+								"kind": { "const": "origin" },
+								"origin": {
+									"type": "string",
+									"pattern": "^[0-9a-f]{64}_(0|[1-9][0-9]*)$"
+								},
+								"path": { "$ref": "#/$defs/path" }
+							},
+							"additionalProperties": false
+						}
+					]
+				},
+				"mediaType": {
+					"type": "string",
+					"pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$"
+				},
+				"integrity": {
+					"type": "string",
+					"pattern": "^sha256:[0-9a-f]{64}$"
+				},
+				"delivery": { "enum": ["linked", "vendored"] },
+				"required": { "type": "boolean", "default": true },
+				"render": {
+					"type": "object",
+					"properties": {
+						"mode": { "enum": ["image", "mask"] },
+						"repeat": {
+							"enum": [
+								"repeat",
+								"no-repeat",
+								"repeat-x",
+								"repeat-y",
+								"space",
+								"round"
+							]
+						},
+						"size": { "enum": ["auto", "cover", "contain"] },
+						"position": {
+							"enum": [
+								"center",
+								"top",
+								"bottom",
+								"left",
+								"right",
+								"top left",
+								"top right",
+								"bottom left",
+								"bottom right"
+							]
+						},
+						"color": {
+							"type": "string",
+							"pattern": "^(currentColor|transparent|#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|var\\(--[a-z0-9-]+\\))$"
+						}
+					},
+					"dependentSchemas": {
+						"color": {
+							"required": ["mode"],
+							"properties": { "mode": { "const": "mask" } }
+						}
+					},
+					"additionalProperties": false
+				}
+			},
+			"dependentSchemas": {
+				"render": {
+					"properties": {
+						"kind": { "enum": ["pattern", "wallpaper"] }
+					}
+				}
+			},
+			"additionalProperties": false
+		},
+		"path": {
+			"type": "string",
+			"minLength": 1,
+			"pattern": "^(?!/)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//)[^%\\\\?#\\u0000-\\u001F\\u007F]+$"
+		},
 		"bundle": {
 			"type": "object",
 			"required": ["version", "assets"],

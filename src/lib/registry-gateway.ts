@@ -1,21 +1,12 @@
-import {
-	THEME_TOKEN_SCHEMA_URL,
-	type ThemeToken,
-	toShadcnRegistry,
-	validateThemeToken,
-} from "@theme-token/sdk";
+import { toShadcnRegistry, validateThemeToken } from "@theme-token/sdk";
 import { getOrdfsUrl } from "@/lib/ordfs";
 import {
 	type AssetContentResolver,
 	compileAssetDelivery,
-	parseThemeAssetsV2,
 	resolveThemeAsset,
+	type ThemeAsset,
 	ThemeAssetError,
-	type ThemeAssetV2,
-} from "@/lib/theme-assets-v2";
-
-export const THEME_TOKEN_V2_SCHEMA_URL =
-	"https://themetoken.dev/v2/schema.json";
+} from "@/lib/theme-assets";
 
 /**
  * Registry Gateway - Shared logic for serving shadcn registry items from the blockchain
@@ -69,11 +60,6 @@ export interface RegistryManifest {
 	tailwind?: Record<string, unknown>;
 }
 
-export interface ThemeTokenV2Source extends Record<string, unknown> {
-	$schema: typeof THEME_TOKEN_V2_SCHEMA_URL;
-	assets?: unknown;
-}
-
 interface CompiledRegistryFile {
 	path: string;
 	type: "registry:file";
@@ -94,7 +80,6 @@ const ASSET_ROLES = {
 	"background.page": "background",
 	"background.card": "background",
 	"background.sidebar": "background",
-	"icon.set": "icon",
 } as const;
 
 const FONT_FALLBACKS = {
@@ -104,41 +89,8 @@ const FONT_FALLBACKS = {
 	heading: "ui-sans-serif, system-ui, sans-serif",
 } as const;
 
-const V2_THEME_KEYS = new Set([
-	"$schema",
-	"name",
-	"author",
-	"styles",
-	"assets",
-	"css",
-	"generation",
-]);
-
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-export function isThemeTokenV2Source(
-	value: unknown,
-): value is ThemeTokenV2Source {
-	return isRecord(value) && value.$schema === THEME_TOKEN_V2_SCHEMA_URL;
-}
-
-function validateV2Theme(source: ThemeTokenV2Source): ThemeToken {
-	if (Object.keys(source).some((key) => !V2_THEME_KEYS.has(key))) {
-		throw new ThemeAssetError(
-			"invalid_source",
-			"Theme Token v2 contains an unknown property",
-		);
-	}
-	const result = validateThemeToken({
-		...source,
-		$schema: THEME_TOKEN_SCHEMA_URL,
-	});
-	if (!result.valid) {
-		throw new ThemeAssetError("invalid_source", result.error);
-	}
-	return result.theme;
 }
 
 function assetUrl(delivery: ReturnType<typeof compileAssetDelivery>): string {
@@ -149,7 +101,7 @@ function assetUrl(delivery: ReturnType<typeof compileAssetDelivery>): string {
 
 function addBackgroundCss(
 	item: CompiledRegistryItem,
-	asset: ThemeAssetV2,
+	asset: ThemeAsset,
 	url: string,
 ) {
 	const selectors = {
@@ -197,15 +149,24 @@ function addBackgroundCss(
 	};
 }
 
-/** Compile a v2 Theme Token source into installable, verified ShadCN output. */
-export async function compileThemeTokenV2(
-	source: ThemeTokenV2Source,
+/** Compile a Theme Token source into installable, verified ShadCN output. */
+export async function compileThemeRegistryItem(
+	source: unknown,
 	packageOrigin: string,
 	resolveContent: AssetContentResolver,
 ): Promise<CompiledRegistryItem> {
-	const theme = validateV2Theme(source);
-	const assets = parseThemeAssetsV2(source.assets);
-	const item: CompiledRegistryItem = toShadcnRegistry(theme);
+	if (!isRecord(source)) {
+		throw new ThemeAssetError(
+			"invalid_source",
+			"Theme Token must be an object",
+		);
+	}
+	const result = validateThemeToken(source);
+	if (!result.valid) {
+		throw new ThemeAssetError("invalid_source", result.error);
+	}
+	const assets = result.theme.assets ?? [];
+	const item: CompiledRegistryItem = toShadcnRegistry(result.theme);
 	const files: CompiledRegistryFile[] = [];
 	const diagnostics: string[] = [];
 	const provenance: Record<string, unknown>[] = [];
@@ -213,6 +174,12 @@ export async function compileThemeTokenV2(
 	for (const asset of assets) {
 		const roleType = ASSET_ROLES[asset.role as keyof typeof ASSET_ROLES];
 		if (!roleType) {
+			if (asset.required !== false) {
+				throw new ThemeAssetError(
+					"unsupported_delivery",
+					`Unsupported required asset role: ${asset.role}`,
+				);
+			}
 			diagnostics.push(`Ignored unsupported asset role: ${asset.role}`);
 			continue;
 		}
@@ -220,8 +187,7 @@ export async function compileThemeTokenV2(
 			(roleType === "font" && asset.kind !== "font") ||
 			(roleType === "background" &&
 				asset.kind !== "pattern" &&
-				asset.kind !== "wallpaper") ||
-			(roleType === "icon" && asset.kind !== "icon")
+				asset.kind !== "wallpaper")
 		) {
 			throw new ThemeAssetError(
 				"invalid_source",
@@ -231,10 +197,7 @@ export async function compileThemeTokenV2(
 		if (
 			(asset.kind === "font" && asset.mediaType !== "font/woff2") ||
 			((asset.kind === "pattern" || asset.kind === "wallpaper") &&
-				!asset.mediaType.startsWith("image/")) ||
-			(asset.kind === "icon" &&
-				!asset.mediaType.startsWith("image/") &&
-				asset.mediaType !== "application/json")
+				!asset.mediaType.startsWith("image/"))
 		) {
 			throw new ThemeAssetError(
 				"invalid_media_type",
@@ -252,19 +215,6 @@ export async function compileThemeTokenV2(
 				`Asset ${asset.role} has incompatible render settings`,
 			);
 		}
-		if (roleType === "icon") {
-			if (asset.required === false) {
-				diagnostics.push(
-					"Ignored optional icon.set asset: ShadCN has no standard install target",
-				);
-				continue;
-			}
-			throw new ThemeAssetError(
-				"unsupported_delivery",
-				"ShadCN has no standard install target for icon.set assets",
-			);
-		}
-
 		let resolved: Awaited<ReturnType<typeof resolveThemeAsset>>;
 		try {
 			resolved = await resolveThemeAsset(packageOrigin, asset, resolveContent);
@@ -321,14 +271,15 @@ export async function compileThemeTokenV2(
 	}
 
 	if (files.length) item.files = files;
-	item.meta = {
-		themeToken: {
-			version: 2,
-			origin: packageOrigin,
-			assets: provenance,
-			...(diagnostics.length && { diagnostics }),
-		},
-	};
+	if (provenance.length || diagnostics.length) {
+		item.meta = {
+			themeToken: {
+				origin: packageOrigin,
+				assets: provenance,
+				...(diagnostics.length && { diagnostics }),
+			},
+		};
+	}
 	return item;
 }
 

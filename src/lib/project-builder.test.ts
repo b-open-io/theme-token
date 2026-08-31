@@ -56,7 +56,7 @@ const config = {
 	menuAccent: "bold",
 } as const;
 
-describe("project preset v2", () => {
+describe("project preset compiler", () => {
 	test("compiles authoring choices into a current registry:base manifest", () => {
 		const manifest = createProjectManifest(theme, config);
 

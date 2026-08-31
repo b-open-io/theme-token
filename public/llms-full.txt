@@ -33,7 +33,8 @@ Required root fields:
 - `name`: a non-empty display name
 - `styles.light` and `styles.dark`: complete style maps
 
-`author`, `css`, `bundle`, and `generation` are optional.
+`author`, `assets`, `css`, and `generation` are optional. Older documents may
+contain `bundle` metadata; it is accepted but does not drive asset compilation.
 
 Each style requires:
 
@@ -54,6 +55,29 @@ The Studio writes complete OKLCH values such as `oklch(0.55 0.22 255)`.
 
 Generation details may be recorded with `generation.prompt` and optional
 `provider`, `model`, and `timestamp` fields.
+
+## Related assets
+
+The optional `assets` array links a theme to immutable fonts, patterns, and
+wallpapers. Each relationship declares its role, kind, source, media type, and
+SHA-256 integrity value. Sources can point to a sibling output in the same
+transaction or an existing ordinal origin.
+
+```json
+{
+  "role": "background.page",
+  "kind": "pattern",
+  "source": { "kind": "sibling", "vout": 0 },
+  "mediaType": "image/svg+xml",
+  "integrity": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "delivery": "linked",
+  "render": { "mode": "mask", "repeat": "repeat" }
+}
+```
+
+Supported roles are `font.sans`, `font.serif`, `font.mono`, `font.heading`,
+`background.page`, `background.card`, and `background.sidebar`. Supported kinds
+are `font`, `pattern`, and `wallpaper`.
 
 ## MAP discovery
 
@@ -85,7 +109,8 @@ provider, and model are optional provenance fields.
 ## Registry response
 
 `GET /r/themes/[origin].json` returns a ShadCN `registry:style` item with the
-theme's CSS variables and optional CSS rules. Verify an origin with:
+theme's CSS variables, optional CSS rules, and verified asset behavior. Verify
+an origin with:
 
 ```bash
 bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json --dry-run

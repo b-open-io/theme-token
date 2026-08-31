@@ -1,162 +1,12 @@
+import type { ThemeAsset, ThemeAssetSource } from "@theme-token/sdk";
 import { normalizeOutpoint } from "@/lib/outpoint";
+
+export type { ThemeAsset, ThemeAssetSource } from "@theme-token/sdk";
 
 const ORIGIN = /^[0-9a-f]{64}_(?:0|[1-9][0-9]*)$/;
 const INTEGRITY = /^sha256:([0-9a-f]{64})$/;
 const MEDIA_TYPE = /^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/;
 const CONTENT_GATEWAY = "https://api.1sat.app/content";
-
-export type ThemeAssetSource =
-	| { kind: "sibling"; vout: number; path?: string }
-	| { kind: "origin"; origin: string; path?: string };
-
-export interface ThemeAssetRender {
-	mode?: "image" | "mask";
-	repeat?: "repeat" | "no-repeat" | "repeat-x" | "repeat-y" | "space" | "round";
-	size?: "auto" | "cover" | "contain";
-	position?:
-		| "center"
-		| "top"
-		| "bottom"
-		| "left"
-		| "right"
-		| "top left"
-		| "top right"
-		| "bottom left"
-		| "bottom right";
-	color?: string;
-}
-
-export interface ThemeAssetV2 {
-	role: string;
-	kind: "font" | "pattern" | "wallpaper" | "icon";
-	source: ThemeAssetSource;
-	mediaType: string;
-	integrity: string;
-	delivery?: "linked" | "vendored";
-	required?: boolean;
-	render?: ThemeAssetRender;
-}
-
-const ASSET_KINDS = new Set(["font", "pattern", "wallpaper", "icon"]);
-const ASSET_KEYS = new Set([
-	"role",
-	"kind",
-	"source",
-	"mediaType",
-	"integrity",
-	"delivery",
-	"required",
-	"render",
-]);
-const RENDER_VALUES = {
-	mode: new Set(["image", "mask"]),
-	repeat: new Set([
-		"repeat",
-		"no-repeat",
-		"repeat-x",
-		"repeat-y",
-		"space",
-		"round",
-	]),
-	size: new Set(["auto", "cover", "contain"]),
-	position: new Set([
-		"center",
-		"top",
-		"bottom",
-		"left",
-		"right",
-		"top left",
-		"top right",
-		"bottom left",
-		"bottom right",
-	]),
-} as const;
-const MASK_COLOR =
-	/^(?:currentColor|transparent|#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|var\(--[a-z0-9-]+\))$/;
-
-function validRender(render: unknown): render is ThemeAssetRender {
-	if (!render || typeof render !== "object" || Array.isArray(render))
-		return false;
-	const value = render as Record<string, unknown>;
-	if (
-		Object.keys(value).some((key) => !(key in RENDER_VALUES) && key !== "color")
-	) {
-		return false;
-	}
-	for (const key of Object.keys(RENDER_VALUES) as Array<
-		keyof typeof RENDER_VALUES
-	>) {
-		if (
-			value[key] !== undefined &&
-			(typeof value[key] !== "string" || !RENDER_VALUES[key].has(value[key]))
-		) {
-			return false;
-		}
-	}
-	return (
-		value.color === undefined ||
-		(typeof value.color === "string" && MASK_COLOR.test(value.color))
-	);
-}
-
-/** Parse the v2 relationship array at the gateway trust boundary. */
-export function parseThemeAssetsV2(input: unknown): ThemeAssetV2[] {
-	if (!Array.isArray(input)) {
-		throw new ThemeAssetError(
-			"invalid_source",
-			"Theme assets must be an array",
-		);
-	}
-
-	return input.map((value, index) => {
-		if (!value || typeof value !== "object") {
-			throw new ThemeAssetError(
-				"invalid_source",
-				`Theme asset ${index} must be an object`,
-			);
-		}
-		const asset = value as Record<string, unknown>;
-		const source = asset.source as Record<string, unknown> | undefined;
-		if (
-			Object.keys(asset).some((key) => !ASSET_KEYS.has(key)) ||
-			typeof asset.role !== "string" ||
-			asset.role.length === 0 ||
-			typeof asset.kind !== "string" ||
-			!ASSET_KINDS.has(asset.kind) ||
-			typeof asset.mediaType !== "string" ||
-			typeof asset.integrity !== "string" ||
-			!source ||
-			(source.kind !== "sibling" && source.kind !== "origin") ||
-			(asset.delivery !== undefined &&
-				asset.delivery !== "linked" &&
-				asset.delivery !== "vendored") ||
-			(asset.required !== undefined && typeof asset.required !== "boolean") ||
-			(asset.render !== undefined && !validRender(asset.render))
-		) {
-			throw new ThemeAssetError(
-				"invalid_source",
-				`Theme asset ${index} is invalid`,
-			);
-		}
-		const sourceKeys =
-			source.kind === "sibling"
-				? ["kind", "vout", "path"]
-				: ["kind", "origin", "path"];
-		if (
-			Object.keys(source).some((key) => !sourceKeys.includes(key)) ||
-			(source.kind === "sibling" && typeof source.vout !== "number") ||
-			(source.kind === "origin" && typeof source.origin !== "string") ||
-			(source.path !== undefined && typeof source.path !== "string")
-		) {
-			throw new ThemeAssetError(
-				"invalid_source",
-				`Theme asset ${index} has an invalid source`,
-			);
-		}
-
-		return asset as unknown as ThemeAssetV2;
-	});
-}
 
 export interface AssetLocation {
 	origin: string;
@@ -169,7 +19,7 @@ export interface ResolvedAssetContent {
 }
 
 export interface ResolvedThemeAsset extends ResolvedAssetContent {
-	asset: ThemeAssetV2;
+	asset: ThemeAsset;
 	location: AssetLocation;
 }
 
@@ -279,7 +129,7 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 
 export async function resolveThemeAsset(
 	packageOrigin: string,
-	asset: ThemeAssetV2,
+	asset: ThemeAsset,
 	resolveContent: AssetContentResolver,
 ): Promise<ResolvedThemeAsset> {
 	if (!MEDIA_TYPE.test(asset.mediaType)) {
@@ -375,47 +225,4 @@ export function compileAssetDelivery(
 		content,
 		target: `~/public/theme-token/${location.origin}/${vendoredFilename(resolved)}`,
 	};
-}
-
-const LEGACY_ROLES = {
-	sans: ["font.sans", "font"],
-	"font-sans": ["font.sans", "font"],
-	serif: ["font.serif", "font"],
-	"font-serif": ["font.serif", "font"],
-	mono: ["font.mono", "font"],
-	"font-mono": ["font.mono", "font"],
-	pattern: ["background.page", "pattern"],
-	"--bg-pattern": ["background.page", "pattern"],
-	wallpaper: ["background.page", "wallpaper"],
-	"--hero-image": ["background.page", "wallpaper"],
-} as const;
-
-export interface LegacyBundleAsset {
-	vout: number;
-	slot: string;
-}
-
-export interface NormalizedLegacyAsset {
-	role: string;
-	kind: "font" | "pattern" | "wallpaper";
-	source: { kind: "sibling"; vout: number };
-	verified: false;
-}
-
-/** Normalize known v1 bundle slots without pretending they satisfy v2 integrity. */
-export function normalizeV1BundleAssets(
-	assets: LegacyBundleAsset[],
-): NormalizedLegacyAsset[] {
-	return assets.flatMap(({ slot, vout }) => {
-		const mapped = LEGACY_ROLES[slot as keyof typeof LEGACY_ROLES];
-		if (!mapped || !Number.isSafeInteger(vout) || vout < 0) return [];
-		return [
-			{
-				role: mapped[0],
-				kind: mapped[1],
-				source: { kind: "sibling" as const, vout },
-				verified: false as const,
-			},
-		];
-	});
 }
