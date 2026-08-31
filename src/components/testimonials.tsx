@@ -94,8 +94,11 @@ export function Testimonials() {
 					transition={{ delay: 0.3 }}
 					className="text-center mt-12"
 				>
-					<Badge variant="outline" className="px-4 py-2">
-						<span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-green-500" />
+					<Badge
+						className="max-w-full whitespace-normal px-4 py-2 text-center leading-relaxed"
+						variant="outline"
+					>
+						<span className="mr-2 inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-500" />
 						Themes published on Bitcoin, installed with one command
 					</Badge>
 				</motion.div>
