@@ -5,7 +5,6 @@ import {
 	Copy,
 	ExternalLink,
 	FolderKanban,
-	Image,
 	Loader2,
 	Palette,
 	PenLine,
@@ -110,10 +109,6 @@ export function ProjectStudioPageClient() {
 
 	// Selected on-chain theme for the project
 	const [selectedTheme, setSelectedTheme] = useState<CachedTheme | null>(null);
-	const [selectedWallpaper, setSelectedWallpaper] = useState<string | null>(
-		null,
-	);
-
 	// Success dialog state
 	const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 	const [inscribedOrigin, setInscribedOrigin] = useState<string | null>(null);
@@ -462,44 +457,6 @@ export function ProjectStudioPageClient() {
 								</p>
 							</div>
 
-							{/* Wallpaper (optional) */}
-							<div className="space-y-2">
-								<div className="flex items-center gap-2">
-									<Image className="h-4 w-4 text-primary" />
-									<Label className="text-xs font-medium">Wallpaper</Label>
-									<Badge
-										variant="secondary"
-										className="text-[10px] px-1.5 py-0"
-									>
-										Optional
-									</Badge>
-								</div>
-								<div className="flex gap-2">
-									<Select
-										value={selectedWallpaper ?? ""}
-										onValueChange={setSelectedWallpaper}
-									>
-										<SelectTrigger className="flex-1 h-9">
-											<SelectValue placeholder="No wallpaper" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">No wallpaper</SelectItem>
-											<SelectItem value="generate">Generate New...</SelectItem>
-										</SelectContent>
-									</Select>
-									<Button
-										variant="outline"
-										size="icon"
-										className="h-9 w-9 shrink-0"
-										asChild
-									>
-										<a href="/studio/wallpaper">
-											<ExternalLink className="h-4 w-4" />
-										</a>
-									</Button>
-								</div>
-							</div>
-
 							{/* Style Configuration */}
 							<div className="space-y-3 pt-2 border-t border-border">
 								<h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -722,28 +679,6 @@ export function ProjectStudioPageClient() {
 								</div>
 								<div className="flex items-center justify-center h-8 rounded-md bg-muted/50 text-xs text-muted-foreground font-mono">
 									{iconDeps.join(", ")}
-								</div>
-							</div>
-
-							{/* Wallpaper Card */}
-							<div className="rounded-lg border border-border bg-card p-4">
-								<div className="flex items-center gap-3 mb-3">
-									<div className="p-2 rounded-md bg-primary/10">
-										<Image className="h-5 w-5 text-primary" />
-									</div>
-									<div>
-										<h3 className="font-medium text-sm">Wallpaper</h3>
-										<p className="text-xs text-muted-foreground">
-											{selectedWallpaper && selectedWallpaper !== "none"
-												? "Selected"
-												: "None"}
-										</p>
-									</div>
-								</div>
-								<div className="flex items-center justify-center h-8 rounded-md border border-dashed border-border text-xs text-muted-foreground">
-									{selectedWallpaper && selectedWallpaper !== "none"
-										? "Preview"
-										: "Optional"}
 								</div>
 							</div>
 						</div>

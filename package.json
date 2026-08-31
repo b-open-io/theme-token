@@ -17,6 +17,7 @@
 		"lint:fix": "biome check --write",
 		"cli": "bun run cli/index.ts",
 		"generate-og": "bun run scripts/generate-og-images.ts",
+		"verify:project-presets": "bun run scripts/verify-project-presets.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test"
 	},

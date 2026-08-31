@@ -1,7 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import type { ThemeStyleProps, ThemeToken } from "@theme-token/sdk";
 import { buildProjectBundle, getProjectDependencies } from "./project-builder";
-import { createProjectManifest } from "./project-types";
+import {
+	BASE_COLORS,
+	createProjectManifest,
+	ICON_LIBRARIES,
+	ICON_LIBRARY_PACKAGES,
+	MENU_ACCENTS,
+	MENU_COLORS,
+	PROJECT_BASES,
+	PROJECT_FONTS,
+	PROJECT_RADII,
+	PROJECT_RADIUS_VALUES,
+} from "./project-types";
 
 const mode = (dark = false): ThemeStyleProps => ({
 	background: dark ? "black" : "white",
@@ -49,6 +60,8 @@ describe("project preset v2", () => {
 	test("compiles authoring choices into a current registry:base manifest", () => {
 		const manifest = createProjectManifest(theme, config);
 
+		expect(manifest.name).toBe("Test Theme");
+		expect(manifest.cssVars.light.primary).toBe("blue");
 		expect(manifest.config).toEqual({
 			style: "base-sera",
 			tailwind: { baseColor: "taupe" },
@@ -94,5 +107,53 @@ describe("project preset v2", () => {
 			"_0",
 		]);
 		expect(getProjectDependencies(config)).toContain("@base-ui/react");
+	});
+
+	test("every exposed preset option reaches the generated payload", () => {
+		for (const base of PROJECT_BASES) {
+			const manifest = createProjectManifest(theme, { base, style: "nova" });
+			expect(manifest.config.style).toBe(`${base}-nova`);
+		}
+
+		for (const iconLibrary of ICON_LIBRARIES) {
+			const manifest = createProjectManifest(theme, { iconLibrary });
+			expect(manifest.config.iconLibrary).toBe(iconLibrary);
+			for (const dependency of ICON_LIBRARY_PACKAGES[iconLibrary]) {
+				expect(manifest.dependencies).toContain(dependency);
+			}
+		}
+
+		for (const baseColor of BASE_COLORS) {
+			const manifest = createProjectManifest(theme, {
+				tailwind: { baseColor },
+			});
+			expect(manifest.config.tailwind.baseColor).toBe(baseColor);
+		}
+
+		for (const menuColor of MENU_COLORS) {
+			expect(createProjectManifest(theme, { menuColor }).config.menuColor).toBe(
+				menuColor,
+			);
+		}
+		for (const menuAccent of MENU_ACCENTS) {
+			expect(
+				createProjectManifest(theme, { menuAccent }).config.menuAccent,
+			).toBe(menuAccent);
+		}
+
+		for (const radius of PROJECT_RADII) {
+			expect(
+				createProjectManifest(theme, { radius }).cssVars.light.radius,
+			).toBe(PROJECT_RADIUS_VALUES[radius]);
+		}
+
+		for (const font of PROJECT_FONTS) {
+			const manifest = createProjectManifest(theme, {
+				font,
+				fontHeading: font,
+			});
+			expect(manifest.registryDependencies).toContain(`font-${font}`);
+			expect(manifest.registryDependencies).toContain(`font-heading-${font}`);
+		}
 	});
 });

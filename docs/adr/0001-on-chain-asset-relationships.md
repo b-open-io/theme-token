@@ -1,6 +1,6 @@
 # ADR 0001: On-chain asset relationships
 
-- Status: Accepted for implementation planning (OPL-3941)
+- Status: Accepted; resolver core implemented behind disabled features (OPL-3941)
 - Date: 2026-08-30
 
 ## Context
@@ -230,3 +230,10 @@ immutable Theme Token source documents.
   pattern, wallpaper, or local-font publishing.
 - Current raw asset MAP types and the dormant bundle builder are legacy input,
   not the canonical contract for new publications.
+
+## Implementation status
+
+The deterministic resolver and integrity boundary lives in
+`src/lib/theme-assets-v2.ts`, with non-network conformance tests alongside it.
+Pattern, wallpaper, and local-font publishing remain disabled until their
+publishers and ShadCN compiler paths consume that boundary end to end.
