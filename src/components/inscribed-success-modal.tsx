@@ -15,6 +15,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { buildThemeShareText } from "@/lib/theme-share";
 
 interface InscribedSuccessModalProps {
 	isOpen: boolean;
@@ -158,9 +159,9 @@ export function InscribedSuccessModal({
 	};
 
 	const handleShare = () => {
-		const text = `I just inscribed "${theme.name}" as a Theme Token on BSV! Install it in your project:\n\n${installCommand}\n\n`;
+		const text = buildThemeShareText(theme.name, themePageUrl, installCommand);
 		window.open(
-			`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(themePageUrl)}`,
+			`https://x.com/intent/post?text=${encodeURIComponent(text)}`,
 			"_blank",
 		);
 	};
