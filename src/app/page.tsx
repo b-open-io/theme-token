@@ -1,10 +1,5 @@
-"use client";
-
-import { motion } from "framer-motion";
 import {
-	Check,
 	Code2,
-	Copy,
 	Globe,
 	Layers,
 	LayoutGrid,
@@ -12,40 +7,27 @@ import {
 	Palette,
 	Terminal,
 	Wallet,
-	Wand2,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
 import { AmbientMesh } from "@/components/ambient-mesh";
 import {
 	ColorBleed,
 	ColorSectionDivider,
 } from "@/components/color-section-divider";
 import { HeroOrbs } from "@/components/hero-orbs";
+import {
+	CopyInstallCommandButton,
+	CreateThemeButton,
+} from "@/components/home-actions";
 import { JsonSyntax } from "@/components/json-syntax";
 import { PageContainer } from "@/components/page-container";
 import { ParallaxChips } from "@/components/parallax-chips";
 import { StatsBar } from "@/components/stats-bar";
 import { SwatchyHeroController } from "@/components/swatchy/swatchy-hero-controller";
-import { useSwatchyStore } from "@/components/swatchy/swatchy-store";
 import { Testimonials } from "@/components/testimonials";
 import { ThemeGallery } from "@/components/theme-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const fadeIn = {
-	initial: { opacity: 0, y: 20 },
-	animate: { opacity: 1, y: 0 },
-	transition: { duration: 0.5 },
-};
-
-const stagger = {
-	animate: {
-		transition: {
-			staggerChildren: 0.1,
-		},
-	},
-};
 
 // ShadCN Registry Format - the standard
 const minimalSchema = {
@@ -73,22 +55,7 @@ const exampleOrigin =
 	"85702d92d2ca2f5a48eaede302f0e85d9142924d68454565dbf621701b2d83cf_0";
 
 export default function Home() {
-	const [copied, setCopied] = useState(false);
-	const { openChat, setPendingPrefill } = useSwatchyStore();
-
-	const handleCreateWithSwatchy = useCallback(() => {
-		setPendingPrefill(
-			"I want to create a new theme. Can you help me design something?",
-		);
-		openChat();
-	}, [openChat, setPendingPrefill]);
 	const installCommand = `bunx shadcn@latest add https://themetoken.dev/r/themes/${exampleOrigin}.json`;
-
-	const copyCommand = useCallback(() => {
-		navigator.clipboard.writeText(installCommand);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
-	}, [installCommand]);
 
 	return (
 		<div className="min-h-screen">
@@ -107,12 +74,7 @@ export default function Home() {
 				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
 
 				<PageContainer className="relative pb-24 pt-32">
-					<motion.div
-						initial={{ opacity: 0, y: 30 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.6 }}
-						className="text-center"
-					>
+					<div className="text-center">
 						<Badge className="mb-6" variant="outline">
 							<span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
 							bun i @theme-token/sdk
@@ -127,8 +89,14 @@ export default function Home() {
 							</span>
 						</h1>
 
-						<p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-							Ownable, cross-site theming. Buy, Sell, Create.
+						<p className="mx-auto mb-8 max-w-3xl text-lg text-muted-foreground sm:text-xl">
+							Create light and dark shadcn/ui themes, preview them against real
+							components, and publish them as 1Sat Ordinals. Every indexed theme
+							receives a stable registry URL for the standard shadcn CLI. Themes
+							can also link immutable fonts, patterns, and wallpapers while
+							keeping authorship and asset relationships verifiable on-chain.
+							Published packages remain portable across compatible apps and
+							resolve from the same immutable origin through ordinary HTTPS.
 						</p>
 
 						<div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -138,28 +106,14 @@ export default function Home() {
 									Browse Themes
 								</Link>
 							</Button>
-							<Button
-								size="lg"
-								variant="outline"
-								className="gap-2"
-								onClick={handleCreateWithSwatchy}
-							>
-								<Wand2 data-icon="inline-start" className="h-5 w-5" />
-								Create Theme
-							</Button>
+							<CreateThemeButton />
 						</div>
-					</motion.div>
+					</div>
 
 					{/* Glass Stack: CLI + Schema Preview */}
 					<div className="relative mx-auto mt-16 flex w-full max-w-3xl flex-col items-center justify-center">
 						{/* Background Layer: JSON Schema (tilted, faded) */}
-						<motion.div
-							initial={{ opacity: 0, y: 40, rotate: 0 }}
-							animate={{ opacity: 0.6, y: 0, rotate: -2 }}
-							transition={{ duration: 0.6, delay: 0.3 }}
-							whileHover={{ opacity: 1, rotate: 0 }}
-							className="absolute top-0 w-full max-w-2xl scale-95 rounded-xl border border-border bg-card/50 p-1 shadow-xl backdrop-blur transition-all duration-500"
-						>
+						<div className="absolute top-0 w-full max-w-2xl -rotate-2 scale-95 rounded-xl border border-border bg-card/50 p-1 opacity-60 shadow-xl backdrop-blur transition-[opacity,transform] duration-500 hover:rotate-0 hover:opacity-100">
 							<div className="flex items-center gap-2 border-b border-border/50 px-4 py-2">
 								<div className="traffic-close h-2.5 w-2.5 rounded-full" />
 								<div className="traffic-minimize h-2.5 w-2.5 rounded-full" />
@@ -175,15 +129,10 @@ export default function Home() {
 								/>
 								<div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card/80 to-transparent" />
 							</div>
-						</motion.div>
+						</div>
 
 						{/* Foreground Layer: CLI Install (focused, glowing) */}
-						<motion.div
-							initial={{ opacity: 0, y: 40 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.6, delay: 0.2 }}
-							className="relative z-10 mt-32 w-full max-w-xl"
-						>
+						<div className="relative z-10 mt-32 w-full max-w-xl">
 							<div className="rounded-xl border border-primary/20 bg-background/90 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
 								<div className="mb-2 flex items-center gap-2 px-2 pt-1">
 									<Terminal className="h-4 w-4 text-primary" />
@@ -203,18 +152,7 @@ export default function Home() {
 											.json
 										</span>
 									</code>
-									<button
-										type="button"
-										onClick={copyCommand}
-										className="shrink-0 rounded-md border border-border bg-background p-2 text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-										title="Copy command"
-									>
-										{copied ? (
-											<Check className="h-4 w-4 text-green-500" />
-										) : (
-											<Copy className="h-4 w-4" />
-										)}
-									</button>
+									<CopyInstallCommandButton command={installCommand} />
 								</div>
 							</div>
 							<p className="mt-3 text-center text-sm text-muted-foreground">
@@ -228,7 +166,7 @@ export default function Home() {
 								</Link>{" "}
 								to find one.
 							</p>
-						</motion.div>
+						</div>
 					</div>
 				</PageContainer>
 			</section>
@@ -249,43 +187,22 @@ export default function Home() {
 				<ColorBleed color="chart-3" position="right" className="top-[60%]" />
 
 				<PageContainer className="relative z-10">
-					<motion.div
-						initial="initial"
-						whileInView="animate"
-						viewport={{ once: true }}
-						variants={stagger}
-						className="text-center"
-					>
-						<motion.p
-							variants={fadeIn}
-							className="font-mono text-sm text-primary"
-						>
+					<div className="text-center">
+						<p className="font-mono text-sm text-primary">
 							{"// Why store themes on-chain?"}
-						</motion.p>
-						<motion.h2
-							variants={fadeIn}
-							className="mb-4 text-3xl font-bold sm:text-4xl"
-						>
+						</p>
+						<h2 className="mb-4 text-3xl font-bold sm:text-4xl">
 							A Registry That Cannot Be Deleted
-						</motion.h2>
-						<motion.p
-							variants={fadeIn}
-							className="mx-auto mb-16 max-w-2xl text-muted-foreground"
-						>
+						</h2>
+						<p className="mx-auto mb-16 max-w-2xl text-muted-foreground">
 							Design tokens as immutable assets. Once published, your theme is
 							globally accessible via CLI, forever.
-						</motion.p>
-					</motion.div>
+						</p>
+					</div>
 
 					<div className="grid gap-8 md:grid-cols-3">
 						{/* For Designers */}
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							viewport={{ once: true }}
-							transition={{ delay: 0.1 }}
-							className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-primary/50 transition-colors"
-						>
+						<div className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-primary/50 transition-colors">
 							{/* Bottom gradient accent */}
 							<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary via-chart-1 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
 
@@ -310,16 +227,10 @@ export default function Home() {
 									<span>Direct, permissionless distribution</span>
 								</li>
 							</ul>
-						</motion.div>
+						</div>
 
 						{/* For Developers */}
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							viewport={{ once: true }}
-							transition={{ delay: 0.2 }}
-							className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-chart-2/50 transition-colors"
-						>
+						<div className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-chart-2/50 transition-colors">
 							{/* Bottom gradient accent */}
 							<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-chart-2 via-chart-3 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
 
@@ -344,16 +255,10 @@ export default function Home() {
 									<span>Decentralized, immutable theme CDN</span>
 								</li>
 							</ul>
-						</motion.div>
+						</div>
 
 						{/* For Users */}
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							whileInView={{ opacity: 1, y: 0 }}
-							viewport={{ once: true }}
-							transition={{ delay: 0.3 }}
-							className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-chart-5/50 transition-colors"
-						>
+						<div className="group relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl p-6 overflow-hidden hover:border-chart-5/50 transition-colors">
 							{/* Bottom gradient accent */}
 							<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-chart-5 via-chart-4 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
 
@@ -378,7 +283,7 @@ export default function Home() {
 									<span>Community-driven curation ecosystem</span>
 								</li>
 							</ul>
-						</motion.div>
+						</div>
 					</div>
 				</PageContainer>
 			</section>

@@ -95,6 +95,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.5,
 		},
 		{
+			url: `${baseUrl}/developers`,
+			lastModified: "2026-08-31",
+			changeFrequency: "monthly",
+			priority: 0.6,
+		},
+		{
 			url: `${baseUrl}/contact`,
 			lastModified: "2026-08-31",
 			changeFrequency: "monthly",

@@ -17,15 +17,17 @@ ordinal bytes.
 
 ## Links
 
-- App: https://themetoken.dev
-- Specification: https://themetoken.dev/spec
-- Theme Studio: https://themetoken.dev/studio/theme
-- Schema: https://themetoken.dev/v1/schema.json
-- SDK: https://www.npmjs.com/package/@theme-token/sdk
-- Source: https://github.com/b-open-io/theme-token
-- About: https://themetoken.dev/about
-- Contact: https://themetoken.dev/contact
-- Privacy: https://themetoken.dev/privacy
+- [App](https://themetoken.dev)
+- [Developer guide](https://themetoken.dev/developers)
+- [Specification](https://themetoken.dev/spec)
+- [Theme Studio](https://themetoken.dev/studio/theme)
+- [Schema](https://themetoken.dev/v1/schema.json)
+- [SDK](https://www.npmjs.com/package/@theme-token/sdk)
+- [Pricing in Markdown](https://themetoken.dev/pricing.md)
+- [Source](https://github.com/b-open-io/theme-token)
+- [About](https://themetoken.dev/about)
+- [Contact](https://themetoken.dev/contact)
+- [Privacy](https://themetoken.dev/privacy)
 
 ## Install a theme
 

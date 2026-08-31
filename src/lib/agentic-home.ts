@@ -23,8 +23,10 @@ raw blockchain content, use the 1Sat content gateway linked below.
 - [Browse themes](https://themetoken.dev/themes)
 - [Open the Theme Studio](https://themetoken.dev/studio/theme)
 - [Read the specification](https://themetoken.dev/spec)
+- [Open the developer guide](https://themetoken.dev/developers)
 - [Read the quick agent reference](https://themetoken.dev/llms.txt)
 - [Read the full technical reference](https://themetoken.dev/llms-full.txt)
+- [Read pricing in Markdown](https://themetoken.dev/pricing.md)
 - [View the SDK](https://www.npmjs.com/package/@theme-token/sdk)
 - [View the source](https://github.com/b-open-io/theme-token)
 

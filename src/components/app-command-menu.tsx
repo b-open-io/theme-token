@@ -83,36 +83,38 @@ export function AppCommandMenu() {
 				</kbd>
 			</Button>
 
-			<CommandDialog onOpenChange={setOpen} open={open}>
-				<CommandInput placeholder="Search pages and studios…" />
-				<CommandList>
-					<CommandEmpty>No matching destination.</CommandEmpty>
-					<CommandGroup heading="Navigate">
-						{destinations.map(({ href, label, icon: Icon }) => (
+			{open && (
+				<CommandDialog onOpenChange={setOpen} open>
+					<CommandInput placeholder="Search pages and studios…" />
+					<CommandList>
+						<CommandEmpty>No matching destination.</CommandEmpty>
+						<CommandGroup heading="Navigate">
+							{destinations.map(({ href, label, icon: Icon }) => (
+								<CommandItem
+									key={href}
+									onSelect={() => navigate(href)}
+									value={label}
+								>
+									<Icon />
+									{label}
+								</CommandItem>
+							))}
+						</CommandGroup>
+						<CommandGroup heading="Appearance">
 							<CommandItem
-								key={href}
-								onSelect={() => navigate(href)}
-								value={label}
+								onSelect={() => {
+									setOpen(false);
+									void toggleMode();
+								}}
 							>
-								<Icon />
-								{label}
+								{mode === "dark" ? <Sun /> : <Moon />}
+								Use {mode === "dark" ? "light" : "dark"} mode
+								<CommandShortcut>D</CommandShortcut>
 							</CommandItem>
-						))}
-					</CommandGroup>
-					<CommandGroup heading="Appearance">
-						<CommandItem
-							onSelect={() => {
-								setOpen(false);
-								void toggleMode();
-							}}
-						>
-							{mode === "dark" ? <Sun /> : <Moon />}
-							Use {mode === "dark" ? "light" : "dark"} mode
-							<CommandShortcut>D</CommandShortcut>
-						</CommandItem>
-					</CommandGroup>
-				</CommandList>
-			</CommandDialog>
+						</CommandGroup>
+					</CommandList>
+				</CommandDialog>
+			)}
 		</>
 	);
 }

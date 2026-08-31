@@ -189,7 +189,7 @@ function ThemeCard({
 		: undefined;
 
 	return (
-		<div className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md">
+		<div className="group relative flex-shrink-0 cursor-pointer rounded-lg border border-border bg-card transition-[border-color,box-shadow] hover:border-primary/50 hover:shadow-md">
 			<Link
 				aria-label={`Preview ${theme.name}`}
 				className="relative flex h-16 w-40 overflow-hidden rounded-t-lg"
@@ -201,7 +201,7 @@ function ThemeCard({
 				<ViewTransition name={viewTransitionName}>
 					{colorStripes}
 				</ViewTransition>
-				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/10">
+				<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/10">
 					<Eye className="h-5 w-5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 drop-shadow-md" />
 				</div>
 			</Link>
@@ -281,9 +281,9 @@ export function ThemeGallery() {
 		<section className="bg-muted/30 py-4 overflow-hidden">
 			{/* Header */}
 			<div className="mx-auto max-w-7xl mb-3 flex items-center justify-between px-6">
-				<h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+				<h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
 					Published Themes
-				</h3>
+				</h2>
 				<Link
 					href="/themes"
 					className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"

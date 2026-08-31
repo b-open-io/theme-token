@@ -17,16 +17,18 @@ raw transaction, ownership, or inscription data, use the 1Sat APIs.
 
 ## URLs
 
-- Specification: https://themetoken.dev/spec
-- Schema: https://themetoken.dev/v1/schema.json
-- Theme Studio: https://themetoken.dev/studio/theme
-- Registry item: https://themetoken.dev/r/themes/[origin].json
-- Raw content: https://api.1sat.app/content/[origin]
-- SDK: https://www.npmjs.com/package/@theme-token/sdk
-- Source: https://github.com/b-open-io/theme-token
-- About: https://themetoken.dev/about
-- Contact: https://themetoken.dev/contact
-- Privacy: https://themetoken.dev/privacy
+- [Developer guide](https://themetoken.dev/developers)
+- [Specification](https://themetoken.dev/spec)
+- [Schema](https://themetoken.dev/v1/schema.json)
+- [Theme Studio](https://themetoken.dev/studio/theme)
+- [Registry item](https://themetoken.dev/r/themes/[origin].json)
+- [Raw content](https://api.1sat.app/content/[origin])
+- [SDK](https://www.npmjs.com/package/@theme-token/sdk)
+- [Pricing in Markdown](https://themetoken.dev/pricing.md)
+- [Source](https://github.com/b-open-io/theme-token)
+- [About](https://themetoken.dev/about)
+- [Contact](https://themetoken.dev/contact)
+- [Privacy](https://themetoken.dev/privacy)
 
 Install a published theme:
 
