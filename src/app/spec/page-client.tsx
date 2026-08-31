@@ -55,14 +55,14 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							Install Themes from Blockchain
+							Install on-chain themes
 						</motion.h1>
 						<motion.p
 							variants={fadeIn}
 							className="mx-auto mb-8 max-w-2xl text-muted-foreground"
 						>
-							The registry endpoint translates validated Theme Token documents
-							into ShadCN registry items for direct CLI installation.
+							Every published theme gets a ShadCN-compatible URL you can install
+							with one command.
 						</motion.p>
 					</motion.div>
 
@@ -99,7 +99,7 @@ export function SpecPageClient() {
 							</div>
 							<p className="mt-3 text-center text-xs text-muted-foreground">
 								Replace <code className="rounded bg-muted px-1">[origin]</code>{" "}
-								with the inscription origin ID
+								with the theme&apos;s origin ID.
 							</p>
 						</div>
 					</motion.div>
@@ -125,15 +125,15 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							Theme Token v1 Raw Document
+							Theme Token Format
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							The inscription stores Theme Token JSON, not a ShadCN registry
-							item. The gateway validates that durable document and compiles it
-							into the current ShadCN registry-item shape at install time.
+							A theme is a small JSON document with a name and matching light
+							and dark styles. Theme Token validates it, publishes it on-chain,
+							and gives it a ShadCN-compatible install URL.
 						</motion.p>
 					</motion.div>
 
@@ -260,12 +260,12 @@ export function SpecPageClient() {
 											</div>
 										))}
 									</div>
-									<p className="mt-1 text-[10px] text-muted-foreground/70">
-										Font values: Google Font name or{" "}
+									<p className="mt-2 text-sm text-muted-foreground">
+										Use a font name or{" "}
 										<code className="rounded bg-muted px-1">
 											/content/&lt;txid&gt;_&lt;vout&gt;
 										</code>{" "}
-										for on-chain fonts
+										for an on-chain font.
 									</p>
 								</div>
 
@@ -290,25 +290,13 @@ export function SpecPageClient() {
 											</div>
 										))}
 									</div>
-									<p className="mt-1 text-[10px] text-muted-foreground/70">
-										The SDK derives the public shadow-2xs through shadow-2xl
-										scale.
-									</p>
 								</div>
 							</div>
 
-							<p className="text-xs text-muted-foreground">
-								The Studio emits direct{" "}
+							<p className="text-sm text-muted-foreground">
+								The Studio writes{" "}
 								<code className="rounded bg-muted px-1">oklch()</code> values,
-								matching current ShadCN themes. The v1 validator accepts CSS
-								value strings rather than enforcing one color function. The
-								required{" "}
-								<code className="rounded bg-muted px-1">
-									destructive-foreground
-								</code>{" "}
-								field is retained for v1 compatibility although current ShadCN
-								only requires{" "}
-								<code className="rounded bg-muted px-1">destructive</code>.
+								and the validator also accepts other CSS color values.
 							</p>
 						</motion.div>
 
@@ -318,7 +306,7 @@ export function SpecPageClient() {
 							animate={{ opacity: 1, x: 0 }}
 							className="flex flex-col min-w-0"
 						>
-							<h3 className="mb-4 font-semibold">Full Schema Structure</h3>
+							<h3 className="mb-4 font-semibold">Complete example</h3>
 							<CodeBlock
 								code={JSON.stringify(
 									{
@@ -382,21 +370,21 @@ export function SpecPageClient() {
 								language="json"
 								className="h-[500px]"
 							/>
-							<p className="mt-3 text-xs text-muted-foreground">
-								Our{" "}
+							<p className="mt-3 text-sm text-muted-foreground">
+								Install a published theme from{" "}
 								<code className="rounded bg-muted px-1">
 									/r/themes/[origin].json
 								</code>{" "}
-								endpoint serves this as{" "}
+								with the{" "}
 								<a
 									href="https://ui.shadcn.com/docs/registry"
 									target="_blank"
 									rel="noopener noreferrer"
 									className="text-primary hover:underline"
 								>
-									ShadCN Registry Format
+									ShadCN CLI
 								</a>
-								. The suffixless route is also accepted. Also compatible with{" "}
+								. The same URL also works in{" "}
 								<a
 									href="https://tweakcn.com/editor/theme"
 									target="_blank"
@@ -405,361 +393,7 @@ export function SpecPageClient() {
 								>
 									tweakcn
 								</a>
-								. The <code className="rounded bg-muted px-1">name</code> is a
-								human-readable display name. The optional{" "}
-								<a
-									href="https://docs.npmjs.com/cli/v10/configuring-npm/package-json#people-fields-author-contributors"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-primary hover:underline"
-								>
-									author
-								</a>{" "}
-								field is free-form; npm person-string syntax is recommended when
-								it includes an email or URL.
-							</p>
-						</motion.div>
-					</div>
-				</PageContainer>
-			</section>
-
-			{/* Verified asset relationships */}
-			<section className="border-t border-border bg-muted/30 py-16">
-				<PageContainer>
-					<motion.div
-						initial="initial"
-						whileInView="animate"
-						viewport={{ once: true }}
-						variants={stagger}
-					>
-						<motion.p
-							variants={fadeIn}
-							className="font-mono text-sm text-primary"
-						>
-							{"// Gateway Preview"}
-						</motion.p>
-						<motion.h2
-							variants={fadeIn}
-							className="mb-4 text-3xl font-bold sm:text-4xl"
-						>
-							Theme Token v2 Asset Relationships
-						</motion.h2>
-						<motion.p
-							variants={fadeIn}
-							className="mb-8 max-w-3xl text-muted-foreground"
-						>
-							Version 2 keeps the v1 theme fields, changes the schema URL to{" "}
-							<code className="rounded bg-muted px-1">
-								https://themetoken.dev/v2/schema.json
-							</code>
-							, and requires an{" "}
-							<code className="rounded bg-muted px-1">assets</code> array. The
-							registry gateway verifies each asset&apos;s origin, media type,
-							and SHA-256 digest before emitting installable CSS or files.
-						</motion.p>
-					</motion.div>
-
-					<div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-						<div className="space-y-4">
-							<h3 className="font-semibold">Current implementation status</h3>
-							<div className="space-y-3 text-sm">
-								<div className="rounded-lg border border-border bg-card p-4">
-									<p className="font-medium">Gateway supported</p>
-									<p className="mt-1 text-muted-foreground">
-										Font roles <code>font.sans</code>, <code>font.serif</code>,{" "}
-										<code>font.mono</code>, and <code>font.heading</code>
-										{";"}
-										background roles <code>background.page</code>,{" "}
-										<code>background.card</code>, and{" "}
-										<code>background.sidebar</code>.
-									</p>
-								</div>
-								<div className="rounded-lg border border-border bg-card p-4">
-									<p className="font-medium">Delivery rules</p>
-									<p className="mt-1 text-muted-foreground">
-										Linked delivery works for verified fonts, patterns, and
-										wallpapers. Vendored delivery is limited to verified UTF-8
-										content such as SVG; binary fonts and raster images remain
-										linked.
-									</p>
-								</div>
-								<div className="rounded-lg border border-border bg-card p-4">
-									<p className="font-medium">Authoring still v1</p>
-									<p className="mt-1 text-muted-foreground">
-										The Theme Studio and <code>@theme-token/sdk</code> currently
-										author and fetch v1 documents. Required{" "}
-										<code>icon.set</code> delivery is not implemented. Treat v2
-										as a gateway contract, not the default Studio output yet.
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div className="min-w-0">
-							<h3 className="mb-4 font-semibold">Valid assets field example</h3>
-							<CodeBlock
-								code={JSON.stringify(
-									{
-										assets: [
-											{
-												role: "background.page",
-												kind: "pattern",
-												source: {
-													kind: "origin",
-													origin: `${"a".repeat(64)}_0`,
-													path: "pattern.svg",
-												},
-												mediaType: "image/svg+xml",
-												integrity: `sha256:${"b".repeat(64)}`,
-												delivery: "linked",
-												render: {
-													mode: "mask",
-													repeat: "repeat",
-													size: "auto",
-													position: "center",
-													color: "var(--primary)",
-												},
-											},
-										],
-									},
-									null,
-									2,
-								)}
-								language="json"
-								className="h-[500px]"
-							/>
-							<p className="mt-3 text-xs text-muted-foreground">
-								This is the{" "}
-								<code className="rounded bg-muted px-1">assets</code> field
-								only. Add it to an otherwise complete v1-shaped document and
-								change <code className="rounded bg-muted px-1">$schema</code> to
-								the v2 URL. Use the actual content digest, not the placeholder
-								hash shown here.
-							</p>
-						</div>
-					</div>
-				</PageContainer>
-			</section>
-
-			{/* Project Presets - registry:base */}
-			<section className="border-t border-border py-16">
-				<PageContainer>
-					<motion.div
-						initial="initial"
-						whileInView="animate"
-						viewport={{ once: true }}
-						variants={stagger}
-					>
-						<motion.p
-							variants={fadeIn}
-							className="font-mono text-sm text-primary"
-						>
-							{"// Experimental Project Presets"}
-						</motion.p>
-						<motion.h2
-							variants={fadeIn}
-							className="mb-4 text-3xl font-bold sm:text-4xl"
-						>
-							Project Presets Are Not Yet Stable
-						</motion.h2>
-						<motion.p
-							variants={fadeIn}
-							className="mb-12 max-w-2xl text-muted-foreground"
-						>
-							ShadCN changed the <code>registry:base</code> preset shape after
-							this feature was drafted. Theme Token&apos;s project publisher and{" "}
-							<code>/init</code> response still need that migration, so this
-							section documents the target—not a production-ready command.
-						</motion.p>
-					</motion.div>
-
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						className="mx-auto max-w-2xl mb-12"
-					>
-						<div className="rounded-xl border border-primary/20 bg-card p-6">
-							<div className="mb-4 flex items-center gap-2">
-								<Terminal className="h-5 w-5 text-primary" />
-								<span className="font-semibold">
-									Intended Command After Migration
-								</span>
-							</div>
-							<div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 font-mono text-sm">
-								<code className="flex-1 overflow-x-auto text-muted-foreground">
-									<span className="text-primary">bunx</span> shadcn@latest
-									create{" "}
-									<span className="text-foreground">
-										--template next --preset
-										&quot;https://themetoken.dev/init?project=[origin]&quot;
-									</span>
-								</code>
-								<button
-									type="button"
-									onClick={() =>
-										copyToClipboard(
-											'bunx shadcn@latest create --template next --preset "https://themetoken.dev/init?project=[origin]"',
-											"project-cli",
-										)
-									}
-									className="flex-shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-									title="Copy command"
-								>
-									{copied === "project-cli" ? (
-										<Check className="h-4 w-4 text-green-500" />
-									) : (
-										<Copy className="h-4 w-4" />
-									)}
-								</button>
-							</div>
-							<p className="mt-3 text-center text-xs text-muted-foreground">
-								Replace <code className="rounded bg-muted px-1">[origin]</code>{" "}
-								with the project inscription origin
-							</p>
-						</div>
-					</motion.div>
-
-					<div className="grid gap-8 lg:grid-cols-2 lg:items-start overflow-hidden">
-						{/* Project Features */}
-						<motion.div
-							initial={{ opacity: 0, x: -20 }}
-							whileInView={{ opacity: 1, x: 0 }}
-							viewport={{ once: true }}
-							className="space-y-4"
-						>
-							<h3 className="font-semibold">Project Bundle Contents</h3>
-
-							<div className="space-y-3">
-								<div className="rounded-lg border border-border bg-card p-4">
-									<div className="flex items-center gap-2 mb-2">
-										<div className="h-2 w-2 rounded-full bg-primary" />
-										<span className="font-medium text-sm">Theme Styles</span>
-									</div>
-									<p className="text-xs text-muted-foreground">
-										Complete light/dark CSS variables including sidebar and
-										chart colors
-									</p>
-								</div>
-
-								<div className="rounded-lg border border-border bg-card p-4">
-									<div className="flex items-center gap-2 mb-2">
-										<div className="h-2 w-2 rounded-full bg-primary" />
-										<span className="font-medium text-sm">Dependencies</span>
-									</div>
-									<p className="text-xs text-muted-foreground">
-										shadcn, CVA, animations, icon library packages
-									</p>
-								</div>
-
-								<div className="rounded-lg border border-border bg-card p-4">
-									<div className="flex items-center gap-2 mb-2">
-										<div className="h-2 w-2 rounded-full bg-primary" />
-										<span className="font-medium text-sm">
-											CLI Configuration
-										</span>
-									</div>
-									<p className="text-xs text-muted-foreground">
-										Base color, menu style, icon library, font settings
-									</p>
-								</div>
-
-								<div className="rounded-lg border border-border bg-card p-4">
-									<div className="flex items-center gap-2 mb-2">
-										<div className="h-2 w-2 rounded-full bg-primary" />
-										<span className="font-medium text-sm">
-											Asset Relationships
-										</span>
-										<span className="text-[10px] text-muted-foreground">
-											(incomplete)
-										</span>
-									</div>
-									<p className="text-xs text-muted-foreground">
-										Project-level font, icon, pattern, and wallpaper resolution
-										remains unfinished and is not part of the stable v1 contract
-									</p>
-								</div>
-							</div>
-
-							<div className="pt-2">
-								<p className="text-xs text-muted-foreground mb-2">
-									Query parameter overrides:
-								</p>
-								<div className="flex flex-wrap gap-1 font-mono text-xs">
-									{[
-										"base",
-										"iconLibrary",
-										"font",
-										"fontHeading",
-										"radius",
-										"baseColor",
-										"menuColor",
-										"menuAccent",
-									].map((param) => (
-										<div
-											key={param}
-											className="rounded border border-border bg-muted/30 px-2 py-1"
-										>
-											{param}
-										</div>
-									))}
-								</div>
-							</div>
-						</motion.div>
-
-						{/* Project Schema */}
-						<motion.div
-							initial={{ opacity: 0, x: 20 }}
-							whileInView={{ opacity: 1, x: 0 }}
-							viewport={{ once: true }}
-							className="flex flex-col min-w-0"
-						>
-							<h3 className="mb-4 font-semibold">
-								Current ShadCN registry:base Target
-							</h3>
-							<CodeBlock
-								code={JSON.stringify(
-									{
-										$schema: "https://ui.shadcn.com/schema/registry-item.json",
-										name: "my-project",
-										type: "registry:base",
-										style: "radix-nova",
-										iconLibrary: "lucide",
-										baseColor: "neutral",
-										theme: "neutral",
-										cssVars: {
-											light: {
-												background: "oklch(...)",
-												primary: "oklch(...)",
-												sidebar: "oklch(...)",
-												"chart-1": "oklch(...)",
-											},
-											dark: {
-												background: "oklch(...)",
-												primary: "oklch(...)",
-												sidebar: "oklch(...)",
-												"chart-1": "oklch(...)",
-											},
-										},
-									},
-									null,
-									2,
-								)}
-								language="json"
-								className="h-[500px]"
-							/>
-							<p className="mt-3 text-xs text-muted-foreground">
-								The intended endpoint is{" "}
-								<code className="rounded bg-muted px-1">
-									/init?project=[origin]
-								</code>{" "}
-								for{" "}
-								<code className="rounded bg-muted px-1">
-									shadcn create --preset
-								</code>
-								. Do not depend on it until the project builder emits the
-								current ShadCN top-level preset fields shown above and passes an
-								end-to-end CLI test.
+								.
 							</p>
 						</motion.div>
 					</div>
@@ -785,14 +419,14 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-4 text-3xl font-bold sm:text-4xl"
 						>
-							MAP Metadata Protocol
+							On-chain metadata
 						</motion.h2>
 						<motion.p
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							Assets use the MAP (Magic Attribute Protocol) for on-chain
-							metadata.
+							MAP fields make themes and assets searchable by type, name, and
+							author.
 						</motion.p>
 					</motion.div>
 
@@ -802,19 +436,6 @@ export function SpecPageClient() {
 						viewport={{ once: true }}
 					>
 						<OnChainProtocol />
-						<p className="mx-auto mt-6 max-w-3xl text-xs text-muted-foreground">
-							These fields are MAP metadata on the package&apos;s{" "}
-							<code className="rounded bg-muted px-1">ord-fs/json</code>{" "}
-							manifest, not fields inside <code>theme.json</code>. Theme
-							discovery still uses{" "}
-							<code className="rounded bg-muted px-1">registry:style</code> for
-							compatibility with existing inscriptions. Current ShadCN names a
-							color-only item{" "}
-							<code className="rounded bg-muted px-1">registry:theme</code>
-							{";"}
-							migrating that identifier requires a versioned compatibility plan,
-							not a silent v1 rewrite.
-						</p>
 					</motion.div>
 				</PageContainer>
 			</section>
@@ -844,9 +465,8 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-12 max-w-2xl text-muted-foreground"
 						>
-							The format is portable JSON, but Theme Token publishing,
-							discovery, ownership, and registry serving currently target BSV.
-							Other storage encodings are outside this specification.
+							Theme Token uses BSV and 1Sat Ordinals for publishing, discovery,
+							ownership, and registry delivery.
 						</motion.p>
 					</motion.div>
 
@@ -885,10 +505,7 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-8 max-w-2xl text-muted-foreground"
 						>
-							TypeScript utilities for v1 Theme Tokens. Validate, fetch,
-							convert, and apply themes programmatically. The v2 relationship
-							contract is currently compiled by the registry gateway, not this
-							SDK release.
+							Validate, fetch, convert, and apply Theme Tokens from TypeScript.
 						</motion.p>
 					</motion.div>
 
@@ -927,23 +544,23 @@ export function SpecPageClient() {
 								<h4 className="mb-1 font-mono text-sm font-semibold">
 									validateThemeToken
 								</h4>
-								<p className="text-xs text-muted-foreground">
-									Validate v1 Theme Token documents
+								<p className="text-sm text-muted-foreground">
+									Validate a Theme Token document
 								</p>
 							</div>
 							<div className="rounded-lg border border-border bg-card p-4">
 								<h4 className="mb-1 font-mono text-sm font-semibold">
 									fetchThemeByOrigin
 								</h4>
-								<p className="text-xs text-muted-foreground">
-									Fetch and validate v1 theme.json
+								<p className="text-sm text-muted-foreground">
+									Fetch a published theme by origin
 								</p>
 							</div>
 							<div className="rounded-lg border border-border bg-card p-4">
 								<h4 className="mb-1 font-mono text-sm font-semibold">
 									parseCss
 								</h4>
-								<p className="text-xs text-muted-foreground">
+								<p className="text-sm text-muted-foreground">
 									Convert CSS to ThemeToken
 								</p>
 							</div>
@@ -951,7 +568,7 @@ export function SpecPageClient() {
 								<h4 className="mb-1 font-mono text-sm font-semibold">
 									applyTheme
 								</h4>
-								<p className="text-xs text-muted-foreground">
+								<p className="text-sm text-muted-foreground">
 									Apply one light or dark style map
 								</p>
 							</div>
@@ -1020,17 +637,8 @@ export function SpecPageClient() {
 							variants={fadeIn}
 							className="mb-8 max-w-2xl text-muted-foreground"
 						>
-							Machine-readable documentation for AI coding assistants. Copy
-							context directly into your AI tool or feed the URLs. Following the{" "}
-							<a
-								href="https://llmstxt.org"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-primary hover:underline"
-							>
-								llms.txt
-							</a>{" "}
-							specification.
+							Copy a concise Theme Token reference into your coding assistant,
+							or give it one of these URLs.
 						</motion.p>
 					</motion.div>
 
@@ -1066,17 +674,12 @@ export function SpecPageClient() {
 							{copied === "full-context" ? (
 								<>
 									<Check className="h-5 w-5 text-green-500" />
-									<span className="text-green-600">
-										Full system context copied!
-									</span>
+									<span className="text-green-600">Reference copied</span>
 								</>
 							) : (
 								<>
 									<Copy className="h-5 w-5 text-primary" />
-									<span>Copy Full System Context</span>
-									<span className="text-xs text-muted-foreground">
-										(~8KB for comprehensive AI context)
-									</span>
+									<span>Copy full reference</span>
 								</>
 							)}
 						</button>
@@ -1097,7 +700,7 @@ export function SpecPageClient() {
 								<div className="flex-1">
 									<h3 className="font-semibold">llms.txt</h3>
 									<p className="text-sm text-muted-foreground">
-										Quick reference (~2KB)
+										Quick reference
 									</p>
 								</div>
 							</div>
@@ -1126,7 +729,7 @@ export function SpecPageClient() {
 									) : (
 										<>
 											<Copy className="h-4 w-4" />
-											Copy for AI
+											Copy
 										</>
 									)}
 								</button>
@@ -1151,7 +754,7 @@ export function SpecPageClient() {
 								<div className="flex-1">
 									<h3 className="font-semibold">llms-full.txt</h3>
 									<p className="text-sm text-muted-foreground">
-										Complete docs (~6KB)
+										Complete reference
 									</p>
 								</div>
 							</div>
@@ -1180,7 +783,7 @@ export function SpecPageClient() {
 									) : (
 										<>
 											<Copy className="h-4 w-4" />
-											Copy for AI
+											Copy
 										</>
 									)}
 								</button>

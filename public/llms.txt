@@ -1,14 +1,13 @@
 # Theme Token
 
-> Publish, discover, and install ShadCN-compatible themes as 1Sat Ordinals on BSV.
+Theme Token publishes ShadCN-compatible themes as 1Sat Ordinals on BSV.
 
-## Canonical links
+## Links
 
 - App: https://themetoken.dev
 - Specification: https://themetoken.dev/spec
 - Theme Studio: https://themetoken.dev/studio/theme
-- Stable v1 schema: https://themetoken.dev/v1/schema.json
-- Gateway-preview v2 schema: https://themetoken.dev/v2/schema.json
+- Schema: https://themetoken.dev/v1/schema.json
 - SDK: https://www.npmjs.com/package/@theme-token/sdk
 
 ## Install a theme
@@ -17,27 +16,21 @@
 bunx shadcn@latest add https://themetoken.dev/r/themes/[origin].json
 ```
 
-`[origin]` is a 1Sat origin outpoint in `txid_vout` form. The suffixless route
-also works, but public examples use `.json` consistently.
+`[origin]` is the theme's 1Sat origin in `txid_vout` form.
 
-## Stable v1 document
+## Theme document
 
-The inscription contains Theme Token JSON. The registry gateway validates and
-compiles that raw document into a ShadCN registry item at install time.
+A theme requires `$schema`, `name`, `styles.light`, and `styles.dark`. Each
+style includes the semantic colors and radius used by ShadCN. Charts, sidebar
+colors, fonts, spacing, letter spacing, shadows, custom CSS variables, and
+generation details are optional.
 
-A v1 document requires `$schema`, `name`, `styles.light`, and `styles.dark`.
-Each mode requires 19 semantic color values plus `radius`. Additional
-string-valued CSS variables are allowed. The Studio emits direct OKLCH values,
-matching current ShadCN themes; the v1 validator accepts CSS value strings and
-does not enforce a single color function.
+The Studio writes OKLCH colors. The validator accepts other CSS color values.
 
-Theme Token v1 also requires `destructive-foreground` for compatibility with
-existing inscriptions, although current ShadCN requires only `destructive`.
+## Publishing and discovery
 
-## On-chain package and discovery
-
-Themes are `ord-fs/json` directories containing `theme.json`. MAP metadata is
-attached to the directory manifest, not placed inside `theme.json`:
+Themes are `ord-fs/json` packages containing `theme.json`. The package manifest
+uses MAP metadata for discovery:
 
 ```json
 {
@@ -49,19 +42,15 @@ attached to the directory manifest, not placed inside `theme.json`:
 }
 ```
 
-`registry:style` is Theme Token's compatibility identifier for existing theme
-inscriptions. Current ShadCN calls a color-only registry item `registry:theme`;
-changing the on-chain identifier requires a versioned migration.
+Standalone assets use `type: "theme-token:asset"` with `kind` and `mediaType`.
+Raw on-chain content is available from `https://api.1sat.app/content/[origin]`.
 
-New standalone assets use MAP `type: "theme-token:asset"` plus `kind` (`font`,
-`pattern`, `wallpaper`, or `image`) and `mediaType`. Project drafts use
-`registry:base`. Raw content is served from
-`https://api.1sat.app/content/[origin]`.
+## SDK
 
-## v2 gateway preview
+```ts
+import { applyTheme, fetchThemeByOrigin } from "@theme-token/sdk";
 
-Version 2 adds a required `assets` relationship array. The gateway verifies
-canonical origins, media types, and `sha256:<lowercase hex>` integrity before
-compiling supported font and background roles. The Studio and current SDK still
-author and fetch v1; required `icon.set` delivery and stable project presets are
-not implemented yet.
+const published = await fetchThemeByOrigin("<txid>_0");
+if (!published) throw new Error("Theme not found");
+applyTheme(published.theme.styles.light);
+```
