@@ -10,7 +10,8 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { useYoursWallet } from "@/hooks/use-yours-wallet";
@@ -65,6 +66,17 @@ export function WalletConnect() {
 	const { activeTheme, applyThemeAnimated, resetTheme, mode } = useTheme();
 	const [isOpen, setIsOpen] = useState(false);
 
+	useEffect(() => {
+		if (!error) return;
+		toast.error("Wallet operation failed", {
+			id: "wallet-operation-error",
+			description: error,
+			duration: Number.POSITIVE_INFINITY,
+			dismissible: true,
+			closeButton: true,
+		});
+	}, [error]);
+
 	// Not installed / disconnected / error — show connect button
 	if (
 		status === "not-installed" ||
@@ -88,11 +100,6 @@ export function WalletConnect() {
 					/>
 					<span className="hidden sm:inline">Connect</span>
 				</Button>
-				{error && (
-					<span role="alert" className="text-xs text-destructive">
-						{error}
-					</span>
-				)}
 			</div>
 		);
 	}
