@@ -47,6 +47,10 @@ import {
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { Button } from "@/components/ui/button";
 import { type FeatureFlags, useFeatureFlags } from "@/lib/feature-flags";
+import {
+	MAX_INSPIRATION_UPLOAD_BYTES,
+	prepareInspirationImage,
+} from "@/lib/image-inspiration";
 import { BlockPreview } from "./block-preview";
 import { PaymentRequestCard } from "./payment-request";
 import {
@@ -408,9 +412,18 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 		setInput(suggestion);
 	};
 
-	const onPromptSubmit = (message: PromptInputMessage) => {
+	const onPromptSubmit = async (message: PromptInputMessage) => {
 		if ((!message.text.trim() && message.files.length === 0) || isBusy) return;
-		return handleSubmit(message);
+		try {
+			const files = await Promise.all(
+				message.files.map(prepareInspirationImage),
+			);
+			return await handleSubmit({ ...message, files });
+		} catch (error) {
+			const detail = error instanceof Error ? error.message : "Unknown error";
+			toast.error(`Could not prepare that image. ${detail}`);
+			throw error;
+		}
 	};
 
 	const onPaymentConfirm = async () => {
@@ -750,7 +763,7 @@ export function SwatchyChatBubble({ isOpen }: { isOpen: boolean }) {
 				<PromptInput
 					accept="image/*"
 					maxFiles={1}
-					maxFileSize={3 * 1024 * 1024}
+					maxFileSize={MAX_INSPIRATION_UPLOAD_BYTES}
 					onError={({ message }) => toast.error(message)}
 					onSubmit={onPromptSubmit}
 					className="rounded-lg border bg-muted/30"
