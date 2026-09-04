@@ -1,16 +1,6 @@
 "use client";
 
-import {
-	ImageIcon,
-	LayoutGrid,
-	Moon,
-	Palette,
-	Search,
-	Shapes,
-	Sparkles,
-	Sun,
-	Type,
-} from "lucide-react";
+import { LayoutGrid, Moon, Search, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
@@ -24,15 +14,8 @@ import {
 	CommandList,
 	CommandShortcut,
 } from "@/components/ui/command";
-
-const destinations = [
-	{ href: "/themes", label: "Browse themes", icon: LayoutGrid },
-	{ href: "/studio/theme", label: "Theme Studio", icon: Palette },
-	{ href: "/studio/font", label: "Font Studio", icon: Type },
-	{ href: "/studio/patterns", label: "Pattern Studio", icon: Shapes },
-	{ href: "/studio/wallpaper", label: "Wallpaper Studio", icon: ImageIcon },
-	{ href: "/studio/icon", label: "Icon Studio", icon: Sparkles },
-];
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { getStudioTabs } from "@/lib/routes";
 
 function isTypingTarget(target: EventTarget | null): boolean {
 	return (
@@ -45,6 +28,8 @@ function isTypingTarget(target: EventTarget | null): boolean {
 export function AppCommandMenu() {
 	const router = useRouter();
 	const { mode, toggleMode } = useTheme();
+	const flags = useFeatureFlags();
+	const studioTabs = getStudioTabs(flags);
 	const [open, setOpen] = useState(false);
 
 	useEffect(() => {
@@ -89,14 +74,21 @@ export function AppCommandMenu() {
 					<CommandList>
 						<CommandEmpty>No matching destination.</CommandEmpty>
 						<CommandGroup heading="Navigate">
-							{destinations.map(({ href, label, icon: Icon }) => (
+							<CommandItem
+								onSelect={() => navigate("/themes")}
+								value="Browse themes"
+							>
+								<LayoutGrid />
+								Browse themes
+							</CommandItem>
+							{studioTabs.map(({ path, label, icon: Icon }) => (
 								<CommandItem
-									key={href}
-									onSelect={() => navigate(href)}
-									value={label}
+									key={path}
+									onSelect={() => navigate(path)}
+									value={`${label} Studio`}
 								>
-									<Icon />
-									{label}
+									{Icon && <Icon />}
+									{label} Studio
 								</CommandItem>
 							))}
 						</CommandGroup>

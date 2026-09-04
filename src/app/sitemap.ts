@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
+import { getFeatureFlags } from "@/lib/get-feature-flags";
+import { isRouteEnabled } from "@/lib/routes";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = "https://themetoken.dev";
+	const flags = await getFeatureFlags();
 
-	return [
+	const entries: MetadataRoute.Sitemap = [
 		{
 			url: baseUrl,
 			lastModified: "2025-06-01",
@@ -113,4 +116,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.4,
 		},
 	];
+
+	return entries.filter((entry) =>
+		isRouteEnabled(new URL(entry.url).pathname, flags),
+	);
 }
