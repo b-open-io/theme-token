@@ -18,8 +18,8 @@ export function CreateThemeButton() {
 	return (
 		<Button
 			size="lg"
-			variant="secondary"
-			className="gap-2 border border-border/80 bg-secondary/80 shadow-sm hover:bg-secondary active:translate-y-px"
+			variant="outline"
+			className="gap-2 border-primary/40 bg-primary/10 text-foreground shadow-sm hover:bg-primary/20 hover:text-foreground active:translate-y-px"
 			onClick={handleClick}
 			aria-haspopup="dialog"
 			aria-controls="swatchy-chat"
