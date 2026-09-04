@@ -48,7 +48,7 @@ function ModeToggle() {
 			variant="ghost"
 			size="icon"
 			onClick={(e) => toggleMode(e)}
-			className="h-9 w-9"
+			className="h-8 w-8 text-muted-foreground hover:text-foreground"
 			title={mode === "light" ? "Switch to dark mode" : "Switch to light mode"}
 		>
 			{mode === "light" ? (
@@ -90,7 +90,7 @@ export function WalletConnect() {
 					variant="ghost"
 					size="sm"
 					onClick={() => connect()}
-					className="gap-1.5"
+					className="gap-1.5 text-muted-foreground hover:text-foreground"
 					title="Connect wallet"
 				>
 					<Wallet
@@ -109,7 +109,12 @@ export function WalletConnect() {
 		return (
 			<div className="flex items-center gap-1">
 				<ModeToggle />
-				<Button variant="ghost" size="sm" disabled className="gap-1.5">
+				<Button
+					variant="ghost"
+					size="sm"
+					disabled
+					className="gap-1.5 text-muted-foreground"
+				>
 					<Loader2 data-icon="inline-start" className="h-4 w-4 animate-spin" />
 					<span className="hidden sm:inline">Connecting...</span>
 				</Button>
@@ -128,7 +133,7 @@ export function WalletConnect() {
 					variant="ghost"
 					size="sm"
 					onClick={() => setIsOpen(!isOpen)}
-					className="gap-1.5"
+					className="gap-1.5 text-muted-foreground hover:text-foreground"
 				>
 					{activeTheme ? (
 						<ThemeStripes styles={activeTheme.styles} mode={mode} />

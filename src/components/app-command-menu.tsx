@@ -56,14 +56,13 @@ export function AppCommandMenu() {
 		<>
 			<Button
 				aria-label="Open command menu"
-				className="size-8 gap-2 px-0 lg:h-8 lg:w-auto lg:px-3"
+				className="size-8 gap-1.5 px-0 text-muted-foreground hover:text-foreground lg:h-8 lg:w-auto lg:px-2"
 				onClick={() => setOpen(true)}
 				size="sm"
 				variant="ghost"
 			>
 				<Search data-icon="inline-start" />
-				<span className="hidden lg:inline">Search</span>
-				<kbd className="hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline">
+				<kbd className="hidden rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline">
 					⌘K
 				</kbd>
 			</Button>

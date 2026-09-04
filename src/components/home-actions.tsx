@@ -16,7 +16,14 @@ export function CreateThemeButton() {
 	};
 
 	return (
-		<Button size="lg" variant="outline" className="gap-2" onClick={handleClick}>
+		<Button
+			size="lg"
+			variant="secondary"
+			className="gap-2 border border-border/80 bg-secondary/80 shadow-sm hover:bg-secondary active:translate-y-px"
+			onClick={handleClick}
+			aria-haspopup="dialog"
+			aria-controls="swatchy-chat"
+		>
 			<Wand2 data-icon="inline-start" className="h-5 w-5" />
 			Create Theme
 		</Button>
