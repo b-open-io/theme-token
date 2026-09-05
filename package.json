@@ -70,7 +70,7 @@
 		"@radix-ui/react-tooltip": "^1.2.16",
 		"@radix-ui/react-use-controllable-state": "^1.2.6",
 		"@resvg/resvg-js": "^2.6.2",
-		"@sigma-auth/better-auth-plugin": "^0.0.93",
+		"@sigma-auth/better-auth-plugin": "^0.0.101",
 		"@streamdown/cjk": "^1.0.3",
 		"@streamdown/code": "^1.1.1",
 		"@streamdown/math": "^1.0.2",

@@ -88,8 +88,8 @@ KV_REDIS_URL=
 # Vercel Blob (draft asset storage) — Vercel injects BLOB_READ_WRITE_TOKEN in prod
 # BLOB_READ_WRITE_TOKEN=
 
-# Sigma / BAP identity
-SIGMA_MEMBER_PRIVATE_KEY=
+# Sigma / BAP identity — account WIF (plugin 0.0.101+ reads SIGMA_ACCOUNT_PRIVATE_KEY only)
+SIGMA_ACCOUNT_PRIVATE_KEY=
 
 # Sandbox preview (Vercel Sandbox) — uses VERCEL_OIDC_TOKEN in prod
 SANDBOX_PREVIEW_SOURCE_URL=
