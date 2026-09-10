@@ -10,7 +10,7 @@
         "@1sat/templates": "^0.0.33",
         "@ai-sdk/react": "^4.0.88",
         "@base-ui/react": "^1.7.0",
-        "@bsv/sdk": "^2.4.2",
+        "@bsv/sdk": "^2.5.0",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/modifiers": "^9.0.0",
         "@dnd-kit/sortable": "^10.0.0",
@@ -231,7 +231,7 @@
 
     "@bsv/message-box-client": ["@bsv/message-box-client@2.4.2", "", { "dependencies": { "@bsv/authsocket-client": "^2.1.6" }, "peerDependencies": { "@bsv/sdk": "^2.4.1" } }, "sha512-DD9Yq4+oKTUzHe1Uu57Na/HO6T9hAaHrdM6crdOpa+VIRhYx7oGlrzQZuVC4eNsygB8D6zckSnTxG0xRSlIqOQ=="],
 
-    "@bsv/sdk": ["@bsv/sdk@2.4.2", "", {}, "sha512-UW1eC6YU+GdHBIQEBemuJo24K5S6rJBd6umNfkOpHR0ke5bgi58ymMrpX6Dm1cd4FYXsTDrbzyiKaH//LmJ7kw=="],
+    "@bsv/sdk": ["@bsv/sdk@2.5.0", "", {}, "sha512-Y1j9iEjpcY09Jvr3HcoXQO2dhn/qEAHsEi+S/yqvu/hwkx2OdH+UlFbEE4na97lNO0UzrIUYFZIL7FJxUSje2w=="],
 
     "@bsv/wallet-toolbox-client": ["@bopen-io/wallet-toolbox-client@2.6.2-brc153.5", "", { "dependencies": { "hash-wasm": "^4.12.0", "idb": "^8.0.3" }, "peerDependencies": { "@bsv/sdk": "^2.1.8" } }, "sha512-+EB9ohtVi08KOizQA796lsNBRzBym4G7hvxIWZtaPfKCqaNFcXkoOU7l5tXFRqXrY1JTqIEuPcjwBh/+88CMMw=="],
 
